@@ -72,13 +72,13 @@ class InstrumentInterface:
     def output_on(self):
         if self.sp is None:
             return False
-        response = self._send_command("SOUT1")
+        response = self._send_command("SOUT0")
         return response == "OK"
 
     def output_off(self):
         if self.sp is None:
             return False
-        response = self._send_command("SOUT0")
+        response = self._send_command("SOUT1")
         return response == "OK"
 
     def get_output_read(self) -> Union[bool, Tuple[float, float, Literal["CC", "CV", False]]]:
