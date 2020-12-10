@@ -32,7 +32,8 @@ class InstrumentInterface:
             self.sp.reset_input_buffer()
             self.sp.reset_output_buffer()
 
-        except serial.SerialException:
+        except serial.SerialException as e:
+            print(f"Could not connect to power supply: {e}")
             self.sp = None
             return False
 
