@@ -65,8 +65,8 @@ class InstrumentInterface:
 
         if match:
             if response[0:4] == "HCS-":
-                return match.group()
-            return "HCS-" + match.group()
+                return match.group().rstrip()
+            return "HCS-" + match.group().rstrip()
         return False
 
     def output_on(self):
@@ -324,39 +324,6 @@ class InstrumentInterface:
 
         response = self._send_command("SPRO1")
         return bool(response)
-
-    def set_output_current(self, curr: float) -> bool:
-        if self.sp is None or not isinstance(curr, (int, float)):
-            return False
-
-        if 0.25 <= curr < 1:
-            curr = int(curr * 1000)
-            cmd = "CURR" + "0" + str(curr)
-        elif 1 <= curr <= 5.2:
-            curr = int(curr * 1000)
-            cmd = "CURR" + str(curr)
-        else:
-            return False
-        response = self._send_command(cmd)
-        return bool(response)
-
-    def set_output_voltage(self, volt: float):
-        if self.sp is None or not isinstance(volt, (int, float)):
-            return False
-
-        if 1 <= volt < 10:
-            volt = int(volt * 100)
-            cmd = "VOLT" + "0" + str(volt)
-        elif 10 <= volt <= 21:
-            volt = int(volt * 100)
-            cmd = "VOLT" + str(volt)
-        else:
-            return False
-
-        response = self._send_command(cmd)
-        if not response:
-            return False
-        return response
 
 
 if __name__ == '__main__':
