@@ -115,6 +115,16 @@ class InstrumentInterface:
     def get_output_mode(self) -> Literal[False, "CC", "CV"]:
         if self.sp is not None:
             return self.get_output_read()[2]
+        return None
+
+    def get_output_power(self) -> Optional[float]:
+        """ Returns output power in watts """
+        if self.sp is not None:
+            try:
+                voltage, intensity, _ = self.get_output_read()
+                return voltage * intensity
+            except TypeError:
+                return False
         return False
 
     def get_max(self) -> Union[bool, Tuple[float, float]]:
