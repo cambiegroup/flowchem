@@ -6,15 +6,21 @@ def test():
 	ps = InstrumentInterface()
 	ps.open("COM30")
 
-	input("SETTING PS TO 36V 2A, Enter to continue, auto-stop in 3 seconds...")
-	ps.set_current(0.4)
-	ps.set_voltage(31)
+	output = {}
+	ps.set_current(2)
 	ps.output_on()
-	time.sleep(3)
-	output = ps.get_output_read()
+	for voltage in range(220, 361):
+		ps.set_voltage(voltage/10)
+		time.sleep(0.1)
+		power = ps.get_output_power()
+		output[voltage/10] = power
+		print(f"output power at {voltage} is {power}")
+
+	import json
+	out_file = open("420led.json", "w")
+	json.dump(output, out_file)
+
 	ps.output_off()
-	ps.close()
-	print(f"V, I, MODE = {output}")
 
 
 if __name__ == '__main__':	
