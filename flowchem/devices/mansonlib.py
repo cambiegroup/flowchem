@@ -9,7 +9,7 @@ Changes:
 
 import re
 import operator
-from typing import Union, Literal, Tuple
+from typing import Union, Literal, Tuple, Optional
 import serial
 
 
@@ -49,6 +49,7 @@ class InstrumentInterface:
 
     def _send_command(self, command: str) -> str:
         """ Internal function to send command and read reply. """
+        self.sp.reset_input_buffer()
         self.sp.write(f"{command}\r".encode('ascii'))
         return self.sp.readline().decode('ascii').strip()
 
@@ -90,8 +91,11 @@ class InstrumentInterface:
         if not response:
             return False
 
-        volt = float(response[0:4]) / 100
-        curr = float(response[4:8]) / 100
+        try:
+            volt = float(response[0:4]) / 100
+            curr = float(response[4:8]) / 100
+        except ValueError:
+            return False
 
         if response[8:9] == '0':
             mode = "CV"
@@ -102,17 +106,20 @@ class InstrumentInterface:
 
         return volt, curr, mode
 
-    def get_output_voltage(self) -> Union[float, bool]:
+    def get_output_voltage(self) -> Optional[float]:
+        """ Returns output voltage in Volt """
         if self.sp is not None:
             return self.get_output_read()[0]
-        return False
+        return None
 
-    def get_output_current(self) -> Union[float, bool]:
+    def get_output_current(self) -> Optional[float]:
+        """ Returns output current in Ampere """
         if self.sp is not None:
             return self.get_output_read()[1]
-        return False
+        return None
 
-    def get_output_mode(self) -> Literal[False, "CC", "CV"]:
+    def get_output_mode(self) -> Optional[Literal["CC", "CV"]]:
+        """ Returns output mode: either current control (CC) or voltage control (CV) """
         if self.sp is not None:
             return self.get_output_read()[2]
         return None
