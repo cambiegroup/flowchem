@@ -17,6 +17,14 @@ class MansonException(Exception):
     pass
 
 
+class NotConnectedError(MansonException):
+    pass
+
+
+class InvalidArgument(MansonException):
+    pass
+
+
 class InstrumentInterface:
     MODEL_ALT_RANGE = ['HCS-3102', 'HCS-3014', 'HCS-3204']
 
@@ -48,13 +56,12 @@ class InstrumentInterface:
 
     def _send_command(self, command: str) -> str:
         """ Internal function to send command and read reply. """
+        if self.sp is None:
+            raise NotConnectedError
         self.sp.write(f"{command}\r".encode('ascii'))
         return self.sp.readline().decode('ascii').strip()
 
     def get_info(self):
-        if self.sp is None:
-            return False
-
         response = self._send_command("GMOD")
         if not response:
             return False
@@ -69,22 +76,15 @@ class InstrumentInterface:
         return False
 
     def output_on(self):
-        if self.sp is None:
-            return False
         response = self._send_command("SOUT1")
         return response == "OK"
 
     def output_off(self):
-        if self.sp is None:
-            return False
         response = self._send_command("SOUT0")
         return response == "OK"
 
     def get_output_read(self) -> Union[bool, Tuple[float, float, Literal["CC", "CV", False]]]:
         """ Returns actual values of voltage, current and mode """
-        if self.sp is None:
-            return False
-
         response = self._send_command("GETD")
         if not response:
             return False
@@ -102,25 +102,16 @@ class InstrumentInterface:
         return volt, curr, mode
 
     def get_output_voltage(self) -> Union[float, bool]:
-        if self.sp is not None:
-            return self.get_output_read()[0]
-        return False
+        return self.get_output_read()[0]
 
     def get_output_current(self) -> Union[float, bool]:
-        if self.sp is not None:
-            return self.get_output_read()[1]
-        return False
+        return self.get_output_read()[1]
 
     def get_output_mode(self) -> Literal[False, "CC", "CV"]:
-        if self.sp is not None:
-            return self.get_output_read()[2]
-        return False
+        return self.get_output_read()[2]
 
     def get_max(self) -> Union[bool, Tuple[float, float]]:
         """ Returns maximum voltage and current, as tuple, or False. """
-        if self.sp is None:
-            return False
-
         response = self._send_command("GMAX")
         if not response:
             return False
@@ -137,9 +128,6 @@ class InstrumentInterface:
 
     def get_setting(self) -> Union[bool, Tuple[float, float]]:
         """ Returns current setting as tuple (voltage, current). """
-        if self.sp is None:
-            return False
-
         response = self._send_command("GETS")
         if not response:
             return False
@@ -156,9 +144,6 @@ class InstrumentInterface:
 
     def set_voltage(self, value_in_volt: Union[int, float]):
         """ Set target voltage """
-        if self.sp is None:
-            return False
-
         # Zero fill by left pad with zeros, up to three digits
         cmd = "VOLT" + str(value_in_volt * 10).zfill(3)
 
@@ -166,8 +151,8 @@ class InstrumentInterface:
         return response == "OK"
 
     def set_current(self, current_in_ampere):
-        if self.sp is None or not isinstance(current_in_ampere, (int, float)):
-            return False
+        if not isinstance(current_in_ampere, (int, float)):
+            raise InvalidArgument
 
         model = self.get_info()
         if model in self.MODEL_ALT_RANGE:
@@ -183,9 +168,6 @@ class InstrumentInterface:
         return response == "OK"
 
     def Pset(self, num: int, volt, curr):
-        if self.sp is None:
-            return False
-
         if isinstance(num, int):
             num_max = 3
             if num > num_max - 1 or num < 0:
@@ -254,9 +236,6 @@ class InstrumentInterface:
         return response
 
     def GPset(self, index, option):
-        if self.sp is None:
-            return False
-
         model_list = ['HCS-3102', 'HCS-3014', 'HCS-3204']
         model = self.get_info()
         model_mark = 0
@@ -294,39 +273,29 @@ class InstrumentInterface:
             volt = int(response[(int(list_v[index])):(int(list_v[index + 1]))]) / float(10)
             return volt
 
-    def RPreset(self, index):
-        if self.sp is None:
+    def RPreset(self, index: int) -> bool:
+        """ Reset one of the preset position: 0, 1 or 2 """
+        if not 0 <= int(index) < 3:
+            raise InvalidArgument
+        cmd = 'RUNM' + str(int(index))
+        response = self._send_command(cmd)
+        if not response:
             return False
-
-        if isinstance(index, int):
-            index_max = 3
-            if index > index_max - 1 or index < 0:
-                return False
-            cmd = 'RUNM' + str(index)
-            response = self._send_command(cmd)
-            if not response:
-                return False
-            return response
+        return response
 
     def remove_protection(self) -> bool:
         """" I guess it removes over voltage protection """
-        if self.sp is None:
-            return False
-
         response = self._send_command("SPRO0")
         return bool(response)
 
     def add_protection(self) -> bool:
         """" I guess it adds over voltage protection """
-        if self.sp is None:
-            return False
-
         response = self._send_command("SPRO1")
         return bool(response)
 
     def set_output_current(self, curr: float) -> bool:
-        if self.sp is None or not isinstance(curr, (int, float)):
-            return False
+        if not isinstance(curr, (int, float)):
+            raise InvalidArgument
 
         if 0.25 <= curr < 1:
             curr = int(curr * 1000)
@@ -340,8 +309,8 @@ class InstrumentInterface:
         return bool(response)
 
     def set_output_voltage(self, volt: float):
-        if self.sp is None or not isinstance(volt, (int, float)):
-            return False
+        if not isinstance(volt, (int, float)):
+            raise InvalidArgument
 
         if 1 <= volt < 10:
             volt = int(volt * 100)
