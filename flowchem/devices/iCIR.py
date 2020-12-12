@@ -10,17 +10,6 @@ LOG = logging.getLogger("flow-ir")
 LOG.setLevel(logging.DEBUG)
 LOG.addHandler(logging.StreamHandler())
 
-try:
-    from IPython import embed
-except ImportError:
-    import code
-
-    def embed():
-        vars = globals()
-        vars.update(locals())
-        shell = code.InteractiveConsole(vars)
-        shell.interact()
-
 
 class SubHandler(object):
 
@@ -53,7 +42,7 @@ class FlowIR:
             self.opcua.connect()
             server_name = self.opcua.get_node("ns=2;s=Local.iCIR").get_display_name().Text
             self.log.info(f"Connected to {server_name}")
-        except ConnectionRefusedError:
+        except (ConnectionRefusedError, ua.UaStatusCodeError):
             self.opcua = None
 
     def __del__(self):

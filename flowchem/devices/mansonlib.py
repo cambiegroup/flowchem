@@ -9,7 +9,7 @@ Changes:
 
 import re
 import operator
-from typing import Union, Literal, Tuple
+from typing import Union, Literal, Tuple, Optional
 import serial
 
 
@@ -40,7 +40,8 @@ class InstrumentInterface:
             self.sp.reset_input_buffer()
             self.sp.reset_output_buffer()
 
-        except serial.SerialException:
+        except serial.SerialException as e:
+            print(f"Could not connect to power supply: {e}")
             self.sp = None
             return False
 
@@ -58,6 +59,7 @@ class InstrumentInterface:
         """ Internal function to send command and read reply. """
         if self.sp is None:
             raise NotConnectedError
+        self.sp.reset_input_buffer()
         self.sp.write(f"{command}\r".encode('ascii'))
         return self.sp.readline().decode('ascii').strip()
 
@@ -71,16 +73,16 @@ class InstrumentInterface:
 
         if match:
             if response[0:4] == "HCS-":
-                return match.group()
-            return "HCS-" + match.group()
+                return match.group().rstrip()
+            return "HCS-" + match.group().rstrip()
         return False
 
     def output_on(self):
-        response = self._send_command("SOUT1")
+        response = self._send_command("SOUT0")
         return response == "OK"
 
     def output_off(self):
-        response = self._send_command("SOUT0")
+        response = self._send_command("SOUT1")
         return response == "OK"
 
     def get_output_read(self) -> Union[bool, Tuple[float, float, Literal["CC", "CV", False]]]:
@@ -89,8 +91,11 @@ class InstrumentInterface:
         if not response:
             return False
 
-        volt = float(response[0:4]) / 100
-        curr = float(response[4:8]) / 100
+        try:
+            volt = float(response[0:4]) / 100
+            curr = float(response[4:8]) / 100
+        except ValueError:
+            return False
 
         if response[8:9] == '0':
             mode = "CV"
@@ -101,14 +106,27 @@ class InstrumentInterface:
 
         return volt, curr, mode
 
-    def get_output_voltage(self) -> Union[float, bool]:
+    def get_output_voltage(self) -> float:
+        """ Returns output voltage in Volt """
         return self.get_output_read()[0]
 
-    def get_output_current(self) -> Union[float, bool]:
+    def get_output_current(self) -> float:
+        """ Returns output current in Ampere """
         return self.get_output_read()[1]
 
-    def get_output_mode(self) -> Literal[False, "CC", "CV"]:
+    def get_output_mode(self) -> Literal["CC", "CV"]:
+        """ Returns output mode: either current control (CC) or voltage control (CV) """
         return self.get_output_read()[2]
+
+    def get_output_power(self) -> Optional[float]:
+        """ Returns output power in watts """
+        if self.sp is not None:
+            try:
+                voltage, intensity, _ = self.get_output_read()
+                return voltage * intensity
+            except TypeError:
+                return False
+        return False
 
     def get_max(self) -> Union[bool, Tuple[float, float]]:
         """ Returns maximum voltage and current, as tuple, or False. """
@@ -292,39 +310,6 @@ class InstrumentInterface:
         """" I guess it adds over voltage protection """
         response = self._send_command("SPRO1")
         return bool(response)
-
-    def set_output_current(self, curr: float) -> bool:
-        if not isinstance(curr, (int, float)):
-            raise InvalidArgument
-
-        if 0.25 <= curr < 1:
-            curr = int(curr * 1000)
-            cmd = "CURR" + "0" + str(curr)
-        elif 1 <= curr <= 5.2:
-            curr = int(curr * 1000)
-            cmd = "CURR" + str(curr)
-        else:
-            return False
-        response = self._send_command(cmd)
-        return bool(response)
-
-    def set_output_voltage(self, volt: float):
-        if not isinstance(volt, (int, float)):
-            raise InvalidArgument
-
-        if 1 <= volt < 10:
-            volt = int(volt * 100)
-            cmd = "VOLT" + "0" + str(volt)
-        elif 10 <= volt <= 21:
-            volt = int(volt * 100)
-            cmd = "VOLT" + str(volt)
-        else:
-            return False
-
-        response = self._send_command(cmd)
-        if not response:
-            return False
-        return response
 
 
 if __name__ == '__main__':
