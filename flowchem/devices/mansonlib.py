@@ -8,8 +8,8 @@ Changes:
 """
 
 import re
-import operator
 from typing import Union, Literal, Tuple, Optional, List
+
 import serial
 
 
