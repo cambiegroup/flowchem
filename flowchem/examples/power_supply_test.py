@@ -1,9 +1,9 @@
-from flowchem.devices.mansonlib import InstrumentInterface
+from flowchem.devices.mansonlib import PowerSupply
 import time
 
 
 def test():
-	ps = InstrumentInterface()
+	ps = PowerSupply()
 	ps.open("COM30")
 
 	output = {}
