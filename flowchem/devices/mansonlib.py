@@ -29,7 +29,7 @@ class InvalidOrNoReply(MansonException):
     pass
 
 
-class InstrumentInterface:
+class PowerSupply:
     MODEL_ALT_RANGE = ['HCS-3102', 'HCS-3014', 'HCS-3204']
 
     def __init__(self):
@@ -46,8 +46,7 @@ class InstrumentInterface:
 
         except serial.SerialException as e:
             print(f"Could not connect to power supply: {e}")
-            self.sp = None
-            return False
+            raise NotConnectedError from e
 
         return True
 
@@ -59,7 +58,7 @@ class InstrumentInterface:
             return True
         return False
 
-    def _send_command(self, command: str, multiline_reply: bool = False) -> str:
+    def _send_command(self, command: str, multiline_reply: bool = False, no_reply_expected: bool = False) -> str:
         """ Internal function to send command and read reply. """
         if self.sp is None:
             raise NotConnectedError
@@ -69,8 +68,8 @@ class InstrumentInterface:
         self.sp.write(f"{command}\r".encode('ascii'))
         response = self.sp.readline().decode('ascii').strip()
 
-        if not response:
-            raise InvalidOrNoReply
+        if not response and not no_reply_expected:
+            raise InvalidOrNoReply("No reply received!")
 
         # Get multiple lines if needed
         if multiline_reply:
@@ -195,12 +194,13 @@ class InstrumentInterface:
 
         for set_values in preset:
             voltage, current = set_values
-            voltage_string = str(int(voltage * voltage_multiplier))
-            current_string = str(int(current * 10))
+            voltage_string = str(int(voltage * voltage_multiplier)).zfill(3)
+            current_string = str(int(current * 10)).zfill(3)
             command += voltage_string + current_string
 
-        response = self._send_command(command)
-        return response == "OK"
+        # Set and verify new values (no reply from device on this command)
+        self._send_command(command, no_reply_expected=True)
+        return True
 
     def set_preset(self, index: int, voltage: float, current: float) -> bool:
         """ Set preset position index with the provided values of voltage and current """
@@ -213,10 +213,11 @@ class InstrumentInterface:
 
     def get_all_preset(self) -> List[Tuple[float, float]]:
         """ Get voltage and current for all 3 memory preset position """
-        response_lines = self._send_command("GETM", multiline_reply=True).split("\n")
+        response_lines = self._send_command("GETM", multiline_reply=True).split("\r")
 
         voltage = []
         current = []
+
         for preset in response_lines[0:3]:
             # Drop all but numbers
             preset = re.sub(r"\D", "", preset)
@@ -224,7 +225,7 @@ class InstrumentInterface:
                 # Three digits for voltage and three digits for current
                 voltage.append(float(preset[0:3]))
                 current.append(float(preset[3:6]))
-            except KeyError as e:
+            except (KeyError, ValueError) as e:
                 raise InvalidOrNoReply from e
 
         # Transform current in Ampere and voltage in Volt
