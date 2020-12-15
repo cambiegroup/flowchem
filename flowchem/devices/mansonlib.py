@@ -38,7 +38,7 @@ class PowerSupply:
     def open(self, com_port, baud_rate=9600):
         """ Opens serial connection. """
         if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
-            return MansonException(f"Invalid baud rate provided {baud_rate}!")
+            raise MansonException(f"Invalid baud rate provided {baud_rate}!")
         try:
             self.sp = serial.Serial(com_port, baudrate=baud_rate, bytesize=8, parity='N', stopbits=1, timeout=0.1)
             self.sp.reset_input_buffer()
