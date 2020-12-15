@@ -41,3 +41,5 @@ def autodiscover_knauer(source_ip: str = "192.168.1.1") -> List[Tuple[str, str]]
 if __name__ == '__main__':
     devices = autodiscover_knauer()
     print(devices)
+    # Currently returns:
+    # [('192.168.1.108', '00:80:a3:ce:7e:15'), ('192.168.1.188', '00:80:a3:ba:bf:e2'), ('192.168.1.126', '00:80:a3:ce:8e:43'), ('192.168.1.119', '00:80:a3:b9:0e:33'), ('192.168.1.2', '00:80:a3:90:d5:5e')]
