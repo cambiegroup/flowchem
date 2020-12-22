@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Union, List, TypedDict
+from typing import Union, List, TypedDict, Optional
 from dataclasses import dataclass
+from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 import serial
 
@@ -101,7 +102,7 @@ class PumpIO:
         except serial.PortNotOpenError as e:
             raise NotConnectedError from e
 
-    def write_and_read_reply(self, command: Protocol11Command):
+    def write_and_read_reply(self, command: Protocol11Command) -> List[str]:
         """  """
         with self.lock:
             self.flush_input_buffer()
@@ -113,7 +114,7 @@ class PumpIO:
             raise Elite11Exception(f"Invalid reply received from pump {command.target_pump_address}: {response}")
 
     @property
-    def name(self):
+    def name(self) -> Optional[str]:
         try:
             return self._serial.name
         except AttributeError:
@@ -121,11 +122,8 @@ class PumpIO:
 
 
 class Elite11:
-    """ Single pump object, implement commands w/ tenacity? """
-    all_pump_names = []
     GET_VERSION = Protocol11CommandTemplate(command_string="VER", reply_lines=1)
 
-    # FIXME use explicit diameter as default. (e.g. Our 10ml syringe?)
     def __init__(self, pump_io: PumpIO, address: int = 0, name: str = None, diameter: float = None):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
@@ -135,18 +133,17 @@ class Elite11:
         the pump is connected and working."""
 
         self.name = f"Pump {self.pump_io.name}:{address}" if None else name
-        if self.name in Elite11.all_pump_names:
-            raise InvalidConfiguration(f"Pump name '{self.name}' is not unique and therefore invalid!")
-        Elite11.all_pump_names.append(self.name)
         self.pump_io = pump_io
         self.address = address  # This is converted to string and zfill()-ed in Protocol11Command
         self.diameter = None
+
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
-        # This command is used to test connection. Failure handled by PumpIO
+        # This command is used to test connection: failure handled by PumpIO
         self.get_version()
         self.log.info(f"Created pump '{self.name}' w/ address '{address}' on port {self.pump_io.name}!")
 
+    @retry(retry=retry_if_exception_type(Elite11Exception), stop=stop_after_attempt(3))
     def send_command_and_read_reply(self, command: Protocol11CommandTemplate) -> List[str]:
         """ Sends a command based on its template and return the corresponding reply """
         # Transforms the Protocol11CommandTemplate in the corresponding Protocol11Command by adding pump address
