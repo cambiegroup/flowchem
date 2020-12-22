@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import json
 import logging
 import threading
-from pathlib import Path
-from typing import Union, List, Dict, TypedDict
+from typing import Union, List, TypedDict
 from dataclasses import dataclass
 
 import serial
@@ -68,7 +66,7 @@ class PumpIO:
         self._serial = serial.Serial(port=port,baudrate=baud_rate, bytesize=serial.EIGHTBITS,
                                      parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1,
                                      xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False,
-                                     exclusive=None)  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
+                                     exclusive=None)  # type:Union[serial.serialposix.Serial, serial.serialwin32.Serial]
 
     def _write(self, command: Protocol11Command):
         """ Writes a command to the pump """
@@ -124,7 +122,7 @@ class PumpIO:
 
 class Elite11:
     """ Single pump object, implement commands w/ tenacity? """
-
+    all_pump_names = []
     GET_VERSION = Protocol11CommandTemplate(command_string="VER", reply_lines=1)
 
     # FIXME use explicit diameter as default. (e.g. Our 10ml syringe?)
@@ -136,7 +134,10 @@ class Elite11:
         that the address is correct. This acts as a check to see that
         the pump is connected and working."""
 
-        self.name = f"Pump {address}" if None else name
+        self.name = f"Pump {self.pump_io.name}:{address}" if None else name
+        if self.name in Elite11.all_pump_names:
+            raise InvalidConfiguration(f"Pump name '{self.name}' is not unique and therefore invalid!")
+        Elite11.all_pump_names.append(self.name)
         self.pump_io = pump_io
         self.address = address  # This is converted to string and zfill()-ed in Protocol11Command
         self.diameter = None
@@ -146,20 +147,12 @@ class Elite11:
         self.get_version()
         self.log.info(f"Created pump '{self.name}' w/ address '{address}' on port {self.pump_io.name}!")
 
+    def send_command_and_read_reply(self, command: Protocol11CommandTemplate) -> List[str]:
+        """ Sends a command based on its template and return the corresponding reply """
+        # Transforms the Protocol11CommandTemplate in the corresponding Protocol11Command by adding pump address
+        return self.pump_io.write_and_read_reply(command.to_pump(self.address))
+
     def get_version(self):
         """ Returns the current firmware version reported by the pump """
-        version = self.pump_io.write_and_read_reply(self.GET_VERSION.to_pump(self.address))
+        version = self.send_command_and_read_reply(self.GET_VERSION)
         return version
-
-
-class PumpChain:
-    """ Holds the pumps and can setup everything from JSON """
-    def __init__(self, *pumps: Elite11):
-        self.pumps = pumps
-        self.pump_by_name = {}
-        for pump in self.pumps:
-            self.pump_by_name[pump.name] = pump
-
-        # Check that pump_by_name is valid, i.e. holds the same number of object than pumps
-        if len(self.pump_by_name.items()) != len(self.pumps):
-            raise InvalidConfiguration("The pump names are not unique!")
