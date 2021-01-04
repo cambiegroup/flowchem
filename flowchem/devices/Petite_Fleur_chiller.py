@@ -77,15 +77,16 @@ class Huber(SerialDevice):
         # E-grade "Exclusive" commands
         self.ramp_duration = "59"               # LSB = 1s,     range = -32767 - 32767s (negative values cancel ramp)
         self.start_ramp_cmd = "5A"                  # LSB = 0.01°C, range = -151.00 - 327.00°C (sets sp and starts ramp)
-        # at this point I got bored, someone may want to type up all the other commands at some point
+        self.thermostate_mode="13"              # range 0, 1 reads/set the thermostate mode to internal/external
 
         super().__init__(address, port, mode, device_name, connect_on_instantiation, soft_fail_for_testing)
 
 
     @command
-    def set_internal_temperature(self, temp):
+    def set_temperature(self, temp):
         """
         Sets the internal target temperature of the chiller
+        AFAJU If external Pt100 connected, this will be used for process control
 
         Args:
             temp (float): Temperature setpoint
@@ -99,24 +100,8 @@ class Huber(SerialDevice):
 
         self.send_message('{0}{1}{2}'.format(self.command_start, self.temp_controller_setpoint, temp_string), True, self.answer)
 
-    @command
-    def set_external_temperature(self, temp):
-        """
-        Sets the internal target temperature of the chiller
 
-        Args:
-            temp (float): Temperature setpoint
-        """
-        # setting the setpoint
-        if -151 <= temp <= 327:
-            temp = int(temp * 100)  # convert to appropriate decimal format
-            # : is a formatting controller, 0 means padding 7 values with zeros and X means hexadecimal
-            temp_string = "{:04X}".format(temp & 0xFFFF)  # convert to two's complement hex string
-        else:
-            raise ValueError('The set point should be in range 0..2')
 
-        self.send_message('{0}{1}{2}'.format(self.command_start, self.process_temperature, temp_string), True,
-                          self.answer)
 
     @command
     def start(self):
@@ -139,6 +124,17 @@ class Huber(SerialDevice):
         """Reads the current temperature of the bath"""
         answer = self.send_message('{0}{1}{2}'.format(self.command_start, self.internal_temperature, self.query), True, self.answer)
         if answer[0] == self.internal_temperature:
+            # convert two's complement 16 bit signed hex to signed int
+            if int(answer[1], 16) > 32767:
+                return (int(answer[1], 16) - 65536) / 100
+            else:
+                return (int(answer[1], 16)) / 100
+
+    @command
+    def get_process_temperature(self):
+        """Reads the current temperature of the external Pt100"""
+        answer = self.send_message('{0}{1}{2}'.format(self.command_start, self.process_temperature, self.query), True, self.answer)
+        if answer[0] == self.process_temperature:
             # convert two's complement 16 bit signed hex to signed int
             if int(answer[1], 16) > 32767:
                 return (int(answer[1], 16) - 65536) / 100
