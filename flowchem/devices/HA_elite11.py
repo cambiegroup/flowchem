@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 import serial
+from time import sleep
 
 
 class Elite11Exception(Exception):
@@ -46,12 +47,14 @@ class Protocol11Command(Protocol11CommandTemplate):
         Create actual command byte by prepending pump address to command.
         Fast saves some ms but do not update the display.
         """
-        assert 0 < self.target_pump_address < 99
+        assert 0 <= self.target_pump_address < 99
+        # this pattern does not work, syringe expects crlf as ending of command
         if fast:
-            return str(self.target_pump_address).zfill(2) + "@" + self.command_string
+            msg=str(self.target_pump_address) + "@" + self.command_string + "\r\n"
         else:
-            return str(self.target_pump_address).zfill(2) + self.command_string
-
+            msg= str(self.target_pump_address) + self.command_string + "\r\n"
+        print(msg)
+        return msg
 
 class PumpIO:
     """ Setup with serial parameters, low level IO"""
@@ -86,7 +89,8 @@ class PumpIO:
 
     def is_prompt_valid(self, prompt: str, command) -> bool:
         """ Verify absence of errors in prompt """
-        assert 3 <= len(prompt) <= 4
+        print(prompt, command)
+        assert 3 <= len(prompt) <= 40 # no, this is only the length of the pump address, zero filling taken out because redundant
         if not int(prompt[0:2]) == command.target_pump_address:
             raise Elite11Exception("Pump address mismatch in reply")
 
@@ -107,6 +111,7 @@ class PumpIO:
         with self.lock:
             self.flush_input_buffer()
             self._write(command)
+            sleep(1)
             response = self._read_reply(command)
         if self.is_prompt_valid(response[-1], command):
             return response
@@ -122,9 +127,9 @@ class PumpIO:
 
 
 class Elite11:
-    GET_VERSION = Protocol11CommandTemplate(command_string="VER", reply_lines=1)
+    GET_VERSION = Protocol11CommandTemplate(command_string="VER", reply_lines=2)
 
-    def __init__(self, pump_io: PumpIO, address: int = 0, name: str = None, diameter: float = None):
+    def __init__(self, pump_io: PumpIO, address: int = 15, name: str = None, diameter: float = None):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
         are XXY, where XX is the address and Y is pump status. :, > or <
@@ -153,3 +158,6 @@ class Elite11:
         """ Returns the current firmware version reported by the pump """
         version = self.send_command_and_read_reply(self.GET_VERSION)
         return version
+
+
+# replies are far more verbose than expected, it is necessery in my eyes to look more deeply
