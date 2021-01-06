@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 import serial
-from time import sleep
 
 
 class Elite11Exception(Exception):
@@ -26,6 +25,10 @@ class CommandNotSupported(Elite11Exception):
     pass
 
 
+class InvalidReply(Elite11Exception):
+    pass
+
+
 class ArgumentNotSupported(Elite11Exception):
     pass
 
@@ -38,13 +41,11 @@ class Elite11PumpConfiguration(TypedDict):
 class Protocol11CommandTemplate:
     """ Class representing a pump command and its expected reply, but without target pump number """
     command_string: str
-    reply_lines: int  # Including prompt!
+    reply_lines: int
 
-
-    # this should also support arguments
-    def to_pump(self, address: int) -> Protocol11Command:
+    def to_pump(self, address: int, argument: str = '') -> Protocol11Command:
         return Protocol11Command(command_string=self.command_string, reply_lines=self.reply_lines,
-                                 target_pump_address=address)
+                                 target_pump_address=address, command_argument=argument)
 
 
 
@@ -53,6 +54,7 @@ class Protocol11CommandTemplate:
 class Protocol11Command(Protocol11CommandTemplate):
     """ Class representing a pump command and its expected reply """
     target_pump_address: int
+    command_argument: str
 
     def compile(self, fast: bool = False) -> str:
         """
@@ -60,11 +62,11 @@ class Protocol11Command(Protocol11CommandTemplate):
         Fast saves some ms but do not update the display.
         """
         assert 0 <= self.target_pump_address < 99
-        # this pattern does not work, syringe expects crlf as ending of command
+        # end character needs to be '\r\n'. Since this command building is specific for elite 11, that should be fine
         if fast:
-            msg=str(self.target_pump_address) + "@" + self.command_string + "\r\n"
+            msg =str(self.target_pump_address) + "@" + self.command_string + ' ' + self.command_argument + "\r\n"
         else:
-            msg= str(self.target_pump_address) + self.command_string + "\r\n"
+            msg = str(self.target_pump_address) + self.command_string + ' ' + self.command_argument + "\r\n"
         return msg
 
 class PumpIO:
@@ -93,20 +95,22 @@ class PumpIO:
         """ Reads a line from the serial communication """
         reply_string = []
         for line in range(command.reply_lines):
-            reply_string.append((self._serial.readline()).decode("ascii").strip())
+            chunk = self._serial.readline().decode("ascii").strip()
+            if chunk:
+                reply_string.append(chunk)
 
         self.logger.debug(f"Reply received: {reply_string}")
         return reply_string
 
     def is_prompt_valid(self, prompt: str, command) -> bool:
         """ Verify absence of errors in prompt """
-        #TODO it might be an idea to check the length of answer against the expected length. len(answer) > 3 if address is prvided in command, otherwise only len >=1.
-        assert 3 <= len(prompt) <= 4 # no, this is only the length of the pump address, zero filling taken out because redundant
+
+        assert 3 <= len(prompt) # unfortunately, the prompt line also holds the out of range answer, so it can be longer and information is valuable.
         if not int(prompt[0:2]) == command.target_pump_address:
             raise Elite11Exception("Pump address mismatch in reply")
 
         elif prompt[2:3] == "*": # address:* means stalling, address:T* means stopped at endpoint
-            return False
+            raise Elite11Exception("Pump is Stalling")
         elif prompt[2:3] in self.VALID_PROMPTS:
             return True
 
@@ -122,18 +126,16 @@ class PumpIO:
         with self.lock:
             self.flush_input_buffer()
             self._write(command)
-            #sleep(1)
             response = self._read_reply(command)
         if self.is_prompt_valid(response[-1], command):
 
-            # maybe would be better to pack that in method?
-            if "Command Error" in response:
+            if "Unknown command" in response[-1]:
                 raise CommandNotSupported(
-                    f"The Pump command you supplied: {command} to pump {command.target_pump_address} has the follwing error {response[1]}")
+                    f"The Pump command you supplied: {command} to pump {command.target_pump_address} has the following error {response}")
 
-            elif "Argument Error" in response:
+            elif "Out of range" in response[-1]:
                 raise ArgumentNotSupported(
-                    f"The Pump command you supplied: {command} to pump {command.target_pump_address} has the follwing error {response[1]}")
+                    f"The Pump command you supplied: {command} to pump {command.target_pump_address} has the follwing error {response}")
 
             else:
                 return response
@@ -150,7 +152,20 @@ class PumpIO:
 
 class Elite11Commands:
 
-    """Holds the commands and arguments"""
+    """Holds the commands and arguments. Nota bene: Pump needs to be in Quick Start mode, which can be achieved from
+     the display interface"""
+
+    # collected commands
+    # pump address and baud rate can be set from here, however I can't imagine a situation where this is desirable
+    # Methods can be programmed onto the pump (I think via GUI) and executed via remote. this might be handy but is against the design principle of transferability
+    # other not included methods: dim display, delete method, usb echo, footswitch, poll(don't really know what this does. It definately doesn't prevent manual display inputs)
+    # version (verbose ver), input, output (if pin state high or low)
+
+    # to include irun (infuse), wrun(withdraw), rrun (reverse), stp(stop), run(start), crate (current moving rate), diameter (with syr dia in mm), iramp [{start rate} {start units} {end rate} {end
+    # units} {ramp time in seconds}], irate, wrate, wramp, civolume, ctvolume,cvolume, cwvolume, ivolume, svolume, tvolume, wvolume, citime, ctime,cttime,cwtime, itime, ttime, wtime, time
+
+
+    # metrics command can be valuable for debugging or so, poll
 
     GET_VERSION = Protocol11CommandTemplate(command_string="VER", reply_lines=3)  # no args
     INFUSE = Protocol11CommandTemplate(command_string='irun', reply_lines=2)  # no args
@@ -159,12 +174,12 @@ class Elite11Commands:
     STOP = Protocol11CommandTemplate(command_string='stp', reply_lines=2)  # no args
     WITHDRAW = Protocol11CommandTemplate(command_string="wrun", reply_lines=2)
     SET_FORCE = Protocol11CommandTemplate(command_string="FORCE",
-                                          reply_lines=2)  # allows parameters in range 1-100, hm modify template so it can also hold the allowed parameter range?
+                                          reply_lines=3)  # allows parameters in range 1-100, hm modify template so it can also hold the allowed parameter range?
     ESTABLISH_CONNECTION = Protocol11CommandTemplate(command_string="\r", reply_lines=2)  # no args
     METRICS = Protocol11CommandTemplate(command_string="metrics", reply_lines=22)  # no args
     CURRENT_MOVING_RATE = Protocol11CommandTemplate(command_string="crate", reply_lines=3)
     DIAMETER = Protocol11CommandTemplate(command_string="diameter",
-                                         reply_lines=3)  # arg in mm, range no idea #TODO add range
+                                         reply_lines=3)  # arg in mm, range 0.1 - 33mm
     INFUSE_RAMP = Protocol11CommandTemplate(command_string="iramp",
                                             reply_lines=3)  # returns ramp setting, if set: iramp [{start rate} {start units} {end rate} {end units} {ramp time in seconds}]
     INFUSE_RATE = Protocol11CommandTemplate(command_string="irate",
@@ -188,56 +203,10 @@ class Elite11Commands:
     CLEAR_WITHDRAW_TIME = Protocol11CommandTemplate(command_string="cwtime", reply_lines=3)
     WITHDRAWN_TIME = Protocol11CommandTemplate(command_string="wtime", reply_lines=3)
     INFUSED_TIME = Protocol11CommandTemplate(command_string="itime", reply_lines=3)
-    TARGET_TIME = Protocol11CommandTemplate(command_string="ttime", reply_lines=3)  # set
+    TARGET_TIME = Protocol11CommandTemplate(command_string="ttime", reply_lines=3)  # se
 
 
 class Elite11:
-    #collected commands
-    # pump address and baud rate can be set from here, however I can't imagine a situation where this is desireable
-    # Methods can be programmed onto the pump (I think via GUI) and executed via remote. this might be handy but is against the design principle of transferability
-    # other not included methods: dim display, delete method, usb echo, footswitch, poll(don't really get what this does. It definately doesn't prevent manual display inputs, time)
-    # version (verbose ver), input, output (if pin state high or low)
-
-    # to incluse irun (infuse), wrun(withdraw), rrun (reverse), stp(stop), run(start), crate (current moving rate), diameter (with syr dia in mm), iramp [{start rate} {start units} {end rate} {end
-    # units} {ramp time in seconds}], irate, wrate, wramp, civolume, ctvolume,cvolume, cwvolume, ivolume, svolume, tvolume, wvolume, citime, ctime,cttime,cwtime, itime, ttime, wtime
-
-    # quick start mode???
-
-    #metrics command can be valuablefor debugging or so, poll
-    #these are the command blueprints. If arguments are to be supplied, this works by manipulation of the command string and handing on that new object, after del
-    # alternative: pass on decorated object?
-    GET_VERSION = Protocol11CommandTemplate(command_string="VER", reply_lines=3) # no args
-    INFUSE = Protocol11CommandTemplate(command_string='irun', reply_lines=2)  #no args
-    REVERSE_RUN = Protocol11CommandTemplate(command_string='rrun', reply_lines=2)  #no args
-    RUN = Protocol11CommandTemplate(command_string='run', reply_lines=2)  #no args
-    STOP = Protocol11CommandTemplate(command_string='stp', reply_lines=2)  #no args
-    WITHDRAW = Protocol11CommandTemplate(command_string="wrun", reply_lines=2)
-    SET_FORCE = Protocol11CommandTemplate(command_string="FORCE", reply_lines=2) # allows parameters in range 1-100, hm modify template so it can also hold the allowed parameter range?
-    ESTABLISH_CONNECTION = Protocol11CommandTemplate(command_string="\r", reply_lines=2) #no args
-    METRICS = Protocol11CommandTemplate(command_string="metrics", reply_lines=22) #no args
-    CURRENT_MOVING_RATE = Protocol11CommandTemplate(command_string="crate", reply_lines=3)
-    DIAMETER = Protocol11CommandTemplate(command_string="diameter", reply_lines=3) # arg in mm, range no idea #TODO add range
-    INFUSE_RAMP = Protocol11CommandTemplate(command_string="iramp", reply_lines=3) # returns ramp setting, if set: iramp [{start rate} {start units} {end rate} {end units} {ramp time in seconds}]
-    INFUSE_RATE = Protocol11CommandTemplate(command_string="irate", reply_lines=3) # returns or set rate irate [max | min | lim | {rate} {rate units}]
-    WITHDRAW_RAMP = Protocol11CommandTemplate(command_string="wramp", reply_lines=3) # returns ramp setting, if set: iramp [{start rate} {start units} {end rate} {end units} {ramp time in seconds}]
-    WITHDRAW_RATE = Protocol11CommandTemplate(command_string="wrate", reply_lines=3) # returns or set rate irate [max | min | lim | {rate} {rate units}]
-    CLEAR_INFUSED_VOLUME = Protocol11CommandTemplate(command_string="civolume", reply_lines=2) # no real response
-    CLEAR_TARGET_VOLUME = Protocol11CommandTemplate(command_string="ctvolume", reply_lines=2)
-    CLEAR_INFUSED_WITHDRAWN_VOLUME = Protocol11CommandTemplate(command_string="cvvolume", reply_lines=2)
-    CLEAR_WITHDRAWN_VOLUME = Protocol11CommandTemplate(command_string="cwvolume", reply_lines=2)
-    INFUSED_VOLUME = Protocol11CommandTemplate(command_string="ivolume", reply_lines=3)
-    SYRINGE_VOLUME = Protocol11CommandTemplate(command_string="svolume", reply_lines=3)
-    TARGET_VOLUME = Protocol11CommandTemplate(command_string="tvolume", reply_lines=3)# tvolume [{target volume} {volume units}]
-    WITHDRAWN_VOLUME = Protocol11CommandTemplate(command_string="wvolume", reply_lines=3)
-    CLEAR_INFUSED_TIME = Protocol11CommandTemplate(command_string="citime", reply_lines=3)
-    CLEAR_INFUSED_WITHDRAW_TIME = Protocol11CommandTemplate(command_string="ctime", reply_lines=3)
-    CLEAR_TARGET_TIME = Protocol11CommandTemplate(command_string="cttime", reply_lines=3)
-    CLEAR_WITHDRAW_TIME = Protocol11CommandTemplate(command_string="cwtime", reply_lines=3)
-    WITHDRAWN_TIME = Protocol11CommandTemplate(command_string="wtime", reply_lines=3)
-    INFUSED_TIME = Protocol11CommandTemplate(command_string="itime", reply_lines=3)
-    TARGET_TIME = Protocol11CommandTemplate(command_string="ttime", reply_lines=3) # set
-
-
 
 
     #TODO use the raw status and it's flags to assert that everything is as desired
@@ -264,18 +233,19 @@ class Elite11:
         self.get_version()
         self.log.info(f"Created pump '{self.name}' w/ address '{address}' on port {self.pump_io.name}!")
 
-    @retry(retry=retry_if_exception_type(Elite11Exception), stop=stop_after_attempt(3))
-    def send_command_and_read_reply(self, command: Protocol11CommandTemplate) -> List[str]:
+
+    @retry(retry=retry_if_exception_type((NotConnectedError, InvalidReply)), stop=stop_after_attempt(3))
+    def send_command_and_read_reply(self, command: Protocol11CommandTemplate, parameter: str='') -> List[str]:
         """ Sends a command based on its template and return the corresponding reply """
         # Transforms the Protocol11CommandTemplate in the corresponding Protocol11Command by adding pump address
-        return self.pump_io.write_and_read_reply(command.to_pump(self.address))
+        return self.pump_io.write_and_read_reply(command.to_pump(self.address, parameter))
 
+    @retry(retry=retry_if_exception_type(Elite11Exception), stop=stop_after_attempt(3))
     def get_version(self):
         """ Returns the current firmware version reported by the pump """
         # first, a initialisation character is sent
-        self.send_command_and_read_reply(self.ESTABLISH_CONNECTION)
-        version = self.send_command_and_read_reply(self.GET_VERSION)
-        print(version) #TODO strip all answers of leading empty line and maybe of trailing prompt?
+        self.send_command_and_read_reply(Elite11Commands.ESTABLISH_CONNECTION)
+        version = self.send_command_and_read_reply(Elite11Commands.GET_VERSION)
         return version
 
     def check_quick_start_on(self):
@@ -283,19 +253,7 @@ class Elite11:
         pass
 
     def run(self):
-        return self.send_command_and_read_reply(self.RUN)
+        return self.send_command_and_read_reply(Elite11Commands.RUN)
 
-
-    def add_parameter(self, base_command:Protocol11CommandTemplate, parameter: str, reply_lines = None):
-        """takes the base tempalte and expands it with a parameter. Also, the expected answer length can be manipulated"""
-        dubbed_command = base_command
-        dubbed_command.command_string += '' + parameter
-        if reply_lines:
-            dubbed_command.reply_lines= reply_lines
-        return dubbed_command
-
-
-
-
-# replies are far more verbose than expected, it is necessery in my eyes
-# to look more deeply
+# TODO T* should be included, Methods need to be created, configuration script needs to be accepted (actually, since
+#  this is likely to start from graph and graph should hold the relevant data, it is only important to start with that)
