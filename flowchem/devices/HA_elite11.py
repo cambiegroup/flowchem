@@ -32,6 +32,8 @@ class InvalidReply(Elite11Exception):
 class ArgumentNotSupported(Elite11Exception):
     pass
 
+class UnachievableMove(Elite11Exception):
+    pass
 
 class Elite11PumpConfiguration(TypedDict):
     pass
@@ -171,11 +173,13 @@ class Elite11Commands:
     INFUSE = Protocol11CommandTemplate(command_string='irun', reply_lines=2)  # no args
     REVERSE_RUN = Protocol11CommandTemplate(command_string='rrun', reply_lines=2)  # no args
     RUN = Protocol11CommandTemplate(command_string='run', reply_lines=2)  # no args
-    STOP = Protocol11CommandTemplate(command_string='stp', reply_lines=2)  # no args
     WITHDRAW = Protocol11CommandTemplate(command_string="wrun", reply_lines=2)
+    STOP = Protocol11CommandTemplate(command_string='stp', reply_lines=2)  # no args
+
     SET_FORCE = Protocol11CommandTemplate(command_string="FORCE",
                                           reply_lines=3)  # allows parameters in range 1-100, hm modify template so it can also hold the allowed parameter range?
     ESTABLISH_CONNECTION = Protocol11CommandTemplate(command_string="\r", reply_lines=2)  # no args
+    EMPTY_MESSAGE = Protocol11CommandTemplate(command_string=" ", reply_lines=2)
     METRICS = Protocol11CommandTemplate(command_string="metrics", reply_lines=22)  # no args
     CURRENT_MOVING_RATE = Protocol11CommandTemplate(command_string="crate", reply_lines=3)
     DIAMETER = Protocol11CommandTemplate(command_string="diameter",
@@ -207,14 +211,12 @@ class Elite11Commands:
 
 
 class Elite11:
-
-
-    #TODO use the raw status and it's flags to assert that everything is as desired
-
-    #to establish connection, send carriage return
+    """
+    Not ready for full usage.  Usable with: init with syringe diameter and volume. Set target volume and rate. run.
+    """
 
     # first pump in chain/pump connected directly to computer, if pump chain connected MUST have address 0
-    def __init__(self, pump_io: PumpIO, address: int = 0, name: str = None, diameter: float = None):
+    def __init__(self, pump_io: PumpIO, address: int = 0, name: str = None, diameter: float = None, volume_syringe: float = None):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
         are XXY, where XX is the address and Y is pump status. :, > or <
@@ -225,35 +227,184 @@ class Elite11:
         self.name = f"Pump {self.pump_io.name}:{address}" if None else name
         self.pump_io = pump_io
         self.address = address  # This is converted to string and zfill()-ed in Protocol11Command
-        self.diameter = None
+        self.diameter = diameter
+        self.volume_syringe  = volume_syringe
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
         # This command is used to test connection: failure handled by PumpIO
         self.get_version()
         self.log.info(f"Created pump '{self.name}' w/ address '{address}' on port {self.pump_io.name}!")
+        # makes sure that a 'clean' pump is initialized.
+        self.clear_times()
+        self.clear_volumes()
+        # set the syringe-specific parameters
+        if self.diameter:
+            self.set_diameter(self.diameter)
+        if self.volume_syringe:
+            self.syringe_volume(self.volume_syringe)
+
+        self._volume_stored = self.volume_syringe
+        self._target_volume = None
+
 
 
     @retry(retry=retry_if_exception_type((NotConnectedError, InvalidReply)), stop=stop_after_attempt(3))
-    def send_command_and_read_reply(self, command: Protocol11CommandTemplate, parameter: str='') -> List[str]:
+    def send_command_and_read_reply(self, command: Protocol11CommandTemplate, parameter='') -> List[str]:
         """ Sends a command based on its template and return the corresponding reply """
         # Transforms the Protocol11CommandTemplate in the corresponding Protocol11Command by adding pump address
+        # if parameter is None, supply empty string
+        if not parameter:
+            parameter = ''
         return self.pump_io.write_and_read_reply(command.to_pump(self.address, parameter))
 
     @retry(retry=retry_if_exception_type(Elite11Exception), stop=stop_after_attempt(3))
     def get_version(self):
         """ Returns the current firmware version reported by the pump """
         # first, a initialisation character is sent
-        self.send_command_and_read_reply(Elite11Commands.ESTABLISH_CONNECTION)
+        self.establish_connection()
         version = self.send_command_and_read_reply(Elite11Commands.GET_VERSION)
         return version
 
-    def check_quick_start_on(self):
-        """Checks if the pump is on quick start screen. Only if so, relevant parameters can be changed"""
-        pass
+    def establish_connection(self):
+        return self.send_command_and_read_reply(Elite11Commands.ESTABLISH_CONNECTION)
 
+    def check_status(self):
+        return self.send_command_and_read_reply(Elite11Commands.EMPTY_MESSAGE)
+
+    def update_stored_volume(self):
+        # not really nice, also the target_volume and rate should be class attributes?
+        if self._target_volume:
+            self._volume_stored -= self._target_volume
+
+    def is_moving(self):
+        status = self.check_status()
+        print(status)
+        if '>' in status[0] or '<' in status[0]:
+            return True
+        else:
+            return False
+
+#TODO when sending itime, pump will return the needed time for infusion of target volume. this could be used for time efficiency
     def run(self):
-        return self.send_command_and_read_reply(Elite11Commands.RUN)
+        """activates pump, runs in the previously set direction"""
+        if self.is_moving():
+        #should raise exception
+            raise UnachievableMove("Pump already is moving")
+        elif self._volume_stored < self._target_volume:
+            raise UnachievableMove("Pump contains less volume than required")
+        else:
+            self.send_command_and_read_reply(Elite11Commands.RUN)
+            # if a target volume is set, pump will only deliver thiws
+            self.update_stored_volume()
+        self.log.info("Pump started to run")
 
-# TODO T* should be included, Methods need to be created, configuration script needs to be accepted (actually, since
+    def inverse_run(self):
+        """activates pump, runs opposite to previously set direction"""
+        self.send_command_and_read_reply(Elite11Commands.REVERSE_RUN)
+        self.log.info("Pump started to run reverse")
+
+    def infuse_run(self):
+        """activates pump, runs in infuse mode"""
+        self.send_command_and_read_reply(Elite11Commands.INFUSE)
+        self.log.info("Pump started to infuse")
+
+    def withdraw_run(self):
+        """activates pump, runs in infuse mode"""
+        self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
+        self.log.info("Pump started to withdraw")
+
+    def stop(self):
+        """stops pump"""
+        self.send_command_and_read_reply(Elite11Commands.STOP)
+        self.log.info("Pump stopped")
+
+        #metrics, syringevolume
+
+    def infusion_rate(self, i_rate:float = None):
+        """
+
+        :param i_rate: in mL/min, also other units can be used from syringe side. feel free to include
+        :return:
+        """
+        if i_rate:
+            i_rate = str(i_rate)+' m/m'
+        self.send_command_and_read_reply(Elite11Commands.INFUSE_RATE, parameter=i_rate)
+
+    def withdrawing_rate(self):
+        self.send_command_and_read_reply(Elite11Commands.WITHDRAW_RATE)
+
+    def infuse_ramp(self):
+        self.send_command_and_read_reply(Elite11Commands.INFUSE_RAMP)
+
+    def withdraw_ramp(self):
+        self.send_command_and_read_reply(Elite11Commands.WITHDRAW_RAMP)
+
+    def syringe_volume(self, volume: float = None):
+        """
+
+        :param volume: if supplied, sets  syringe volume. volume in mL, if µL needed: supply 0.005
+        :return:
+        """
+        if volume:
+            # from syringe side, also µL could be used or even nanoliter, with u respective n. However, imho this si simpler
+            volume = str(volume) + ' m'
+        return self.send_command_and_read_reply(Elite11Commands.SYRINGE_VOLUME, parameter=volume)
+
+    def force(self, percent_force: int= None):
+        """
+        Allows to set or read the force.
+        :param parameter: Supplied value is in % (1-100)
+        :return: Force of pump
+        """
+        if percent_force:
+            percent_force = str(percent_force)
+        return self.send_command_and_read_reply(Elite11Commands.SET_FORCE, parameter=percent_force)
+
+    def set_diameter(self, diameter: float = None):
+        """
+        Sets or displays the syringe diameter
+        :param diameter: if supplied, sets the diameter in mm. This has to be between 1 and 33, can have 4 significant, eg 33 or 12.3456
+        :return: if  no parameter supplied, returns the set diameter
+        """
+        return self.send_command_and_read_reply(Elite11Commands.DIAMETER, parameter=str(diameter))
+
+    def display_current_rate(self):
+        """
+        If pump moves, this returns the current moving rate. Else return is not sensible
+        :return: current moving rate
+        """
+        return self.send_command_and_read_reply(Elite11Commands.CURRENT_MOVING_RATE)
+
+    def target_volume(self, t_volume: float = None):
+        """
+
+        :param target_volume: volume in mL 5. refer to manual
+        :return:
+        """
+        if t_volume:
+            # append unit
+            self._target_volume = t_volume
+            t_volume = str(t_volume) + ' m'
+        return self.send_command_and_read_reply(Elite11Commands.TARGET_VOLUME, parameter=t_volume)
+
+    def target_time(self, target_time: str):
+        return self.send_command_and_read_reply(Elite11Commands.TARGET_VOLUME, parameter=target_time)
+
+    def clear_volumes(self):
+        self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME)
+        self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAWN_VOLUME)
+        self._target_volume = None
+
+    def clear_times(self):
+        self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAW_TIME)
+        self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_TIME)
+
+
+
+# TARGET VOLuME AND TIME ARE THE THINGS TO USE!!! Rate needs to be set, infuse or withdraw, then simply start!
+
+
+# TODO T* should be included, configuration script needs to be accepted (actually, since
 #  this is likely to start from graph and graph should hold the relevant data, it is only important to start with that)
+#  if pump in isn't in quick start mode: reply is command error Nonsystem commnds bla bla so this is caught, maybe get more explanatory logging message
