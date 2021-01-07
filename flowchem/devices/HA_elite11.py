@@ -32,8 +32,10 @@ class InvalidReply(Elite11Exception):
 class ArgumentNotSupported(Elite11Exception):
     pass
 
+
 class UnachievableMove(Elite11Exception):
     pass
+
 
 class Elite11PumpConfiguration(TypedDict):
     pass
@@ -50,8 +52,6 @@ class Protocol11CommandTemplate:
                                  target_pump_address=address, command_argument=argument)
 
 
-
-
 @dataclass
 class Protocol11Command(Protocol11CommandTemplate):
     """ Class representing a pump command and its expected reply """
@@ -66,10 +66,11 @@ class Protocol11Command(Protocol11CommandTemplate):
         assert 0 <= self.target_pump_address < 99
         # end character needs to be '\r\n'. Since this command building is specific for elite 11, that should be fine
         if fast:
-            msg =str(self.target_pump_address) + "@" + self.command_string + ' ' + self.command_argument + "\r\n"
+            msg = str(self.target_pump_address) + "@" + self.command_string + ' ' + self.command_argument + "\r\n"
         else:
             msg = str(self.target_pump_address) + self.command_string + ' ' + self.command_argument + "\r\n"
         return msg
+
 
 class PumpIO:
     """ Setup with serial parameters, low level IO"""
@@ -82,7 +83,7 @@ class PumpIO:
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self.lock = threading.Lock()
 
-        self._serial = serial.Serial(port=port,baudrate=baud_rate, bytesize=serial.EIGHTBITS,
+        self._serial = serial.Serial(port=port, baudrate=baud_rate, bytesize=serial.EIGHTBITS,
                                      parity=serial.PARITY_NONE, stopbits=serial.STOPBITS_ONE, timeout=1,
                                      xonxoff=False, rtscts=False, write_timeout=None, dsrdtr=False,
                                      exclusive=None)  # type:Union[serial.serialposix.Serial, serial.serialwin32.Serial]
@@ -110,7 +111,7 @@ class PumpIO:
     def is_prompt_valid(self, prompt: str, command) -> bool:
         """ Verify absence of errors in prompt """
 
-        assert 3 <= len(prompt) # unfortunately, the prompt line also holds the out of range answer, so it can be longer and information is valuable.
+        assert 3 <= len(prompt)  # The prompt line also holds the out of range answer, so it can be longer ;)
         if not int(prompt[0:2]) == command.target_pump_address:
             raise Elite11Exception("Pump address mismatch in reply")
 
@@ -249,8 +250,6 @@ class Elite11:
 
         self._volume_stored = self.volume_syringe
         self._target_volume = None
-
-
 
     @retry(retry=retry_if_exception_type((NotConnectedError, InvalidReply)), stop=stop_after_attempt(3))
     def send_command_and_read_reply(self, command: Protocol11CommandTemplate, parameter='') -> List[str]:
