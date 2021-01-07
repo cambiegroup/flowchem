@@ -91,7 +91,10 @@ class PumpIO:
         """ Writes a command to the pump """
         command = command.compile(fast=False)
         self.logger.debug(f"Sending {command}")
-        self._serial.write(command.encode("ascii"))
+        try:
+            self._serial.write(command.encode("ascii"))
+        except serial.serialutil.SerialException as e:
+            raise NotConnectedError from e
 
     def _read_reply(self, command) -> List[str]:
         """ Reads a line from the serial communication """
