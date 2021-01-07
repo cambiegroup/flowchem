@@ -262,11 +262,12 @@ class Elite11:
         return self.pump_io.write_and_read_reply(command.to_pump(self.address, parameter))
 
     @retry(retry=retry_if_exception_type(Elite11Exception), stop=stop_after_attempt(3))
-    def get_version(self):
+    def get_version(self) -> str:
         """ Returns the current firmware version reported by the pump """
         # first, a initialisation character is sent
         self.establish_connection()
-        version = self.send_command_and_read_reply(Elite11Commands.GET_VERSION)
+        version = self.send_command_and_read_reply(Elite11Commands.GET_VERSION)[1][3:]  # '11 ELITE I/W Single 3.0.4'
+
         return version
 
     def establish_connection(self):
