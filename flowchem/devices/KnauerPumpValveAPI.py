@@ -11,7 +11,6 @@ import threading
 import time
 from queue import Queue
 
-# TODO look if thats fine
 class CommandError(Exception):
     pass
 
