@@ -5,7 +5,7 @@ import threading
 from typing import Union, List, TypedDict, Optional
 from dataclasses import dataclass
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
-
+from time import sleep
 import serial
 
 
@@ -34,10 +34,6 @@ class ArgumentNotSupported(Elite11Exception):
 
 
 class UnachievableMove(Elite11Exception):
-    pass
-
-
-class Elite11PumpConfiguration(TypedDict):
     pass
 
 
@@ -115,22 +111,18 @@ class PumpIO:
         if not int(prompt[0:2]) == command.target_pump_address:
             raise Elite11Exception("Pump address mismatch in reply")
 
-        elif prompt[2:3] == "*": # address:* means stalling, address:T* means stopped at endpoint
+        elif prompt[2:3] == "*":  # address:* means stalling, address:T* means stopped at endpoint
             raise Elite11Exception("Pump is Stalling")
         elif prompt[2:3] in self.VALID_PROMPTS:
             return True
 
-    def flush_input_buffer(self):
-        """ Flushes input buffer from potentially unread messages so that write and read works as expected """
-        try:
-            self._serial.reset_input_buffer()
-        except serial.PortNotOpenError as e:
-            raise NotConnectedError from e
-
     def write_and_read_reply(self, command: Protocol11Command) -> List[str]:
         """  """
         with self.lock:
-            self.flush_input_buffer()
+            try:
+                self._serial.reset_input_buffer()
+            except serial.PortNotOpenError as e:
+                raise NotConnectedError from e
             self._write(command)
             response = self._read_reply(command)
         if self.is_prompt_valid(response[-1], command):
@@ -248,6 +240,7 @@ class Elite11:
         if self.volume_syringe:
             self.syringe_volume(self.volume_syringe)
 
+        # Can we raise an exception as soon as self._volume_stored becomes negative?
         self._volume_stored = self.volume_syringe
         self._target_volume = None
 
@@ -264,7 +257,7 @@ class Elite11:
     def get_version(self) -> str:
         """ Returns the current firmware version reported by the pump """
         # first, a initialisation character is sent
-        self.establish_connection()
+        self.check_status()
         version = self.send_command_and_read_reply(Elite11Commands.GET_VERSION)[1][3:]  # '11 ELITE I/W Single 3.0.4'
 
         return version
@@ -276,30 +269,43 @@ class Elite11:
         return self.send_command_and_read_reply(Elite11Commands.EMPTY_MESSAGE)
 
     def update_stored_volume(self):
+        withdrawn = self.get_withdrawn_volume()
+        infused = self.get_infused_volume()
+        netto_vol = withdrawn-infused
         # not really nice, also the target_volume and rate should be class attributes?
-        if self._target_volume:
-            self._volume_stored -= self._target_volume
+        self._volume_stored += netto_vol
+        #clear stored i w volume
+        if withdrawn+infused != 0:
+            self.clear_infused_withdrawn_volume()
 
     def is_moving(self):
         status = self.check_status()
-        print(status)
         if '>' in status[0] or '<' in status[0]:
             return True
         else:
             return False
 
+
+
 #TODO when sending itime, pump will return the needed time for infusion of target volume. this could be used for time efficiency
     def run(self):
+        # actually should be avoided, because in principle, this will move in any direction that it move before
+        #TODO if stp while infuse/withdraw: get the ifused withdrawn volume and correct
         """activates pump, runs in the previously set direction"""
+
+        # this takes ANY volume changes before, updates internal variable and runs
+        self.update_stored_volume()
         if self.is_moving():
         #should raise exception
             raise UnachievableMove("Pump already is moving")
+
+
+        # if target volume is set, ccheck if this is acievable
         elif self._volume_stored < self._target_volume:
             raise UnachievableMove("Pump contains less volume than required")
         else:
             self.send_command_and_read_reply(Elite11Commands.RUN)
-            # if a target volume is set, pump will only deliver thiws
-            self.update_stored_volume()
+
         self.log.info("Pump started to run")
 
     def inverse_run(self):
@@ -309,18 +315,45 @@ class Elite11:
 
     def infuse_run(self):
         """activates pump, runs in infuse mode"""
-        self.send_command_and_read_reply(Elite11Commands.INFUSE)
+        self.update_stored_volume()
+
+        if self.is_moving():
+            # should raise exception
+            raise UnachievableMove("Pump already is moving")
+        # if target volume is set, ccheck if this is acievable
+        elif self._target_volume:
+            if self._volume_stored < self._target_volume:
+                raise UnachievableMove("Pump contains less volume than required")
+        else:
+            self.send_command_and_read_reply(Elite11Commands.INFUSE)
+
         self.log.info("Pump started to infuse")
 
     def withdraw_run(self):
         """activates pump, runs in infuse mode"""
-        self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
+
+        self.update_stored_volume()
+
+        if self.is_moving():
+            # should raise exception
+            raise UnachievableMove("Pump already is moving")
+        # if target volume is set, ccheck if this is acievable
+        elif self._target_volume:
+            if self._volume_stored + self._target_volume > self.volume_syringe:
+                raise UnachievableMove("Pump would be overfilled")
+        else:
+            self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
+
         self.log.info("Pump started to withdraw")
 
     def stop(self):
         """stops pump"""
         self.send_command_and_read_reply(Elite11Commands.STOP)
+        self.update_stored_volume()
+
         self.log.info("Pump stopped")
+
+
 
         #metrics, syringevolume
 
@@ -334,8 +367,20 @@ class Elite11:
             i_rate = str(i_rate)+' m/m'
         self.send_command_and_read_reply(Elite11Commands.INFUSE_RATE, parameter=i_rate)
 
-    def withdrawing_rate(self):
-        self.send_command_and_read_reply(Elite11Commands.WITHDRAW_RATE)
+    def withdrawing_rate(self, w_rate:float = None):
+        if w_rate:
+            w_rate = str(w_rate)+' m/m'
+        self.send_command_and_read_reply(Elite11Commands.WITHDRAW_RATE, parameter=w_rate)
+
+    def get_infused_volume(self):
+        return float(self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)[0][3:].split(' ')[0])
+
+    def get_withdrawn_volume(self):
+        return float(self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)[0][3:].split(' ')[0])
+
+    def clear_infused_withdrawn_volume(self):
+        self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAWN_VOLUME)
+        sleep(0.1)
 
     def infuse_ramp(self):
         self.send_command_and_read_reply(Elite11Commands.INFUSE_RAMP)
