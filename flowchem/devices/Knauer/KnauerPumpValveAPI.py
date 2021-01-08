@@ -302,7 +302,7 @@ class KnauerPump(EthernetDevice):
         return reply
 
     def set_start_level(self, setpoint=None):
-        reply= self.message_constructor_dispatcher(STARTLEVEL, setpoint=setpoint, setpoint_range=(0,2))
+        reply= self.message_constructor_dispatcher(STARTLEVEL, setpoint=setpoint, setpoint_range= (0, 2))
         logging.info('Start level of pump {} is set to {}, returns {}'.format(self.address, setpoint, reply))
 
         return reply
@@ -313,10 +313,12 @@ class KnauerPump(EthernetDevice):
         :param setpoint: 0 pause pump after switch on. 1 switch on immidiately with previously selected flow rate
         :return: device message
         """
-        reply= self.message_constructor_dispatcher(STARTMODE, setpoint=setpoint, setpoint_range=(0,2))
-        logging.info('Start mode of pump {} is set to {}, returns {}'.format(self.address, setpoint, reply))
-
-        return reply
+        if setpoint in (0,1):
+            reply= self.message_constructor_dispatcher(STARTMODE, setpoint=setpoint)
+            logging.info('Start mode of pump {} is set to {}, returns {}'.format(self.address, setpoint, reply))
+            return reply
+        else:
+            logging.warning('Supply binary value')
 
     def set_adjusting_factor(self, setpoint: int = None):
         command = ADJ10 if str(10) in self.headtype else ADJ50
