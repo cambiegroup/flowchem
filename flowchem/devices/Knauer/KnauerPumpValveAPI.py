@@ -8,6 +8,8 @@ import logging
 import socket
 import time
 
+# TODO trim volume inputs to reasonable digits after decimal point
+
 class KnauerError(Exception):
     pass
 

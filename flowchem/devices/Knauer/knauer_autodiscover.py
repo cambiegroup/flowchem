@@ -3,7 +3,7 @@ from typing import Tuple, List
 import getmac
 
 
-def autodiscover_knauer(source_ip: str = "192.168.1.1") -> List[Tuple[str, str]]:
+def autodiscover_knauer(source_ip: str = "192.168.1.116") -> dict:
     # Create a UDP socket
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind((source_ip, 28688))
@@ -34,8 +34,12 @@ def autodiscover_knauer(source_ip: str = "192.168.1.1") -> List[Tuple[str, str]]
     finally:
         sock.close()
 
-    mac = [getmac.get_mac_address(ip=device_ip) for device_ip in device]
-    return list(zip(device, mac))
+    mac_to_ip = {}
+
+    for device_ip in device:
+        mac=getmac.get_mac_address(ip=device_ip)
+        mac_to_ip[mac] = device_ip
+    return mac_to_ip
 
 
 if __name__ == '__main__':

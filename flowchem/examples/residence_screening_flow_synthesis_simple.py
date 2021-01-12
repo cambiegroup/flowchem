@@ -1,0 +1,110 @@
+import time
+import logging
+from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerValve, KnauerPump
+from flowchem.devices.Knauer.knauer_autodiscover import autodiscover_knauer
+from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
+
+
+
+#residence time determines flow rate with know volume
+def get_flow_rate_for_residence_time(residence_time, volume_reactor):
+    #input a mL and min
+    rate= volume_reactor/residence_time
+    return rate
+
+
+
+# this starts  the pump. loads the sample loop. pushes half the reactor volume through, then switches to next collection vial, waits half reactor + full reactor volume.
+def perform_experiment(residence_time, reactor_volume, sample_loop_volume):
+    flow_rate = get_flow_rate_for_residence_time(residence_time, reactor_volume)
+
+    current_valve_position = neccessary_devices_macs['fraction_collection'].get_current_position()
+
+    logging.info('Flow rate is {} for residence time {}. This will go into collection vessel on position {}'.format(flow_rate, residence_time, current_valve_position+1))
+
+    neccessary_devices_macs['solvent_delivery'].set_flow(flow_rate)
+    neccessary_devices_macs['solvent_delivery'].start_flow()
+
+    # load starting mixture to loop
+    neccessary_devices_macs['injection_loop'].switch_to_position('L')
+    neccessary_devices_macs['injection_pump'].infuse_run()
+    #TODO check type
+    time.sleep(float(neccessary_devices_macs['injection_pump'].target_time()))
+
+    while True:
+        if not neccessary_devices_macs['injection_pump'].is_moving():
+            break
+
+    neccessary_devices_macs['injection_loop'].switch_to_position('I')
+    #start timer
+
+    start_time = time.time()
+    purge_time = start_time + ((reactor_volume/2) / flow_rate) * 60
+    collect_time_end = purge_time + ((reactor_volume/2+sample_loop_volume) / flow_rate) * 60
+    logging.info("this run will be over in "+ str((collect_time_end-start_time)/60) +"min.")
+
+    # wait until half the reactor is full with reagent
+    counter = 0
+    while time.time() < purge_time:
+        time.sleep(1)
+        counter+=1
+        if counter ==  60:
+            logging.info("Still "+str((purge_time-time.time())/60)+ "min to wait until collection starts")
+            counter = 0
+
+    neccessary_devices_macs['fraction_collection'].switch_to_position(current_valve_position+1)
+
+    # now collect rest plus sample loop
+    while time.time() < collect_time_end:
+        time.sleep(1)
+        counter += 1
+        if counter == 60:
+            logging.info("Still "+str((purge_time-time.time())/60)+ "min to wait until collection finishes")
+            counter = 0
+
+    # the tail is caught anyway by switching after half the reactor volume
+    logging.info('Collection of product is finished')
+
+    #create several smaller wait times, to ensure purity
+
+
+
+if __name__ == "__main__":
+
+    # take arguments and calculate everything needed. In the end this will solely be times and flow rates.
+    # iterate through experiments
+    # get available macs and check against required_macs list.  This isn't elegant for sure
+    available_macs_ips = autodiscover_knauer()
+
+    neccessary_devices_list = []
+
+    for i in neccessary_devices_list:
+        if i not in available_macs_ips:
+            raise ConnectionError('At least one device with MAC {} is not available'.format(i))
+
+    neccessary_devices_macs = {'solvent_delivery': KnauerPump(available_macs_ips['MAC']),
+                               'injection_loop': KnauerValve(available_macs_ips['MAC']),
+                               'injection_pump': Elite11(PumpIO('COM'), diameter=None, volume_syringe=None),
+                               'fraction_collection': KnauerValve(available_macs_ips['MAC'])}
+
+    # ultimately, this could be determined with dye or fluorescence, biphasic mixture(diffusion) known flowrate would yield volume
+    # reactortocollection needs to be cleaned actually. This needs to be done after everything is out, but before new stuff arrives
+    reactor_volume = 4.7
+    injection_loop_volume = 1
+
+
+    residence_time_list = [15, 20, 25, 30, 35, 40, 45, 50]  # in min
+    # set syringe pump
+    neccessary_devices_macs['injection_pump'].target_volume(1.1)
+    neccessary_devices_macs['injection_pump'].infusion_rate(1)
+
+    for i in residence_time_list:
+        perform_experiment(i, reactor_volume, injection_loop_volume)
+
+    logging.info('run finished. Now purging some solvent to get last tail out')
+    neccessary_devices_macs['solvent_delivery'].set_flow(1)
+    neccessary_devices_macs['solvent_delivery'].start_flow()
+    time.sleep(600)
+    neccessary_devices_macs['solvent_delivery'].stop_flow()
+
+
