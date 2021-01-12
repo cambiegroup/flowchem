@@ -190,7 +190,7 @@ class Elite11Commands:
                                               reply_lines=3)  # returns or set rate irate [max | min | lim | {rate} {rate units}]
     CLEAR_INFUSED_VOLUME = Protocol11CommandTemplate(command_string="civolume", reply_lines=2)  # no real response
     CLEAR_TARGET_VOLUME = Protocol11CommandTemplate(command_string="ctvolume", reply_lines=2)
-    CLEAR_INFUSED_WITHDRAWN_VOLUME = Protocol11CommandTemplate(command_string="cvvolume", reply_lines=2)
+    CLEAR_INFUSED_WITHDRAWN_VOLUME = Protocol11CommandTemplate(command_string="cvolume", reply_lines=2)
     CLEAR_WITHDRAWN_VOLUME = Protocol11CommandTemplate(command_string="cwvolume", reply_lines=2)
     INFUSED_VOLUME = Protocol11CommandTemplate(command_string="ivolume", reply_lines=3)
     SYRINGE_VOLUME = Protocol11CommandTemplate(command_string="svolume", reply_lines=3)
