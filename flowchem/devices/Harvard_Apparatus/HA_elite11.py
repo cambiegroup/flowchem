@@ -314,20 +314,20 @@ class Elite11:
         self.log.info("Pump started to run reverse")
 
     def infuse_run(self):
-        """activates pump, runs in infuse mode"""
+        """activates pump, runs in infuse mode. Beware: different behaviour to self.run(). Target volume has to be given again every time?"""
         self.update_stored_volume()
 
         if self.is_moving():
             # should raise exception
             raise UnachievableMove("Pump already is moving")
         # if target volume is set, ccheck if this is acievable
-        elif self._target_volume:
-            if self._volume_stored < self._target_volume:
-                raise UnachievableMove("Pump contains less volume than required")
+        # if target volume is set, ccheck if this is acievable
+        elif self._volume_stored < self._target_volume:
+            raise UnachievableMove("Pump contains less volume than required")
         else:
             self.send_command_and_read_reply(Elite11Commands.INFUSE)
 
-        self.log.info("Pump started to infuse")
+        self.log.info("Pump started to run in infuse mode")
 
     def withdraw_run(self):
         """activates pump, runs in infuse mode"""
@@ -448,7 +448,7 @@ class Elite11:
         self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAW_TIME)
         self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_TIME)
 
-
+#TODO enable infused time
 
 # TARGET VOLuME AND TIME ARE THE THINGS TO USE!!! Rate needs to be set, infuse or withdraw, then simply start!
 
