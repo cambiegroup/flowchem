@@ -97,9 +97,9 @@ def test_force(pump: Elite11):
     assert pump.force == 10
     pump.force = 50.2
     assert pump.force == 50
-    with pytest.raises(InvalidArgument) as excinfo:
+    with pytest.raises(InvalidArgument) as exception_info:
         pump.force = 110
-    assert "Out of range" in str(excinfo.value)
+    assert "Out of range" in str(exception_info.value)
     assert pump.force == 50
 
 
@@ -107,13 +107,13 @@ def test_diameter(pump: Elite11):
     pump.diameter = 10
     assert pump.diameter == 10
 
-    with pytest.raises(InvalidArgument) as excinfo:
+    with pytest.raises(InvalidArgument) as exception_info:
         pump.diameter = 34
-    assert "not valid" in str(excinfo.value)
+    assert "not valid" in str(exception_info.value)
 
-    with pytest.raises(InvalidArgument) as excinfo:
+    with pytest.raises(InvalidArgument) as exception_info:
         pump.diameter = 0.01
-    assert "not valid" in str(excinfo.value)
+    assert "not valid" in str(exception_info.value)
 
     pump.diameter = math.pi
     math.isclose(pump.diameter, math.pi)
