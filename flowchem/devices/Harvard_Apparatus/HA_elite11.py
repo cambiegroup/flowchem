@@ -119,12 +119,17 @@ class PumpIO:
         reply_string = []
         self.logger.debug(f"I am going to read {command.reply_lines} line for this command (+prompt)")
 
-        for _ in range(command.reply_lines + 2):  # +1 to account for leading newline character in reply + 1 prompt
+        for line_num in range(command.reply_lines + 2):  # +1 to account for leading newline character in reply + 1 prompt
             chunk = self._serial.readline().decode("ascii")
             self.logger.debug(f"Read line: {repr(chunk)} ")
 
             # Stripping newlines etc allows to skip empty lines and clean output
             chunk = chunk.strip()
+
+            # Fix bug in pump! Some prompts, such as T*, leak in the first (usually empty) line returned after commands
+            if line_num == 0:
+                chunk = ""
+
             if chunk:
                 reply_string.append(chunk)
 
@@ -463,7 +468,7 @@ class Elite11:
     @infusion_rate.setter
     def infusion_rate(self, rate_in_ml_min: float):
         set_rate = self.bound_rate_to_pump_limits(rate_in_ml_min=rate_in_ml_min)
-        self.send_command_and_read_reply(Elite11Commands.SET_INFUSE_RATE, parameter=f"{set_rate} m/m")
+        self.send_command_and_read_reply(Elite11Commands.SET_INFUSE_RATE, parameter=f"{set_rate:.10f} m/m")
 
     @property
     def withdrawing_rate(self) -> float:
@@ -527,18 +532,18 @@ class Elite11:
             glass/glass:        30% if volume <= 20 ml else 50%
             glass/plastic:      30% if volume <= 250 ul, 50% if volume <= 5ml else 100%
         """
-        return int(self.send_command_and_read_reply(Elite11Commands.GET_FORCE)[-1])
+        return int(self.send_command_and_read_reply(Elite11Commands.GET_FORCE)[:-1])
 
     @force.setter
     def force(self, force_percent: int):
-        self.send_command_and_read_reply(Elite11Commands.SET_FORCE, parameter=str(force_percent))
+        self.send_command_and_read_reply(Elite11Commands.SET_FORCE, parameter=str(int(force_percent)))
 
     @property
     def diameter(self) -> float:
         """
         Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
         """
-        return float(self.send_command_and_read_reply(Elite11Commands.SET_DIAMETER)[:-3])  # "31.1232 mm" removes unit
+        return float(self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)[:-3])  # "31.1232 mm" removes unit
 
     @diameter.setter
     def diameter(self, diameter_in_mm: float):
@@ -559,7 +564,8 @@ class Elite11:
         """
         Set/returns target volume in ml.
         """
-        return float(self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME))
+        target_volume = Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME))
+        return target_volume.m_as("ml")
 
     @target_volume.setter
     def target_volume(self, target_volume_in_ml: float):
