@@ -596,7 +596,7 @@ class Elite11:
     @target_volume.setter
     def target_volume(self, target_volume_in_ml: float):
         if target_volume_in_ml == 0:
-            self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME, parameter=f"{target_volume_in_ml} m")
+            self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME)
         else:
             self.send_command_and_read_reply(Elite11Commands.SET_TARGET_VOLUME, parameter=f"{target_volume_in_ml} m")
 
