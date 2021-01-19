@@ -1,7 +1,9 @@
 from flowchem.devices.mansonlib import PowerSupply
 import time
+import pytest
 
 
+@pytest.mark.skip("not a test")
 def test():
 	ps = PowerSupply()
 	ps.open("COM30")
