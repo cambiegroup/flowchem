@@ -57,7 +57,7 @@ def test_syringe_volume(pump: Elite11):
     pump.syringe_volume = 10
     assert pump.syringe_volume == 10
     pump.syringe_volume = math.pi
-    assert math.isclose(pump.syringe_volume, math.pi, rel_tol=10e-4)
+    assert math.isclose(pump.syringe_volume, math.pi, abs_tol=10e-4)
     pump.syringe_volume = 3.2e-09
     assert math.isclose(pump.syringe_volume, 3.2e-9)
 
@@ -72,6 +72,8 @@ def test_infusion_rate(pump: Elite11):
     with pytest.warns(UserWarning):
         pump.infusion_rate = 0
     assert pump.infusion_rate == 1e-05
+    pump.infusion_rate = math.pi
+    assert math.isclose(pump.infusion_rate, math.pi, abs_tol=0.001)
 
 
 def test_get_infused_volume(pump: Elite11):
@@ -121,6 +123,6 @@ def test_diameter(pump: Elite11):
 
 def test_target_volume(pump: Elite11):
     pump.target_volume = math.pi
-    assert math.isclose(pump.target_volume, math.pi, rel_tol=10e-4)
+    assert math.isclose(pump.target_volume, math.pi, abs_tol=10e-4)
     pump.target_volume = 1e-04
     assert pump.target_volume == 1e-4
