@@ -254,7 +254,7 @@ class KnauerPump(EthernetDevice):
                            ' manual.'.format(setpoint, setpoint_range))
 
 
-    def set_flow(self, setpoint= None):
+    def set_flow(self, setpoint:int = None):
         """
 
         :param setpoint: in µL/min

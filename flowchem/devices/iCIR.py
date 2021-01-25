@@ -171,10 +171,15 @@ class FlowIR:
     def trigger_collection(self):
         pass
 
+    def get_last_spectrum_treated(self):
+        return self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.SpectraTreated").get_value()
+
 
 if __name__ == '__main__':
     ir_spectrometer = FlowIR()
     ir_spectrometer.is_instrument_connected()
-    assert ir_spectrometer.get_iC_software_version() == "7.1.91.0"
+    print(ir_spectrometer.get_iC_software_version())
     assert ir_spectrometer.is_template_name_valid("test.iCIRTemplate")
-    assert ir_spectrometer.resolution == 8
+    # assert ir_spectrometer.resolution == 8
+    print(ir_spectrometer.get_last_spectrum_treated())
+
