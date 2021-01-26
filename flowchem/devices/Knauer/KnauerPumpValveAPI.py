@@ -143,11 +143,11 @@ class KnauerValve(EthernetDevice):
                 logging.debug('switching successful')
                 self._valve_state = position
 
-            elif reply == "E0":
+            elif "E0" in reply:
                 logging.error('valve was not switched because valve refused')
                 raise SwitchingException('valve was not switched because valve refused')
 
-            elif reply == "E1":
+            elif "E1" in reply:
                 logging.error('Motor current to high. Check that')
                 raise SwitchingException('Motor current to high. Check that')
 
@@ -226,10 +226,10 @@ class KnauerPump(EthernetDevice):
         # beware: I think the pumps want \n\r as end of message, the valves \r\n
         message = str(message)+'\n\r'
         reply = super()._send_and_receive_handler(message)
-        if reply == "ERROR:1":
+        if "ERROR:1" in reply:
             CommandError('Invalid message sent to device. Message was: {}. Reply is {}'.format(message, reply))
 
-        elif reply == "ERROR:2":
+        elif "ERROR:2" in reply:
             ParameterError('Setpoint refused by device. Refer to manual for allowed values.  Message was: {}. '
                            'Reply is {}'.format(message, reply))
 
