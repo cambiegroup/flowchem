@@ -35,6 +35,8 @@ class PowerSupply:
     def __init__(self):
         self.sp = None
 
+    # FIXME this could be integrated in the constructor, raising an error if the port is not available.
+    #  that would also save all the unpythonic "if self.sp is not None" checks (those are very LBYL and not EAFP)
     def open(self, com_port, baud_rate=9600):
         """ Opens serial connection. """
         if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
@@ -50,6 +52,7 @@ class PowerSupply:
 
         return True
 
+    # FIXME this is (likely) completely unnecessary.
     def close(self):
         """" Closes serial connection. """
         if self.sp is not None:
@@ -263,3 +266,8 @@ class PowerSupply:
         """" I guess it adds over voltage protection """
         response = self._send_command("SPRO1")
         return bool(response)
+
+    def set_voltage_and_current(self, voltage_in_volt: float, current_in_ampere: float):
+        """ Convenience method to contemporary set voltage and current """
+        self.set_voltage(voltage_in_volt)
+        self.set_current(current_in_ampere)

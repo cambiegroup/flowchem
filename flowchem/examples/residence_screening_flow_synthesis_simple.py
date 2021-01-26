@@ -7,22 +7,21 @@ from flowchem.devices.mansonlib import PowerSupply
 import json
 from flowchem.devices.iCIR import FlowIR
 
-# usable, but maybe some output table or format wouzld be nicee
+# usable, but maybe some output table or format would be nice
 
 
-#residence time determines flow rate with know volume
-def get_flow_rate_for_residence_time(residence_time, volume_reactor):
-    #input a mL and min
-    rate= volume_reactor/residence_time
-    return rate
+# residence time determines flow rate with known volume
+def get_flow_rate_for_residence_time(residence_time_in_min, volume_reactor_in_ml) -> float:
+    rate_in_ml_min = volume_reactor_in_ml / residence_time_in_min
+    return rate_in_ml_min
 
 
-
-# this starts  the pump. loads the sample loop. pushes half the reactor volume through, then switches to next collection vial, waits half reactor + full reactor volume.
+# this starts  the pump. loads the sample loop. pushes half the reactor volume through,
+# then switches to next collection vial, waits half reactor + full reactor volume.
 def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_volume, file_name=None):
     flow_rate = get_flow_rate_for_residence_time(residence_time, reactor_volume)
 
-    current_valve_position = neccessary_devices_macs['fraction_collection'].get_current_position()
+    current_valve_position = necessary_devices_macs['fraction_collection'].get_current_position()
 
     logging.info('Flow rate is {} for residence time {}. This will go into collection vessel on position {}'.format(flow_rate, residence_time, int(current_valve_position)+1))
 
@@ -30,23 +29,22 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
 
     # dump dict with collection vessel as primary key. links to dict of flow, residence time and spectra 1 to --
 
-
-# DAMN check reply and raise error on KNAUER. handing in lon comma value gives problems
-    neccessary_devices_macs['solvent_delivery'].set_flow(round(flow_rate*1000)) # transorm to µl/min
-    neccessary_devices_macs['solvent_delivery'].start_flow()
+    # DAMN check reply and raise error on KNAUER. handing in lon comma value gives problems
+    necessary_devices_macs['solvent_delivery'].set_flow(round(flow_rate * 1000))  # transform to µl/min
+    necessary_devices_macs['solvent_delivery'].start_flow()
 
     # load starting mixture to loop
-    neccessary_devices_macs['injection_loop'].switch_to_position('L')
-    neccessary_devices_macs['injection_pump'].run() #TODO check infuse_run()
+    necessary_devices_macs['injection_loop'].switch_to_position('L')
+    necessary_devices_macs['injection_pump'].run()  # TODO check infuse_run()
 
     time.sleep(30)
 
     while True:
-        if not neccessary_devices_macs['injection_pump'].is_moving():
+        if not necessary_devices_macs['injection_pump'].is_moving():
             break
 
-    neccessary_devices_macs['injection_loop'].switch_to_position('I')
-    #start timer
+    necessary_devices_macs['injection_loop'].switch_to_position('I')
+    # start timer
 
     start_time = time.time()
     purge_time = start_time + ((reactor_volume/2 + dead_volume) / flow_rate) * 60
@@ -61,12 +59,13 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
     counter = 0
     while time.time() < purge_time:
         time.sleep(1)
-        counter+=1
-        if counter ==  60:
-            logging.info("Still "+str((purge_time-time.time())/60)+ "min to wait until collection starts")
+        counter += 1
+        if counter == 60:
+            remaining_time = purge_time-time.time()
+            logging.info(f"Still {remaining_time/60:.2f} min to wait until collection starts")
             counter = 0
 
-    neccessary_devices_macs['fraction_collection'].switch_to_position(int(current_valve_position)+1)
+    necessary_devices_macs['fraction_collection'].switch_to_position(int(current_valve_position) + 1)
 
     # now collect rest plus sample loop
 
@@ -98,7 +97,6 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
     #create several smaller wait times, to ensure purity
 
 
-
 if __name__ == "__main__":
     # take arguments and calculate everything needed. In the end this will solely be times and flow rates.
     # iterate through experiments
@@ -109,25 +107,27 @@ if __name__ == "__main__":
     ir_spectrometer = FlowIR()
     ir_spectrometer.is_instrument_connected()
 
-    neccessary_devices_list = ['00:80:a3:ce:7e:15','00:80:a3:ba:bf:e2','00:80:a3:ce:8e:43']
+    # These MACs are essentially repeated twice, which is not ideal (as if you change one pump...)
+    # Now is this check even needed? What if the Knauer object creation is directly attempted with
+    # e.g. available_macs_ips['00:80:a3:ba:bf:e2']. If the mac was not found this would raise a KeyError
+    # So a simple try/catch with re-raising a ConnectionError would achieve the same result with less code.
+    necessary_devices_list = ['00:80:a3:ce:7e:15', '00:80:a3:ba:bf:e2', '00:80:a3:ce:8e:43']
 
-    for i in neccessary_devices_list:
+    for i in necessary_devices_list:
         if i not in available_macs_ips:
             raise ConnectionError('At least one device with MAC {} is not available'.format(i))
 
-    # use power supply and switch leds on
+    # use power supply and switch LEDs on
     ps = PowerSupply()
     ps.open("COM6")
 
-    ps.set_current(2)
+    ps.set_voltage_and_current(voltage_in_volt=36, current_in_ampere=2)
     ps.output_on()
 
-    ps.set_voltage(36)
-
-    neccessary_devices_macs = {'solvent_delivery': KnauerPump(available_macs_ips['00:80:a3:ba:bf:e2']),
-                               'injection_loop': KnauerValve(available_macs_ips['00:80:a3:ce:7e:15']),
-                               'injection_pump': Elite11(PumpIO('COM5'), diameter=14.57, volume_syringe=10),
-                               'fraction_collection': KnauerValve(available_macs_ips['00:80:a3:ce:8e:43'])}
+    necessary_devices_macs = {'solvent_delivery': KnauerPump(available_macs_ips['00:80:a3:ba:bf:e2']),
+                              'injection_loop': KnauerValve(available_macs_ips['00:80:a3:ce:7e:15']),
+                              'injection_pump': Elite11(PumpIO('COM5'), diameter=14.57, volume_syringe=10),
+                              'fraction_collection': KnauerValve(available_macs_ips['00:80:a3:ce:8e:43'])}
 
     # ultimately, this could be determined with dye or fluorescence, biphasic mixture(diffusion) known flowrate would yield volume
     # reactortocollection needs to be cleaned actually. This needs to be done after everything is out, but before new stuff arrives
@@ -137,21 +137,25 @@ if __name__ == "__main__":
     dead_volume = 0.45
     # to the IR it is again 0.2 mL
 
-
-    residence_times = [1/60, 0.25,0.5]
+    # If you want to use units all over the place pint is a nice package for that, see e.g. HA Elite 11 unit conversions
+    # That would allow the next line to be residence_time = ["1 sec", "15 sec", "0.5 min"]
+    # Using values with units all over the place is slightly more complex, but has the advantage of allowing
+    # more descriptive and "human" input (via pint parser), transparent unit transformation and ideally could
+    # prevent dimensionality errors. I'm not 100% sold to that as the unit registry syntax is not always clean
+    residence_times = [1/60, 0.25, 0.5]
     # set syringe pump
-    neccessary_devices_macs['injection_pump'].target_volume(injection_loop_volume*1.1)
-    neccessary_devices_macs['injection_pump'].infusion_rate(2)
-    neccessary_devices_macs['injection_pump'].force(percent_force=50)
+    necessary_devices_macs['injection_pump'].target_volume(injection_loop_volume * 1.1)
+    necessary_devices_macs['injection_pump'].infusion_rate(2)
+    necessary_devices_macs['injection_pump'].force(percent_force=50)
 
     for i in residence_times[::-1]:
         perform_experiment(i, reactor_volume, injection_loop_volume, dead_volume, file_name='jbw13_onlymaleimid.txt')
 
     logging.info('run finished. Now purging some solvent to get last tail out')
-    neccessary_devices_macs['solvent_delivery'].set_flow(1000)
-    neccessary_devices_macs['solvent_delivery'].start_flow()
+    necessary_devices_macs['solvent_delivery'].set_flow(1000)
+    necessary_devices_macs['solvent_delivery'].start_flow()
     time.sleep(600)
-    neccessary_devices_macs['solvent_delivery'].stop_flow()
+    necessary_devices_macs['solvent_delivery'].stop_flow()
 
     ps.output_off()
 # Future: ALL parameters should be reported. 
