@@ -58,7 +58,7 @@ class EthernetDevice():
             reply += chunk
             if "\r" in chunk:
                 break
-        return reply.strip('\r')
+        return reply.strip('\r').rstrip()
 
     # idea is: try to send message, when reply is received return that. returned reply can be checked against expected
     def _send_and_receive_handler(self, message):
@@ -210,7 +210,7 @@ class KnauerPump(EthernetDevice):
 
 
     def verify_knauer_pump_connected(self):
-        if self.headtype not in ('HEADTYPE:50', 'HEADTYPE:10'):
+        if self.headtype not in ('50', '10'):
             raise KnauerError('It seems you\'re trying instantiate an unknown device/unknown pump type as Knauer Pump.'
                   'Only Knauer Azura Compact is supported')
         else:
@@ -225,7 +225,7 @@ class KnauerPump(EthernetDevice):
 
         # beware: I think the pumps want \n\r as end of message, the valves \r\n
         message = str(message)+'\n\r'
-        reply = super()._send_and_receive_handler(message)
+        reply = super()._send_and_receive_handler(message).rstrip()
         if "ERROR:1" in reply:
             CommandError('Invalid message sent to device. Message was: {}. Reply is {}'.format(message, reply))
 
@@ -235,21 +235,24 @@ class KnauerPump(EthernetDevice):
 
         elif ':OK' in reply:
             logging.info('setpoint successfully set')
-        elif message[:-1] + ':' in reply:
+
+        elif message.rstrip()[:-1] + ':' in reply:
             logging.info('setpoint successfully acquired, is ' + reply)
+            return reply.split(':')[-1]
+        elif not reply:
+            raise CommandError('No reply received')
         return reply
 
     # read and write. write: append ":value", read: append "?"
     def message_constructor_dispatcher(self, message, setpoint: int = None, setpoint_range: tuple = None):
+
         if not setpoint:
             return self.communicate(message+"?")
-
-        elif setpoint in range(*setpoint_range):
-            return self.communicate(message+":"+str(setpoint))
-
-        else:
-            ParameterError('Internal check shows that setpoint provided ({}) is not in range({}). Refer to'
+        elif setpoint not in range(*setpoint_range):
+            raise ParameterError('Internal check shows that setpoint provided ({}) is not in range({}). Refer to'
                            ' manual.'.format(setpoint, setpoint_range))
+        else:
+            return self.communicate(message + ":" + str(setpoint))
 
 
     def set_flow(self, setpoint= None):
