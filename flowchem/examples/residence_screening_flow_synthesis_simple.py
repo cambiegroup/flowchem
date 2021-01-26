@@ -51,18 +51,23 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
     start_time = time.time()
     purge_time = start_time + ((reactor_volume/2 + dead_volume) / flow_rate) * 60
 
+    #safety margin on front is half rector volume, safety margin on back is half sample loop volume
     collection_time = purge_time + ((reactor_volume/2+sample_loop_volume/2) / flow_rate) * 60
 
-    collect_time_end = collection_time + ((sample_loop_volume/2) / flow_rate) * 60
+    collect_time_end = collection_time + (sample_loop_volume / flow_rate) * 60
 
     logging.info("this run will be over in "+ str((collect_time_end-start_time)/60) +"min.")
+
+    # actually, when one does the calculation it turns out that collection time solely depends on the sample loop
+    # which also makes sense if one thinks about it: Any volume close to zero of a sample loop will mean close to zero collection time.
+    # off course, this should not be followed to stricly because of tailing
 
     # wait until half the reactor is full with reagent
     counter = 0
     while time.time() < purge_time:
         time.sleep(1)
-        counter+=1
-        if counter ==  60:
+        counter += 1
+        if counter == 60:
             logging.info("Still "+str((purge_time-time.time())/60)+ "min to wait until collection starts")
             counter = 0
 
@@ -133,7 +138,7 @@ if __name__ == "__main__":
     # reactortocollection needs to be cleaned actually. This needs to be done after everything is out, but before new stuff arrives
     reactor_volume = 4.7
     # ToDo check:
-    injection_loop_volume = 1
+    injection_loop_volume = 0.98
     dead_volume = 0.45
     # to the IR it is again 0.2 mL
 
