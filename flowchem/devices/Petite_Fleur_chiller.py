@@ -94,11 +94,11 @@ class Huber(SerialDevice):
         # setting the setpoint
         if -151 <= temp <= 327:
             temp = int(temp * 100)  # convert to appropriate decimal format
-            temp_string = "{:04X}".format(temp & 0xFFFF)  # convert to two's complement hex string
+            temp_string = f"{temp & 65535:04X}"  # convert to two's complement hex string
         else:
             raise ValueError('The set point should be in range 0..2')
 
-        self.send_message('{0}{1}{2}'.format(self.command_start, self.temp_controller_setpoint, temp_string), True, self.answer)
+        self.send_message(f'{self.command_start}{self.temp_controller_setpoint}{temp_string}', True, self.answer)
 
 
 
@@ -107,22 +107,22 @@ class Huber(SerialDevice):
     def start(self):
         """Starts the chiller"""
         # start circulation
-        self.send_message('{0}{1}{2:04}'.format(self.command_start, self.circulation, 1), True, self.answer)
+        self.send_message(f'{self.command_start}{self.circulation}{1:04}', True, self.answer)
         # start temperature control
-        self.send_message('{0}{1}{2:04}'.format(self.command_start, self.temperature_control, 1), True, self.answer)
+        self.send_message(f'{self.command_start}{self.temperature_control}{1:04}', True, self.answer)
 
     @command
     def stop(self):
         """Stops the chiller"""
         # stop temperature control
-        self.send_message('{0}{1}{2:04}'.format(self.command_start, self.temperature_control, 0), True, self.answer)
+        self.send_message(f'{self.command_start}{self.temperature_control}{0:04}', True, self.answer)
         # stop circulation
-        self.send_message('{0}{1}{2:04}'.format(self.command_start, self.circulation, 0), True, self.answer)
+        self.send_message(f'{self.command_start}{self.circulation}{0:04}', True, self.answer)
 
     @command
     def get_temperature(self):
         """Reads the current temperature of the bath"""
-        answer = self.send_message('{0}{1}{2}'.format(self.command_start, self.internal_temperature, self.query), True, self.answer)
+        answer = self.send_message(f'{self.command_start}{self.internal_temperature}{self.query}', True, self.answer)
         if answer[0] == self.internal_temperature:
             # convert two's complement 16 bit signed hex to signed int
             if int(answer[1], 16) > 32767:
@@ -133,7 +133,7 @@ class Huber(SerialDevice):
     @command
     def get_process_temperature(self):
         """Reads the current temperature of the external Pt100"""
-        answer = self.send_message('{0}{1}{2}'.format(self.command_start, self.process_temperature, self.query), True, self.answer)
+        answer = self.send_message(f'{self.command_start}{self.process_temperature}{self.query}', True, self.answer)
         if answer[0] == self.process_temperature:
             # convert two's complement 16 bit signed hex to signed int
             if int(answer[1], 16) > 32767:
@@ -144,7 +144,7 @@ class Huber(SerialDevice):
     @command
     def get_setpoint(self):
         """Reads the current temperature setpoint"""
-        answer = self.send_message('{0}{1}{2}'.format(self.command_start, self.temp_controller_setpoint, self.query), True, self.answer)
+        answer = self.send_message(f'{self.command_start}{self.temp_controller_setpoint}{self.query}', True, self.answer)
         if answer[0] == self.temp_controller_setpoint:
             # convert two's complement 16 bit signed hex to signed int
             if int(answer[1], 16) > 32767:
@@ -163,11 +163,11 @@ class Huber(SerialDevice):
         """
         # setting the setpoint
         if -32767 <= ramp_duration <= 32767:
-            ramp_duration_string = "{:04X}".format(ramp_duration & 0xFFFF)  # convert to two's complement hex string
+            ramp_duration_string = f"{ramp_duration & 65535:04X}"  # convert to two's complement hex string
         else:
             raise ValueError('The set point should be in range -32767..32767')
 
-        self.send_message('{0}{1}{2}'.format(self.command_start, self.set_ramp_duration, ramp_duration_string), True, self.answer)
+        self.send_message(f'{self.command_start}{self.set_ramp_duration}{ramp_duration_string}', True, self.answer)
 
     @command
     def start_ramp(self, temp):
@@ -180,11 +180,11 @@ class Huber(SerialDevice):
         # setting the setpoint
         if -151 <= temp <= 327:
             temp = int(temp * 100)  # convert to appropriate decimal format
-            temp_string = "{:04X}".format(temp & 0xFFFF)  # convert to two's complement hex string
+            temp_string = f"{temp & 65535:04X}"  # convert to two's complement hex string
         else:
             raise ValueError('The set point should be in range 0..2')
 
-        self.send_message('{0}{1}{2}'.format(self.command_start, self.start_ramp_cmd, temp_string), True, self.answer)
+        self.send_message(f'{self.command_start}{self.start_ramp_cmd}{temp_string}', True, self.answer)
 
     # @command
     # def get_status(self):
