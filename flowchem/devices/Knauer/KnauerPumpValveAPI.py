@@ -230,8 +230,8 @@ class KnauerPump(EthernetDevice):
             CommandError(f'Invalid message sent to device. Message was: {message}. Reply is {reply}')
 
         elif "ERROR:2" in reply:
-            ParameterError('Setpoint refused by device. Refer to manual for allowed values.  Message was: {}. '
-                           'Reply is {}'.format(message, reply))
+            ParameterError(f"Setpoint refused by device. Refer to manual for allowed values.  Message was: '{message}'. "
+                           "Reply is '{reply}'")
 
         elif ':OK' in reply:
             logging.info('setpoint successfully set')
@@ -249,8 +249,8 @@ class KnauerPump(EthernetDevice):
         if not setpoint:
             return self.communicate(message+"?")
         elif setpoint not in range(*setpoint_range):
-            raise ParameterError('Internal check shows that setpoint provided ({}) is not in range({}). Refer to'
-                           ' manual.'.format(setpoint, setpoint_range))
+            raise ParameterError(f'Internal check shows that setpoint provided ({setpoint}) is not in range({setpoint_range}). Refer to'
+                           ' manual.')
         else:
             return self.communicate(message + ":" + str(setpoint))
 

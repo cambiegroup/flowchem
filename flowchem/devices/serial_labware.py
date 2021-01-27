@@ -418,15 +418,15 @@ class SerialDevice:
                         answer = re.match(pattern=return_pattern, string=answer).groups()
                         if answer is None:
                             self.logger.critical(
-                                "Value Error. Serial device did not return correct return code. Send: \"{0}\". "
-                                "Received: \"{1}\".".format(return_pattern, answer)
+                                f"Value Error. Serial device did not return correct return code. Send: '{return_pattern}'. "
+                                "Received: '{answer}'."
                             )
                             if self.__soft_fail_for_testing:
                                 return answer.strip()
                             else:
                                 raise ValueError(
-                                    "Value Error. Serial device did not return correct return code. Send: \"{0}\". "
-                                    "Received: \"{1}\".".format(return_pattern, answer)
+                                    f"Value Error. Serial device did not return correct return code. Send: '{return_pattern}'. "
+                                    "Received: '{answer}'."
                                 )
                         return answer
                     except AttributeError:
