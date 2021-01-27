@@ -9,6 +9,7 @@ Module for communication with Knauer pumps and valves.
 import logging
 import socket
 import time
+from enum import Enum
 
 # TODO trim volume inputs to reasonable digits after decimal point
 
@@ -28,6 +29,14 @@ class ParameterError(KnauerError):
 class CommandError(KnauerError):
     pass
 
+class KnauerHeads(Enum):
+    SMALL_HEAD=10
+    BIG_HEAD=50
+
+class KnauerValves(Enum):
+    LI='LI'
+    SIX=6
+    SIXTEEN=16
 
 """ CONSTANTS """
 
@@ -212,7 +221,6 @@ PUMP_OFF = "OFF"  # stops flow
 class KnauerPump(EthernetDevice):
     def __init__(self, address, port=TCP_PORT, buffersize=BUFFER_SIZE):
         super().__init__(address, port, buffersize)
-        self.headtype = self.set_pumphead_type()  # FIXME this can become a property, head_type could be an Enum
         self.verify_knauer_pump_connected()
         # here, pump head should be checked, pump switched of, flow rate initialised and and and
         # this gets the valve type as valve [type] and strips away val
@@ -273,15 +281,21 @@ class KnauerPump(EthernetDevice):
         logging.info('Flow of pump {} is set to {}, returns {}'.format(self.address, setpoint, flow))
         return flow
 
-    def set_pumphead_type(self, setpoint: int = None):
-        reply = self.message_constructor_dispatcher(HEADTYPE, setpoint=setpoint, setpoint_range=(10, 51, 40))
-        if setpoint:
-            if str(setpoint) not in self.headtype:
-                self.headtype = 'HEADTYPE:'+str(setpoint)
-                self.achievable_pressure = 400 if str(10) in self.headtype else 150
-                self.achievable_flow = 10000 if str(10) in self.headtype else 50000
-        logging.info('Headtype of pump {} is set to {}, returns {}'.format(self.address, setpoint, reply))
+    @property
+    def headtype(self):
+        reply = int(self.message_constructor_dispatcher(HEADTYPE)[-2:])
+        logging.info('Headtype of pump {} is {}'.format(self.address, reply))
+        self.achievable_pressure = 400 if reply == 10 else 150
+        self.achievable_flow = 10000 if reply == 10 else 50000
         return reply
+
+    @headtype.setter
+    def headtype(self, setpoint: int):
+        reply = self.message_constructor_dispatcher(HEADTYPE, setpoint=setpoint, setpoint_range=(10, 51, 40))
+        self.achievable_pressure = 400 if setpoint == 10 else 150
+        self.achievable_flow = 10000 if setpoint == 10 else 50000
+        logging.info('Headtype of pump {} is set to {}, returns {}'.format(self.address, setpoint, reply))
+        return setpoint
 
     def set_minimum_pressure(self, pressure_in_bar=None):
 

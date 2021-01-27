@@ -7,7 +7,7 @@ from flowchem.devices.mansonlib import PowerSupply
 import json
 from flowchem.devices.iCIR import FlowIR
 
-# usable, but maybe some output table or format would be nice
+# usable, but maybe some output table or format would be nice: especially parameters like t or wavelength
 
 
 # residence time determines flow rate with known volume
@@ -28,8 +28,6 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
     str_to_write = 'Collection vessel on valve position {2}: Flow rate was {0} ml/min for residence time {1} min.\n\r'.format(flow_rate, residence_time, int(current_valve_position)+1)
 
     # dump dict with collection vessel as primary key. links to dict of flow, residence time and spectra 1 to --
-
-    # DAMN check reply and raise error on KNAUER. handing in lon comma value gives problems
     necessary_devices_macs['solvent_delivery'].set_flow(round(flow_rate * 1000))  # transform to µl/min
     necessary_devices_macs['solvent_delivery'].start_flow()
 
@@ -67,8 +65,7 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
 
     necessary_devices_macs['fraction_collection'].switch_to_position(int(current_valve_position) + 1)
 
-    # now collect rest plus sample loop
-
+    # now collect up till half of sample loop
     while time.time() < collection_time:
         time.sleep(1)
         counter += 1
@@ -88,34 +85,29 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
         if counter == 60:
             logging.info("Still "+str((collect_time_end-time.time())/60)+ "min to wait until collection finishes")
             counter = 0
-    # dump result to json
 
 
     # the tail is caught anyway by switching after half the reactor volume
     logging.info('Collection of product is finished')
 
-    #create several smaller wait times, to ensure purity
-
-
 if __name__ == "__main__":
     # take arguments and calculate everything needed. In the end this will solely be times and flow rates.
     # iterate through experiments
-    # get available macs and check against required_macs list.  This isn't elegant for sure
     available_macs_ips = autodiscover_knauer(source_ip='192.168.1.1')
-    print(available_macs_ips)
 
+    try:
+        necessary_devices_macs = {'solvent_delivery': KnauerPump(available_macs_ips['00:80:a3:ba:bf:e2']),
+                                  'injection_loop': KnauerValve(available_macs_ips['00:80:a3:ce:7e:15']),
+                                  'injection_pump': Elite11(PumpIO('COM5'), diameter=14.57, volume_syringe=10),
+                                  'fraction_collection': KnauerValve(available_macs_ips['00:80:a3:ce:8e:43'])}
+    except KeyError as e:
+        raise ConnectionError(f'Device with MAC {e} is not available') from e
+
+    # will trhow error if not operational
     ir_spectrometer = FlowIR()
     ir_spectrometer.is_instrument_connected()
+    ir_spectrometer.get_last_spectrum_treated()
 
-    # These MACs are essentially repeated twice, which is not ideal (as if you change one pump...)
-    # Now is this check even needed? What if the Knauer object creation is directly attempted with
-    # e.g. available_macs_ips['00:80:a3:ba:bf:e2']. If the mac was not found this would raise a KeyError
-    # So a simple try/catch with re-raising a ConnectionError would achieve the same result with less code.
-    necessary_devices_list = ['00:80:a3:ce:7e:15', '00:80:a3:ba:bf:e2', '00:80:a3:ce:8e:43']
-
-    for i in necessary_devices_list:
-        if i not in available_macs_ips:
-            raise ConnectionError('At least one device with MAC {} is not available'.format(i))
 
     # use power supply and switch LEDs on
     ps = PowerSupply()
@@ -124,10 +116,6 @@ if __name__ == "__main__":
     ps.set_voltage_and_current(voltage_in_volt=36, current_in_ampere=2)
     ps.output_on()
 
-    necessary_devices_macs = {'solvent_delivery': KnauerPump(available_macs_ips['00:80:a3:ba:bf:e2']),
-                              'injection_loop': KnauerValve(available_macs_ips['00:80:a3:ce:7e:15']),
-                              'injection_pump': Elite11(PumpIO('COM5'), diameter=14.57, volume_syringe=10),
-                              'fraction_collection': KnauerValve(available_macs_ips['00:80:a3:ce:8e:43'])}
 
     # ultimately, this could be determined with dye or fluorescence, biphasic mixture(diffusion) known flowrate would yield volume
     # reactortocollection needs to be cleaned actually. This needs to be done after everything is out, but before new stuff arrives

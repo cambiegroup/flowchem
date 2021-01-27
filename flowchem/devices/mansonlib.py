@@ -32,8 +32,8 @@ class InvalidOrNoReply(MansonException):
 class PowerSupply:
     MODEL_ALT_RANGE = ['HCS-3102', 'HCS-3014', 'HCS-3204']
 
-    def __init__(self):
-        self.sp = None
+    def __init__(self, com_port, baud_rate):
+        self.sp = self.open(com_port, baud_rate)
 
     # FIXME this could be integrated in the constructor, raising an error if the port is not available.
     #  that would also save all the unpythonic "if self.sp is not None" checks (those are very LBYL and not EAFP)
@@ -50,26 +50,22 @@ class PowerSupply:
             print(f"Could not connect to power supply: {e}")
             raise NotConnectedError from e
 
-        return True
 
     # FIXME this is (likely) completely unnecessary.
     def close(self):
         """" Closes serial connection. """
-        if self.sp is not None:
-            self.sp.close()
-            self.sp = None
-            return True
-        return False
+        self.sp.close()
 
     def _send_command(self, command: str, multiline_reply: bool = False, no_reply_expected: bool = False) -> str:
         """ Internal function to send command and read reply. """
-        if self.sp is None:
-            raise NotConnectedError
 
         # Flush buffer, write command and read reply
-        self.sp.reset_input_buffer()
-        self.sp.write(f"{command}\r".encode('ascii'))
-        response = self.sp.readline().decode('ascii').strip()
+        try:
+            self.sp.reset_input_buffer()
+            self.sp.write(f"{command}\r".encode('ascii'))
+            response = self.sp.readline().decode('ascii').strip()
+        except serial.serialutil.SerialException:
+            NotConnectedError('Connection seems closed')
 
         if not response and not no_reply_expected:
             raise InvalidOrNoReply("No reply received!")
