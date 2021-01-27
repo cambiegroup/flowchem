@@ -24,10 +24,9 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
 
     current_valve_position = neccessary_devices_macs['fraction_collection'].get_current_position()
 
-    logging.info('Flow rate is {} for residence time {}. This will go into collection vessel on position {}'.format(flow_rate, residence_time, int(current_valve_position)+1))
+    logging.info(f'Flow rate is {flow_rate} for residence time {residence_time}. This will go into collection vessel on position {int(current_valve_position)+1}')
 
-    str_to_write = 'Collection vessel on valve position {2}: Flow rate was {0} ml/min for residence time {1} min.\n\r'.format(flow_rate, residence_time, int(current_valve_position)+1)
-
+    str_to_write = f'Collection vessel on valve position {int(current_valve_position)+1}: Flow rate was {flow_rate} ml/min for residence time {residence_time} min.\n\r'
     # dump dict with collection vessel as primary key. links to dict of flow, residence time and spectra 1 to --
 
 
@@ -52,8 +51,8 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
     purge_time = start_time + ((reactor_volume/2 + dead_volume) / flow_rate) * 60
 
     collection_time = purge_time + ((reactor_volume/2+sample_loop_volume/2) / flow_rate) * 60
-
-    collect_time_end = collection_time + ((sample_loop_volume/2) / flow_rate) * 60
+    #big saftey margin for flushing
+    collect_time_end = collection_time + ((sample_loop_volume*1.5) / flow_rate) * 60
 
     logging.info("this run will be over in "+ str((collect_time_end-start_time)/60) +"min.")
 
@@ -91,7 +90,6 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
             counter = 0
     # dump result to json
 
-
     # the tail is caught anyway by switching after half the reactor volume
     logging.info('Collection of product is finished')
 
@@ -113,7 +111,7 @@ if __name__ == "__main__":
 
     for i in neccessary_devices_list:
         if i not in available_macs_ips:
-            raise ConnectionError('At least one device with MAC {} is not available'.format(i))
+            raise ConnectionError(f'At least one device with MAC {i} is not available')
 
     # use power supply and switch leds on
     ps = PowerSupply()
