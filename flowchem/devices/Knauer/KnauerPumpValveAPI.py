@@ -29,23 +29,38 @@ class ParameterError(KnauerError):
 class CommandError(KnauerError):
     pass
 
-class KnauerHeads(Enum):
-    SMALL_HEAD=10
-    BIG_HEAD=50
 
-class KnauerValves(Enum):
-    LI='LI'
-    SIX=6
-    SIXTEEN=16
+
+class KnauerPumpHeads(Enum):
+    """
+    Two Pumpheads exist, 50 mL/min and 10 mL/min
+    """
+    FLOWRATE_FIFTY_ML = 50
+    FLOWRATE_TEN_ML = 10
+
+
+class KnauerValveHeads(Enum):
+    """
+    Four different valve types can be used. 6port2position valve, and 6 12 16 multiposition valves
+    """
+    SIX_PORT_TWO_POSITION = 'LI'
+    SIX_PORT_SIX_POSITION = 6
+    TWELVE_PORT_TWELVE_POSITION = 12
+    SIXTEEN_PORT_SIXTEEN_POSITION = 16
+
+
+
 
 """ CONSTANTS """
+class KnauerCommunicationConstants(Enum):
 
-TCP_PORT = 10001
-BUFFER_SIZE = 1024
+    TCP_PORT = 10001
+    BUFFER_SIZE = 1024
 
 
 class EthernetDevice:
-    def __init__(self, address, port=TCP_PORT, buffersize=BUFFER_SIZE):
+    def __init__(self, address, port=KnauerCommunicationConstants.TCP_PORT.value,
+                 buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value):
         self.address = str(address)
         self.port = int(port)
         self.buffersize = buffersize
@@ -55,12 +70,12 @@ class EthernetDevice:
     def __del__(self):
         self.sock.close()
 
-    def _try_connection(self, address, port):
+    def _try_connection(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # set timeout to 5s
         sock.settimeout(5)
         try:
-            sock.connect((address, int(port)))
+            sock.connect((self.address, self.port))
         except socket.timeout:
             logging.error('No connection possible to device with IP {}'.format(address))
             raise ConnectionError('No Connection possible to device with address {}'.format(address))
@@ -105,23 +120,18 @@ class KnauerValve(EthernetDevice):
     https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_benutzerhandbuch_de.pdf
     dip switch for valve selection
     """
-    def __init__(self, address, port=TCP_PORT, buffersize=BUFFER_SIZE):
+    def __init__(self, address, port=KnauerCommunicationConstants.TCP_PORT.value,
+                 buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value):
 
         super().__init__(address, port, buffersize)
 
         self._valve_state = self.get_current_position()
         # this gets the valve type as valve [type] and strips away valve_
-        self.valve_type= self.get_valve_type()[6:]
-        self.verify_knauer_valve_connected()
+        self.valve_type= self.get_valve_type() # checks against allowed valve types
 
-    def verify_knauer_valve_connected(self):
-        if self.valve_type not in ('LI', '16', '12', '6'):
-            raise KnauerError('It seems you\'re trying instantiate a unknown device/unknown valve type {} as Knauer Valve.'
-                  'Only Valves of type 16, 12, 10 and LI are supported'.format(self.valve_type))
-        else:
-            logging.info('Knauer Valve of type VALVE {} successfully connected'.format(self.valve_type))
 
-    def communicate(self, message: str):
+
+    def communicate(self, message: str or int):
         """
         sends command and receives reply, deals with all communication based stuff and checks that the valve is of expected type
         :param message:
@@ -133,28 +143,41 @@ class KnauerValve(EthernetDevice):
             reply = super()._send_and_receive_handler(str(message) + '\r\n')
             if reply == "?":
                 CommandError('Command not supported, your valve is of type'+ self.valve_type)
+        try:
+            reply=int(reply)
+        except ValueError:
+            pass
         return reply
 
     def get_current_position(self):
         curr_pos = self.communicate("P")
         logging.debug("Current position is " + curr_pos)
+
         return curr_pos
 
     def switch_to_position(self, position: int or str):
+        try:
+            position = int(position)
+        except ValueError:
+            pass
 
-        position = str(position)
+        # allows lower and uppercase commands in case of injection
+        if isinstance(position, str):
+            position = position.upper()
+
         # switching necessary?
         if position == self._valve_state:
             logging.debug('already at that position')
 
         else:
+            #these prechecks are not really necessery, since sending wrong value would throw an error by wrong reply
             # check if switching can be achieved
-            if self.valve_type == 'LI':
-                if position not in 'LI':
+            if self.valve_type == KnauerValveHeads.SIX_PORT_TWO_POSITION:
+                if position not in self.valve_type.value:
                     SwitchingException('Internal check: Position {} not available on instantiated valve {}'.format(position, self.valve_type))
 
-            if self.valve_type != 'LI':
-                if int(position) not in range(1, int(self.valve_type)+1):
+            if self.valve_type != KnauerValveHeads.SIX_PORT_TWO_POSITION:
+                if not 0 <= position <= self.valve_type.value:
                     SwitchingException('Internal Check: Position {} not available on instantiated valve {}'.format(position, self.valve_type))
 
         # change to selected position
@@ -163,6 +186,7 @@ class KnauerValve(EthernetDevice):
             if reply == "OK":
                 logging.debug('switching successful')
                 self._valve_state = position
+
 
             elif reply == "E0":
                 logging.error('valve was not switched because valve refused')
@@ -176,9 +200,20 @@ class KnauerValve(EthernetDevice):
                 raise SwitchingException('Unknown reply received. Reply is ' + reply)
 
     def get_valve_type(self):
-        reply = self.communicate('T')
-        logging.info('Valve Type is {} at address {}'.format(reply, self.address))
-        return reply
+        """aquires valve type, if not supported will throw error. This also prevents to initialize some device as a KnauerValve"""
+        reply = self.communicate('T')[6:]
+        # could be more pretty by passing expected answer to communicate
+        try:
+            reply=int(reply)
+        except ValueError:
+            pass
+        try:
+            headtype= KnauerValveHeads(reply)
+        except ValueError as e:
+            raise KnauerError(f'It seems you\'re trying instantiate a unknown device/unknown valve type {e} as Knauer Valve.'
+                  'Only Valves of type 16, 12, 10 and LI are supported') from e
+        logging.info(f'Valve successfully connected, Type is {headtype} at address {self.address}')
+        return headtype
 
     def close_connection(self):
         logging.info('Valve at address closed connection {}'.format(self.address))
