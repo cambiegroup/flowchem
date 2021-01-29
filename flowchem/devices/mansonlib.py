@@ -30,14 +30,12 @@ class InvalidOrNoReply(MansonException):
 
 
 class PowerSupply:
-    MODEL_ALT_RANGE = ['HCS-3102', 'HCS-3014', 'HCS-3204']
+    MODEL_ALT_RANGE = ['HCS-3102', 'HCS-3014', 'HCS-3204', 'HCS-3202']
 
-    def __init__(self, com_port, baud_rate):
-        self.sp = self.open(com_port, baud_rate)
+    def __init__(self, com_port, baud_rate=9600):
+        self.open(com_port, baud_rate)
 
-    # FIXME this could be integrated in the constructor, raising an error if the port is not available.
-    #  that would also save all the unpythonic "if self.sp is not None" checks (those are very LBYL and not EAFP)
-    def open(self, com_port, baud_rate=9600):
+    def open(self, com_port, baud_rate):
         """ Opens serial connection. """
         if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
             raise MansonException(f"Invalid baud rate provided {baud_rate}!")
@@ -50,8 +48,10 @@ class PowerSupply:
             print(f"Could not connect to power supply: {e}")
             raise NotConnectedError from e
 
+        # for the unlikely case
+        if self.get_info() not in self.MODEL_ALT_RANGE:
+            raise InvalidOrNoReply(f'Device on {com_port} is either not supported or no MansonLib Device')
 
-    # FIXME this is (likely) completely unnecessary.
     def close(self):
         """" Closes serial connection. """
         self.sp.close()

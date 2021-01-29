@@ -11,8 +11,6 @@ import socket
 import time
 from enum import Enum
 
-# TODO trim volume inputs to reasonable digits after decimal point
-
 
 class KnauerError(Exception):
     pass
@@ -259,12 +257,12 @@ class KnauerPump(EthernetDevice):
         self.verify_knauer_pump_connected()
         # here, pump head should be checked, pump switched of, flow rate initialised and and and
         # this gets the valve type as valve [type] and strips away val
-        self.achievable_pressure = 400 if str(10) in self.headtype else 150
-        self.achievable_flow = 10000 if str(10) in self.headtype else 50000
+        # self.achievable_pressure = 400 if str(10) in self.headtype else 150
+        # self.achievable_flow = 10000 if str(10) in self.headtype else 50000
         self.set_minimum_pressure(pressure_in_bar=5)
 
     def verify_knauer_pump_connected(self):
-        if self.headtype not in ('HEADTYPE:50', 'HEADTYPE:10'):
+        if self.headtype not in (50,10):
             raise KnauerError('It seems you\'re trying instantiate an unknown device/unknown pump type as Knauer Pump.'
                   'Only Knauer Azura Compact is supported')
         else:
@@ -334,7 +332,7 @@ class KnauerPump(EthernetDevice):
 
     def set_minimum_pressure(self, pressure_in_bar=None):
 
-        command = PMIN10 if str(10) in self.headtype else PMIN50
+        command = PMIN10 if 10 == self.headtype else PMIN50
 
         reply = self.message_constructor_dispatcher(command, setpoint=pressure_in_bar,
                                                     setpoint_range=(0, self.achievable_pressure+1))
@@ -342,7 +340,7 @@ class KnauerPump(EthernetDevice):
         return reply
 
     def set_maximum_pressure(self, pressure_in_bar=None):
-        command = PMAX10 if str(10) in self.headtype else PMAX50
+        command = PMAX10 if 10 == self.headtype else PMAX50
 
         reply = self.message_constructor_dispatcher(command, setpoint=pressure_in_bar,
                                                     setpoint_range=(0, self.achievable_pressure + 1))
@@ -351,7 +349,7 @@ class KnauerPump(EthernetDevice):
         return reply
 
     def set_minimum_motor_current(self, setpoint=None):
-        command = IMIN10 if str(10) in self.headtype else IMIN50
+        command = IMIN10 if 10 == self.headtype else IMIN50
 
         reply = self.message_constructor_dispatcher(command, setpoint=setpoint,
                                                     setpoint_range=(0, 101))
@@ -414,6 +412,7 @@ class KnauerPump(EthernetDevice):
         logging.info('Motor current reading of pump {} returns {}'.format(self.address, reply))
         return reply
 
+    #TODO run flag
     # write only
     def start_flow(self):
         reply = self.communicate(PUMP_ON)
