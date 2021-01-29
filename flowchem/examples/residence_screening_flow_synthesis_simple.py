@@ -23,10 +23,9 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
 
     current_valve_position = necessary_devices_macs['fraction_collection'].get_current_position()
 
-    logging.info('Flow rate is {} for residence time {}. This will go into collection vessel on position {}'.format(flow_rate, residence_time, int(current_valve_position)+1))
+    logging.info(f'Flow rate is {flow_rate} for residence time {residence_time}. This will go into collection vessel on position {int(current_valve_position)+1}')
 
-    str_to_write = 'Collection vessel on valve position {2}: Flow rate was {0} ml/min for residence time {1} min.\n\r'.format(flow_rate, residence_time, int(current_valve_position)+1)
-
+    str_to_write = f'Collection vessel on valve position {int(current_valve_position)+1}: Flow rate was {flow_rate} ml/min for residence time {residence_time} min.\n\r'
     # dump dict with collection vessel as primary key. links to dict of flow, residence time and spectra 1 to --
     necessary_devices_macs['solvent_delivery'].set_flow(round(flow_rate * 1000))  # transform to µl/min
     necessary_devices_macs['solvent_delivery'].start_flow()
@@ -48,8 +47,8 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
     purge_time = start_time + ((reactor_volume/2 + dead_volume) / flow_rate) * 60
 
     collection_time = purge_time + ((reactor_volume/2+sample_loop_volume/2) / flow_rate) * 60
-
-    collect_time_end = collection_time + ((sample_loop_volume/2) / flow_rate) * 60
+    #big saftey margin for flushing
+    collect_time_end = collection_time + ((sample_loop_volume*1.5) / flow_rate) * 60
 
     logging.info("this run will be over in "+ str((collect_time_end-start_time)/60) +"min.")
 
@@ -86,7 +85,6 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
             logging.info("Still "+str((collect_time_end-time.time())/60)+ "min to wait until collection finishes")
             counter = 0
 
-
     # the tail is caught anyway by switching after half the reactor volume
     logging.info('Collection of product is finished')
 
@@ -109,7 +107,9 @@ if __name__ == "__main__":
     ir_spectrometer.get_last_spectrum_treated()
 
 
+
     # use power supply and switch LEDs on
+
     ps = PowerSupply()
     ps.open("COM6")
 

@@ -179,7 +179,7 @@ class SerialDevice:
                 # workaround if something goes wrong with the serial connection
                 # future me will certainly not hate past me for this...
                 # but current other one hates you for that been done that way!
-                err_msg = "Error while running {} - {}".format(method, sys.exc_info()[1])
+                err_msg = f"Error while running {method} - {sys.exc_info()[1]}"
                 self.logger.critical(err_msg)
                 if self.mode == 'serial':
                     self.__connection.flush()
@@ -190,7 +190,7 @@ class SerialDevice:
                     self.reply_queue.get()
 
     def launch_command_handler(self):
-        self.command_handler = threading.Thread(target=self.__command_handler_daemon, name="{0}_command_handler".format(self.device_name), daemon=True)
+        self.command_handler = threading.Thread(target=self.__command_handler_daemon, name=f"{self.device_name}_command_handler", daemon=True)
         self.command_handler.start()
 
     def open_connection(self):
@@ -232,7 +232,7 @@ class SerialDevice:
                     raise
                 else:
                     # soft-fail error message
-                    self.logger.debug("ERROR: The connection to the serial device could not be established: {0}".format(e))
+                    self.logger.debug(f"ERROR: The connection to the serial device could not be established: {e}")
                     return False  # announce failure
         elif self.mode == 'ethernet':
             # in case 'address' was provided and 'mode' was set to "socket"
@@ -254,7 +254,7 @@ class SerialDevice:
                     raise
                 else:
                     # soft-fail error message
-                    self.logger.debug("ERROR: The connection to the serial device could not be established: {0}".format(e))
+                    self.logger.debug(f"ERROR: The connection to the serial device could not be established: {e}")
                     return False  # announce failure
      
     def close_connection(self):
@@ -298,7 +298,7 @@ class SerialDevice:
         # send the message and encode it according to the standard settings found in __init__
         # Hint: "{}".format(message) auto converts message to string in case it was something else, so no type checking
         # retry loop
-        self.logger.debug("Sending command {}".format(message))
+        self.logger.debug(f"Sending command {message}")
         while True:
             try:
                 sleep(self.write_delay)
@@ -310,9 +310,9 @@ class SerialDevice:
                         self.__connection.reset_input_buffer()
                         self.logger.debug("Reset input buffer before sending command.")
                 if self.mode == "serial":
-                    self.__connection.write("{0}{1}".format(message, self.command_termination).encode(self.standard_encoding))
+                    self.__connection.write(f"{message}{self.command_termination}".encode(self.standard_encoding))
                 else:
-                    self.__connection.sendall("{0}{1}".format(message, self.command_termination).encode(self.standard_encoding))
+                    self.__connection.sendall(f"{message}{self.command_termination}".encode(self.standard_encoding))
                 self.logger.debug("Command  %s sent.", message)
                 sleep(self.read_delay)
                 self._connection_lock.release()
@@ -331,7 +331,7 @@ class SerialDevice:
                     # just raise the exception again when not in test mode
                     raise
                 else:
-                    self.logger.error("Error: Unexpected error while writing to connection. Error Message: {0}".format(e))
+                    self.logger.error(f"Error: Unexpected error while writing to connection. Error Message: {e}")
                     self._connection_lock.release()
                     break
         # if the user specified that a return message is expected
@@ -418,15 +418,15 @@ class SerialDevice:
                         answer = re.match(pattern=return_pattern, string=answer).groups()
                         if answer is None:
                             self.logger.critical(
-                                "Value Error. Serial device did not return correct return code. Send: \"{0}\". "
-                                "Received: \"{1}\".".format(return_pattern, answer)
+                                f"Value Error. Serial device did not return correct return code. Send: '{return_pattern}'. "
+                                "Received: '{answer}'."
                             )
                             if self.__soft_fail_for_testing:
                                 return answer.strip()
                             else:
                                 raise ValueError(
-                                    "Value Error. Serial device did not return correct return code. Send: \"{0}\". "
-                                    "Received: \"{1}\".".format(return_pattern, answer)
+                                    f"Value Error. Serial device did not return correct return code. Send: '{return_pattern}'. "
+                                    "Received: '{answer}'."
                                 )
                         return answer
                     except AttributeError:
@@ -439,7 +439,7 @@ class SerialDevice:
         except Exception as e:
             # This is not very elegant, but lets the user know that the device failed while retaining the error
             # information
-            raise Exception("Serial device message receive failed. Error Message: {0}\n{1}".format(e, e.__traceback__))
+            raise Exception(f"Serial device message receive failed. Error Message: {e}\n{e.__traceback__}")
 
     def non_blocking_wait(self, callback, interval):
         """
