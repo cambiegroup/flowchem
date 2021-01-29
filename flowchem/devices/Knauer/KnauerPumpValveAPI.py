@@ -10,7 +10,7 @@ import logging
 import socket
 import time
 from enum import Enum
-
+# from pint import UnitRegistry
 
 class KnauerError(Exception):
     pass
@@ -139,7 +139,7 @@ class KnauerValve(EthernetDevice):
             # retry once
             reply = super()._send_and_receive_handler(str(message) + '\r\n')
             if reply == "?":
-                CommandError('Command not supported, your valve is of type'+ self.valve_type)
+                CommandError(f'Command not supported, your valve is of type {self.valve_type}')
         try:
             reply=int(reply)
         except ValueError:
@@ -258,6 +258,9 @@ PUMP_OFF = "OFF"  # stops flow
 
 
 class KnauerPump(EthernetDevice):
+
+    ureg=UnitRegistry()
+
     def __init__(self, address, port=KnauerCommunicationConstants.TCP_PORT.value, buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value):
         super().__init__(address, port, buffersize)
         self.headtype
@@ -283,7 +286,7 @@ class KnauerPump(EthernetDevice):
             logging.info('setpoint successfully set')
 
         elif message.rstrip()[:-1] + ':' in reply:
-            logging.info('setpoint successfully acquired, is ' + reply)
+            logging.info(f'setpoint successfully acquired, is {reply}')
             return reply.split(':')[-1]
         elif not reply:
             raise CommandError('No reply received')
@@ -300,8 +303,8 @@ class KnauerPump(EthernetDevice):
                 return self.communicate(message+":"+str(setpoint))
 
             else:
-                ParameterError('Internal check shows that setpoint provided ({}) is not in range({}). Refer to'
-                           ' manual.'.format(setpoint, setpoint_range))
+                ParameterError(f'Internal check shows that setpoint provided ({setpoint}) is not in range({setpoint_range}). Refer to'
+                           ' manual.')
 
         else:
             return self.communicate(message + ":" + str(setpoint))
@@ -313,7 +316,7 @@ class KnauerPump(EthernetDevice):
         :return: nothing
         """
         flow = self.message_constructor_dispatcher(FLOW, setpoint=setpoint, setpoint_range=(0, self.achievable_flow+1))
-        logging.info('Flow of pump {} is set to {}, returns {}'.format(self.address, setpoint, flow))
+        logging.info(f'Flow of pump {self.address} is set to {setpoint}, returns {flow}')
 
     @property
     def headtype(self):
@@ -324,7 +327,7 @@ class KnauerPump(EthernetDevice):
             raise KnauerError('It seems you\'re trying instantiate an unknown device/unknown pump type as Knauer Pump.'
                   'Only Knauer Azura Compact is supported') from e
 
-        logging.info('Headtype of pump {} is {}'.format(self.address, headtype))
+        logging.info(f'Headtype of pump {self.address} is {headtype}')
         self.achievable_pressure, self.achievable_flow = (400, 10000) if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML \
             else (150, 50000)
         return headtype
@@ -334,7 +337,7 @@ class KnauerPump(EthernetDevice):
         reply = self.message_constructor_dispatcher(HEADTYPE, setpoint=setpoint.value)
         self.achievable_pressure, self.achievable_flow = (400, 10000) if setpoint == KnauerPumpHeads.FLOWRATE_TEN_ML \
             else (150, 50000)
-        logging.info('Headtype of pump {} is set to {}, returns {}'.format(self.address, setpoint, reply))
+        logging.info(f'Headtype of pump {self.address} is set to {setpoint}, returns {reply}')
         return setpoint
 
 
@@ -401,7 +404,7 @@ class KnauerPump(EthernetDevice):
 
     def read_extflow(self):
         reply =int(self.communicate(EXTFLOW))
-        logging.info('Extflow reading of pump {self.address} returns {reply}')
+        logging.info(f'Extflow reading of pump {self.address} returns {reply}')
         return reply
 
     def read_errors(self):
