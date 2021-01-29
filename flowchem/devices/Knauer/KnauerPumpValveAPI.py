@@ -75,8 +75,8 @@ class EthernetDevice:
         try:
             sock.connect((self.address, self.port))
         except socket.timeout:
-            logging.error('No connection possible to device with IP {}'.format(address))
-            raise ConnectionError('No Connection possible to device with address {}'.format(address))
+            logging.error('No connection possible to device with IP {}'.format(self.address))
+            raise ConnectionError('No Connection possible to device with address {}'.format(self.address))
         return sock
 
     def _send_and_receive(self, message):
@@ -252,7 +252,7 @@ PUMP_OFF = "OFF"  # stops flow
 
 
 class KnauerPump(EthernetDevice):
-    def __init__(self, address, port=TCP_PORT, buffersize=BUFFER_SIZE):
+    def __init__(self, address, port=KnauerCommunicationConstants.TCP_PORT.value, buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value):
         super().__init__(address, port, buffersize)
         self.verify_knauer_pump_connected()
         # here, pump head should be checked, pump switched of, flow rate initialised and and and
