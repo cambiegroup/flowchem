@@ -310,12 +310,10 @@ class KnauerPump(EthernetDevice):
         """
 
         :param setpoint: in µL/min
-        :return: device answer
+        :return: nothing
         """
-
         flow = self.message_constructor_dispatcher(FLOW, setpoint=setpoint, setpoint_range=(0, self.achievable_flow+1))
         logging.info('Flow of pump {} is set to {}, returns {}'.format(self.address, setpoint, flow))
-        return flow
 
     @property
     def headtype(self):
@@ -349,7 +347,6 @@ class KnauerPump(EthernetDevice):
 
         logging.info(f'Minimum pressure of pump {self.address} is set to {pressure_in_bar}, returns {reply}')
 
-        return reply
 
     def set_maximum_pressure(self, pressure_in_bar=None):
         command = PMAX10 if self.headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMAX50
@@ -359,9 +356,6 @@ class KnauerPump(EthernetDevice):
 
         logging.info(f'Maximum pressure of pump {self.address} is set to {pressure_in_bar}, returns {reply}')
 
-
-        return reply
-
     def set_minimum_motor_current(self, setpoint=None):
         command = IMIN10 if self.headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else IMIN50
 
@@ -369,14 +363,11 @@ class KnauerPump(EthernetDevice):
                                                     setpoint_range=(0, 101))
         logging.info(f'Minimum motor current of pump {self.address} is set to {setpoint}, returns {reply}')
 
-        return reply
 
     def set_start_level(self, setpoint=None):
         reply= self.message_constructor_dispatcher(STARTLEVEL, setpoint=setpoint, setpoint_range= (0, 2))
         logging.info(f'Start level of pump {self.address} is set to {setpoint}, returns {reply}')
 
-
-        return reply
 
     def set_start_mode(self, setpoint=None):
         """
@@ -387,7 +378,6 @@ class KnauerPump(EthernetDevice):
         if setpoint in (0, 1):
             reply= self.message_constructor_dispatcher(STARTMODE, setpoint=setpoint)
             logging.info(f'Start mode of pump {self.address} is set to {setpoint}, returns {reply}')
-            return reply
         else:
             logging.warning('Supply binary value')
 
@@ -396,23 +386,21 @@ class KnauerPump(EthernetDevice):
         reply = self.message_constructor_dispatcher(command, setpoint=setpoint, setpoint_range=(0,2001))
         logging.info(f'Adjusting factor of pump {self.address} is set to {setpoint}, returns {reply}')
 
-        return reply
 
     def set_correction_factor(self, setpoint=None):
         command = CORR10 if self.headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else CORR50
         reply = self.message_constructor_dispatcher(command, setpoint=setpoint, setpoint_range=(0,301))
         logging.info(f'Correction factor of pump {self.address} is set to {setpoint}, returns {reply}')
 
-        return reply
 
     # read only
     def read_pressure(self):
-        reply = int(self.communicate(PRESSURE)[9:])
+        reply = int(self.communicate(PRESSURE))
         logging.info(f'Pressure reading of pump {self.address} returns {reply} bar')
         return reply
 
     def read_extflow(self):
-        reply =int(self.communicate(EXTFLOW)[8:])
+        reply =int(self.communicate(EXTFLOW))
         logging.info('Extflow reading of pump {self.address} returns {reply}')
         return reply
 
@@ -422,37 +410,31 @@ class KnauerPump(EthernetDevice):
         return reply
 
     def read_motor_current(self):
-        reply = self.communicate(IMOTOR)
-        logging.info(f'Motor current reading of pump {self.address} returns {reply}')
+        reply = int(self.communicate(IMOTOR))
+        logging.info(f'Motor current reading of pump {self.address} returns {reply} A')
         return reply
 
     #TODO run flag
     # write only
     def start_flow(self):
         reply = self.communicate(PUMP_ON)
-        if reply != "ON:OK":
-            raise CommandError
-        else:
-            logging.info('Pump switched on')
+        logging.info('Pump switched on')
 
     def stop_flow(self):
         reply = self.communicate(PUMP_OFF)
-        if reply != "OFF:OK":
-            raise CommandError
-        else:
-            logging.info('Pump switched off')
+        logging.info('Pump switched off')
 
     def set_local(self, param: int):
         if param in (0, 1):
             logging.info(f'Pump {self.address} set local {param}')
-            return self.communicate(LOCAL + ':' + str(param))
+            self.communicate(LOCAL + ':' + str(param))
         else:
             logging.warning('Supply binary value')
 
     def set_remote(self, param: int):
         if param in (0, 1):
             logging.info(f'Pump {self.address} set remote {param}')
-            return self.communicate(REMOTE + ':' + str(param))
+            self.communicate(REMOTE + ':' + str(param))
         else:
             logging.warning('Supply binary value')
 
@@ -460,14 +442,14 @@ class KnauerPump(EthernetDevice):
     def set_errio(self, param: int):
         if param in (0, 1):
             logging.info(f'Pump {self.address} set errio {param}')
-            return self.communicate(ERRIO + ':' + str(param))
+            self.communicate(ERRIO + ':' + str(param))
         else:
             logging.warning('Supply binary value')
 
     def set_extcontrol(self, param: int):
         if param in (0,1):
             logging.info(f'Pump {self.address} set extcontrol {param}')
-            return self.communicate(EXTCONTR+':'+str(param))
+            self.communicate(EXTCONTR+':'+str(param))
         else:
             logging.warning('Supply binary value')
 
