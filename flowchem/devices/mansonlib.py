@@ -30,12 +30,12 @@ class InvalidOrNoReply(MansonException):
 
 
 class PowerSupply:
-    MODEL_ALT_RANGE = ['HCS-3102', 'HCS-3014', 'HCS-3204']
+    MODEL_ALT_RANGE = ['HCS-3102', 'HCS-3014', 'HCS-3204', 'HCS-3202']
 
-    def __init__(self):
-        self.sp = None
+    def __init__(self, com_port, baud_rate=9600):
+        self.open(com_port, baud_rate)
 
-    def open(self, com_port, baud_rate=9600):
+    def open(self, com_port, baud_rate):
         """ Opens serial connection. """
         if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
             raise MansonException(f"Invalid baud rate provided {baud_rate}!")
@@ -48,25 +48,24 @@ class PowerSupply:
             print(f"Could not connect to power supply: {e}")
             raise NotConnectedError from e
 
-        return True
+        # for the unlikely case
+        if self.get_info() not in self.MODEL_ALT_RANGE:
+            raise InvalidOrNoReply(f'Device on {com_port} is either not supported or no MansonLib Device')
 
     def close(self):
         """" Closes serial connection. """
-        if self.sp is not None:
-            self.sp.close()
-            self.sp = None
-            return True
-        return False
+        self.sp.close()
 
     def _send_command(self, command: str, multiline_reply: bool = False, no_reply_expected: bool = False) -> str:
         """ Internal function to send command and read reply. """
-        if self.sp is None:
-            raise NotConnectedError
 
         # Flush buffer, write command and read reply
-        self.sp.reset_input_buffer()
-        self.sp.write(f"{command}\r".encode('ascii'))
-        response = self.sp.readline().decode('ascii').strip()
+        try:
+            self.sp.reset_input_buffer()
+            self.sp.write(f"{command}\r".encode('ascii'))
+            response = self.sp.readline().decode('ascii').strip()
+        except serial.serialutil.SerialException:
+            NotConnectedError('Connection seems closed')
 
         if not response and not no_reply_expected:
             raise InvalidOrNoReply("No reply received!")
@@ -263,3 +262,8 @@ class PowerSupply:
         """" I guess it adds over voltage protection """
         response = self._send_command("SPRO1")
         return bool(response)
+
+    def set_voltage_and_current(self, voltage_in_volt: float, current_in_ampere: float):
+        """ Convenience method to contemporary set voltage and current """
+        self.set_voltage(voltage_in_volt)
+        self.set_current(current_in_ampere)
