@@ -259,7 +259,6 @@ PUMP_OFF = "OFF"  # stops flow
 
 class KnauerPump(EthernetDevice):
 
-    ureg=UnitRegistry()
 
     def __init__(self, address, port=KnauerCommunicationConstants.TCP_PORT.value, buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value):
         super().__init__(address, port, buffersize)
@@ -280,7 +279,7 @@ class KnauerPump(EthernetDevice):
 
         elif "ERROR:2" in reply:
             ParameterError(f"Setpoint refused by device. Refer to manual for allowed values.  Message was: '{message}'. "
-                           "Reply is '{reply}'")
+                           f"Reply is '{reply}'")
 
         elif ':OK' in reply:
             logging.info('setpoint successfully set')
@@ -420,11 +419,11 @@ class KnauerPump(EthernetDevice):
     #TODO run flag
     # write only
     def start_flow(self):
-        reply = self.communicate(PUMP_ON)
+        self.communicate(PUMP_ON)
         logging.info('Pump switched on')
 
     def stop_flow(self):
-        reply = self.communicate(PUMP_OFF)
+        self.communicate(PUMP_OFF)
         logging.info('Pump switched off')
 
     def set_local(self, param: int):
