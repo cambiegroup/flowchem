@@ -3,7 +3,7 @@ from threading import Thread
 from queue import Queue
 from time import sleep
 import socket
-from tenacity import *
+import tenacity
 
 class FolderListener:
     # create the listener and create list of files present already
@@ -52,7 +52,7 @@ class FileSender:
                 queue_name.task_done()
             sleep(1)
 
-    @retry(stop=stop_after_attempt(5), wait=wait_fixed(2), reraise=True)
+    @tenacity.retry(stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_fixed(2), reraise=True)
     def open_socket_and_send(self, host, port, path_to_file):
         s = socket.socket()
         s.connect((host, port))
@@ -67,4 +67,46 @@ class FileSender:
                 s.sendall(bytes_read)
         s.close()
 
-#Servercode is missing
+class FileReceiver:
+    def __init__(self, server_host, server_port, buffer_size=4096, separator='SEPARATOR', allowed_address='192.168.1.12'):
+        self.buffer_size = buffer_size
+        self.allowed_address=allowed_address
+        self.separator = separator
+        self.s = socket.socket()
+        self.s.bind((server_host, server_port))
+        self.s.listen(2)
+        self.receiver = Thread(target=self.accept_new_connection)
+        self.receiver.start()
+
+    def accept_new_connection(self):
+        while True:
+            client_socket, address = self.s.accept()
+            if not address[0] == self.allowed_address:
+                client_socket.close()
+                print(f'nice try {client_socket,address}')
+            else:
+                # if below code is executed, that means the sender is connected
+                print(f"[+] {address} is connected.")
+                self.receive_file(client_socket)
+            sleep(1)
+
+    def receive_file(self, client_socket):
+        # receive the file infos
+        # receive using client socket, not server socket
+        received = client_socket.recv(self.buffer_size).decode()
+        filename, file_size = received.split(self.separator)
+        file_size = int(file_size)
+        size_received = 0
+
+        with open(filename, "wb") as f:
+            while file_size > size_received:
+                # read 1024 bytes from the socket (receive)
+                bytes_read = client_socket.recv(self.buffer_size)
+                if not bytes_read:
+                    raise ConnectionAbortedError
+                # TODO check
+                size_received += len(bytes_read)
+                f.write(bytes_read)
+            # update the progress ba
+        # close the client socket
+        client_socket.close()
