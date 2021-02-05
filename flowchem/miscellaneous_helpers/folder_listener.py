@@ -3,32 +3,31 @@ from threading import Thread
 from queue import Queue
 from time import sleep
 import socket
+
 import tenacity
+
 
 class FolderListener:
     # create the listener and create list of files present already
-    def __init__(self, folder_path,  file_pattern):
+    def __init__(self, folder_path: str,  file_pattern: str):
         self.files = []
         self.new_files = Queue()
-        for i in self.get_all_objects(folder_path, file_pattern):
-            self.files.append(i)
+        for filepath in Path(folder_path).glob(file_pattern):
+            if filepath not in self.files:
+                self.files.append(filepath)
         self._watcher = Thread(target=self._watch_forever, args=(folder_path,file_pattern))
         self._watcher.start()
 
-
     def get_all_objects(self, folder_path: str,  file_pattern: str) -> iter:
-        y = Path(folder_path).glob(file_pattern)
-        return y
-
-    def _append_new_objects(self, y: iter) -> None:
-        for i in y:
-            if i not in self.files:
-                self.files.append(i)
-                self.new_files.put(i)
+        for filepath in Path(folder_path).glob(file_pattern):
+            if filepath not in self.files:
+                self.files.append(filepath)
+                sleep(1)  # Let´s make sure that ClarityChrome has finished writing the file
+                self.new_files.put(filepath)
 
     def _watch_forever(self, folder_path: str, file_pattern: str) -> None:
-        while True: #This could be replaced by some experiment_running flag
-            self._append_new_objects(self.get_all_objects(folder_path, file_pattern))
+        while True:  # This could be replaced by some experiment_running flag
+            self.get_all_objects(folder_path, file_pattern)
             sleep(1)
 
 
@@ -36,10 +35,10 @@ class FolderListener:
 
 class FileSender:
     """Sends new files from queue to a websocket"""
-    def __init__(self, queue_name, host, port):
+    def __init__(self, queue_object, host, port):
         self.host = host
         self.port = port
-        self._sender = Thread(target=self.queue_worker(queue_name))
+        self._sender = Thread(target=self.queue_worker(queue_object))
         self._sender.start()
         # call queue done when done and look for new
         pass
@@ -58,7 +57,7 @@ class FileSender:
         s.connect((host, port))
         file_size = Path(path_to_file).stat().st_size
 
-        s.send(f"{path_to_file.name}<SEPARATOR{file_size}".encode())
+        s.send(f"{path_to_file.name}<SEPARATOR>{file_size}".encode())
         with open(path_to_file, 'rb') as f:
             while True:
                 bytes_read = f.read(4096)
@@ -67,13 +66,15 @@ class FileSender:
                 s.sendall(bytes_read)
         s.close()
 
+
 class FileReceiver:
-    def __init__(self, server_host, server_port, buffer_size=4096, separator='SEPARATOR', allowed_address='192.168.1.12'):
+    def __init__(self, server_host, server_port, directory_to_safe_to='D:\\transferred_chromatograms', buffer_size=4096, separator='<SEPARATOR>', allowed_address='192.168.1.12'):
         self.buffer_size = buffer_size
-        self.allowed_address=allowed_address
+        self.allowed_address = allowed_address
         self.separator = separator
         self.s = socket.socket()
         self.s.bind((server_host, server_port))
+        self.directory_to_safe_to = Path(directory_to_safe_to)
         self.s.listen(2)
         self.receiver = Thread(target=self.accept_new_connection)
         self.receiver.start()
@@ -91,14 +92,17 @@ class FileReceiver:
             sleep(1)
 
     def receive_file(self, client_socket):
-        # receive the file infos
-        # receive using client socket, not server socket
+        """
+        receive the file infos
+        receive using client socket, not server socket
+        """
         received = client_socket.recv(self.buffer_size).decode()
         filename, file_size = received.split(self.separator)
         file_size = int(file_size)
         size_received = 0
 
-        with open(filename, "wb") as f:
+        target_location = self.directory_to_safe_to / Path(filename)
+        with target_location.open("wb") as f:
             while file_size > size_received:
                 # read 1024 bytes from the socket (receive)
                 bytes_read = client_socket.recv(self.buffer_size)
