@@ -140,13 +140,14 @@ class ClarityExecutioner:
         self.allowed_client=allowed_client
         self.host_ip=host_ip
         self.server_socket = self.open_server()
-        self.get_commands_and_execute()
+        self.executioner = Thread(target=self.get_commands_and_execute())
+        self.executioner.start()
 
 
     def open_server(self):
         s = socket.socket()
         s.bind((self.host_ip, self.port))
-        s.listen(1)
+        s.listen(5)
         return s
 
     def accept_new_connection(self):
@@ -160,16 +161,16 @@ class ClarityExecutioner:
             # in unicode
             request = client_socket.recv(1024).decode('utf-8')
             client_socket.close()
+            print(request)
             return request
 
 
     def execute_command(self, command: str, folder_of_executable: Union[Path, str]=r'C:\claritychrom\bin\\'):
         prefix='claritychrom.exe'
         # sanitize input a bit
-        command = command.split(' ')
-        if command[0] != prefix:
-            command.insert(0, prefix)
-        command[0] = folder_of_executable+command[0]
+        if command.split(' ')[0] != prefix:
+            command = folder_of_executable + prefix + ' ' + command
+            print(command)
         x=subprocess.run(command, shell=True)
         return x
 
@@ -177,3 +178,21 @@ class ClarityExecutioner:
         while True:
             self.execute_command(self.accept_new_connection())
             sleep(1)
+
+
+if __name__ == "__main__":
+    clarity_pc=True
+    if clarity_pc:
+        #start folder listener
+        nosy = FolderListener(r"D:\exported_chromatograms", '*.txt')
+
+        # start file transfer
+        cleanly=FileSender(nosy.new_files, host='192.168.10.20', port=10339)
+
+        # start command listener and executioner
+        tattler = ClarityExecutioner(10237, allowed_client='192.168.10.20', host_ip='192.168.10.11')
+
+    else:
+        # start message sender (for clarity commands)
+        messenger = MessageSender('192.168.10.11',  10237)
+        archivist = FileReceiver('192.168.10.20', 10339, allowed_address='192.168.10.11')
