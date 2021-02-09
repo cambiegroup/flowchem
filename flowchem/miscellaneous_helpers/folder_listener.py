@@ -117,69 +117,6 @@ class FileReceiver:
         client_socket.close()
 
 
-class MessageSender:
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
-    #encode('utf-8')
-
-    @tenacity.retry(stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_fixed(2), reraise=True)
-    def open_socket_and_send(self, message:str):
-        s = socket.socket()
-        s.connect((self.host, self.port))
-        s.sendall(message.encode('utf-8'))
-        s.close()
-
-#
-# sanitizing should be done
-class ClarityExecutioner:
-    """open up server socket. Everything coming in will be prepended with claritychrom.exe (if it is not already)"""
-    command_prepend = 'claritychrom.exe'
-    def __init__(self, port, allowed_client='192.168.10.20', host_ip='192.168.10.11'):
-        self.port=port
-        self.allowed_client=allowed_client
-        self.host_ip=host_ip
-        self.server_socket = self.open_server()
-        self.executioner = Thread(target=self.get_commands_and_execute())
-        self.executioner.start()
-
-
-    def open_server(self):
-        s = socket.socket()
-        s.bind((self.host_ip, self.port))
-        s.listen(5)
-        return s
-
-    def accept_new_connection(self):
-        client_socket, address = self.server_socket.accept()
-        if not address[0] == self.allowed_client:
-            client_socket.close()
-            print(f'nice try {client_socket,address}')
-        else:
-            # if below code is executed, that means the sender is connected
-            print(f"[+] {address} is connected.")
-            # in unicode
-            request = client_socket.recv(1024).decode('utf-8')
-            client_socket.close()
-            print(request)
-            return request
-
-
-    def execute_command(self, command: str, folder_of_executable: Union[Path, str]=r'C:\claritychrom\bin\\'):
-        prefix='claritychrom.exe'
-        # sanitize input a bit
-        if command.split(' ')[0] != prefix:
-            command = folder_of_executable + prefix + ' ' + command
-            print(command)
-        x=subprocess.run(command, shell=True)
-        return x
-
-    def get_commands_and_execute(self):
-        while True:
-            self.execute_command(self.accept_new_connection())
-            sleep(1)
-
-
 if __name__ == "__main__":
     clarity_pc=True
     if clarity_pc:
