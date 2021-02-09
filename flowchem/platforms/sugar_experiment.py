@@ -2,19 +2,17 @@ from time import sleep
 from flowchem.devices.Petite_Fleur_chiller import Huber
 import queue
 from threading import Thread
-
+from datetime import datetime
 # from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 # TODO create simulation classes at some point
+
+# TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
 
 
 class ExperimentConditions:
     """This is actively changed, either by human or by optimizer. Goes into the queue.
     When the conditions are taken from the queue, a FlowConditions object is derived from ExperimentCondition.
     ExperimentConditions has to be dropped into a database, eventually, with analytic results and the optimizer activated"""
-
-    def __init__(self, condition_id):
-        self.condition_id = condition_id  # this should be generated and passed on to the analyzer
-        # when fully analyzed, this, together with analytical results can be dropped to the database
 
     # fixed, only changed for a new experiment sequence (if stock solution changes)
     _stock_concentration_donor = 1  # M
@@ -64,6 +62,9 @@ class FlowConditions:
     # these can be calculated, from eqach pump 'package', the flow rate should be the same I suppose
     def __init__(self, experiment_conditions: ExperimentConditions,
                  flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and abstraction still low
+
+        self.experiment_id = round(datetime.timestamp(datetime.now))
+
         self._concentration_donor = experiment_conditions.concentration_donor
         self._concentration_acceptor = self.get_dependent_concentration(self._concentration_donor,
                                                                         experiment_conditions.acceptor_equivalents)
@@ -184,13 +185,28 @@ class Scheduler:
         self.procedure = FlowProcedure(self.graph)
         self.experiment_queue = queue.Queue()
         # start worker
-        self.experiment_handler()
+        self.experiment_worker=Thread(target=self.experiment_handler)
+        self.experiment_worker.start()
+
+        self.data_worker = Thread(target=self.data_handler)
+        self.data_worker.start()
+
 
         # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
         # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
         # and drop it to the sql. in future, also hand it to the optimizer
         self.started_experiments = {}
         self.analysed_samples = {}
+
+    def data_handler(self):
+        while True:
+            if self.analysed_samples.keys():
+                # take the first, normally, there should not be more than one in there
+                analysis_id=self.analysed_samples.keys()[0]
+                analysis_results = self.analysed_samples.pop(analysis_id)
+                experimental_conditions=self.started_experiments.pop(analysis_id)
+                # TODO drop these somewhere: Timestamp : conditions : results
+            sleep(5)
 
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
@@ -204,7 +220,9 @@ class Scheduler:
             if self.experiment_queue.not_empty:
                 # get raw experimental data, derive actual platform parameters, create sequence function and execute that in a thread
                 experiment: ExperimentConditions = self.experiment_queue.get()
+                # append the experiment  to the dictionary
                 individual_conditions = FlowConditions(experiment, self.graph)
+                self.started_experiments[individual_conditions.experiment_id] = experiment
                 new_thread = Thread(target=FlowProcedure.individual_procedure, args=individual_conditions)
                 new_thread.start()
                 while True:
