@@ -141,11 +141,6 @@ class FlowProcedure:
         self.chiller.set_temperature(flow_conditions.temperature)
         self.chiller.start()
 
-        # prepare HPLC
-        self.hplc.switch_lamp_on('192.168.10.107', 10001)
-        self.hplc.open_clarity_chrom('admin')
-        self.hplc.load_file()
-
         while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature)) > 2:
             sleep(10)
             print('Chiller waiting for temperature')
@@ -176,6 +171,19 @@ class FlowProcedure:
         self.hplc.set_sample_name(flow_conditions.experiment_id)
         self.hplc.run()
 
+    def get_platform_ready(self):
+        """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
+        sending the hplc method"""
+        # prepare HPLC
+        self.hplc.switch_lamp_on('192.168.10.107', 10001)
+        self.hplc.open_clarity_chrom('admin')
+        #TODO insert appropriate file here
+        self.hplc.load_file()
+        for pump in self.pumps:
+            pump.syringe_volume = 10
+            pump.diameter = 15
+            pump.force = 50
+
 
     # and could hold wrapper methods:
     def general_method_1(self):
@@ -199,6 +207,9 @@ class Scheduler:
 
         self.data_worker = Thread(target=self.data_handler)
         self.data_worker.start()
+
+        # takes necessery steps to initialise the platform
+        self.procedure.get_platform_ready()
 
 
         # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
