@@ -4,6 +4,7 @@ import queue
 from threading import Thread
 from datetime import datetime
 # from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
+from flowchem.devices.Knauer.HPLC_control import ClarityInterface
 # TODO create simulation classes at some point
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
@@ -63,7 +64,7 @@ class FlowConditions:
     def __init__(self, experiment_conditions: ExperimentConditions,
                  flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and abstraction still low
 
-        self.experiment_id = round(datetime.timestamp(datetime.now))
+        self.experiment_id = round(datetime.timestamp(datetime.now()))
 
         self._concentration_donor = experiment_conditions.concentration_donor
         self._concentration_acceptor = self.get_dependent_concentration(self._concentration_donor,
@@ -133,12 +134,18 @@ class FlowProcedure:
 
     def __init__(self, platform_graph: dict):
         self.pumps = platform_graph['pumps']
-        self.hplc = platform_graph['HPLC']
-        self.chiller = platform_graph['chiller']
+        self.hplc: ClarityInterface = platform_graph['HPLC']
+        self.chiller: Huber = platform_graph['chiller']
 
     def individual_procedure(self, flow_conditions: FlowConditions):
         self.chiller.set_temperature(flow_conditions.temperature)
         self.chiller.start()
+
+        # prepare HPLC
+        self.hplc.switch_lamp_on('192.168.10.107', 10001)
+        self.hplc.open_clarity_chrom('admin')
+        self.hplc.load_file()
+
         while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature)) > 2:
             sleep(10)
             print('Chiller waiting for temperature')
@@ -165,7 +172,9 @@ class FlowProcedure:
                 # when platform is idle, flush with solvent
                 self.pumps[pump].infusion_rate= flow_conditions._individual_inlet_flow_rate
 
-        # inject into HPLC
+        # inject into HPLC and send name before
+        self.hplc.set_sample_name(flow_conditions.experiment_id)
+        self.hplc.run()
 
 
     # and could hold wrapper methods:
@@ -197,6 +206,10 @@ class Scheduler:
         # and drop it to the sql. in future, also hand it to the optimizer
         self.started_experiments = {}
         self.analysed_samples = {}
+
+        #switch on the HPLC lamps:
+        #TODO correct address?
+        self.graph['HPLC'].switch_lamp_on('1192.168.10.111', 10001)
 
     def data_handler(self):
         while True:
@@ -259,7 +272,7 @@ SugarPlatform = {
         'activator_solvent': Elite11(pump_connection, address=5),
         'quench': Elite11(pump_connection, address=6),
     },
-    'HPLC': print('hplc'),
+    'HPLC': ClarityInterface(remote=True, host='192.168.1.11', port=10349, path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
     'chiller': Huber('COM7'),
     # assume always the same volume from pump to inlet, before T-mixer can be neglected
     'internal_volumes': {'dead_volume_before_reactor': 100,  # TODO determin
