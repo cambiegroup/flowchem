@@ -3,8 +3,11 @@ from flowchem.devices.Petite_Fleur_chiller import Huber
 import queue
 from threading import Thread
 from datetime import datetime
-# from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
+from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.Knauer.HPLC_control import ClarityInterface
+from flowchem.miscellaneous_helpers.folder_listener import FileReceiver
+import logging
+
 # TODO create simulation classes at some point
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
@@ -154,7 +157,7 @@ class FlowProcedure:
         self.pumps['activator_solvent'].infusion_rate = flow_conditions.activator_solvent_flow_rate
         self.pumps['quench'].infusion_rate = flow_conditions.quencher_flow_rate
 
-        for pump in self.pumps:
+        for pump in self.pumps.values():
             pump.run()
         # start timer
         sleep(flow_conditions.steady_state_time)
@@ -175,11 +178,16 @@ class FlowProcedure:
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
         sending the hplc method"""
         # prepare HPLC
+        self.hplc.exit()
+        sleep(5)
+        print('preparing HPLC')
         self.hplc.switch_lamp_on('192.168.10.107', 10001)
+        sleep(5)
         self.hplc.open_clarity_chrom('admin')
         #TODO insert appropriate file here
-        self.hplc.load_file()
-        for pump in self.pumps:
+        self.hplc.load_file('D:\\Data2q\\testopt\\test_opt_method_short.met')
+        print('HPLC ready')
+        for pump in self.pumps.values():
             pump.syringe_volume = 10
             pump.diameter = 15
             pump.force = 50
@@ -205,6 +213,12 @@ class Scheduler:
         self.experiment_worker=Thread(target=self.experiment_handler)
         self.experiment_worker.start()
 
+        # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
+        # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
+        # and drop it to the sql. in future, also hand it to the optimizer
+        self.started_experiments = {}
+        self.analysed_samples = {}
+
         self.data_worker = Thread(target=self.data_handler)
         self.data_worker.start()
 
@@ -212,15 +226,8 @@ class Scheduler:
         self.procedure.get_platform_ready()
 
 
-        # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
-        # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
-        # and drop it to the sql. in future, also hand it to the optimizer
-        self.started_experiments = {}
-        self.analysed_samples = {}
 
-        #switch on the HPLC lamps:
-        #TODO correct address?
-        self.graph['HPLC'].switch_lamp_on('1192.168.10.111', 10001)
+
 
     def data_handler(self):
         while True:
@@ -247,7 +254,7 @@ class Scheduler:
                 # append the experiment  to the dictionary
                 individual_conditions = FlowConditions(experiment, self.graph)
                 self.started_experiments[individual_conditions.experiment_id] = experiment
-                new_thread = Thread(target=FlowProcedure.individual_procedure, args=individual_conditions)
+                new_thread = Thread(target=FlowProcedure.individual_procedure, args=(self.procedure, individual_conditions,))
                 new_thread.start()
                 while True:
                     sleep(1)
@@ -257,43 +264,39 @@ class Scheduler:
                 self.experiment_queue.task_done()
 
 
-# TODO remove DUMMYCLASSES for testing
-class PumpIO:
-    def __init__(self, sth):
-        print('Dummy PumpIO on ' + sth)
 
 
-class Elite11:
-    def __init__(self, pump_conn: PumpIO, address):
-        print(f'Dummy Pump with address: {address}')
-
-
-# FlowGraph as dicitonary
-pump_connection = PumpIO('COM5')
-
-# missing init parameters
-SugarPlatform = {
-    # try to combine two pumps to one. flow rate with ratio gives individual flow rate
-    'pumps': {
-        'donor': Elite11(pump_connection, address=0),
-        'donor_solvent': Elite11(pump_connection, address=1),
-        'acceptor': Elite11(pump_connection, address=2),
-        'acceptor_solvent': Elite11(pump_connection, address=3),
-        'activator': Elite11(pump_connection, address=4),
-        'activator_solvent': Elite11(pump_connection, address=5),
-        'quench': Elite11(pump_connection, address=6),
-    },
-    'HPLC': ClarityInterface(remote=True, host='192.168.1.11', port=10349, path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
-    'chiller': Huber('COM7'),
-    # assume always the same volume from pump to inlet, before T-mixer can be neglected
-    'internal_volumes': {'dead_volume_before_reactor': 100,  # TODO determin
-                         'volume_mixing': 9.5,  # µL
-                         'volume_reactor': 68.8,
-                         'dead_volume_to_HPLC': 100  # TODO determine
-                         }  # µL
-}
 
 # TODO either devices have to round to reasonable numbers or it has to be done internally. Using pint would be good
 
 if __name__ == "__main__":
-    print('test')
+    # FlowGraph as dicitonary
+    pump_connection = PumpIO('COM5')
+    log = logging.getLogger()
+    # missing init parameters
+    SugarPlatform = {
+        # try to combine two pumps to one. flow rate with ratio gives individual flow rate
+        'pumps': {
+            'donor': Elite11(pump_connection, address=0),
+            'donor_solvent': Elite11(pump_connection, address=1),
+            'acceptor': Elite11(pump_connection, address=2),
+            'acceptor_solvent': Elite11(pump_connection, address=3),
+            'activator': Elite11(pump_connection, address=4),
+            'activator_solvent': Elite11(pump_connection, address=5),
+            'quench': Elite11(pump_connection, address=6),
+        },
+        'HPLC': ClarityInterface(remote=True, host='192.168.10.11', port=10349,
+                                 path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
+        # 'chiller': Huber('COM7'),
+        # assume always the same volume from pump to inlet, before T-mixer can be neglected
+        'internal_volumes': {'dead_volume_before_reactor': 100,  # TODO determin
+                             'volume_mixing': 9.5,  # µL
+                             'volume_reactor': 68.8,
+                             'dead_volume_to_HPLC': 100  # TODO determine
+                             }  # µL
+    }
+
+    fr=FileReceiver('192.168.10.20', 10359, allowed_address='192.168.10.11')
+    scheduler=Scheduler(SugarPlatform)
+    e = ExperimentConditions()
+    scheduler.create_experiment(e)
