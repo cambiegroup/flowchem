@@ -5,7 +5,7 @@ from threading import Thread
 from datetime import datetime
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.Knauer.HPLC_control import ClarityInterface
-from flowchem.miscellaneous_helpers.folder_listener import FileReceiver
+from flowchem.miscellaneous_helpers.folder_listener import FileReceiver, ResultListener
 import logging
 
 # TODO create simulation classes at some point
@@ -138,15 +138,15 @@ class FlowProcedure:
     def __init__(self, platform_graph: dict):
         self.pumps = platform_graph['pumps']
         self.hplc: ClarityInterface = platform_graph['HPLC']
-        self.chiller: Huber = platform_graph['chiller']
+        #self.chiller: Huber = platform_graph['chiller']
 
     def individual_procedure(self, flow_conditions: FlowConditions):
-        self.chiller.set_temperature(flow_conditions.temperature)
-        self.chiller.start()
+        #self.chiller.set_temperature(flow_conditions.temperature)
+        #self.chiller.start()
 
-        while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature)) > 2:
-            sleep(10)
-            print('Chiller waiting for temperature')
+        #while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature)) > 2:
+       #     sleep(10)
+        #    print('Chiller waiting for temperature')
 
         # set all flow rates
         self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate
@@ -158,9 +158,14 @@ class FlowProcedure:
         self.pumps['quench'].infusion_rate = flow_conditions.quencher_flow_rate
 
         for pump in self.pumps.values():
-            pump.run()
+            if pump.get_status().name != 'INFUSING':
+                pump.run()
         # start timer
         sleep(flow_conditions.steady_state_time)
+
+        self.hplc.set_sample_name(flow_conditions.experiment_id)
+        self.hplc.run()
+
         # timer is over
         for pump in self.pumps:
             if 'solvent' not in pump:
@@ -170,9 +175,7 @@ class FlowProcedure:
                 # when platform is idle, flush with solvent
                 self.pumps[pump].infusion_rate= flow_conditions._individual_inlet_flow_rate
 
-        # inject into HPLC and send name before
-        self.hplc.set_sample_name(flow_conditions.experiment_id)
-        self.hplc.run()
+        return 'done'
 
     def get_platform_ready(self):
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
@@ -185,7 +188,7 @@ class FlowProcedure:
         sleep(5)
         self.hplc.open_clarity_chrom('admin')
         #TODO insert appropriate file here
-        self.hplc.load_file('D:\\Data2q\\testopt\\test_opt_method_short.met')
+        self.hplc.load_file('D:\\Data2q\\testopt\\test_opt_method_shortest.met')
         print('HPLC ready')
         for pump in self.pumps.values():
             pump.syringe_volume = 10
@@ -217,10 +220,13 @@ class Scheduler:
         # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
         # and drop it to the sql. in future, also hand it to the optimizer
         self.started_experiments = {}
-        self.analysed_samples = {}
+        # later transfer to dict to hold analysis results, for now it only holds analysed sample
+        self.analysed_samples = []
 
         self.data_worker = Thread(target=self.data_handler)
         self.data_worker.start()
+
+        self._experiment_running = False
 
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
@@ -228,16 +234,39 @@ class Scheduler:
 
 
 
+    @property
+    def experiment_running(self) -> bool:
+        "returns the flag if experiment is running"
+        return self._experiment_running
+
+    @experiment_running.setter
+    def experiment_running(self, experiment_running: bool):
+        self._experiment_running = experiment_running
+
 
     def data_handler(self):
+        x=3
         while True:
-            if self.analysed_samples.keys():
-                # take the first, normally, there should not be more than one in there
-                analysis_id=self.analysed_samples.keys()[0]
-                analysis_results = self.analysed_samples.pop(analysis_id)
-                experimental_conditions=self.started_experiments.pop(analysis_id)
-                # TODO drop these somewhere: Timestamp : conditions : results
-            sleep(5)
+            # check if analysis of started experiments returned results already. If so, indicate the run finished and
+            # clear the results list
+            sleep(1)
+            if len(self.analysed_samples) >= x:
+                self.experiment_running = False
+                print(f'Experiment Running was set to {self.experiment_running} by data handler')
+                x+=3
+
+
+
+
+
+        # while True:
+        #     if self.analysed_samples.keys():
+        #         # take the first, normally, there should not be more than one in there
+        #         analysis_id=self.analysed_samples.keys()[0]
+        #         analysis_results = self.analysed_samples.pop(analysis_id)
+        #         experimental_conditions=self.started_experiments.pop(analysis_id)
+        #         # TODO drop these somewhere: Timestamp : conditions : results
+        #     sleep(5)
 
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
@@ -248,7 +277,7 @@ class Scheduler:
         """sits in separate thread, checks if previous job is finished and if so grabs new job from queue and executes it in a new thread"""
         while True:
             sleep(1)
-            if self.experiment_queue.not_empty:
+            if self.experiment_queue.not_empty and not self.experiment_running:
                 # get raw experimental data, derive actual platform parameters, create sequence function and execute that in a thread
                 experiment: ExperimentConditions = self.experiment_queue.get()
                 # append the experiment  to the dictionary
@@ -256,12 +285,12 @@ class Scheduler:
                 self.started_experiments[individual_conditions.experiment_id] = experiment
                 new_thread = Thread(target=FlowProcedure.individual_procedure, args=(self.procedure, individual_conditions,))
                 new_thread.start()
-                while True:
-                    sleep(1)
-                    if new_thread.is_alive() is False:
-                        break
+                self.experiment_running = True
+                print(f'Experiment Running was set to {self.experiment_running} by experiment handler')
                 # this should be called when experiment is over
                 self.experiment_queue.task_done()
+
+
 
 
 
@@ -289,14 +318,32 @@ if __name__ == "__main__":
                                  path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
         # 'chiller': Huber('COM7'),
         # assume always the same volume from pump to inlet, before T-mixer can be neglected
-        'internal_volumes': {'dead_volume_before_reactor': 100,  # TODO determin
-                             'volume_mixing': 9.5,  # µL
-                             'volume_reactor': 68.8,
-                             'dead_volume_to_HPLC': 100  # TODO determine
+        'internal_volumes': {'dead_volume_before_reactor': 0.001,  # TODO determin
+                             'volume_mixing': 0.0095,  # µL
+                             'volume_reactor': 0.0688,
+                             'dead_volume_to_HPLC': 0.01  # TODO determine
                              }  # µL
     }
 
     fr=FileReceiver('192.168.10.20', 10359, allowed_address='192.168.10.11')
     scheduler=Scheduler(SugarPlatform)
+
+    results_listener= ResultListener('D:\\transferred_chromatograms', '*.txt', scheduler.analysed_samples)
+
     e = ExperimentConditions()
+    e.residence_time=1
     scheduler.create_experiment(e)
+
+    e.residence_time=2
+    scheduler.create_experiment(e)
+
+    e.residence_time=3
+    scheduler.create_experiment(e)
+
+    e.residence_time=4
+    scheduler.create_experiment(e)
+
+    e.residence_time=5
+    scheduler.create_experiment(e)
+    #TODO when queue empty, after some while everything should be switched off
+
