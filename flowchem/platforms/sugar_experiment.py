@@ -182,7 +182,7 @@ class FlowProcedure:
         for pump in self.pumps:
             pump.syringe_volume = 10
             pump.diameter = 15
-            pump.force = 50
+            pump.force = 20
 
 
     # and could hold wrapper methods:
@@ -286,10 +286,10 @@ SugarPlatform = {
     'HPLC': ClarityInterface(remote=True, host='192.168.1.11', port=10349, path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
     'chiller': Huber('COM7'),
     # assume always the same volume from pump to inlet, before T-mixer can be neglected
-    'internal_volumes': {'dead_volume_before_reactor': 100,  # TODO determin
-                         'volume_mixing': 9.5,  # µL
-                         'volume_reactor': 68.8,
-                         'dead_volume_to_HPLC': 100  # TODO determine
+    'internal_volumes': {'dead_volume_before_reactor': 0.0845,  # TODO: This is volume in total, which is fine since all flow rates will be the same
+                         'volume_mixing': 0.0095,  # µL
+                         'volume_reactor': 0.0688,
+                         'dead_volume_to_HPLC': 0.011
                          }  # µL
 }
 
