@@ -31,6 +31,31 @@ class FolderListener:
             sleep(1)
 
 
+class ResultListener:
+    # create the listener and create list of files present already
+    def __init__(self, folder_path: str, file_pattern: str, output: list):
+        self.files = []
+        self.new_files = output
+        for filepath in Path(folder_path).glob(file_pattern):
+            if filepath not in self.files:
+                self.files.append(filepath)
+        self._watcher = Thread(target=self._watch_forever, args=(folder_path, file_pattern))
+        self._watcher.start()
+
+    def get_all_objects(self, folder_path: str, file_pattern: str) -> iter:
+        for filepath in Path(folder_path).glob(file_pattern):
+            if filepath not in self.files:
+                self.files.append(filepath)
+                sleep(1)  # Let´s make sure that ClarityChrome has finished writing the file
+                # specific for this file
+                self.new_files.append(filepath.name)
+
+    def _watch_forever(self, folder_path: str, file_pattern: str) -> None:
+        while True:  # This could be replaced by some experiment_running flag
+            self.get_all_objects(folder_path, file_pattern)
+            sleep(1)
+
+
 # some worker which takes from queue and sends file via socket is needed
 
 class FileSender:

@@ -3,8 +3,11 @@ from flowchem.devices.Petite_Fleur_chiller import Huber
 import queue
 from threading import Thread
 from datetime import datetime
-# from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
+from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.Knauer.HPLC_control import ClarityInterface
+from flowchem.miscellaneous_helpers.folder_listener import FileReceiver, ResultListener
+import logging
+
 # TODO create simulation classes at some point
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
@@ -135,15 +138,15 @@ class FlowProcedure:
     def __init__(self, platform_graph: dict):
         self.pumps = platform_graph['pumps']
         self.hplc: ClarityInterface = platform_graph['HPLC']
-        self.chiller: Huber = platform_graph['chiller']
+        #self.chiller: Huber = platform_graph['chiller']
 
     def individual_procedure(self, flow_conditions: FlowConditions):
-        self.chiller.set_temperature(flow_conditions.temperature)
-        self.chiller.start()
+        #self.chiller.set_temperature(flow_conditions.temperature)
+        #self.chiller.start()
 
-        while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature)) > 2:
-            sleep(10)
-            print('Chiller waiting for temperature')
+        #while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature)) > 2:
+       #     sleep(10)
+        #    print('Chiller waiting for temperature')
 
         # set all flow rates
         self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate
@@ -154,10 +157,15 @@ class FlowProcedure:
         self.pumps['activator_solvent'].infusion_rate = flow_conditions.activator_solvent_flow_rate
         self.pumps['quench'].infusion_rate = flow_conditions.quencher_flow_rate
 
-        for pump in self.pumps:
-            pump.run()
+        for pump in self.pumps.values():
+            if pump.get_status().name != 'INFUSING':
+                pump.run()
         # start timer
         sleep(flow_conditions.steady_state_time)
+
+        self.hplc.set_sample_name(flow_conditions.experiment_id)
+        self.hplc.run()
+
         # timer is over
         for pump in self.pumps:
             if 'solvent' not in pump:
@@ -167,19 +175,22 @@ class FlowProcedure:
                 # when platform is idle, flush with solvent
                 self.pumps[pump].infusion_rate= flow_conditions._individual_inlet_flow_rate
 
-        # inject into HPLC and send name before
-        self.hplc.set_sample_name(flow_conditions.experiment_id)
-        self.hplc.run()
+        return 'done'
 
     def get_platform_ready(self):
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
         sending the hplc method"""
         # prepare HPLC
+        self.hplc.exit()
+        sleep(5)
+        print('preparing HPLC')
         self.hplc.switch_lamp_on('192.168.10.107', 10001)
+        sleep(5)
         self.hplc.open_clarity_chrom('admin')
         #TODO insert appropriate file here
-        self.hplc.load_file()
-        for pump in self.pumps:
+        self.hplc.load_file('D:\\Data2q\\testopt\\test_opt_method_shortest.met')
+        print('HPLC ready')
+        for pump in self.pumps.values():
             pump.syringe_volume = 10
             pump.diameter = 15
             pump.force = 20
@@ -205,32 +216,57 @@ class Scheduler:
         self.experiment_worker=Thread(target=self.experiment_handler)
         self.experiment_worker.start()
 
+        # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
+        # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
+        # and drop it to the sql. in future, also hand it to the optimizer
+        self.started_experiments = {}
+        # later transfer to dict to hold analysis results, for now it only holds analysed sample
+        self.analysed_samples = []
+
         self.data_worker = Thread(target=self.data_handler)
         self.data_worker.start()
+
+        self._experiment_running = False
 
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
 
 
-        # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
-        # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
-        # and drop it to the sql. in future, also hand it to the optimizer
-        self.started_experiments = {}
-        self.analysed_samples = {}
 
-        #switch on the HPLC lamps:
-        #TODO correct address?
-        self.graph['HPLC'].switch_lamp_on('1192.168.10.111', 10001)
+
+    @property
+    def experiment_running(self) -> bool:
+        "returns the flag if experiment is running"
+        return self._experiment_running
+
+    @experiment_running.setter
+    def experiment_running(self, experiment_running: bool):
+        self._experiment_running = experiment_running
+
 
     def data_handler(self):
+        x=3
         while True:
-            if self.analysed_samples.keys():
-                # take the first, normally, there should not be more than one in there
-                analysis_id=self.analysed_samples.keys()[0]
-                analysis_results = self.analysed_samples.pop(analysis_id)
-                experimental_conditions=self.started_experiments.pop(analysis_id)
-                # TODO drop these somewhere: Timestamp : conditions : results
-            sleep(5)
+            # check if analysis of started experiments returned results already. If so, indicate the run finished and
+            # clear the results list
+            sleep(1)
+            if len(self.analysed_samples) >= x:
+                self.experiment_running = False
+                print(f'Experiment Running was set to {self.experiment_running} by data handler')
+                x+=3
+
+
+
+
+
+        # while True:
+        #     if self.analysed_samples.keys():
+        #         # take the first, normally, there should not be more than one in there
+        #         analysis_id=self.analysed_samples.keys()[0]
+        #         analysis_results = self.analysed_samples.pop(analysis_id)
+        #         experimental_conditions=self.started_experiments.pop(analysis_id)
+        #         # TODO drop these somewhere: Timestamp : conditions : results
+        #     sleep(5)
 
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
@@ -241,59 +277,73 @@ class Scheduler:
         """sits in separate thread, checks if previous job is finished and if so grabs new job from queue and executes it in a new thread"""
         while True:
             sleep(1)
-            if self.experiment_queue.not_empty:
+            if self.experiment_queue.not_empty and not self.experiment_running:
                 # get raw experimental data, derive actual platform parameters, create sequence function and execute that in a thread
                 experiment: ExperimentConditions = self.experiment_queue.get()
                 # append the experiment  to the dictionary
                 individual_conditions = FlowConditions(experiment, self.graph)
                 self.started_experiments[individual_conditions.experiment_id] = experiment
-                new_thread = Thread(target=FlowProcedure.individual_procedure, args=individual_conditions)
+                new_thread = Thread(target=FlowProcedure.individual_procedure, args=(self.procedure, individual_conditions,))
                 new_thread.start()
-                while True:
-                    sleep(1)
-                    if new_thread.is_alive() is False:
-                        break
+                self.experiment_running = True
+                print(f'Experiment Running was set to {self.experiment_running} by experiment handler')
                 # this should be called when experiment is over
                 self.experiment_queue.task_done()
 
 
-# TODO remove DUMMYCLASSES for testing
-class PumpIO:
-    def __init__(self, sth):
-        print('Dummy PumpIO on ' + sth)
 
 
-class Elite11:
-    def __init__(self, pump_conn: PumpIO, address):
-        print(f'Dummy Pump with address: {address}')
 
 
-# FlowGraph as dicitonary
-pump_connection = PumpIO('COM5')
-
-# missing init parameters
-SugarPlatform = {
-    # try to combine two pumps to one. flow rate with ratio gives individual flow rate
-    'pumps': {
-        'donor': Elite11(pump_connection, address=0),
-        'donor_solvent': Elite11(pump_connection, address=1),
-        'acceptor': Elite11(pump_connection, address=2),
-        'acceptor_solvent': Elite11(pump_connection, address=3),
-        'activator': Elite11(pump_connection, address=4),
-        'activator_solvent': Elite11(pump_connection, address=5),
-        'quench': Elite11(pump_connection, address=6),
-    },
-    'HPLC': ClarityInterface(remote=True, host='192.168.1.11', port=10349, path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
-    'chiller': Huber('COM7'),
-    # assume always the same volume from pump to inlet, before T-mixer can be neglected
-    'internal_volumes': {'dead_volume_before_reactor': 0.0845,  # TODO: This is volume in total, which is fine since all flow rates will be the same
-                         'volume_mixing': 0.0095,  # µL
-                         'volume_reactor': 0.0688,
-                         'dead_volume_to_HPLC': 0.011
-                         }  # µL
-}
 
 # TODO either devices have to round to reasonable numbers or it has to be done internally. Using pint would be good
 
 if __name__ == "__main__":
-    print('test')
+    # FlowGraph as dicitonary
+    pump_connection = PumpIO('COM5')
+    log = logging.getLogger()
+    # missing init parameters
+    SugarPlatform = {
+        # try to combine two pumps to one. flow rate with ratio gives individual flow rate
+        'pumps': {
+            'donor': Elite11(pump_connection, address=0),
+            'donor_solvent': Elite11(pump_connection, address=1),
+            'acceptor': Elite11(pump_connection, address=2),
+            'acceptor_solvent': Elite11(pump_connection, address=3),
+            'activator': Elite11(pump_connection, address=4),
+            'activator_solvent': Elite11(pump_connection, address=5),
+            'quench': Elite11(pump_connection, address=6),
+        },
+        'HPLC': ClarityInterface(remote=True, host='192.168.10.11', port=10349,
+                                 path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
+        # 'chiller': Huber('COM7'),
+        # assume always the same volume from pump to inlet, before T-mixer can be neglected
+        'internal_volumes': {'dead_volume_before_reactor': 0.0845,  # TODO determin
+                             'volume_mixing': 0.0095,  # µL
+                             'volume_reactor': 0.0688,
+                             'dead_volume_to_HPLC': 0.011  # TODO determine
+                             }  # µL
+    }
+
+    fr=FileReceiver('192.168.10.20', 10359, allowed_address='192.168.10.11')
+    scheduler=Scheduler(SugarPlatform)
+
+    results_listener= ResultListener('D:\\transferred_chromatograms', '*.txt', scheduler.analysed_samples)
+
+    e = ExperimentConditions()
+    e.residence_time=1
+    scheduler.create_experiment(e)
+
+    e.residence_time=2
+    scheduler.create_experiment(e)
+
+    e.residence_time=3
+    scheduler.create_experiment(e)
+
+    e.residence_time=4
+    scheduler.create_experiment(e)
+
+    e.residence_time=5
+    scheduler.create_experiment(e)
+    #TODO when queue empty, after some while everything should be switched off
+
