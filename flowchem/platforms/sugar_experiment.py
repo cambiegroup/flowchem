@@ -316,10 +316,10 @@ if __name__ == "__main__":
                                  path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
         # 'chiller': Huber('COM7'),
         # assume always the same volume from pump to inlet, before T-mixer can be neglected
-        'internal_volumes': {'dead_volume_before_reactor': 0.001,  # TODO determin
+        'internal_volumes': {'dead_volume_before_reactor': 0.0845,  # TODO determin
                              'volume_mixing': 0.0095,  # µL
                              'volume_reactor': 0.0688,
-                             'dead_volume_to_HPLC': 0.01  # TODO determine
+                             'dead_volume_to_HPLC': 0.011  # TODO determine
                              }  # µL
     }
 
