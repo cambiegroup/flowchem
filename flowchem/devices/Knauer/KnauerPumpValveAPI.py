@@ -308,14 +308,15 @@ class KnauerPump(EthernetDevice):
         else:
             return self.communicate(message + ":" + str(setpoint))
 
-    def set_flow(self, setpoint: int = None):
+    def set_flow(self, setpoint_in_ml_min: float = None):
         """
 
-        :param setpoint: in µL/min
+        :param setpoint_in_ml_min: in mL/min
         :return: nothing
         """
-        flow = self.message_constructor_dispatcher(FLOW, setpoint=setpoint, setpoint_range=(0, self.achievable_flow+1))
-        logging.info(f'Flow of pump {self.address} is set to {setpoint}, returns {flow}')
+        set_flowrate_ul_min = int(setpoint_in_ml_min * 1000)
+        flow = self.message_constructor_dispatcher(FLOW, setpoint=set_flowrate_ul_min, setpoint_range=(0, self.achievable_flow + 1))
+        logging.info(f'Flow of pump {self.address} is set to {setpoint_in_ml_min}, returns {flow}')
 
     @property
     def headtype(self):
