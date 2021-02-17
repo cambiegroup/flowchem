@@ -27,7 +27,7 @@ def perform_experiment(residence_time, reactor_volume, sample_loop_volume, dead_
 
     str_to_write = f'Collection vessel on valve position {int(current_valve_position)+1}: Flow rate was {flow_rate} ml/min for residence time {residence_time} min.\n\r'
     # dump dict with collection vessel as primary key. links to dict of flow, residence time and spectra 1 to --
-    necessary_devices_macs['solvent_delivery'].set_flow(round(flow_rate * 1000))  # transform to µl/min
+    necessary_devices_macs['solvent_delivery'].set_flow(flow_rate)  # transform to µl/min
     necessary_devices_macs['solvent_delivery'].start_flow()
 
     # load starting mixture to loop
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         perform_experiment(i, reactor_volume, injection_loop_volume, dead_volume, file_name='jbw13_onlymaleimid.txt')
 
     logging.info('run finished. Now purging some solvent to get last tail out')
-    necessary_devices_macs['solvent_delivery'].set_flow(1000)
+    necessary_devices_macs['solvent_delivery'].set_flow(1)  # ml min-1
     necessary_devices_macs['solvent_delivery'].start_flow()
     time.sleep(600)
     necessary_devices_macs['solvent_delivery'].stop_flow()

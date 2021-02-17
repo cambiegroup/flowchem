@@ -7,8 +7,7 @@ from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.Knauer.HPLC_control import ClarityInterface
 from flowchem.miscellaneous_helpers.folder_listener import FileReceiver, ResultListener
 import logging
-
-# TODO create simulation classes at some point
+from flowchem.constants.constants import flowchem_ureg
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
 
@@ -19,16 +18,16 @@ class ExperimentConditions:
     ExperimentConditions has to be dropped into a database, eventually, with analytic results and the optimizer activated"""
 
     # fixed, only changed for a new experiment sequence (if stock solution changes)
-    _stock_concentration_donor = 1  # M
-    _stock_concentration_acceptor = 1  # M
-    _stock_concentration_activator = 1  # M
-    _stock_concentration_quencher = 1
+    _stock_concentration_donor = 1 * flowchem_ureg.molar
+    _stock_concentration_acceptor = 1 * flowchem_ureg.molar
+    _stock_concentration_activator = 1 * flowchem_ureg.molar
+    _stock_concentration_quencher = 1 * flowchem_ureg.molar
     # how many reactor volumes until steady state reached
     _reactor_volumes = 3
 
     # mutable
-    residence_time = 60  # sec
-    concentration_donor = 0.25
+    residence_time = 60 * flowchem_ureg.second  # sec
+    concentration_donor = 0.25 * flowchem_ureg.molar
     acceptor_equivalents = 1.2
     activator_equivalents = 1.5
     quencher_equivalents = 5
@@ -107,14 +106,15 @@ class FlowConditions:
 
         self.temperature = experiment_conditions.temperature
 
-        self._time_start_till_end = round((self.platform_volumes['dead_volume_before_reactor'] * 3 +
-                                           self.platform_volumes['volume_mixing'] +
-                                           self.platform_volumes['volume_reactor']) / self._total_flow_rate + \
-                                          self.platform_volumes['dead_volume_to_HPLC'] / (self._total_flow_rate +
-                                                                                         self.quencher_flow_rate))
+        self._time_start_till_end = ((self.platform_volumes['dead_volume_before_reactor'] +
+                                     self.platform_volumes['volume_mixing'] +
+                                     self.platform_volumes['volume_reactor']) / self._total_flow_rate + \
+                                    (self.platform_volumes['dead_volume_to_HPLC'] / (self._total_flow_rate +
+                                                                                     self.quencher_flow_rate))).to(
+                                        flowchem_ureg.second)
 
-        self.steady_state_time = self._time_start_till_end + \
-                                 experiment_conditions.residence_time * experiment_conditions.reactor_volumes
+        self.steady_state_time = (self._time_start_till_end + experiment_conditions.residence_time *
+                                  experiment_conditions.reactor_volumes).to(flowchem_ureg.second)
 
     def get_dependent_concentration(self, limiting_reagent_concentration: float, equivalents: float):
         dependent_concentration = limiting_reagent_concentration * equivalents
@@ -191,10 +191,7 @@ class FlowProcedure:
         self.hplc.load_file('D:\\Data2q\\testopt\\test_opt_method_shortest.met')
         print('HPLC ready')
         for pump in self.pumps.values():
-            pump.syringe_volume = 10
-            pump.diameter = 15
             pump.force = 20
-
 
     # and could hold wrapper methods:
     def general_method_1(self):
@@ -213,7 +210,7 @@ class Scheduler:
         self.procedure = FlowProcedure(self.graph)
         self.experiment_queue = queue.Queue()
         # start worker
-        self.experiment_worker=Thread(target=self.experiment_handler)
+        self.experiment_worker = Thread(target=self.experiment_handler)
         self.experiment_worker.start()
 
         # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
@@ -231,9 +228,6 @@ class Scheduler:
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
 
-
-
-
     @property
     def experiment_running(self) -> bool:
         "returns the flag if experiment is running"
@@ -243,9 +237,8 @@ class Scheduler:
     def experiment_running(self, experiment_running: bool):
         self._experiment_running = experiment_running
 
-
     def data_handler(self):
-        x=3
+        x = 3
         while True:
             # check if analysis of started experiments returned results already. If so, indicate the run finished and
             # clear the results list
@@ -253,11 +246,7 @@ class Scheduler:
             if len(self.analysed_samples) >= x:
                 self.experiment_running = False
                 print(f'Experiment Running was set to {self.experiment_running} by data handler')
-                x+=3
-
-
-
-
+                x += 3
 
         # while True:
         #     if self.analysed_samples.keys():
@@ -267,7 +256,6 @@ class Scheduler:
         #         experimental_conditions=self.started_experiments.pop(analysis_id)
         #         # TODO drop these somewhere: Timestamp : conditions : results
         #     sleep(5)
-
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
     def create_experiment(self, conditions: ExperimentConditions) -> None:
@@ -283,7 +271,8 @@ class Scheduler:
                 # append the experiment  to the dictionary
                 individual_conditions = FlowConditions(experiment, self.graph)
                 self.started_experiments[individual_conditions.experiment_id] = experiment
-                new_thread = Thread(target=FlowProcedure.individual_procedure, args=(self.procedure, individual_conditions,))
+                new_thread = Thread(target=FlowProcedure.individual_procedure,
+                                    args=(self.procedure, individual_conditions,))
                 new_thread.start()
                 self.experiment_running = True
                 print(f'Experiment Running was set to {self.experiment_running} by experiment handler')
@@ -294,9 +283,6 @@ class Scheduler:
 
 
 
-
-
-# TODO either devices have to round to reasonable numbers or it has to be done internally. Using pint would be good
 
 if __name__ == "__main__":
     # FlowGraph as dicitonary
@@ -318,32 +304,32 @@ if __name__ == "__main__":
                                  path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
         # 'chiller': Huber('COM7'),
         # assume always the same volume from pump to inlet, before T-mixer can be neglected
-        'internal_volumes': {'dead_volume_before_reactor': 0.0845,  # TODO determin
-                             'volume_mixing': 0.0095,  # µL
-                             'volume_reactor': 0.0688,
-                             'dead_volume_to_HPLC': 0.011  # TODO determine
-                             }  # µL
+        'internal_volumes': {'dead_volume_before_reactor': 84.5 * flowchem_ureg.microliter,
+                             'volume_mixing': 9.5 * flowchem_ureg.microliter,
+                             'volume_reactor': 68.8 * flowchem_ureg.microliter,
+                             'dead_volume_to_HPLC': 11 * flowchem_ureg.microliter,
+                             }
     }
 
-    fr=FileReceiver('192.168.10.20', 10359, allowed_address='192.168.10.11')
-    scheduler=Scheduler(SugarPlatform)
+    fr = FileReceiver('192.168.10.20', 10359, allowed_address='192.168.10.11')
+    scheduler = Scheduler(SugarPlatform)
 
-    results_listener= ResultListener('D:\\transferred_chromatograms', '*.txt', scheduler.analysed_samples)
+    results_listener = ResultListener('D:\\transferred_chromatograms', '*.txt', scheduler.analysed_samples)
 
     e = ExperimentConditions()
-    e.residence_time=1
+    e.residence_time = 1 * flowchem_ureg.seconds
     scheduler.create_experiment(e)
 
-    e.residence_time=2
+    e.residence_time = 2 * flowchem_ureg.seconds
     scheduler.create_experiment(e)
 
-    e.residence_time=3
+    e.residence_time = 3 * flowchem_ureg.seconds
     scheduler.create_experiment(e)
 
-    e.residence_time=4
+    e.residence_time = 4 * flowchem_ureg.seconds
     scheduler.create_experiment(e)
 
-    e.residence_time=5
+    e.residence_time = 5 * flowchem_ureg.seconds
     scheduler.create_experiment(e)
-    #TODO when queue empty, after some while everything should be switched off
 
+    # TODO when queue empty, after some while everything should be switched off
