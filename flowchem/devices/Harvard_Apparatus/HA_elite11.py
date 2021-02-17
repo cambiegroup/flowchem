@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import threading
 import warnings
-from pint import UnitRegistry
+from flowchem.constants.constants import flowchem_ureg
 from enum import Enum
 from typing import Union, List, Optional, Tuple
 from dataclasses import dataclass
@@ -89,6 +89,8 @@ class PumpStatus(Enum):
     WITHDRAWING = "<"
     TARGET_REACHED = "T"
     STALLED = "*"
+    INFUSE_WITHDRAW = "I/W"
+
 
 
 class PumpIO:
@@ -310,7 +312,6 @@ class Elite11:
     Not ready for full usage.  Usable with: init with syringe diameter and volume. Set target volume and rate. run.
     """
     # noinspection SpellCheckingInspection
-    ureg = UnitRegistry()  # Unit converter, defaults are fine, but it would be wise explicitly list the units needed
 
     # first pump in chain/pump connected directly to computer, if pump chain connected MUST have address 0
     def __init__(self, pump_io: PumpIO, address: int = 0, name: str = None, diameter: float = None,
@@ -334,7 +335,9 @@ class Elite11:
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
         # This command is used to test connection: failure handled by PumpIO
-        self.log.info(f"Connected to pump '{self.name}' on port {self.pump_io.name}:{address} version: {self.version}!")
+        self.log.info(f"Connected to pump '{self.name}' on port {self.pump_io.name}:{address} version: {self.version}! "
+                      f"{'Pump can only Infuse' if self.infuse_only == True else 'Pump can Infuse AND withdraw'}")
+
         # makes sure that a 'clean' pump is initialized.
         self.clear_times()
         self.clear_volumes()
@@ -356,10 +359,10 @@ class Elite11:
         limits_raw = self.send_command_and_read_reply(Elite11Commands.GET_INFUSE_RATE_LIMITS)
 
         # Lower limit usually expressed in nl/min so unit-aware quantities are needed
-        lower_limit, upper_limit = map(Elite11.ureg, limits_raw.split(" to "))
+        lower_limit, upper_limit = map(flowchem_ureg, limits_raw.split(" to "))
 
         # Also add units to the provided rate
-        value_w_units = Elite11.ureg.Quantity(rate_in_ml_min, "ml/min")
+        value_w_units = flowchem_ureg.Quantity(rate_in_ml_min, "ml/min")
 
         # Bound rate to acceptance range
         set_rate = max(lower_limit, min(upper_limit, value_w_units)).m_as("ml/min")
@@ -372,8 +375,14 @@ class Elite11:
 
     @property
     def version(self) -> str:
-        """ Returns the current firmware version reported by the pump """
+        """ Returns the current firmware version reported by the pump"""
         return self.send_command_and_read_reply(Elite11Commands.GET_VERSION)  # '11 ELITE I/W Single 3.0.4
+
+    @property
+    def infuse_only(self) -> bool:
+        """Sets the flag if the pump is infuse only or not"""
+        return False if PumpStatus.INFUSE_WITHDRAW.value in self.version else True
+
 
     def get_status(self):
         """ Empty message to trigger a new reply and evaluate connection and pump current status via reply prompt """
@@ -388,7 +397,7 @@ class Elite11:
     def syringe_volume(self) -> float:
         """ Sets/returns the syringe volume in ml. """
         volume_w_units = self.send_command_and_read_reply(Elite11Commands.GET_SYRINGE_VOLUME)  # e.g. '100 ml'
-        return Elite11.ureg(volume_w_units).m_as("ml")  # Unit registry does the unit conversion and returns ml
+        return flowchem_ureg(volume_w_units).m_as("ml")  # Unit registry does the unit conversion and returns ml
 
     @syringe_volume.setter
     def syringe_volume(self, volume_in_ml: float = None):
@@ -396,14 +405,21 @@ class Elite11:
 
     def update_stored_volume(self):
         """ FIXME: write docstring and check this """
-        withdrawn = self.get_withdrawn_volume()
-        infused = self.get_infused_volume()
-        net_volume = withdrawn-infused
-        # not really nice, also the target_volume and rate should be class attributes?
-        self._volume_stored += net_volume
-        # clear stored i w volume
-        if withdrawn+infused != 0:
-            self.clear_infused_withdrawn_volume()
+        if self.infuse_only:
+            infused = self.get_infused_volume()
+            if infused != 0:
+                self._volume_stored -= infused
+                self.clear_infused_volume()
+
+        else:
+            withdrawn = self.get_withdrawn_volume()
+            infused = self.get_infused_volume()
+            net_volume = withdrawn-infused
+            # not really nice, also the target_volume and rate should be class attributes?
+            self._volume_stored += net_volume
+            # clear stored i w volume
+            if withdrawn+infused != 0:
+                self.clear_infused_withdrawn_volume()
 
     # TODO: when sending itime, pump will return the needed time for infusion of target volume.
     #  this could be used for time efficiency
@@ -428,8 +444,11 @@ class Elite11:
 
     def inverse_run(self):
         """activates pump, runs opposite to previously set direction"""
-        self.send_command_and_read_reply(Elite11Commands.REVERSE_RUN)
-        self.log.info("Pump started to run in reverse direction")
+        if self.infuse_only:
+            InvalidCommand('The pump is infuse only this command doesn\'t make sense.')
+        else:
+            self.send_command_and_read_reply(Elite11Commands.REVERSE_RUN)
+            self.log.info("Pump started to run in reverse direction")
 
     def infuse_run(self):
         """activates pump, runs in infuse mode"""
@@ -449,20 +468,22 @@ class Elite11:
 
     def withdraw_run(self):
         """activates pump, runs in withdraw mode"""
-
-        self.update_stored_volume()
-
-        if self.is_moving():
-            raise UnachievableMove("Pump already is moving")
-
-        # if target volume is set, check if this is achievable
-        elif self._target_volume:
-            if self._volume_stored + self._target_volume > self.volume_syringe:
-                raise UnachievableMove("Pump would be overfilled")
+        if self.infuse_only:
+            InvalidCommand('The pump is infuse only and doesn\'t know this command.')
         else:
-            self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
+            self.update_stored_volume()
 
-        self.log.info("Pump started to withdraw")
+            if self.is_moving():
+                raise UnachievableMove("Pump already is moving")
+
+            # if target volume is set, check if this is achievable
+            elif self._target_volume:
+                if self._volume_stored + self._target_volume > self.volume_syringe:
+                    raise UnachievableMove("Pump would be overfilled")
+            else:
+                self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
+
+            self.log.info("Pump started to withdraw")
 
     def stop(self):
         """stops pump"""
@@ -477,7 +498,7 @@ class Elite11:
     def infusion_rate(self) -> float:
         """ Returns/set the infusion rate in ml*min-1 """
         rate_w_units = self.send_command_and_read_reply(Elite11Commands.GET_INFUSE_RATE)  # e.g. '0.2 ml/min'
-        return Elite11.ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
+        return flowchem_ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
 
     @infusion_rate.setter
     def infusion_rate(self, rate_in_ml_min: float):
@@ -487,21 +508,30 @@ class Elite11:
     @property
     def withdrawing_rate(self) -> float:
         """ Returns/set the infusion rate in ml*min-1 """
-        rate_w_units = self.send_command_and_read_reply(Elite11Commands.GET_WITHDRAW_RATE)
-        return Elite11.ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
+        if self.infuse_only:
+            InvalidCommand('The pump is infuse only and doesn\'t know this command.')
+        else:
+                rate_w_units = self.send_command_and_read_reply(Elite11Commands.GET_WITHDRAW_RATE)
+                return flowchem_ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
 
     @withdrawing_rate.setter
     def withdrawing_rate(self, rate_in_ml_min: float):
-        set_rate = self.bound_rate_to_pump_limits(rate_in_ml_min=rate_in_ml_min)
-        self.send_command_and_read_reply(Elite11Commands.SET_WITHDRAW_RATE, parameter=f"{set_rate} m/m")
+        if self.infuse_only:
+            InvalidCommand('The pump is infuse only and doesn\'t know this command.')
+        else:
+                set_rate = self.bound_rate_to_pump_limits(rate_in_ml_min=rate_in_ml_min)
+                self.send_command_and_read_reply(Elite11Commands.SET_WITHDRAW_RATE, parameter=f"{set_rate} m/m")
 
     def get_infused_volume(self) -> float:
         """ Return infused volume in ml """
-        return Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)).m_as("ml")
+        return flowchem_ureg(self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)).m_as("ml")
 
     def get_withdrawn_volume(self):
         """ Returns the withdrawn volume from the last clear_*_volume() command, according to the pump """
-        return Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)).m_as("ml")
+        if self.infuse_only:
+            InvalidCommand('The pump is infuse only and doesn\'t know this command.')
+        else:
+            return flowchem_ureg(self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)).m_as("ml")
 
     def clear_infused_volume(self):
         """ Reset the pump infused volume counter to 0 """
@@ -509,18 +539,27 @@ class Elite11:
 
     def clear_withdrawn_volume(self):
         """ Reset the pump withdrawn volume counter to 0 """
-        self.send_command_and_read_reply(Elite11Commands.CLEAR_WITHDRAWN_VOLUME)
+        if self.infuse_only:
+            InvalidCommand('The pump is infuse only and doesn\'t know this command.')
+        else:
+            self.send_command_and_read_reply(Elite11Commands.CLEAR_WITHDRAWN_VOLUME)
 
     def clear_infused_withdrawn_volume(self):
         """ Reset both the pump infused and withdrawn volume counters to 0 """
-        self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAWN_VOLUME)
+        if self.infuse_only:
+            InvalidCommand('The pump is infuse only and doesn\'t know this command.')
+        else:
+            self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAWN_VOLUME)
         sleep(0.1)  # FIXME check if needed
 
     def clear_volumes(self):
-        """ Set all pump volumes to 0 """
+        """ Set all changes in pump volumes to 0 """
         self.target_volume = 0
         self._target_volume = None
-        self.clear_infused_withdrawn_volume()
+        if self.infuse_only:
+            self.clear_infused_volume()
+        else:
+            self.clear_infused_withdrawn_volume()
 
     @property
     def infuse_ramp(self):
@@ -538,6 +577,8 @@ class Elite11:
     @property
     def withdraw_ramp(self):
         """ Represent a ramp in withdrawing rate over a time interval """
+        if self.infuse_only:
+            return InvalidCommand('The pump is Infuse only and doesn\'t recognise Withdraw ramps')
         raw_ramp = self.send_command_and_read_reply(Elite11Commands.GET_WITHDRAW_RAMP)
         if raw_ramp == "Ramp not set up.":
             return None
@@ -590,7 +631,7 @@ class Elite11:
         """
         Set/returns target volume in ml. If the volume is set to 0, the target is cleared.
         """
-        target_volume = Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME))
+        target_volume = flowchem_ureg(self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME))
         return target_volume.m_as("ml")
 
     @target_volume.setter
@@ -602,7 +643,10 @@ class Elite11:
 
     def clear_times(self):
         """ Clear all pump measured times (i.e. infused and withdrawn) """
-        self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAW_TIME)
+        if self.infuse_only:
+            self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_TIME)
+        else:
+            self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAW_TIME)
         self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_TIME)
 
     @property
