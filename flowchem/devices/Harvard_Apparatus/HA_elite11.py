@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import threading
 import warnings
-from pint import UnitRegistry
+from flowchem.constants.constants import flowchem_ureg
 from enum import Enum
 from typing import Union, List, Optional, Tuple
 from dataclasses import dataclass
@@ -312,7 +312,6 @@ class Elite11:
     Not ready for full usage.  Usable with: init with syringe diameter and volume. Set target volume and rate. run.
     """
     # noinspection SpellCheckingInspection
-    ureg = UnitRegistry()  # Unit converter, defaults are fine, but it would be wise explicitly list the units needed
 
     # first pump in chain/pump connected directly to computer, if pump chain connected MUST have address 0
     def __init__(self, pump_io: PumpIO, address: int = 0, name: str = None, diameter: float = None,
@@ -360,10 +359,10 @@ class Elite11:
         limits_raw = self.send_command_and_read_reply(Elite11Commands.GET_INFUSE_RATE_LIMITS)
 
         # Lower limit usually expressed in nl/min so unit-aware quantities are needed
-        lower_limit, upper_limit = map(Elite11.ureg, limits_raw.split(" to "))
+        lower_limit, upper_limit = map(flowchem_ureg, limits_raw.split(" to "))
 
         # Also add units to the provided rate
-        value_w_units = Elite11.ureg.Quantity(rate_in_ml_min, "ml/min")
+        value_w_units = flowchem_ureg.Quantity(rate_in_ml_min, "ml/min")
 
         # Bound rate to acceptance range
         set_rate = max(lower_limit, min(upper_limit, value_w_units)).m_as("ml/min")
@@ -398,7 +397,7 @@ class Elite11:
     def syringe_volume(self) -> float:
         """ Sets/returns the syringe volume in ml. """
         volume_w_units = self.send_command_and_read_reply(Elite11Commands.GET_SYRINGE_VOLUME)  # e.g. '100 ml'
-        return Elite11.ureg(volume_w_units).m_as("ml")  # Unit registry does the unit conversion and returns ml
+        return flowchem_ureg(volume_w_units).m_as("ml")  # Unit registry does the unit conversion and returns ml
 
     @syringe_volume.setter
     def syringe_volume(self, volume_in_ml: float = None):
@@ -499,7 +498,7 @@ class Elite11:
     def infusion_rate(self) -> float:
         """ Returns/set the infusion rate in ml*min-1 """
         rate_w_units = self.send_command_and_read_reply(Elite11Commands.GET_INFUSE_RATE)  # e.g. '0.2 ml/min'
-        return Elite11.ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
+        return flowchem_ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
 
     @infusion_rate.setter
     def infusion_rate(self, rate_in_ml_min: float):
@@ -513,7 +512,7 @@ class Elite11:
             InvalidCommand('The pump is infuse only and doesn\'t know this command.')
         else:
                 rate_w_units = self.send_command_and_read_reply(Elite11Commands.GET_WITHDRAW_RATE)
-                return Elite11.ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
+                return flowchem_ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
 
     @withdrawing_rate.setter
     def withdrawing_rate(self, rate_in_ml_min: float):
@@ -525,14 +524,14 @@ class Elite11:
 
     def get_infused_volume(self) -> float:
         """ Return infused volume in ml """
-        return Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)).m_as("ml")
+        return flowchem_ureg(self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)).m_as("ml")
 
     def get_withdrawn_volume(self):
         """ Returns the withdrawn volume from the last clear_*_volume() command, according to the pump """
         if self.infuse_only:
             InvalidCommand('The pump is infuse only and doesn\'t know this command.')
         else:
-            return Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)).m_as("ml")
+            return flowchem_ureg(self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)).m_as("ml")
 
     def clear_infused_volume(self):
         """ Reset the pump infused volume counter to 0 """
@@ -632,7 +631,7 @@ class Elite11:
         """
         Set/returns target volume in ml. If the volume is set to 0, the target is cleared.
         """
-        target_volume = Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME))
+        target_volume = flowchem_ureg(self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME))
         return target_volume.m_as("ml")
 
     @target_volume.setter
