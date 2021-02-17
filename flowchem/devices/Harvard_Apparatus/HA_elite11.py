@@ -375,7 +375,7 @@ class Elite11:
 
     @property
     def version(self) -> str:
-        """ Returns the current firmware version reported by the pump"""
+        """ Returns the current firmware version reported by the pump """
         return self.send_command_and_read_reply(Elite11Commands.GET_VERSION)  # '11 ELITE I/W Single 3.0.4
 
     @property
