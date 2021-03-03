@@ -6,6 +6,8 @@ from opcua import Client
 from opcua import ua
 import logging
 
+from opcua.ua.uaerrors import BadOutOfService
+
 LOG = logging.getLogger("flow-ir")
 LOG.setLevel(logging.DEBUG)
 LOG.addHandler(logging.StreamHandler())
@@ -172,7 +174,11 @@ class FlowIR:
         pass
 
     def get_last_spectrum_treated(self):
-        return self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.SpectraTreated").get_value()
+        try:
+            spectrum = self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.SpectraTreated").get_value()
+        except BadOutOfService:
+            spectrum = []
+        return spectrum
 
 
 if __name__ == '__main__':
