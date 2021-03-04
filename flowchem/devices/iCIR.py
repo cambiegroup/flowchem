@@ -181,6 +181,7 @@ class FlowIR:
         return spectrum
 
 
+
 if __name__ == '__main__':
     ir_spectrometer = FlowIR()
     ir_spectrometer.is_instrument_connected()
@@ -188,4 +189,8 @@ if __name__ == '__main__':
     assert ir_spectrometer.is_template_name_valid("test.iCIRTemplate")
     # assert ir_spectrometer.resolution == 8
     print(ir_spectrometer.get_last_spectrum_treated())
+
+    xp_nid = ir_spectrometer.opcua.get_node("ns=2;s=Local.iCIR.Probe1.Methods.Start Experiment").nodeid
+    xp_nid = ir_spectrometer.opcua.get_node("ns=2;s=Local.iCIR.Probe1.Methods").call_method(xp_nid, "blabal", "test.iCIRTemplate", False)
+
 
