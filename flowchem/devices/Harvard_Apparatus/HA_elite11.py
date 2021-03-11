@@ -192,6 +192,10 @@ class PumpIO:
             self._write(command)
             response = self._read_reply(command)
 
+        if not response:
+            raise InvalidConfiguration(f"No response received from pump, check pump address! "
+                                       f"(Currently set to {command.target_pump_address})")
+
         # Parse reply
         pump_address, return_status, parsed_response = PumpIO.parse_response(response)
 
@@ -631,5 +635,5 @@ if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger('flowchem').setLevel(logging.DEBUG)
 
-    a = PumpIO(5)
+    a = PumpIO(6)
     p = Elite11(a, 9)
