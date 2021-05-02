@@ -1,31 +1,17 @@
 import datetime
-import warnings
 from pathlib import Path
 from typing import List, Optional
-#
-# from opcua import Client
-# from opcua import ua
-# import logging
-#
-# from opcua.ua.uaerrors import BadOutOfService
-import asyncio
-from threading import Thread, Condition
+
+from opcua import Client
+from opcua import ua
 import logging
-from typing import List, Tuple, Union
 
-from async_property import async_property, async_cached_property
-from asyncua import ua
-from asyncua import Client
-from asyncua import server
-from asyncua import common
-from asyncua.common import node, subscription, shortcuts, xmlexporter, type_dictionary_builder
-from asyncua.ua.uaerrors import BadOutOfService, Bad
+from opcua.ua.uaerrors import BadOutOfService
 
-logger = logging.getLogger(__name__)
+LOG = logging.getLogger("flow-ir")
+LOG.setLevel(logging.DEBUG)
+LOG.addHandler(logging.StreamHandler())
 
-
-class FlowIRError(Exception):
-    pass
 
 class SubHandler(object):
 
@@ -44,26 +30,49 @@ class SubHandler(object):
 
 
 class FlowIR:
-    def __init__(self, client: Client):
-        """ Initiate connection with OPC UA server """
-        self.log = logging.getLogger(__name__)
+    # This is unlikely to change but let's keep it highly visible here just in case ;)
+    iC_OPCUA_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
 
-        self.opcua = client
+    def __init__(self):
+        """ Initiate connection with OPC UA server """
+        self.log = logging.getLogger("flow-ir")
+
+        self.opcua = Client(self.iC_OPCUA_SERVER_ADDRESS)
         self.probe = None
+
+        try:
+            self.opcua.connect()
+            server_name = self.opcua.get_node("ns=2;s=Local.iCIR").get_display_name().Text
+            self.log.info(f"Connected to {server_name}")
+        except (ConnectionRefusedError, ua.UaStatusCodeError):
+            self.opcua = None
+
+    def __del__(self):
+        """ Ensure disconnection on object destruction """
+        if self.opcua is not False:
+            self.opcua.disconnect()
 
     def acquire_background(self):
         pass
 
-    async def get_iC_software_version(self):
-        """ Returns iC IR software version or raise FlowIRError """
-        try:
-            return await self.opcua.get_node("ns=2;s=Local.iCIR.SoftwareVersion").get_value()  # "7.1.91.0"
-        except ua.UaStatusCodeError as e:  # iCIR app closed
-            raise FlowIRError("iCIR app is closed, cannot control instrument!") from e
+    def get_iC_software_version(self):
+        """ Returns iC IR software version or False """
+        if self.opcua is None:
+            return False
 
-    async def is_instrument_connected(self) -> bool:
+        try:
+            version = self.opcua.get_node("ns=2;s=Local.iCIR.SoftwareVersion").get_value()  # "7.1.91.0"
+            return version
+        except ua.UaStatusCodeError:
+            return False
+
+    def is_instrument_connected(self) -> bool:
         """ Check connection with instrument """
-        return await self.opcua.get_node("ns=2;s=Local.iCIR.ConnectionStatus").get_value()
+        if self.opcua is None:
+            return False
+
+        connection_status = self.opcua.get_node("ns=2;s=Local.iCIR.ConnectionStatus").get_value()
+        return connection_status  # Avoid return with one liner as it bumpers debug
 
     def is_template_name_valid(self, template_name: str) -> bool:
         """
@@ -83,10 +92,12 @@ class FlowIR:
                     return True
         return False
 
-    async def probe_description(self, probe_num: int = 1):
+    def probe_description(self, probe_num: int = 1):
         """ Return FlowIR probe information """
-        node = self.opcua.get_node(f"ns=2;s=Local.iCIR.Probe{probe_num}.ProbeDescription")
-        probe_info = await node.get_value()
+        if self.opcua is None:
+            return False
+
+        probe_info = ir_spectrometer.opcua.get_node(f"ns=2;s=Local.iCIR.Probe{probe_num}.ProbeDescription").get_value()
         # 'FlowIR; SN: 2989; Detector: DTGS; Apodization: HappGenzel; IP Address: 192.168.1.2;
         # Probe: DiComp (Diamond); SN: 14570173; Interface: FlowIR™ Sensor; Sampling: 4000 to 650 cm-1;
         # Resolution: 8; Scan option: AutoSelect; Gain: 232;'
@@ -115,10 +126,12 @@ class FlowIR:
 
         self.probe = probe_info
 
-    async def is_running(self):
+    def is_running(self):
         """ Is probe 1 is measuring? """
-        node = self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.ProbeStatus")
-        status = await node.get_value()
+        if self.opcua is None:
+            return False
+
+        status = self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.ProbeStatus").get_value()
 
         if status == "Running":
             return True
@@ -146,19 +159,13 @@ class FlowIR:
         # ir_spectrometer.opcua.get_node("ns=2;s=Local.iCIR.Probe1.SampleCount").get_value()
         # 6
 
-    @async_property
-    async def resolution(self):
-        """ Returns resolution of probe 1 in cm^(-1) """
-        if self.probe is None:
-            await self.probe_description()
-        return self.probe["resolution"]
 
-    @async_cached_property
-    async def detector(self):
-        """ Returns detector type """
-        if self.probe is None:
-            await self.probe_description()
-        return self.probe["detector"]
+    @property
+    def resolution(self):
+        """ Returns resolution of probe 1 in cm^(-1) """
+        if self.probe is None and self.probe_description() is False:
+            return False
+        return self.probe["resolution"]
 
     def acquire_spectrum(self, template: str):
         pass
@@ -166,59 +173,25 @@ class FlowIR:
     def trigger_collection(self):
         pass
 
-    async def get_last_spectrum_treated(self):
+    def get_last_spectrum_treated(self):
         try:
-            spectrum = await self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.SpectraTreated").get_value()
+            spectrum = self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.SpectraTreated").get_value()
         except BadOutOfService:
             spectrum = []
         return spectrum
 
-    async def start_experiment(self, template: str, name: str = "Unnamed flowchem exp.", collect_bg: bool = False):
-        if await self.is_running():
-            warnings.warn("I was asked to start an experiment while a current experiment is already running!"
-                          "I will have to stop that first! Sorry for that :)")
-            await self.stop_experiment()
-            # And wait for ready...
-            while await self.is_running():
-                asyncio.sleep(1)
-
-        start_xp_nodeid = self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.Methods.Start Experiment").nodeid
-        method_parent = self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.Methods")
-        await method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
-
-    async def stop_experiment(self):
-        method_parent = self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.Methods")
-        stop_nodeid = self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.Methods.Stop").nodeid
-        await method_parent.call_method(stop_nodeid)
-
-async def main():
-    iC_OPCUA_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
-
-    async with Client(url=iC_OPCUA_SERVER_ADDRESS) as opcua_client:
-        ir_spectrometer = FlowIR(opcua_client)
-        print(await ir_spectrometer.get_iC_software_version())
-
-        if await ir_spectrometer.is_instrument_connected():
-            print(f"FlowIR connected! [Detector type: {await ir_spectrometer.detector}]")
-        else:
-            print("FlowIR not connected :(")
-
-        print(f"Current resolution set to {await ir_spectrometer.resolution} cm-1")
-
-        # Last spectrum empty before starting an experiment
-        spectrum = await ir_spectrometer.get_last_spectrum_treated()
-        print(f"Received spectrum is {spectrum}")  # Should be empty
-
-        template_name = "test.iCIRTemplate"
-        assert ir_spectrometer.is_template_name_valid(template_name)
-        await ir_spectrometer.start_experiment(name="test", template=template_name)
-
-        spectrum = await ir_spectrometer.get_last_spectrum_treated()
-        while spectrum == []:
-            spectrum = await ir_spectrometer.get_last_spectrum_treated()
-        print(spectrum)
-
-
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    ir_spectrometer = FlowIR()
+    ir_spectrometer.is_instrument_connected()
+    print(ir_spectrometer.get_iC_software_version())
+    # assert ir_spectrometer.is_template_name_valid("test.iCIRTemplate")
+    # assert ir_spectrometer.resolution == 8
+    print(ir_spectrometer.get_last_spectrum_treated())
+    ir_spectrometer.opcua.load_type_definitions()
+    print(ir_spectrometer.get_last_spectrum_treated())
+
+    xp_nid = ir_spectrometer.opcua.get_node("ns=2;s=Local.iCIR.Probe1.Methods.Start Experiment").nodeid
+    xp_nid = ir_spectrometer.opcua.get_node("ns=2;s=Local.iCIR.Probe1.Methods").call_method(xp_nid, "blabal", "test.iCIRTemplate", False)
+
+
