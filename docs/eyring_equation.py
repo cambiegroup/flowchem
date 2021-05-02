@@ -4,6 +4,9 @@
 """
 import math
 import numpy as np
+import matplotlib as mpl
+# Better looking fonts
+mpl.rcParams['mathtext.fontset'] = 'cm'
 import matplotlib.pyplot as plt
 from scipy.constants import Boltzmann, Planck, gas_constant
 from matplotlib.colors import LogNorm
@@ -111,3 +114,5 @@ plt.subplots_adjust(top=0.96, bottom=0.12, left=0.04, right=0.84, hspace=0.2, ws
 
 # plt.show(); input()
 plt.savefig("deltaG_vs_t_and_T.png", dpi=300)
+plt.savefig("deltaG_vs_t_and_T.svg", dpi=300)
+plt.savefig("deltaG_vs_t_and_T.eps", dpi=300)
