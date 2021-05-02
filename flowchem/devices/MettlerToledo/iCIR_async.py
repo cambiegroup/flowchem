@@ -44,7 +44,7 @@ class FlowIR:
                 warnings.warn(f"The current version of iCIR [self.version] has not been tested!"
                               f"Pleas use one of the supported versions: {FlowIR._supported_versions}")
         except ua.UaStatusCodeError as e:  # iCIR app closed
-            raise FlowIRError("iCIR app is closed or not installed!") from e
+            raise FlowIRError("iCIR app not installed or closed or no instrument available!") from e
 
     def acquire_background(self):
         raise NotImplementedError
@@ -187,7 +187,8 @@ class FlowIR:
         """ RAW result latest scan """
         return await FlowIR.get_spectrum_from_node(self.opcua.get_node("ns=2;s=Local.iCIR.Probe1.SpectraBackground"))
 
-    async def start_experiment(self, template: str, name: str = "Unnamed flowchem exp.", collect_bg: bool = False):
+    async def start_experiment(self, template: str, name: str = "Unnamed flowchem exp."):
+        collect_bg = False  # This parameter does not work properly so it is not exposed in the method signature
         template = FlowIR._normalize_template_name(template)
         if FlowIR.is_template_name_valid(template) is False:
             raise FlowIRError(f"Cannot start template {template}: name not valid! Check if is in: "
@@ -215,7 +216,7 @@ class FlowIR:
 
 
 async def main():
-    async with Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS, timeout=10) as opcua_client:
+    async with Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS) as opcua_client:
         ir_spectrometer = FlowIR(opcua_client)
         await ir_spectrometer.check_version()
 
