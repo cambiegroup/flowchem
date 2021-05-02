@@ -13,6 +13,6 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/cambiegroup/flowchem",
     packages=setuptools.find_packages(),
-    install_requires=['pyserial', 'pyserial-asyncio', 'pint'],
+    install_requires=['pyserial', 'pyserial-asyncio', 'pint', 'pandas', 'numpy'],
     python_requires='>=3.6',
 )
