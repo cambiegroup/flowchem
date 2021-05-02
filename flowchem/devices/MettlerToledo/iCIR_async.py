@@ -215,7 +215,7 @@ class FlowIR:
 
 
 async def main():
-    async with Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS) as opcua_client:
+    async with Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS, timeout=10) as opcua_client:
         ir_spectrometer = FlowIR(opcua_client)
         await ir_spectrometer.check_version()
 
@@ -244,10 +244,6 @@ async def main():
             print(spectrum)
 
         await ir_spectrometer.stop_experiment()
-
-# FIXME When iCIR is busy (e.g. finding trends) it does not reply to opcua calls, resulting in BadOutOfService error
-# All the opcua call should be handled by a method with a retry (tenacity) or the timeout should be extended
-
 
 
 if __name__ == '__main__':
