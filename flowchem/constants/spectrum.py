@@ -16,6 +16,8 @@ class Spectrum:
     def integrate(self, x_start: float, x_end: float) -> float:
         """ Integrates dy/dx with trapezoid rule """
         integration_interval = self.as_df().query(f"{x_start} <= index <= {x_end}")[0]
+        # Index sorting prevent negative integrals in IR spectra
+        integration_interval.sort_index(inplace=True)
         return integrate.trapezoid(integration_interval.values, integration_interval.index.to_numpy())
 
     def as_df(self) -> pd.DataFrame:
