@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy import integrate
 
 
 class Spectrum:
@@ -12,8 +13,14 @@ class Spectrum:
     def empty(self):
         return self._y.size == 0
 
-    def as_df(self) -> pd.core.frame.DataFrame:
-        pd.DataFrame(self._x, self._y)
+    def integrate(self, x_start: float, x_end: float) -> float:
+        """ Integrates dy/dx with trapezoid rule """
+        integration_interval = self.as_df().query(f"{x_start} <= index <= {x_end}")[0]
+        return integrate.trapezoid(integration_interval.values, integration_interval.index.to_numpy())
+
+    def as_df(self) -> pd.DataFrame:
+        """ Returns spectrum as pd.DataFrame """
+        return pd.DataFrame(data=self._y, index=self._x)
 
     def __str__(self):
         return f"Spectrum object [" \
@@ -22,5 +29,14 @@ class Spectrum:
 
 
 class IRSpectrum(Spectrum):
+    """
+    IR spectrum class.
+    Consider rampy for advance features (baseline fit, etc)
+    See e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb
+    """
     def __init__(self, wavenumber, intensity):
         super().__init__(wavenumber, intensity)
+
+
+if __name__ == '__main__':
+    pass
