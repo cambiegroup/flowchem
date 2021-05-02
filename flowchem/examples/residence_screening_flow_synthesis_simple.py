@@ -5,7 +5,7 @@ from flowchem.devices.Knauer.knauer_autodiscover import autodiscover_knauer
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.mansonlib import PowerSupply
 import json
-from flowchem.devices.iCIR import FlowIR
+from flowchem.devices.MettlerToledo.iCIR import FlowIR
 
 # usable, but maybe some output table or format would be nice: especially parameters like t or wavelength
 
