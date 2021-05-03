@@ -573,10 +573,23 @@ class Elite11:
         """
         Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
         """
-        return float(self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)[:-3])  # "31.1232 mm" removes unit
+        warnings.warn("Deprecated property, use more explicit syringe_diamter instead!", FutureWarning)
+        return self.syringe_diameter
 
     @diameter.setter
     def diameter(self, diameter_in_mm: float):
+        warnings.warn("Deprecated property, use more explicit syringe_diamter instead!", FutureWarning)
+        self.syringe_diameter = diameter_in_mm
+
+    @property
+    def syringe_diameter(self) -> float:
+        """
+        Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
+        """
+        return float(self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)[:-3])  # "31.1232 mm" removes unit
+
+    @syringe_diameter.setter
+    def syringe_diameter(self, diameter_in_mm: float):
         if not 1 <= diameter_in_mm <= 33:
             raise InvalidArgument(f"Diameter provided ({diameter_in_mm}) is not valid! [Accepted range: 1-33 mm]")
 
