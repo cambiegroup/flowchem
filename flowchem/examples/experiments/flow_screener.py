@@ -17,7 +17,8 @@
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 import numpy as np
 import pandas as pd
-from time import sleep
+from time import sleep, time
+
 
 # hard parameters
 reactor_volume = 2
@@ -52,7 +53,7 @@ for ind in conditions_results.index:
 
 
 # Hardware
-pump_connection = PumpIO('COM5')
+pump_connection = PumpIO('COM4')
 
 pump_thionyl_chloride = Elite11(pump_connection, address=0)
 pump_hexyldecanoic_acid = Elite11(pump_connection, address=1)
@@ -62,7 +63,7 @@ pump_hexyldecanoic_acid = Elite11(pump_connection, address=1)
 # Dataframe already is in the right order, now iterate through from top and from bottom, run the experiments and set the boolean
 # assume that the correct syringe diameter was manually set
 for ind in conditions_results.index:
-    if not conditions_results.at[ind, 'Run_forward']:
+    if conditions_results.at[ind, 'Run_forward']  != True:
         # also check the bool, if it ran already, don't rerun it. but skip it
         pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
         pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
@@ -73,7 +74,7 @@ for ind in conditions_results.index:
             pump_hexyldecanoic_acid.infuse_run()
 
         # wait until several reactor volumes are through
-        sleep(3*conditions_results.at[ind, 'residence_time'])
+        sleep(3*60*conditions_results.at[ind, 'residence_time'])
 
         # check if any pump stalled, if so, set the bool false, leave loop
         if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
@@ -87,20 +88,51 @@ for ind in conditions_results.index:
         # easiest: no triggering but extraction from working live data visualisation
 
 
-
         # check if any pump stalled, if so, set the bool false, else true
         if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-            True
+            conditions_results.at[ind, 'Run_forward'] = True
         else:
             conditions_results.at[ind, 'Run_forward'] = False
             break
-    else:
-        pass
 
+for ind in reversed(conditions_results.index):
+    if conditions_results.at[ind, 'Run_forward']  != True:
+        # also check the bool, if it ran already, don't rerun it. but skip it
+        pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
+        pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
+        if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
+            pass
+        else:
+            pump_thionyl_chloride.infuse_run()
+            pump_hexyldecanoic_acid.infuse_run()
+
+        # wait until several reactor volumes are through
+        sleep(3*60*conditions_results.at[ind, 'residence_time'])
+
+        # check if any pump stalled, if so, set the bool false, leave loop
+        if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
+            pass
+        else:
+            conditions_results.at[ind, 'Run_forward'] = False
+            break
+
+        # take three IRs
+        print('yield is nice')
+        # easiest: no triggering but extraction from working live data visualisation
+
+
+        # check if any pump stalled, if so, set the bool false, else true
+        if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
+            conditions_results.at[ind, 'Run_forward'] = True
+        else:
+            conditions_results.at[ind, 'Run_forward'] = False
+            break
+
+#stop the pumps
 
 # after the whole for loop is over, drop that to a csv file.
-# TODO make sure this doesn't overwrite previous runs
-conditions_results.to_csv("flowchem/examples/experiments/results")
+# TODO make sure this doesn't overwrite previous runs, by adding timestamp. Also make proper path
+conditions_results.to_csv(f"C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/{'screening_at_'}{round(time())}")
 
 
 
