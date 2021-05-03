@@ -21,36 +21,51 @@ for x in range(291):
     x_arr = spectra_df.index.to_numpy()
     y_arr = spectra_df[x]
 
-    from lmfit import Minimizer, Parameters
-    from lmfit.lineshapes import gaussian
+    from lmfit.models import GaussianModel, LinearModel, PseudoVoigtModel
+    import matplotlib.pyplot as plt
 
-    def residual(pars, x, data):
-        """ Fitting model: 3 gaussian peaks centered at 1708, 1734 and 1796 cm-1 """
-        model = (gaussian(x, pars['amp_1'], 1708, pars['wid_1']) +
-                 gaussian(x, pars['amp_2'], 1734, pars['wid_2']) +
-                 gaussian(x, pars['amp_3'], 1796, pars['wid_3']))
-        return model - data
+    peak_chloride = PseudoVoigtModel(prefix="chloride_")
+    peak2 = PseudoVoigtModel(prefix="p2_")
+    peak3 = PseudoVoigtModel(prefix="p3_")
+    offset = LinearModel()
+    model = peak_chloride + peak2 + peak3 + offset
 
-    pfit = Parameters()
-    pfit.add(name='amp_1', value=0.50, min=0)
-    pfit.add(name='amp_2', value=0.50, min=0)
-    pfit.add(name='amp_3', value=0.50, min=0)
-    pfit.add(name='wid_1', value=2, min=4, max=12)
-    pfit.add(name='wid_2', value=5, min=5, max=15)
-    pfit.add(name='wid_3', value=5, min=10, max=30)
+    pars = model.make_params()
+    pars["chloride_center"].set(value=1800, min=1790, max=1810)
+    pars["chloride_amplitude"].set(min=0)  # Positive peak
+    pars["chloride_sigma"].set(min=5, max=50)  # Set full width half maximum
 
-    mini = Minimizer(residual, pfit, fcn_args=(x_arr, y_arr))
-    out = mini.leastsq()
-    # Get fitted gaussians
-    g1 = gaussian(x_arr, out.params["amp_1"], 1708, out.params["wid_1"])
-    g2 = gaussian(x_arr, out.params["amp_2"], 1734, out.params["wid_2"])
-    g3 = gaussian(x_arr, out.params["amp_3"], 1796, out.params["wid_3"])
+    pars["p2_center"].set(value=1736, min=1734, max=1738)
+    pars["p2_amplitude"].set(min=0)  # Positive peak
+    pars["p2_sigma"].set(min=4, max=40)  # Set full width half maximum
 
-    # Calculate yield based on fitted peaks (less sensitive to baseline drift)
-    sm = scipy.integrate.trapezoid(g1 + g2, x_arr)
-    p = scipy.integrate.trapezoid(g3, x_arr)
-    integral_p.append(p / (sm + p))
+    pars["p3_center"].set(value=1708, min=1710, max=1712)
+    pars["p3_amplitude"].set(min=0)  # Positive peak
+    pars["p3_sigma"].set(min=0, max=10)  # Set full width half maximum
 
-plt.scatter(x=list(range(291)), y=integral_p)
+    result = model.fit(y_arr, pars, x=x_arr)
+
+    plt.figure(1)
+    plt.cla()
+    plt.plot(x_arr, y_arr, 'ro', ms=6)
+    plt.plot(x_arr, result.best_fit, 'b--')
+    plt.draw()
+    plt.pause(0.001)
+    plt.savefig(f"fit_{x}.png")
+
+    product = result.values["chloride_amplitude"]
+    sm = result.values["p2_amplitude"] + result.values["p3_amplitude"]
+    integral_p.append(product / (sm + product))
+    print(f"Spectrum {x} fitted!")
+    plt.figure(2)
+    plt.cla()
+    plt.scatter(x=list(range(len(integral_p))), y=integral_p)
+    plt.draw()
+    # plt.show()
+    plt.pause(0.001)
+
+plt.cla()
+plt.scatter(x=list(range(len(integral_p))), y=integral_p)
 plt.show()
+plt.savefig(f"yield_trend.png")
 input()
