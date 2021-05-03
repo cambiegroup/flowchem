@@ -22,7 +22,9 @@ from time import sleep
 # hard parameters
 reactor_volume = 2
 
+
 def flow_rates(volume, residence_time, equivalents):
+    """ Given volume in ml, residence time in min and equivalents of SOCl2 returns the respective flowrates (ml/min) """
     total_flow = volume/residence_time
     # 0.1 is the concentration ratio
     flow_thio = total_flow*0.1*equivalents
@@ -31,24 +33,39 @@ def flow_rates(volume, residence_time, equivalents):
 
 
 # prepare the IO Frame
-equivalents = np.arange(start=1, stop=2.1, step=0.1)
-residence_times = np.arange(start=1, stop=11)
+equivalents = np.linspace(start=1, stop=2, num=11)  # [1.  1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2. ]
+residence_times = np.linspace(start=1, stop=10, num=10)  # [ 1.  2.  3.  4.  5.  6.  7.  8.  9. 10.]
+# equivalents = np.arange(start=1, stop=2.1, step=0.1)
+# residence_times = np.arange(start=1, stop=11)
 
 conditions_results = pd.DataFrame(columns=['residence_time', 'eq_thio','flow_thio', 'flow_acid', 'yield_1', 'yield_2', 'yield_3', 'yield_1_rev', 'yield_2_rev', 'yield_3_rev', 'Run_forward', 'Run_backward'])
 
-aa = []
-bb = []
-for residence_time in residence_times:
-    for equivalent in equivalents:
-        aa.append(residence_time)
-        bb.append(equivalent)
+# aa = []
+# bb = []
+# for residence_time in residence_times:
+#     for equivalent in equivalents:
+#         aa.append(residence_time)
+#         bb.append(equivalent)
+#
+# conditions_results['residence_time']=aa
+# conditions_results['eq_thio']=bb
 
-conditions_results['residence_time']=aa
-conditions_results['eq_thio']=bb
+# Create tuples with (residence time, equivalents) for each experimental datapoint
+experimental_conditions = [(t_res, eq) for t_res in residence_times for eq in equivalents]
+# Adds conditions to dataframe
+conditions_results['residence_time'], conditions_results['eq_thio'] = zip(*experimental_conditions)
+
+
+def calculate_flowrate(row):
+    print(row)
+    row['flow_thio'], row['flow_acid'] = flow_rates(reactor_volume, row['residence_time'], row['eq_thio'])
+    return row
 
 # now, iterate through the dataframe and calculate flow rates
-for ind in conditions_results.index:
-    conditions_results.at[ind, 'flow_thio'], conditions_results.at[ind, 'flow_acid'] = flow_rates(reactor_volume, conditions_results.at[ind, 'residence_time'] , conditions_results.at[ind, 'eq_thio'])
+conditions_results = conditions_results.apply(calculate_flowrate, axis=1)
+
+# for ind in conditions_results.index:
+#     conditions_results.at[ind, 'flow_thio'], conditions_results.at[ind, 'flow_acid'] = flow_rates(reactor_volume, conditions_results.at[ind, 'residence_time'] , conditions_results.at[ind, 'eq_thio'])
 
 
 # Hardware
@@ -66,19 +83,18 @@ for ind in conditions_results.index:
         # also check the bool, if it ran already, don't rerun it. but skip it
         pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
         pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
-        if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-            pass
-        else:
+
+        # Ensures pumps are running
+        if not pump_thionyl_chloride.is_moving():
             pump_thionyl_chloride.infuse_run()
+        if not pump_hexyldecanoic_acid.is_moving():
             pump_hexyldecanoic_acid.infuse_run()
 
         # wait until several reactor volumes are through
         sleep(3*conditions_results.at[ind, 'residence_time'])
 
         # check if any pump stalled, if so, set the bool false, leave loop
-        if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-            pass
-        else:
+        if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_forward'] = False
             break
 
@@ -86,21 +102,14 @@ for ind in conditions_results.index:
         print('yield is nice')
         # easiest: no triggering but extraction from working live data visualisation
 
-
-
-        # check if any pump stalled, if so, set the bool false, else true
-        if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-            True
-        else:
+        # check if any pump stalled, if so, set the bool false, leave loop
+        if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_forward'] = False
             break
-    else:
-        pass
 
-
-# after the whole for loop is over, drop that to a csv file.
-# TODO make sure this doesn't overwrite previous runs
-conditions_results.to_csv("flowchem/examples/experiments/results")
+    # after the whole for loop is over, drop that to a csv file.
+    # TODO make sure this doesn't overwrite previous runs
+    conditions_results.to_csv("flowchem/examples/experiments/results")
 
 
 
