@@ -21,7 +21,6 @@ import opcua
 from flowchem.devices.MettlerToledo.iCIR import FlowIR
 import pandas as pd
 from time import sleep, time
-import scipy
 from lmfit.models import LinearModel, PseudoVoigtModel
 from pathlib import Path
 
