@@ -24,7 +24,7 @@ from time import sleep
 import scipy
 from lmfit import Minimizer, Parameters
 from lmfit.lineshapes import gaussian
-import pathlib
+from pathlib import Path
 
 
 def residual(pars, x, data):
@@ -65,7 +65,7 @@ def calculate_yield(spectrum_df):
     return latest_yield
 
 
-path_to_write_csv = pathlib.Path().resolve()
+path_to_write_csv = Path().home() / "Documents"
 
 
 # Hardware
@@ -100,10 +100,13 @@ try:
 except OSError:
     conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_empty.csv"))
 
+conditions_results.Run_forward = conditions_results.Run_forward.astype(str)
+conditions_results.Run_backward = conditions_results.Run_backward.astype(str)
+
 # Dataframe already is in the right order, now iterate through from top and from bottom, run the experiments and set the boolean
 # assume that the correct syringe diameter was manually set
 for ind in conditions_results.index:
-    if conditions_results.at[ind, 'Run_forward']  != True:
+    if conditions_results.at[ind, 'Run_forward'] != "Success":
         # also check the bool, if it ran already, don't rerun it. but skip it
         pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
         pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
@@ -141,16 +144,16 @@ for ind in conditions_results.index:
 
         # check if any pump stalled, if so, set the bool false, else true
         if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
-            conditions_results.at[ind, 'Run_forward'] = False
+            conditions_results.at[ind, 'Run_forward'] = "Failed"
             conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
             break
         else:
-            conditions_results.at[ind, 'Run_forward'] = True
+            conditions_results.at[ind, 'Run_forward'] = "Success"
             conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
 
 
 for ind in reversed(conditions_results.index):
-    if conditions_results.at[ind, 'Run_backward']  != True:
+    if conditions_results.at[ind, 'Run_backward']  != "Success":
         # also check the bool, if it ran already, don't rerun, but skip it
         pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
         pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
@@ -165,7 +168,7 @@ for ind in reversed(conditions_results.index):
 
         # check if any pump stalled, if so, set the bool false, leave loop
         if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
-            conditions_results.at[ind, 'Run_backward'] = False
+            conditions_results.at[ind, 'Run_backward'] = "Failed"
             conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
             break
 
@@ -184,11 +187,11 @@ for ind in reversed(conditions_results.index):
 
         # check if any pump stalled, if so, set the bool false, else true
         if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-            conditions_results.at[ind, 'Run_backward'] = True
+            conditions_results.at[ind, 'Run_backward'] = "Success"
             conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
 
         else:
-            conditions_results.at[ind, 'Run_backward'] = False
+            conditions_results.at[ind, 'Run_backward'] = "Failed"
             conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
 
             break

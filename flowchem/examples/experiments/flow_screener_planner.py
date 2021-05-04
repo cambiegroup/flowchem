@@ -27,7 +27,7 @@ def calculate_flowrate(row):
     return row
 
 
-path_to_write_csv = pathlib.Path().resolve()
+path_to_write_csv = pathlib.Path().home() / "Documents"
 
 # prepare the IO Frame
 equivalents = np.linspace(start=1, stop=2, num=11)  # [1.  1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2. ]
@@ -36,9 +36,6 @@ residence_times = np.linspace(start=1, stop=10, num=10)  # [ 1.  2.  3.  4.  5. 
 conditions_results = pd.DataFrame(columns=['residence_time', 'eq_thio', 'flow_thio', 'flow_acid', 'yield_1', 'yield_2',
                                            'yield_3', 'yield_1_rev', 'yield_2_rev', 'yield_3_rev', 'Run_forward',
                                            'Run_backward'])
-
-conditions_results.Run_forward = conditions_results.Run_forward.astype(bool)
-conditions_results.Run_backward = conditions_results.Run_backward.astype(bool)
 
 
 # Create tuples with (residence time, equivalents) for each experimental datapoint
@@ -52,4 +49,4 @@ conditions_results['residence_time'], conditions_results['eq_thio'] = zip(*exper
 
 # now, iterate through the dataframe and calculate the needed flow rates
 conditions_results: pd.DataFrame = conditions_results.apply(calculate_flowrate, axis=1)
-conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_empty.csv"))
+conditions_results.to_csv(path_to_write_csv / "flow_screening_empty.csv")
