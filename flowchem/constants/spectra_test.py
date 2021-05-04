@@ -5,9 +5,10 @@ from lmfit.models import LinearModel, PseudoVoigtModel
 
 sns.set()
 
-file = r"C:\Users\bs-flowlab\Documents\iC IR Experiments\alc0315_flow_chloride_test.csv"
+# file = r"C:\Users\bs-flowlab\Documents\iC IR Experiments\alc0315_flow_chloride_test.csv"
+file = r"C:\Users\bs-flowlab\Documents\iC IR Experiments\thionylchloride_screening1.csv"
 
-spectra_df = pd.read_csv(file, index_col=0, names=list(range(291)), header=0)
+spectra_df = pd.read_csv(file, index_col=0, names=list(range(1306)), header=0)
 # Reduce to ROI
 spectra_df.query(f"{1600} <= index <= {1900}", inplace=True)
 
@@ -17,7 +18,8 @@ spectra_df.query(f"{1600} <= index <= {1900}", inplace=True)
 # plt.show()
 
 integral_p = []
-for x in range(291):
+for x in range(len(spectra_df.columns)):
+# for x in range(1255,1305):
     x_arr = spectra_df.index.to_numpy()
     y_arr = spectra_df[x]
 
