@@ -40,21 +40,21 @@ reaction_yield = []
 async def get_data():
     async with Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS, timeout=3600) as opcua_client:
         ir_spectrometer = FlowIR(opcua_client)
-        await ir_spectrometer.check_version()
-
-        if await ir_spectrometer.is_iCIR_connected:
-            print(f"FlowIR connected!")
-        else:
-            print("FlowIR not connected :(")
-            import sys
-            sys.exit()
-
-        template_name = "15_sec_integration.iCIRTemplate"
-        await ir_spectrometer.start_experiment(name="reaction_monitoring", template=template_name)
-
-        spectrum = await ir_spectrometer.get_last_spectrum_treated()
-        while spectrum.empty:
-            spectrum = await ir_spectrometer.get_last_spectrum_treated()
+        # await ir_spectrometer.check_version()
+        #
+        # if await ir_spectrometer.is_iCIR_connected:
+        #     print(f"FlowIR connected!")
+        # else:
+        #     print("FlowIR not connected :(")
+        #     import sys
+        #     sys.exit()
+        #
+        # template_name = "15_sec_integration.iCIRTemplate"
+        # await ir_spectrometer.start_experiment(name="reaction_monitoring", template=template_name)
+        #
+        # spectrum = await ir_spectrometer.get_last_spectrum_treated()
+        # while spectrum.empty:
+        #     spectrum = await ir_spectrometer.get_last_spectrum_treated()
 
         # This will become a while true
         while True:

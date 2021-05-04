@@ -19,60 +19,16 @@ import numpy as np
 import pandas as pd
 from time import sleep, time
 
-
-# hard parameters, in mL
-reactor_volume = 2
-
-
-def flow_rates(volume, residence_time, equivalents):
-    """ Given volume in ml, residence time in min and equivalents of SOCl2 returns the respective flowrates (ml/min) """
-    total_flow = volume/residence_time
-
-    flow_acid = total_flow/(0.1*equivalents+1)
-    flow_thio =total_flow-flow_acid
-
-    return flow_thio, flow_acid
-
-
-# prepare the IO Frame
-equivalents = np.linspace(start=1, stop=2, num=11)  # [1.  1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2. ]
-residence_times = np.linspace(start=1, stop=10, num=10)  # [ 1.  2.  3.  4.  5.  6.  7.  8.  9. 10.]
-
-
-conditions = pd.DataFrame(columns=['residence_time', 'eq_thio','flow_thio', 'flow_acid', 'yield_1', 'yield_2', 'yield_3', 'yield_1_rev', 'yield_2_rev', 'yield_3_rev', 'Run_forward', 'Run_backward'])
-
-
-# Create tuples with (residence time, equivalents) for each experimental datapoint
-experimental_conditions = [(t_res, eq) for t_res in residence_times for eq in equivalents]
-# Adds conditions to dataframe
-conditions['residence_time'], conditions['eq_thio'] = zip(*experimental_conditions)
-
-
-def calculate_flowrate(row):
-    print(row)
-    row['flow_thio'], row['flow_acid'] = flow_rates(reactor_volume, row['residence_time'], row['eq_thio'])
-    return row
-
-# now, iterate through the dataframe and calculate flow rates
-conditions = conditions.apply(calculate_flowrate, axis=1)
-
-# drop the plain screening file
-# TODO make relative
-conditions.to_csv(f"C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/{'plain_conditions_'}{round(time())}.csv")
-
 # Hardware
-pump_connection = PumpIO('COM4')
+pump_connection = PumpIO('COM5')
 
 pump_thionyl_chloride = Elite11(pump_connection, address=0)
-pump_hexyldecanoic_acid = Elite11(pump_connection, address=1)
+pump_hexyldecanoic_acid = Elite11(pump_connection, address=6)
 
-# now load that one csv and output the results
-#check if a conditions results csv already exists
-# TODO relative path
-try:
-    conditions_results = pd.read_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
-except OSError:
-    conditions_results = conditions
+pump_thionyl_chloride.syringe_diameter = 9.62
+pump_hexyldecanoic_acid.syringe_diameter = 19.93
+
+conditions_results = pd.read_csv("flow_screening_experiment.csv")
 
 # Dataframe already is in the right order, now iterate through from top and from bottom, run the experiments and set the boolean
 # assume that the correct syringe diameter was manually set
@@ -88,6 +44,9 @@ for ind in conditions_results.index:
         if not pump_hexyldecanoic_acid.is_moving():
             pump_hexyldecanoic_acid.infuse_run()
 
+        print(f"Started experiment with residence time = {conditions_results.at[ind, 'residence_time']} and "
+              f"SOCl2 equiv. = {conditions_results.at[ind, 'eq_thio']}! "
+              f"Now waiting {3*60*conditions_results.at[ind, 'residence_time']}s...")
         # wait until several reactor volumes are through
         sleep(3*60*conditions_results.at[ind, 'residence_time'])
 
