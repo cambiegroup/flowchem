@@ -27,8 +27,7 @@ def calculate_flowrate(row):
     return row
 
 
-root = pathlib.Path()
-path_to_write_csv = root.resolve().joinpath('tests')
+path_to_write_csv = pathlib.Path().resolve()
 
 # prepare the IO Frame
 equivalents = np.linspace(start=1, stop=2, num=11)  # [1.  1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2. ]

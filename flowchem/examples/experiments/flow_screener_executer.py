@@ -65,8 +65,7 @@ def calculate_yield(spectrum_df):
     return latest_yield
 
 
-root = pathlib.Path()
-path_to_write_csv = root.resolve().joinpath('tests')
+path_to_write_csv = pathlib.Path().resolve()
 
 
 # Hardware
