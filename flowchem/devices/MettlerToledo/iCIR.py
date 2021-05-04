@@ -29,6 +29,7 @@ class FlowIR(iCIR_spectrometer):
         assert isinstance(client, opcua.Client)
 
         self.opcua = client
+        self.opcua.connect()
         self.probe = None
         self.version = None
         self.check_version()
@@ -83,16 +84,15 @@ class FlowIR(iCIR_spectrometer):
     @staticmethod
     def _get_wavenumber_from_spectrum_node(node) -> List[float]:
         """ Gets the X-axis value of a spectrum. This is necessary as they change e.g. with resolution. """
-        x_axis = node.get_properties()[0].read_value()
+        x_axis = node.get_properties()[0].get_value()
         return x_axis.AxisSteps
 
     @staticmethod
     def get_spectrum_from_node(node) -> IRSpectrum:
         try:
-            intensity = node.read_value()
+            intensity = node.get_value()
             wavenumber = FlowIR._get_wavenumber_from_spectrum_node(node)
             return IRSpectrum(wavenumber, intensity)
-
         except BadOutOfService:
             return IRSpectrum([], [])
 
@@ -104,11 +104,11 @@ class FlowIR(iCIR_spectrometer):
         """ RAW result latest scan """
         return  FlowIR.get_spectrum_from_node(self.opcua.get_node(self.SPECTRA_RAW))
 
-    async def get_last_spectrum_background(self) -> IRSpectrum:
+    def get_last_spectrum_background(self) -> IRSpectrum:
         """ RAW result latest scan """
         return FlowIR.get_spectrum_from_node(self.opcua.get_node(self.SPECTRA_BACKGROUND))
 
-    async def start_experiment(self, template: str, name: str = "Unnamed flowchem exp."):
+    def start_experiment(self, template: str, name: str = "Unnamed flowchem exp."):
         template = FlowIR._normalize_template_name(template)
         if FlowIR.is_template_name_valid(template) is False:
             raise FlowIRError(f"Cannot start template {template}: name not valid! Check if is in: "
@@ -137,7 +137,7 @@ class FlowIR(iCIR_spectrometer):
 
 
 if __name__ == '__main__':
-    client = opcua.Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS)
+    client = opcua.Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS, timeout=10)
     ir_spectrometer = FlowIR(client)
     if ir_spectrometer.is_iCIR_connected:
         print(f"FlowIR connected!")
