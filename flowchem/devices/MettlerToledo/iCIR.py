@@ -65,7 +65,7 @@ class FlowIR(iCIR_spectrometer):
 
     @property
     def probe_status(self):
-        return await self.opcua.get_node(self.PROBE_STATUS).get_value()
+        return self.opcua.get_node(self.PROBE_STATUS).get_value()
 
     @property
     def is_running(self) -> bool:
@@ -78,7 +78,7 @@ class FlowIR(iCIR_spectrometer):
 
     def get_sample_count(self) -> Optional[int]:
         """ Sample count (integer autoincrement) watch for changes to ensure latest spectrum is recent """
-        return await self.opcua.get_node(self.SAMPLE_COUNT).get_value()
+        return self.opcua.get_node(self.SAMPLE_COUNT).get_value()
 
     @staticmethod
     def _get_wavenumber_from_spectrum_node(node) -> List[float]:
@@ -147,7 +147,7 @@ if __name__ == '__main__':
         sys.exit()
 
     template_name = "15_sec_integration.iCIRTemplate"
-    await ir_spectrometer.start_experiment(name="reaction_monitoring", template=template_name)
+    ir_spectrometer.start_experiment(name="reaction_monitoring", template=template_name)
 
     spectrum = ir_spectrometer.get_last_spectrum_treated()
     while spectrum.empty:
