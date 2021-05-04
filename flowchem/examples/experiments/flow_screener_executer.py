@@ -17,7 +17,7 @@
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 import numpy as np
 import pandas as pd
-from time import sleep, time
+from time import sleep
 
 # Hardware
 pump_connection = PumpIO('COM5')
@@ -28,7 +28,10 @@ pump_hexyldecanoic_acid = Elite11(pump_connection, address=6)
 pump_thionyl_chloride.syringe_diameter = 9.62
 pump_hexyldecanoic_acid.syringe_diameter = 19.93
 
-conditions_results = pd.read_csv("flow_screening_experiment.csv")
+try:
+    conditions_results = pd.read_csv("flow_screening_experiment.csv")
+except OSError:
+    conditions_results = pd.read_csv("flow_screening_empty.csv")
 
 # Dataframe already is in the right order, now iterate through from top and from bottom, run the experiments and set the boolean
 # assume that the correct syringe diameter was manually set
@@ -53,22 +56,22 @@ for ind in conditions_results.index:
         # check if any pump stalled, if so, set the bool false, leave loop
         if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_forward'] = False
-            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
+            conditions_results.to_csv("flow_screening_experiment.csv")
             break
 
         # take three IRs
-        print('yield is nice')
-        # easiest: no triggering but extraction from working live data visualisation
+        for i in range(3):
+            pass
 
 
         # check if any pump stalled, if so, set the bool false, else true
         if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_forward'] = False
-            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
+            conditions_results.to_csv("flow_screening_experiment.csv")
             break
         else:
             conditions_results.at[ind, 'Run_forward'] = True
-            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
+            conditions_results.to_csv("flow_screening_experiment.csv")
 
 
 for ind in reversed(conditions_results.index):
@@ -88,7 +91,7 @@ for ind in reversed(conditions_results.index):
         # check if any pump stalled, if so, set the bool false, leave loop
         if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_backward'] = False
-            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
+            conditions_results.to_csv("flow_screening_experiment.csv")
             break
 
         # take three IRs
@@ -99,11 +102,11 @@ for ind in reversed(conditions_results.index):
         # check if any pump stalled, if so, set the bool false, else true
         if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_backward'] = True
-            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
+            conditions_results.to_csv("flow_screening_experiment.csv")
 
         else:
             conditions_results.at[ind, 'Run_backward'] = False
-            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
+            conditions_results.to_csv("flow_screening_experiment.csv")
 
             break
 
