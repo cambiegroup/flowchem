@@ -20,7 +20,7 @@ from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 import opcua
 from flowchem.devices.MettlerToledo.iCIR import FlowIR
 import pandas as pd
-from time import sleep
+from time import sleep, time
 import scipy
 from lmfit import Minimizer, Parameters
 from lmfit.lineshapes import gaussian
@@ -66,6 +66,11 @@ def calculate_yield(spectrum_df):
 
 
 path_to_write_csv = Path().home() / "Documents"
+
+try:
+    path_to_write_csv.joinpath("spectra").mkdir()
+except FileExistsError:
+    print('Directory already exists')
 
 
 # Hardware
@@ -140,6 +145,12 @@ for ind in conditions_results.index:
             spectrum = ir_spectrometer.get_last_spectrum_treated()
             spectrum_df = spectrum.as_df()
             conditions_results.at[ind, f'yield_{x+1}'] = calculate_yield(spectrum_df)
+            # create a unique identifier, in this case the current time in seconds
+            ident = round(time())
+            # drop the identifier to the table
+            conditions_results.at[ind, f'spectrum_{x + 1}'] = ident
+            # now drop the spectrum as csv to the spectrafolder
+            spectrum_df.to_csv(path_to_write_csv.joinpath(f"spectra/spectrum_at_{ident}.csv"))
 
 
         # check if any pump stalled, if so, set the bool false, else true
@@ -184,6 +195,12 @@ for ind in reversed(conditions_results.index):
             spectrum_df = spectrum.as_df()
             # this now needs to be translated to yield
             conditions_results.at[ind, f'yield_{x+1}_rev'] = calculate_yield(spectrum_df)
+            # create a unique identifier, in this case the current time in seconds
+            ident = round(time())
+            # drop the identifier to the table
+            conditions_results.at[ind, f'spectrum_{x + 1}_rev'] = ident
+            # now drop the spectrum as csv to the spectrafolder
+            spectrum_df.to_csv(path_to_write_csv.joinpath(f"spectra/spectrum_at_{ident}.csv"))
 
         # check if any pump stalled, if so, set the bool false, else true
         if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():

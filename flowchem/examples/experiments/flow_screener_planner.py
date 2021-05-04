@@ -33,9 +33,11 @@ path_to_write_csv = pathlib.Path().home() / "Documents"
 equivalents = np.linspace(start=1, stop=2, num=11)  # [1.  1.1 1.2 1.3 1.4 1.5 1.6 1.7 1.8 1.9 2. ]
 residence_times = np.linspace(start=1, stop=10, num=10)  # [ 1.  2.  3.  4.  5.  6.  7.  8.  9. 10.]
 
+#use timestamp for identifier
 conditions_results = pd.DataFrame(columns=['residence_time', 'eq_thio', 'flow_thio', 'flow_acid', 'yield_1', 'yield_2',
                                            'yield_3', 'yield_1_rev', 'yield_2_rev', 'yield_3_rev', 'Run_forward',
-                                           'Run_backward'])
+                                           'Run_backward', 'spectrum_1', 'spectrum_2',
+                                           'spectrum_3', 'spectrum_1_rev', 'spectrum_2_rev', 'spectrum_3_rev'])
 
 
 # Create tuples with (residence time, equivalents) for each experimental datapoint
