@@ -34,6 +34,16 @@ def residual(pars, x, data):
              gaussian(x, pars['amp_3'], 1796, pars['wid_3']))
     return model - data
 
+def are_pumps_moving(column):
+    # check if any pump stalled, if so, set the bool false, else true
+    if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
+        conditions_results.at[ind, column] = "Success"
+        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
+        return True
+    else:
+        conditions_results.at[ind, column] = "Failed"
+        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
+        return False
 
 # create the fitting parameters
 pfit = Parameters()
@@ -128,10 +138,8 @@ for ind in conditions_results.index:
         # wait until several reactor volumes are through
         sleep(3*60*conditions_results.at[ind, 'residence_time'])
 
-        # check if any pump stalled, if so, set the bool false, leave loop
-        if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
-            conditions_results.at[ind, 'Run_forward'] = False
-            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
+        #
+        if not are_pumps_moving('Run_forward'):
             break
 
         # do this 3 times, just gets 3 consecutive spectra
@@ -154,13 +162,8 @@ for ind in conditions_results.index:
 
 
         # check if any pump stalled, if so, set the bool false, else true
-        if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
-            conditions_results.at[ind, 'Run_forward'] = "Failed"
-            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
+        if not are_pumps_moving('Run_forward'):
             break
-        else:
-            conditions_results.at[ind, 'Run_forward'] = "Success"
-            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
 
 
 for ind in reversed(conditions_results.index):
@@ -202,16 +205,11 @@ for ind in reversed(conditions_results.index):
             # now drop the spectrum as csv to the spectrafolder
             spectrum_df.to_csv(path_to_write_csv.joinpath(f"spectra/spectrum_at_{ident}.csv"))
 
-        # check if any pump stalled, if so, set the bool false, else true
-        if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-            conditions_results.at[ind, 'Run_backward'] = "Success"
-            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
+            if not are_pumps_moving('Run_backward'):
+                break
 
-        else:
-            conditions_results.at[ind, 'Run_backward'] = "Failed"
-            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
 
-            break
+
 
 pump_thionyl_chloride.stop()
 pump_hexyldecanoic_acid.stop()
