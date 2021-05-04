@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-import scipy.integrate
 import seaborn as sns
+from lmfit.models import LinearModel, PseudoVoigtModel
 
 sns.set()
 
@@ -21,27 +21,27 @@ for x in range(291):
     x_arr = spectra_df.index.to_numpy()
     y_arr = spectra_df[x]
 
-    from lmfit.models import GaussianModel, LinearModel, PseudoVoigtModel
-    import matplotlib.pyplot as plt
+    df = pd.DataFrame(y_arr, index=x_arr)
+    df.to_csv("acid_high_concentration.csv")
 
     peak_chloride = PseudoVoigtModel(prefix="chloride_")
-    peak2 = PseudoVoigtModel(prefix="p2_")
-    peak3 = PseudoVoigtModel(prefix="p3_")
+    peak_dimer = PseudoVoigtModel(prefix="dimer_")
+    peak_monomer = PseudoVoigtModel(prefix="monomer_")
     offset = LinearModel()
-    model = peak_chloride + peak2 + peak3 + offset
+    model = peak_chloride + peak_dimer + peak_monomer + offset
 
     pars = model.make_params()
     pars["chloride_center"].set(value=1800, min=1790, max=1810)
     pars["chloride_amplitude"].set(min=0)  # Positive peak
     pars["chloride_sigma"].set(min=5, max=50)  # Set full width half maximum
 
-    pars["p2_center"].set(value=1736, min=1734, max=1738)
-    pars["p2_amplitude"].set(min=0)  # Positive peak
-    pars["p2_sigma"].set(min=4, max=40)  # Set full width half maximum
+    pars["dimer_center"].set(value=1715, min=1706, max=1716)
+    pars["dimer_amplitude"].set(min=0)  # Positive peak
+    pars["dimer_sigma"].set(min=1, max=15)  # Set full width half maximum
 
-    pars["p3_center"].set(value=1708, min=1710, max=1712)
-    pars["p3_amplitude"].set(min=0)  # Positive peak
-    pars["p3_sigma"].set(min=0, max=10)  # Set full width half maximum
+    pars["monomer_center"].set(value=1740, min=1734, max=1752)
+    pars["monomer_amplitude"].set(min=0)  # Positive peak
+    pars["monomer_sigma"].set(min=4, max=30)  # Set full width half maximum
 
     result = model.fit(y_arr, pars, x=x_arr)
 
@@ -54,9 +54,9 @@ for x in range(291):
     plt.savefig(f"fit_{x}.png")
 
     product = result.values["chloride_amplitude"]
-    sm = result.values["p2_amplitude"] + result.values["p3_amplitude"]
+    sm = result.values["dimer_amplitude"] + result.values["monomer_amplitude"]
     integral_p.append(product / (sm + product))
-    print(f"Spectrum {x} fitted!")
+    print(f"Spectrum {x} fitted! [Yield was {product / (sm + product)}]")
     plt.figure(2)
     plt.cla()
     plt.scatter(x=list(range(len(integral_p))), y=integral_p)
@@ -66,6 +66,6 @@ for x in range(291):
 
 plt.cla()
 plt.scatter(x=list(range(len(integral_p))), y=integral_p)
-plt.show()
+plt.draw()
 plt.savefig(f"yield_trend.png")
-input()
+print("Finished!")
