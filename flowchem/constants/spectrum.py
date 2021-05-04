@@ -10,7 +10,8 @@ class Spectrum:
         self._y = np.array(y)
 
     @property
-    def empty(self):
+    def empty(self) -> True:
+        """ True if there are no data """
         return self._y.size == 0
 
     def integrate(self, x_start: float, x_end: float) -> float:
