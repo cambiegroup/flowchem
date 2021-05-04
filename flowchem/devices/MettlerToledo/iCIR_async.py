@@ -59,7 +59,7 @@ class FlowIR(iCIR_spectrometer):
         return await self.opcua.get_node(self.CONNECTION_STATUS).get_value()
 
     @property
-    def probe_info(self) -> ProbeInfo:
+    async def probe_info(self) -> ProbeInfo:
         """ Return FlowIR probe information """
         probe_info = await self.opcua.get_node(self.PROBE_DESCRIPTION).get_value()
         return self.parse_probe_info(probe_info)
@@ -85,13 +85,13 @@ class FlowIR(iCIR_spectrometer):
     async def _get_wavenumber_from_spectrum_node(node) -> List[float]:
         """ Gets the X-axis value of a spectrum. This is necessary as they change e.g. with resolution. """
         node_property = await node.get_properties()
-        x_axis = await node_property[0].read_value()
+        x_axis = await node_property[0].get_value()
         return x_axis.AxisSteps
 
     @staticmethod
     async def get_spectrum_from_node(node) -> IRSpectrum:
         try:
-            intensity = await node.read_value()
+            intensity = await node.get_value()
             wavenumber = await FlowIR._get_wavenumber_from_spectrum_node(node)
             return IRSpectrum(wavenumber, intensity)
 
