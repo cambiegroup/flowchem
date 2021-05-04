@@ -31,11 +31,11 @@ def are_pumps_moving(column):
     # check if any pump stalled, if so, set the bool false, else true
     if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
         conditions_results.at[ind, column] = "Success"
-        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
+        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone.csv"))
         return True
     else:
         conditions_results.at[ind, column] = "Failed"
-        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
+        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone.csv"))
         return False
 
 # create the fitting parameters
@@ -82,8 +82,8 @@ except FileExistsError:
 # Hardware
 pump_connection = PumpIO('COM5')
 
-pump_thionyl_chloride = Elite11(pump_connection, address=0)
-pump_hexyldecanoic_acid = Elite11(pump_connection, address=6)
+pump_thionyl_chloride = Elite11(pump_connection, address=6)
+pump_hexyldecanoic_acid = Elite11(pump_connection, address=0)
 
 pump_thionyl_chloride.syringe_diameter = 9.62
 pump_hexyldecanoic_acid.syringe_diameter = 19.93
@@ -107,7 +107,7 @@ while spectrum.empty:
 ###
 
 try:
-    conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
+    conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone.csv"))
 except OSError:
     conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_empty.csv"))
 
@@ -179,7 +179,7 @@ for ind in reversed(conditions_results.index):
         # check if any pump stalled, if so, set the bool false, leave loop
         if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_backward'] = "Failed"
-            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment.csv"))
+            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone.csv"))
             break
 
         # do this 3 times, just gets 3 consecutive spectra
