@@ -53,6 +53,7 @@ for ind in conditions_results.index:
         # check if any pump stalled, if so, set the bool false, leave loop
         if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_forward'] = False
+            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
             break
 
         # take three IRs
@@ -63,14 +64,16 @@ for ind in conditions_results.index:
         # check if any pump stalled, if so, set the bool false, else true
         if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_forward'] = False
+            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
             break
         else:
             conditions_results.at[ind, 'Run_forward'] = True
+            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
 
 
 for ind in reversed(conditions_results.index):
-    if conditions_results.at[ind, 'Run_forward']  != True:
-        # also check the bool, if it ran already, don't rerun it. but skip it
+    if conditions_results.at[ind, 'Run_backward']  != True:
+        # also check the bool, if it ran already, don't rerun, but skip it
         pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
         pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
         if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
@@ -83,10 +86,9 @@ for ind in reversed(conditions_results.index):
         sleep(3*60*conditions_results.at[ind, 'residence_time'])
 
         # check if any pump stalled, if so, set the bool false, leave loop
-        if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-            pass
-        else:
-            conditions_results.at[ind, 'Run_forward'] = False
+        if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
+            conditions_results.at[ind, 'Run_backward'] = False
+            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
             break
 
         # take three IRs
@@ -96,16 +98,17 @@ for ind in reversed(conditions_results.index):
 
         # check if any pump stalled, if so, set the bool false, else true
         if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-            conditions_results.at[ind, 'Run_forward'] = True
+            conditions_results.at[ind, 'Run_backward'] = True
+            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
+
         else:
-            conditions_results.at[ind, 'Run_forward'] = False
+            conditions_results.at[ind, 'Run_backward'] = False
+            conditions_results.to_csv("C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/conditions_results.csv")
+
             break
 
-#stop the pumps
-
-    # after the whole for loop is over, drop that to a csv file.
-    # TODO make sure this doesn't overwrite previous runs, by adding timestamp. Also make proper path
-    conditions_results.to_csv(f"C:/Users/jwolf/Documents/flowchem/flowchem/examples/experiments/results/{'screening_at_'}{round(time())}")
+pump_thionyl_chloride.stop()
+pump_hexyldecanoic_acid.stop()
 
 
 
