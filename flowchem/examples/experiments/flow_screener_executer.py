@@ -31,11 +31,11 @@ def are_pumps_moving(column):
     # check if any pump stalled, if so, set the bool false, else true
     if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
         conditions_results.at[ind, column] = "Success"
-        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone.csv"))
+        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone_thioeqs.csv"))
         return True
     else:
         conditions_results.at[ind, column] = "Failed"
-        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone.csv"))
+        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone_thioeqs.csv"))
         return False
 
 # create the fitting parameters
@@ -82,8 +82,8 @@ except FileExistsError:
 # Hardware
 pump_connection = PumpIO('COM5')
 
-pump_thionyl_chloride = Elite11(pump_connection, address=6)
-pump_hexyldecanoic_acid = Elite11(pump_connection, address=0)
+pump_thionyl_chloride = Elite11(pump_connection, address=0)
+pump_hexyldecanoic_acid = Elite11(pump_connection, address=6)
 
 pump_thionyl_chloride.syringe_diameter = 9.62
 pump_hexyldecanoic_acid.syringe_diameter = 19.93
@@ -107,9 +107,9 @@ while spectrum.empty:
 ###
 
 try:
-    conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone.csv"))
+    conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone_thioeqs.csv"))
 except OSError:
-    conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_empty.csv"))
+    conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_thio_eqs_empty.csv"))
 
 conditions_results.Run_forward = conditions_results.Run_forward.astype(str)
 conditions_results.Run_backward = conditions_results.Run_backward.astype(str)
@@ -130,9 +130,9 @@ for ind in conditions_results.index:
 
         print(f"Started experiment with residence time = {conditions_results.at[ind, 'residence_time']} and "
               f"SOCl2 equiv. = {conditions_results.at[ind, 'eq_thio']}! "
-              f"Now waiting {3*60*conditions_results.at[ind, 'residence_time']}s...")
+              f"Now waiting {5*60*conditions_results.at[ind, 'residence_time']}s...")
         # wait until several reactor volumes are through
-        sleep(3*60*conditions_results.at[ind, 'residence_time'])
+        sleep(5*60*conditions_results.at[ind, 'residence_time'])
 
         #
         if not are_pumps_moving('Run_forward'):
@@ -174,12 +174,12 @@ for ind in reversed(conditions_results.index):
             pump_hexyldecanoic_acid.infuse_run()
 
         # wait until several reactor volumes are through
-        sleep(3*60*conditions_results.at[ind, 'residence_time'])
+        sleep(5*60*conditions_results.at[ind, 'residence_time'])
 
         # check if any pump stalled, if so, set the bool false, leave loop
         if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
             conditions_results.at[ind, 'Run_backward'] = "Failed"
-            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone.csv"))
+            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone_thioeqs.csv"))
             break
 
         # do this 3 times, just gets 3 consecutive spectra
