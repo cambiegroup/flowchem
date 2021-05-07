@@ -30,8 +30,9 @@ def calculate_flowrate(row):
 path_to_write_csv = pathlib.Path().home() / "Documents"
 
 # prepare the IO Frame
-equivalents = [0.8, 1, 1.2, 1.4, 1.6]#np.linspace(start=1, stop=1.3, num=6)  # [1. 1.06 1.12 1.18 1.24 1.3 ]
-residence_times = [1]#np.logspace(start=0, stop=np.log(20), base=np.e, num=10)  # [ 1. 1.39495079  1.94588772  2.71441762  3.78647901  5.2819519,  7.368063   10.27808533 14.33742329 20.]
+equivalents = [1]#np.linspace(start=1, stop=1.3, num=6)  # [1. 1.06 1.12 1.18 1.24 1.3 ]
+residence_times = [0.5, 1, 1.5, 2, 3,5,7]#np.logspace(start=0, stop=np.log(20), base=np.e, num=10)  # [ 1. 1.39495079  1.94588772  2.71441762  3.78647901  5.2819519,  7.368063   10.27808533 14.33742329 20.]
+
 
 #use timestamp for identifier
 conditions_results = pd.DataFrame(columns=['residence_time', 'eq_thio', 'flow_thio', 'flow_acid', 'yield_1', 'yield_2',
@@ -46,9 +47,7 @@ experimental_conditions = [(t_res, eq) for t_res in residence_times for eq in eq
 conditions_results['residence_time'], conditions_results['eq_thio'] = zip(*experimental_conditions)
 
 
-
-
-
 # now, iterate through the dataframe and calculate the needed flow rates
 conditions_results: pd.DataFrame = conditions_results.apply(calculate_flowrate, axis=1)
-conditions_results.to_csv(path_to_write_csv / "flow_screening_thio_eqs_empty.csv")
+# conditions_results.to_csv(path_to_write_csv / "flow_screening_times_thio_const_empty.csv")
+conditions_results.to_csv(path_to_write_csv / "test_glass.csv")

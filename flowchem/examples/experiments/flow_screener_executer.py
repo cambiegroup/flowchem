@@ -18,24 +18,30 @@
 
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 import opcua
+import logging
 from flowchem.devices.MettlerToledo.iCIR import FlowIR
 import pandas as pd
-from time import sleep, time
+from time import sleep, time, asctime, localtime
 from lmfit.models import LinearModel, PseudoVoigtModel
 from pathlib import Path
 
+SOURCE_FILE = "test_glass.csv"
+OUTPUT_FILE = SOURCE_FILE[:-4] + "_ex.csv"
+
+logging.basicConfig()
+logger = logging.getLogger("flowchem")
+logger.setLevel(logging.DEBUG)
 
 
-
-def are_pumps_moving(column):
+def are_pumps_moving(column, row):
     # check if any pump stalled, if so, set the bool false, else true
     if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-        conditions_results.at[ind, column] = "Success"
-        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone_thioeqs.csv"))
+        conditions_results.at[row, column] = "Success"
+        conditions_results.to_csv(path_to_write_csv.joinpath(OUTPUT_FILE))
         return True
     else:
-        conditions_results.at[ind, column] = "Failed"
-        conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone_thioeqs.csv"))
+        conditions_results.at[row, column] = "Failed"
+        conditions_results.to_csv(path_to_write_csv.joinpath(OUTPUT_FILE))
         return False
 
 # create the fitting parameters
@@ -85,8 +91,8 @@ pump_connection = PumpIO('COM5')
 pump_thionyl_chloride = Elite11(pump_connection, address=0)
 pump_hexyldecanoic_acid = Elite11(pump_connection, address=6)
 
-pump_thionyl_chloride.syringe_diameter = 9.62
-pump_hexyldecanoic_acid.syringe_diameter = 19.93
+pump_thionyl_chloride.syringe_diameter = 10.3
+pump_hexyldecanoic_acid.syringe_diameter = 23.03
 
 
 ###
@@ -107,35 +113,41 @@ while spectrum.empty:
 ###
 
 try:
-    conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone_thioeqs.csv"))
+    conditions_results = pd.read_csv(path_to_write_csv.joinpath(OUTPUT_FILE))
 except OSError:
-    conditions_results = pd.read_csv(path_to_write_csv.joinpath("flow_screening_thio_eqs_empty.csv"))
+    conditions_results = pd.read_csv(path_to_write_csv.joinpath(SOURCE_FILE))
 
 conditions_results.Run_forward = conditions_results.Run_forward.astype(str)
 conditions_results.Run_backward = conditions_results.Run_backward.astype(str)
+
+# Initialize pump
+pump_thionyl_chloride.stop()
+pump_hexyldecanoic_acid.stop()
+pump_thionyl_chloride.infusion_rate = 0.001
+pump_hexyldecanoic_acid.infusion_rate = 0.01
+pump_thionyl_chloride.infuse_run()
+pump_hexyldecanoic_acid.infuse_run()
 
 # Dataframe already is in the right order, now iterate through from top and from bottom, run the experiments and set the boolean
 # assume that the correct syringe diameter was manually set
 for ind in conditions_results.index:
     if conditions_results.at[ind, 'Run_forward'] != "Success":
         # also check the bool, if it ran already, don't rerun it. but skip it
+        print(f"before setting flowrates is {time()}")
         pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
+        print(f"set chloride at {time()}")
         pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
-
-        # Ensures pumps are running
-        if not pump_thionyl_chloride.is_moving():
-            pump_thionyl_chloride.infuse_run()
-        if not pump_hexyldecanoic_acid.is_moving():
-            pump_hexyldecanoic_acid.infuse_run()
+        print(f"set acid at {time()}")
 
         print(f"Started experiment with residence time = {conditions_results.at[ind, 'residence_time']} and "
               f"SOCl2 equiv. = {conditions_results.at[ind, 'eq_thio']}! "
-              f"Now waiting {5*60*conditions_results.at[ind, 'residence_time']}s...")
+              f"Now waiting {5*60*conditions_results.at[ind, 'residence_time']}s... Waiting will be over at "
+              f"{asctime(localtime(time()+5*60*conditions_results.at[ind, 'residence_time']))}")
         # wait until several reactor volumes are through
         sleep(5*60*conditions_results.at[ind, 'residence_time'])
 
         #
-        if not are_pumps_moving('Run_forward'):
+        if not are_pumps_moving('Run_forward', ind):
             break
 
         # do this 3 times, just gets 3 consecutive spectra
@@ -158,57 +170,57 @@ for ind in conditions_results.index:
 
 
         # check if any pump stalled, if so, set the bool false, else true
-        if not are_pumps_moving('Run_forward'):
+        if not are_pumps_moving('Run_forward', ind):
             break
 
 
 for ind in reversed(conditions_results.index):
-    if conditions_results.at[ind, 'Run_backward']  != "Success":
+    if conditions_results.at[ind, 'Run_backward'] != "Success":
         # also check the bool, if it ran already, don't rerun, but skip it
-        pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
-        pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
-        if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
-            pass
-        else:
-            pump_thionyl_chloride.infuse_run()
-            pump_hexyldecanoic_acid.infuse_run()
+        if conditions_results.at[ind, 'Run_backward'] != "Success":
+            # also check the bool, if it ran already, don't rerun it. but skip it
+            pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
+            pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
 
-        # wait until several reactor volumes are through
-        sleep(5*60*conditions_results.at[ind, 'residence_time'])
+            # Ensures pumps are running
+            if not pump_thionyl_chloride.is_moving():
+                pump_thionyl_chloride.infuse_run()
+            if not pump_hexyldecanoic_acid.is_moving():
+                pump_hexyldecanoic_acid.infuse_run()
 
-        # check if any pump stalled, if so, set the bool false, leave loop
-        if not pump_thionyl_chloride.is_moving() or not pump_hexyldecanoic_acid.is_moving():
-            conditions_results.at[ind, 'Run_backward'] = "Failed"
-            conditions_results.to_csv(path_to_write_csv.joinpath("flow_screening_experiment_dmfone_thioeqs.csv"))
-            break
+            print(f"Started experiment with residence time = {conditions_results.at[ind, 'residence_time']} and "
+                  f"SOCl2 equiv. = {conditions_results.at[ind, 'eq_thio']}! "
+                  f"Now waiting {5 * 60 * conditions_results.at[ind, 'residence_time']}s... Waiting will be over at "
+                  f"{asctime(localtime(time() + 5 * 60 * conditions_results.at[ind, 'residence_time']))}")
+            # wait until several reactor volumes are through
+            sleep(5 * 60 * conditions_results.at[ind, 'residence_time'])
 
-        # do this 3 times, just gets 3 consecutive spectra
-        for x in range(3):
-            spectra_count = ir_spectrometer.get_sample_count()
-
-            while ir_spectrometer.get_sample_count() == spectra_count:
-                sleep(1)
-
-            print(f"New spectrum!")
-            spectrum = ir_spectrometer.get_last_spectrum_treated()
-            spectrum_df = spectrum.as_df()
-            # this now needs to be translated to yield
-            conditions_results.at[ind, f'yield_{x+1}_rev'] = calculate_yield(spectrum_df)
-            # create a unique identifier, in this case the current time in seconds
-            ident = round(time())
-            # drop the identifier to the table
-            conditions_results.at[ind, f'spectrum_{x + 1}_rev'] = ident
-            # now drop the spectrum as csv to the spectrafolder
-            spectrum_df.to_csv(path_to_write_csv.joinpath(f"spectra/spectrum_at_{ident}.csv"))
-
-            if not are_pumps_moving('Run_backward'):
+            #
+            if not are_pumps_moving('Run_backward', ind):
                 break
 
+            # do this 3 times, just gets 3 consecutive spectra
+            for x in range(3):
+                spectra_count = ir_spectrometer.get_sample_count()
 
+                while ir_spectrometer.get_sample_count() == spectra_count:
+                    sleep(1)
 
+                print(f"New spectrum!")
+                spectrum = ir_spectrometer.get_last_spectrum_treated()
+                spectrum_df = spectrum.as_df()
+                conditions_results.at[ind, f'yield_{x + 1}_rev'] = calculate_yield(spectrum_df)
+                # create a unique identifier, in this case the current time in seconds
+                ident = round(time())
+                # drop the identifier to the table
+                conditions_results.at[ind, f'spectrum_{x + 1}_rev'] = ident
+                # now drop the spectrum as csv to the spectrafolder
+                spectrum_df.to_csv(path_to_write_csv.joinpath(f"spectra/spectrum_at_{ident}_rev.csv"))
+
+            # check if any pump stalled, if so, set the bool false, else true
+            if not are_pumps_moving('Run_backward', ind):
+                break
 
 pump_thionyl_chloride.stop()
 pump_hexyldecanoic_acid.stop()
-
-
 
