@@ -25,7 +25,7 @@ from time import sleep, time, asctime, localtime
 from lmfit.models import LinearModel, PseudoVoigtModel
 from pathlib import Path
 
-SOURCE_FILE = "test_glass.csv"
+SOURCE_FILE = "test_acylation.csv"
 OUTPUT_FILE = SOURCE_FILE[:-4] + "_ex.csv"
 
 logging.basicConfig()
@@ -35,7 +35,7 @@ logger.setLevel(logging.DEBUG)
 
 def are_pumps_moving(column, row):
     # check if any pump stalled, if so, set the bool false, else true
-    if pump_thionyl_chloride.is_moving() and pump_hexyldecanoic_acid.is_moving():
+    if pump_hexdiol.is_moving() and pump_hexyldecanoic_acid_chloride.is_moving():
         conditions_results.at[row, column] = "Success"
         conditions_results.to_csv(path_to_write_csv.joinpath(OUTPUT_FILE))
         return True
@@ -88,11 +88,11 @@ except FileExistsError:
 # Hardware
 pump_connection = PumpIO('COM5')
 
-pump_thionyl_chloride = Elite11(pump_connection, address=0)
-pump_hexyldecanoic_acid = Elite11(pump_connection, address=6)
+pump_hexdiol = Elite11(pump_connection, address=0)
+pump_hexyldecanoic_acid_chloride = Elite11(pump_connection, address=6)
 
-pump_thionyl_chloride.syringe_diameter = 10.3
-pump_hexyldecanoic_acid.syringe_diameter = 23.03
+pump_hexdiol.syringe_diameter = 14.57
+pump_hexyldecanoic_acid_chloride.syringe_diameter = 14.57
 
 
 ###
@@ -121,12 +121,12 @@ conditions_results.Run_forward = conditions_results.Run_forward.astype(str)
 conditions_results.Run_backward = conditions_results.Run_backward.astype(str)
 
 # Initialize pump
-pump_thionyl_chloride.stop()
-pump_hexyldecanoic_acid.stop()
-pump_thionyl_chloride.infusion_rate = 0.001
-pump_hexyldecanoic_acid.infusion_rate = 0.01
-pump_thionyl_chloride.infuse_run()
-pump_hexyldecanoic_acid.infuse_run()
+pump_hexdiol.stop()
+pump_hexyldecanoic_acid_chloride.stop()
+pump_hexdiol.infusion_rate = 0.001
+pump_hexyldecanoic_acid_chloride.infusion_rate = 0.01
+pump_hexdiol.infuse_run()
+pump_hexyldecanoic_acid_chloride.infuse_run()
 
 # Dataframe already is in the right order, now iterate through from top and from bottom, run the experiments and set the boolean
 # assume that the correct syringe diameter was manually set
@@ -134,13 +134,13 @@ for ind in conditions_results.index:
     if conditions_results.at[ind, 'Run_forward'] != "Success":
         # also check the bool, if it ran already, don't rerun it. but skip it
         print(f"before setting flowrates is {time()}")
-        pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
+        pump_hexdiol.infusion_rate = conditions_results.at[ind, 'flow_hexdiol']
         print(f"set chloride at {time()}")
-        pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
-        print(f"set acid at {time()}")
+        pump_hexyldecanoic_acid_chloride.infusion_rate = conditions_results.at[ind, 'flow_acid_chloride']
+        print(f"set acid_chloride at {time()}")
 
         print(f"Started experiment with residence time = {conditions_results.at[ind, 'residence_time']} and "
-              f"SOCl2 equiv. = {conditions_results.at[ind, 'eq_thio']}! "
+              f"hexdiol equiv. = {conditions_results.at[ind, 'eq_hexdiol']}! "
               f"Now waiting {5*60*conditions_results.at[ind, 'residence_time']}s... Waiting will be over at "
               f"{asctime(localtime(time()+5*60*conditions_results.at[ind, 'residence_time']))}")
         # wait until several reactor volumes are through
@@ -179,17 +179,17 @@ for ind in reversed(conditions_results.index):
         # also check the bool, if it ran already, don't rerun, but skip it
         if conditions_results.at[ind, 'Run_backward'] != "Success":
             # also check the bool, if it ran already, don't rerun it. but skip it
-            pump_thionyl_chloride.infusion_rate = conditions_results.at[ind, 'flow_thio']
-            pump_hexyldecanoic_acid.infusion_rate = conditions_results.at[ind, 'flow_acid']
+            pump_hexdiol.infusion_rate = conditions_results.at[ind, 'flow_hexdiol']
+            pump_hexyldecanoic_acid_chloride.infusion_rate = conditions_results.at[ind, 'flow_acid_chloride']
 
             # Ensures pumps are running
-            if not pump_thionyl_chloride.is_moving():
-                pump_thionyl_chloride.infuse_run()
-            if not pump_hexyldecanoic_acid.is_moving():
-                pump_hexyldecanoic_acid.infuse_run()
+            if not pump_hexdiol.is_moving():
+                pump_hexdiol.infuse_run()
+            if not pump_hexyldecanoic_acid_chloride.is_moving():
+                pump_hexyldecanoic_acid_chloride.infuse_run()
 
             print(f"Started experiment with residence time = {conditions_results.at[ind, 'residence_time']} and "
-                  f"SOCl2 equiv. = {conditions_results.at[ind, 'eq_thio']}! "
+                  f"Hexdiol equiv. = {conditions_results.at[ind, 'eq_hexdiol']}! "
                   f"Now waiting {5 * 60 * conditions_results.at[ind, 'residence_time']}s... Waiting will be over at "
                   f"{asctime(localtime(time() + 5 * 60 * conditions_results.at[ind, 'residence_time']))}")
             # wait until several reactor volumes are through
@@ -221,6 +221,6 @@ for ind in reversed(conditions_results.index):
             if not are_pumps_moving('Run_backward', ind):
                 break
 
-pump_thionyl_chloride.stop()
-pump_hexyldecanoic_acid.stop()
+pump_hexdiol.stop()
+pump_hexyldecanoic_acid_chloride.stop()
 
