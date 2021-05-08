@@ -14,6 +14,7 @@ import threading
 from dataclasses import dataclass
 from typing import Union, List, Tuple, Optional
 from serial import PARITY_EVEN, SEVENBITS, STOPBITS_ONE
+from threading import Thread
 
 
 class ML600Exception(Exception):
@@ -35,17 +36,12 @@ class InvalidArgument(ML600Exception):
 class Protocol1CommandTemplate:
     """ Class representing a pump command and its expected reply, but without target pump number """
     command_string: str
-    requires_argument: bool
+    argument_string: Optional[str] = None
 
     def to_pump(self, address: int, argument: str = '') -> Protocol1Command:
         """ Returns a Protocol11Command by adding to the template pump address and command arguments """
-        if self.requires_argument and not argument:
-            raise InvalidArgument(f"Cannot send command {self.command_string} without an argument!")
-        elif self.requires_argument is False and argument:
-            raise InvalidArgument(f"Cannot provide an argument to command {self.command_string}!")
-        return Protocol1Command(command_string=self.command_string,
-                                requires_argument=self.requires_argument, target_pump_num=address,
-                                command_argument=argument)
+        return Protocol1Command(command_string=self.command_string, target_pump_num=address,
+                                argument_string=self.argument_string, command_argument=argument)
 
 
 @dataclass
@@ -64,7 +60,11 @@ class Protocol1Command(Protocol1CommandTemplate):
         Create actual command byte by prepending pump address to command and appending executing command.
         """
         assert self.target_pump_num in range(1, 17)
-        return str(self.PUMP_ADDRESS[self.target_pump_num]) + self.command_string + self.command_argument + "R\r"
+        if self.command_argument:
+            return str(self.PUMP_ADDRESS[self.target_pump_num]) + self.command_string + self.argument_string\
+                   + self.command_argument + "R\r"
+        else:
+            return str(self.PUMP_ADDRESS[self.target_pump_num]) + self.command_string + "R\r"
 
 
 class HamiltonPumpIO:
@@ -91,7 +91,8 @@ class HamiltonPumpIO:
 
         try:
             # noinspection PyPep8
-            self._serial = serial.Serial(port=port, baudrate=baud_rate,
+            self._serial = serial.Serial(port=port, baudrate=baud_rate, parity=PARITY_EVEN,
+                                         stopbits=STOPBITS_ONE, bytesize=SEVENBITS,
                                          timeout=0.1)  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
         except serial.serialutil.SerialException as e:
             raise InvalidConfiguration from e
@@ -120,10 +121,8 @@ class HamiltonPumpIO:
 
     def _hw_init(self):
         """ Send to all pumps the HW initialization command (i.e. homing) """
-        self._write("aXR\r")  # Broadcast: initialize + execute
-        # Note: no need to consume reply here because:
-        # - every command reset the buffer before writing
-        # - the number of replies depends on the n of pumps connected (I believe)
+        self._write(":XR\r")  # Broadcast: initialize + execute
+        # Note: no need to consume reply here because there is none (since we are using broadcast)
 
     def _write(self, command: str):
         """ Writes a command to the pump """
@@ -188,11 +187,22 @@ class HamiltonPumpIO:
 
 class ML600Commands:
     """ Just a collection of commands. Grouped here to ease future, unlikely, changes. """
-    STATUS = Protocol1CommandTemplate(command_string="U", requires_argument=False)
+    STATUS = Protocol1CommandTemplate(command_string="U")
+    INIT_ALL = Protocol1CommandTemplate(command_string="X", argument_string="S")
+    INIT_VALVE_ONLY = Protocol1CommandTemplate(command_string="LX")
+    INIT_SYRINGE_ONLY = Protocol1CommandTemplate(command_string="X1", argument_string="S")
 
 
 class ML600:
-    """" ML600 implementation according to docs, to be tested! FIXME TODO"""
+    """" ML600 implementation according to docs, to be tested! FIXME TODO
+
+    From docs:
+    To determine the volume dispensed per step the total syringe volume is divided by
+    48,000 steps. All Hamilton instrument syringes are designed with a 60 mm stroke
+    length and the Microlab 600 is designed to move 60 mm in 48,000 steps. For
+    example to dispense 9 mL from a 10 mL syringe you would determine the number of
+    steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
+    """
     def __init__(self, pump_io: HamiltonPumpIO, address: int = 1, name: str = None, syringe_diameter: float = None,
                  syringe_volume: float = None):
         """
@@ -226,11 +236,96 @@ class ML600:
         """ Returns the current firmware version reported by the pump """
         return self.send_command_and_read_reply(ML600Commands.STATUS)
 
+    def initialize_pump(self, speed: int = None):
+        """
+        Initialize both syringe and valve
+        speed: 2-3692 is in seconds/stroke
+        """
+        if speed:
+            assert 2 < speed < 3692
+            return self.send_command_and_read_reply(ML600Commands.INIT_ALL, parameter=str(speed))
+        else:
+            return self.send_command_and_read_reply(ML600Commands.INIT_ALL)
+
+    def initialize_valve(self):
+        """
+        Initialize valve only
+        """
+        return self.send_command_and_read_reply(ML600Commands.INIT_VALVE_ONLY)
+
+    def initialize_syringe(self, speed: int = None):
+        """
+        Initialize syringe only
+        speed: 2-3692 is in seconds/stroke
+        """
+        if speed:
+            assert 2 < speed < 3692
+            return self.send_command_and_read_reply(ML600Commands.INIT_ALL, parameter=str(speed))
+        else:
+            return self.send_command_and_read_reply(ML600Commands.INIT_ALL)
+
+    def set_valve_position(self, target_position):
+        pass
+
+    def pickup(self, volume, from_valve, speed_in, wait):
+        self.set_valve_position(from_valve)
+        pass
+
+    def deliver(self, volume, from_valve, speed_out, wait):
+        pass
+
+    def transfer(self, volume, from_valve, to_valve, speed_in, speed_out, wait):
+        pass
+
+
+class TwoPumpAssembly(Thread):
+    """
+    Thread to control two pumps and have them generating a continuous flow.
+    Note that the pumps should not be accessed directly when used in a TwoPumpAssembly!
+
+    Notes: this needs to start a thread owned by the instance to control the pumps.
+    The async version of this being possibly simpler w/ tasks and callback :)
+    """
+
+    def __init__(self, pump1: ML600, pump2: ML600, target_flowrate: float):
+        super(TwoPumpAssembly, self).__init__()
+        self._p1 = pump1
+        self._p2 = pump2
+        self.daemon = True
+        self.cancelled = False
+        self.flowrate = target_flowrate
+
+        # While in principle possible, using syringes of different volumes is discouraged, hence...
+        assert pump1.diameter == pump2.diameter, "Syringes with the same diameter are needed for continuous flow!"
+        assert pump1.syringe_volume == pump2.syringe_volume, "Syringes w/ equal volume are needed for continuous flow!"
+
+    def run(self):
+        """Overloaded Thread.run, runs the update
+        method once per every 10 milliseconds."""
+
+        # Initialize both, homing and filling of pump 1
+
+        while not self.cancelled:
+            # SET PUMP1 TO 0
+            # SET PUMP 2 TO FILL
+            while self._p1.is_busy or self._p2.is_busy:
+                time.sleep(0.005)  # 5ms sounds reasonable to me
+            # SET PUMP1 TO 0
+            # SET PUMP 2 TO FILL
+            while self._p1.is_busy or self._p2.is_busy:
+                time.sleep(0.005)  # 5ms sounds reasonable to me
+
+    def cancel(self):
+        """ Cancel continuous-pumping assembly """
+        # SEND STOP COMMAND TO BOTH
+        self.cancelled = True
+
+
 
 if __name__ == '__main__':
     logging.basicConfig()
     l = logging.getLogger(__name__)
     l.setLevel(logging.DEBUG)
-    pump_connection = HamiltonPumpIO(7)
+    pump_connection = HamiltonPumpIO(11)
     test = ML600(pump_connection, address=1)
     breakpoint()
