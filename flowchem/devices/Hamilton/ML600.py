@@ -149,7 +149,7 @@ class HamiltonPumpIO:
         else:
             raise ML600Exception(f"This should not happen. Invalid reply: {response}!")
 
-        return success, response[1:]
+        return success, response[1:].rstrip()
 
     def reset_buffer(self):
         """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
@@ -191,6 +191,33 @@ class ML600Commands:
     INIT_ALL = Protocol1CommandTemplate(command_string="X", argument_string="S")
     INIT_VALVE_ONLY = Protocol1CommandTemplate(command_string="LX")
     INIT_SYRINGE_ONLY = Protocol1CommandTemplate(command_string="X1", argument_string="S")
+
+    # STATUS REQUEST
+    # INFORMATION REQUEST -- these all returns Y/N/* where * means busy
+    REQUEST_DONE = Protocol1CommandTemplate(command_string="F")
+    SYRINGE_HAS_ERROR = Protocol1CommandTemplate(command_string="Z")
+    VALVE_HAS_ERROR = Protocol1CommandTemplate(command_string="G")
+    IS_SINGLE_SYRINGE = Protocol1CommandTemplate(command_string="H")
+    # STATUS REQUEST  - these have complex responses, see relevant methods for details.
+    STATUS_REQUEST = Protocol1CommandTemplate(command_string="E1")
+    ERROR_REQUEST = Protocol1CommandTemplate(command_string="E2")
+    TIMER_REQUEST = Protocol1CommandTemplate(command_string="E3")
+    BUSY_STATUS = Protocol1CommandTemplate(command_string="T1")
+    ERROR_STATUS = Protocol1CommandTemplate(command_string="T2")
+    # PARAMETER REQUEST
+    SYRINGE_DEFAULT_SPEED = Protocol1CommandTemplate(command_string="YQS")  # 2-3692 seconds per stroke
+    SYRINGE_DEFAULT_RETURN = Protocol1CommandTemplate(command_string="YQN")  # 0-1000 steps
+    CURRENT_SYRINGE_POSITION = Protocol1CommandTemplate(command_string="YQP")  # 0-52800 steps
+    SYRINGE_DEFAULT_BACKOFF = Protocol1CommandTemplate(command_string="YQP")  # 0-1000 steps
+    CURRENT_VALVE_POSITIONS = Protocol1CommandTemplate(command_string="LQP")  # 1-8 (see docs, Table 3.2.2)
+    # VALVE REQUEST
+    VALVE_ANGLE = Protocol1CommandTemplate(command_string="LQA")  # 0-359 degrees
+    VALVE_CONFIGURATION = Protocol1CommandTemplate(command_string="YQS")  # 11-20 (see docs, Table 3.2.2)
+    VALVE_SPEED = Protocol1CommandTemplate(command_string="LQF")  # 15-720 degrees per sec
+    # TIMER REQUEST
+    TIMER_DELAY = Protocol1CommandTemplate(command_string="<T")  # 0–99999999 ms
+    # FIRMWARE REQUEST
+    FIRMWARE_VERSION = Protocol1CommandTemplate(command_string="U")  # xxii.jj.k (ii major, jj minor, k revision)
 
 
 class ML600:
@@ -235,6 +262,20 @@ class ML600:
     def version(self) -> str:
         """ Returns the current firmware version reported by the pump """
         return self.send_command_and_read_reply(ML600Commands.STATUS)
+
+    @property
+    def is_idle(self) -> bool:
+        """ Checks if the pump is idle (not really, actually check if the last command has ended) """
+        return self.send_command_and_read_reply(ML600Commands.REQUEST_DONE) == "Y"
+
+    @property
+    def is_busy(self) -> bool:
+        """ Not idle """
+        return not self.is_idle
+
+    @property
+    def firmware_version(self) -> str:
+        return self.send_command_and_read_reply(ML600Commands.FIRMWARE_VERSION)
 
     def initialize_pump(self, speed: int = None):
         """
