@@ -171,7 +171,7 @@ class HamiltonPumpIO:
                                        f"(Currently set to {command.target_pump_num})")
 
         # Parse reply
-        success, parsed_response = HamiltonPumpIO.parse_response(response)
+        success, parsed_response = self.parse_response(response)
 
         assert success is True  # Well, this looks like a solid line ;)
         return parsed_response
@@ -230,24 +230,24 @@ class ML600:
     example to dispense 9 mL from a 10 mL syringe you would determine the number of
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
-    def __init__(self, pump_io: HamiltonPumpIO, address: int = 1, name: str = None, syringe_diameter: float = None,
-                 syringe_volume: float = None):
+    VALID_SYRINGE_VOLUME = {0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 25.0, 50.0}
+
+    def __init__(self, pump_io: HamiltonPumpIO, syringe_volume: float, address: int = 1, name: str = None):
         """
 
         Args:
             pump_io: An HamiltonPumpIO w/ serial connection to the daisy chain w/ target pump
+            syringe_volume: Volume of the syringe used, in ml
             address: number of pump in array, 1 for first one, auto-assigned on init based on position.
             name: 'cause naming stuff is important
-            syringe_diameter: ID of the syringe used (to translate linear motion to volume)
-            syringe_volume: Needed to avoid over-withdrawing
         """
         self.pump_io = pump_io
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address: int = address
-        if syringe_diameter is not None:
-            self.diameter = syringe_diameter
-        if syringe_volume is not None:
-            self.syringe_volume = syringe_volume
+        if syringe_volume not in ML600.VALID_SYRINGE_VOLUME:
+            raise InvalidConfiguration(f"The specified syringe volume ({syringe_volume}) does not seem to be valid!\n"
+                                       f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}")
+        self.syringe_volume = syringe_volume
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
@@ -367,5 +367,5 @@ if __name__ == '__main__':
     l = logging.getLogger(__name__)
     l.setLevel(logging.DEBUG)
     pump_connection = HamiltonPumpIO(7)
-    test = ML600(pump_connection, address=1)
+    test = ML600(pump_connection, syringe_volume=5)
     breakpoint()
