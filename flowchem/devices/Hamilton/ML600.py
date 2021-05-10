@@ -40,7 +40,7 @@ class Protocol1CommandTemplate:
 
     def to_pump(self, address: int, argument: str = '') -> Protocol1Command:
         """ Returns a Protocol11Command by adding to the template pump address and command arguments """
-        return Protocol1Command(command_string=self.command_string, target_pump_num=address,
+        return Protocol1Command(target_pump_num=address, command_string=self.command_string,
                                 argument_string=self.argument_string, command_argument=argument)
 
 
@@ -52,8 +52,8 @@ class Protocol1Command(Protocol1CommandTemplate):
     REVERSED_PUMP_ADDRESS = {value: key for (key, value) in PUMP_ADDRESS.items()}
     # i.e. PUMP_ADDRESS = {1:"a", 2:"b"... }
 
-    target_pump_num: int
-    command_argument: str
+    target_pump_num: Optional[int] = 1
+    command_argument: Optional[str] = None
 
     def compile(self) -> str:
         """
@@ -95,7 +95,7 @@ class HamiltonPumpIO:
                                          stopbits=STOPBITS_ONE, bytesize=SEVENBITS,
                                          timeout=0.1)  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
         except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration from e
+            raise InvalidConfiguration(f"Check serial port availability! [{port}]") from e
 
         self.sio = io.TextIOWrapper(buffer=io.BufferedRWPair(self._serial, self._serial), line_buffering=True,
                                     newline="\r")
@@ -321,11 +321,10 @@ class TwoPumpAssembly(Thread):
         self.cancelled = True
 
 
-
 if __name__ == '__main__':
     logging.basicConfig()
     l = logging.getLogger(__name__)
     l.setLevel(logging.DEBUG)
-    pump_connection = HamiltonPumpIO(11)
+    pump_connection = HamiltonPumpIO(7)
     test = ML600(pump_connection, address=1)
     breakpoint()
