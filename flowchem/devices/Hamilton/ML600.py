@@ -138,13 +138,13 @@ class HamiltonPumpIO:
         self.logger.debug(f"Reply received: {reply_string}")
         return reply_string
 
-    @staticmethod
-    def parse_response(response: str) -> Tuple[bool, str]:
+    def parse_response(self, response: str) -> Tuple[bool, str]:
         """ Split a received line in its components: success, reply """
-
         if response[:1] == HamiltonPumpIO.ACKNOWLEDGE:
+            self.logger.debug("Positive acknowledge received")
             success = True
         elif response[:1] == HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE:
+            self.logger.debug("Negative acknowledge received")
             success = False
         else:
             raise ML600Exception(f"This should not happen. Invalid reply: {response}!")
