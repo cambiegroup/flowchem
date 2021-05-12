@@ -341,8 +341,9 @@ class ML600:
         """
         flowrate_in_ml_sec = flowrate_in_ml_min / 60
         flowrate_in_steps_sec = flowrate_in_ml_sec * self.steps_per_ml
-        assert 2 <= flowrate_in_steps_sec <= 3692
-        return round(flowrate_in_steps_sec)
+        seconds_per_stroke = round(48000 / flowrate_in_steps_sec)
+        assert 2 <= seconds_per_stroke <= 3692
+        return round(seconds_per_stroke)
 
     def _volume_to_step(self, volume_in_ml: float) -> int:
         return round(volume_in_ml * self.steps_per_ml) + self.offset_steps
@@ -429,25 +430,48 @@ class TwoPumpAssembly(Thread):
         self.daemon = True
         self.cancelled = False
         self.flowrate = target_flowrate
+        self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
         # While in principle possible, using syringes of different volumes is discouraged, hence...
         assert pump1.syringe_volume == pump2.syringe_volume, "Syringes w/ equal volume are needed for continuous flow!"
+        # self._p1.initialize_pump()
+        # self._p2.initialize_pump()
+
+    def wait_for_both_pumps(self):
+        """ Custom waiting method to wait a shorter time than normal (for better sync) """
+        while self._p1.is_busy or self._p2.is_busy:
+            time.sleep(0.01)  # 10ms sounds reasonable to me
+        self.log.debug("Pumps ready!")
+
+    def _speed(self):
+        speed = self._p1.flowrate_to_steps_per_second(self.flowrate)
+        self.log.debug(f"Speed calculated as {speed}")
+        return speed
 
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every 10 milliseconds."""
 
-        # Initialize both, homing and filling of pump 1
-
         while not self.cancelled:
-            # SET PUMP1 TO 0
-            # SET PUMP 2 TO FILL
-            while self._p1.is_busy or self._p2.is_busy:
-                time.sleep(0.005)  # 5ms sounds reasonable to me
-            # SET PUMP1 TO 0
-            # SET PUMP 2 TO FILL
-            while self._p1.is_busy or self._p2.is_busy:
-                time.sleep(0.005)  # 5ms sounds reasonable to me
+            self._p1.valve_position = self._p1.ValvePositionName.OUTPUT
+            self._p2.valve_position = self._p2.ValvePositionName.INPUT
+            self.log.debug("Setting valves to target position... (phase 1)")
+            self.wait_for_both_pumps()
+
+            self._p1.to_volume(0, speed=self._speed())
+            self._p2.to_volume(self._p2.syringe_volume, speed=self._speed())
+            self.log.debug("Pumping... (phase 1)")
+            self.wait_for_both_pumps()
+
+            self._p1.valve_position = self._p1.ValvePositionName.INPUT
+            self._p2.valve_position = self._p2.ValvePositionName.OUTPUT
+            self.log.debug("Setting valves to target position... (phase 2)")
+            self.wait_for_both_pumps()
+
+            self._p1.to_volume(self._p1.syringe_volume, speed=self._speed())
+            self._p2.to_volume(0, speed=self._speed())
+            self.log.debug("Pumping... (phase 2)")
+            self.wait_for_both_pumps()
 
     def cancel(self):
         """ Cancel continuous-pumping assembly """
@@ -457,13 +481,17 @@ class TwoPumpAssembly(Thread):
 
 if __name__ == '__main__':
     logging.basicConfig()
-    l = logging.getLogger(__name__)
+    l = logging.getLogger(__name__+".TwoPumpAssembly")
+    # l = logging.getLogger(__name__)
     l.setLevel(logging.DEBUG)
     pump_connection = HamiltonPumpIO(7, hw_initialization=False)
-    test = ML600(pump_connection, syringe_volume=5)
-    test.to_volume(0)
-    test.wait_until_idle()
-    test.to_volume(4)
-    test.wait_until_idle()
-    test.to_volume(0)
+    test1 = ML600(pump_connection, syringe_volume=5)
+    pump_connection2 = HamiltonPumpIO(8, hw_initialization=False)
+    test2 = ML600(pump_connection2, syringe_volume=5)
+
+    metapump = TwoPumpAssembly(test1, test2, target_flowrate=20)
+    # metapump.run()
+    # time.sleep(25)
+    # metapump.flowrate = 1
+
     breakpoint()
