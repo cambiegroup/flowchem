@@ -329,7 +329,7 @@ class ML600:
         else:
             return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY)
 
-    def flowrate_to_steps_per_second(self, flowrate_in_ml_min: float):
+    def flowrate_to_seconds_per_stroke(self, flowrate_in_ml_min: float):
         """
         Convert flow rates in ml/min to steps per seconds
 
@@ -444,7 +444,7 @@ class TwoPumpAssembly(Thread):
         self.log.debug("Pumps ready!")
 
     def _speed(self):
-        speed = self._p1.flowrate_to_steps_per_second(self.flowrate)
+        speed = self._p1.flowrate_to_seconds_per_stroke(self.flowrate)
         self.log.debug(f"Speed calculated as {speed}")
         return speed
 
@@ -484,14 +484,14 @@ if __name__ == '__main__':
     l = logging.getLogger(__name__+".TwoPumpAssembly")
     # l = logging.getLogger(__name__)
     l.setLevel(logging.DEBUG)
-    pump_connection = HamiltonPumpIO(7, hw_initialization=False)
+    pump_connection = HamiltonPumpIO(7)
     test1 = ML600(pump_connection, syringe_volume=5)
-    pump_connection2 = HamiltonPumpIO(8, hw_initialization=False)
+    pump_connection2 = HamiltonPumpIO(8)
     test2 = ML600(pump_connection2, syringe_volume=5)
 
     metapump = TwoPumpAssembly(test1, test2, target_flowrate=20)
-    # metapump.run()
-    # time.sleep(25)
-    # metapump.flowrate = 1
+    metapump.start()
+    time.sleep(20)
+    metapump.flowrate = 1
 
     breakpoint()
