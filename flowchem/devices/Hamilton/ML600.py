@@ -12,6 +12,7 @@ import warnings
 import serial
 import logging
 import threading
+from enum import IntEnum
 from dataclasses import dataclass
 from typing import Union, List, Tuple, Optional
 from serial import PARITY_EVEN, SEVENBITS, STOPBITS_ONE
@@ -183,7 +184,7 @@ class HamiltonPumpIO:
         # Parse reply
         success, parsed_response = self.parse_response(response)
 
-        assert success is True  # Well, this looks like a solid line ;)
+        assert success is True  # :)
         return parsed_response
 
     @property
@@ -215,7 +216,8 @@ class ML600Commands:
     VALVE_TO_INLET = Protocol1CommandTemplate(command="I")
     VALVE_TO_OUTLET = Protocol1CommandTemplate(command="O")
     VALVE_TO_WASH = Protocol1CommandTemplate(command="W")
-    VALVE_BY_NAME = Protocol1CommandTemplate(command="LP")  # TODO
+    VALVE_BY_NAME_CW = Protocol1CommandTemplate(command="LP0")
+    VALVE_BY_NAME_CCW = Protocol1CommandTemplate(command="LP1")
     VALVE_BY_ANGLE = Protocol1CommandTemplate(command="LA")  # TODO
 
     # STATUS REQUEST
@@ -256,6 +258,15 @@ class ML600:
     example to dispense 9 mL from a 10 mL syringe you would determine the number of
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
+    class ValvePositionName(IntEnum):
+        """ Maps valve position to the corresponding number """
+        POSITION_1 = 1
+        # POSITION_2 = 2
+        POSITION_3 = 3
+        INPUT = 9  # 9 is default inlet, i.e. 1
+        OUTPUT = 10  # 10 is default outlet, i.e. 3
+        WASH = 11  # 11 is default wash, i.e. undefined
+
     VALID_SYRINGE_VOLUME = {0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 25.0, 50.0}
 
     def __init__(self, pump_io: HamiltonPumpIO, syringe_volume: float, address: int = 1, name: str = None):
@@ -369,16 +380,17 @@ class ML600:
         else:
             return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY)
 
-    def set_valve_position(self, target_position):
-        if target_position == "I":
-            return self.send_command_and_read_reply(ML600Commands.VALVE_TO_INLET)
-        elif target_position == "O":
-            return self.send_command_and_read_reply(ML600Commands.VALVE_TO_OUTLET)
-        else:
-            warnings.warn(f"Invalid valve position: {target_position}")
+    @property
+    def valve_position(self) -> ValvePositionName:
+        """ Represent the position of the valve: getter returns Enum, setter needs Enum """
+        return ML600.ValvePositionName(int(self.send_command_and_read_reply(ML600Commands.CURRENT_VALVE_POSITION)))
 
-    def pickup(self, volume, from_valve, flowrate, wait):
-        self.set_valve_position(from_valve)
+    @valve_position.setter
+    def valve_position(self, target_position: ValvePositionName):
+        self.send_command_and_read_reply(ML600Commands.VALVE_BY_NAME_CW, command_value=str(int(target_position)))
+
+    def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
+        self.valve_position = from_valve
         pass
 
     def deliver(self, volume, from_valve, speed_out, wait):
@@ -436,4 +448,5 @@ if __name__ == '__main__':
     l.setLevel(logging.DEBUG)
     pump_connection = HamiltonPumpIO(7)
     test = ML600(pump_connection, syringe_volume=5)
+    test.valve_position = test.ValvePositionName.INPUT
     breakpoint()
