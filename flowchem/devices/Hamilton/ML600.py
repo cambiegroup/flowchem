@@ -68,8 +68,10 @@ class Protocol1Command(Protocol1CommandTemplate):
         assert self.target_pump_num in range(1, 17)
 
         compiled_command = f"{self.PUMP_ADDRESS[self.target_pump_num]}" \
-                           f"{self.command}{self.command_value}" \
-                           f"{self.optional_parameter}{self.argument_value}"\
+                           f"{self.command}{self.command_value}"
+
+        if self.argument_value:
+            compiled_command += f"{self.optional_parameter}{self.argument_value}"\
 
         # Add execution flag at the end
         if self.execute_command is True:
@@ -218,7 +220,8 @@ class ML600Commands:
     VALVE_TO_WASH = Protocol1CommandTemplate(command="W")
     VALVE_BY_NAME_CW = Protocol1CommandTemplate(command="LP0")
     VALVE_BY_NAME_CCW = Protocol1CommandTemplate(command="LP1")
-    VALVE_BY_ANGLE = Protocol1CommandTemplate(command="LA")  # TODO
+    VALVE_BY_ANGLE_CW = Protocol1CommandTemplate(command="LA0")
+    VALVE_BY_ANGLE_CCW = Protocol1CommandTemplate(command="LA1")
 
     # STATUS REQUEST
     # INFORMATION REQUEST -- these all returns Y/N/* where * means busy
@@ -249,7 +252,7 @@ class ML600Commands:
 
 
 class ML600:
-    """" ML600 implementation according to docs, to be tested! FIXME TODO
+    """" ML600 implementation according to docs. Tested on 61501-01 (single syringe).
 
     From docs:
     To determine the volume dispensed per step the total syringe volume is divided by
@@ -285,72 +288,18 @@ class ML600:
             raise InvalidConfiguration(f"The specified syringe volume ({syringe_volume}) does not seem to be valid!\n"
                                        f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}")
         self.syringe_volume = syringe_volume
+        self.steps_per_ml = 48000 / self.syringe_volume
+        self.offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
         # This command is used to test connection: failure handled by HamiltonPumpIO
-        # self.log.info(f"Connected to pump '{self.name}' on port {self.pump_io.name}:{address} version: {self.version}!")
+        self.log.info(f"Connected to pump '{self.name}'  FW version: {self.firmware_version}!")
 
     def send_command_and_read_reply(self, command_template: Protocol1CommandTemplate, command_value='',
                                     argument_value='') -> str:
         """ Sends a command based on its template and return the corresponding reply as str """
         return self.pump_io.write_and_read_reply(command_template.to_pump(self.address, command_value, argument_value))
-
-    def flowrate_to_steps_per_second(self, flowrate_in_ml_min: float):
-        """
-        Convert flow rates in ml/min to steps per seconds
-
-        To determine the volume dispensed per step the total syringe volume is divided by
-        48,000 steps. All Hamilton instrument syringes are designed with a 60 mm stroke
-        length and the Microlab 600 is designed to move 60 mm in 48,000 steps. For
-        example to dispense 9 mL from a 10 mL syringe you would determine the number of
-        steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
-        """
-        steps_per_ml = 48000 / self.syringe_volume
-        flowrate_in_ml_sec = flowrate_in_ml_min / 60
-        flowrate_in_steps_sec = flowrate_in_ml_sec * steps_per_ml
-        assert 2 <= flowrate_in_steps_sec <= 3692
-        return round(flowrate_in_steps_sec)
-
-    def _to_absolute_step_position(self, speed_in_ml_min: float = None):
-        """ Absolute move to step position """
-
-        return self.send_command_and_read_reply(ML600Commands.STATUS)
-
-    def _to_absolute_volume_position(self):
-        """ Absolute move to volume """
-
-    def pause(self):
-        """ Pause any running command """
-        return self.send_command_and_read_reply(ML600Commands.PAUSE)
-
-    def resume(self):
-        """ Resume any paused command """
-        return self.send_command_and_read_reply(ML600Commands.RESUME)
-
-    def stop(self):
-        """ Stops and abort any running command """
-        self.pause()
-        return self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
-
-    @property
-    def version(self) -> str:
-        """ Returns the current firmware version reported by the pump """
-        return self.send_command_and_read_reply(ML600Commands.STATUS)
-
-    @property
-    def is_idle(self) -> bool:
-        """ Checks if the pump is idle (not really, actually check if the last command has ended) """
-        return self.send_command_and_read_reply(ML600Commands.REQUEST_DONE) == "Y"
-
-    @property
-    def is_busy(self) -> bool:
-        """ Not idle """
-        return not self.is_idle
-
-    @property
-    def firmware_version(self) -> str:
-        return self.send_command_and_read_reply(ML600Commands.FIRMWARE_VERSION)
 
     def initialize_pump(self, speed: int = None):
         """
@@ -379,6 +328,70 @@ class ML600:
             return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY, argument_value=str(speed))
         else:
             return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY)
+
+    def flowrate_to_steps_per_second(self, flowrate_in_ml_min: float):
+        """
+        Convert flow rates in ml/min to steps per seconds
+
+        To determine the volume dispensed per step the total syringe volume is divided by
+        48,000 steps. All Hamilton instrument syringes are designed with a 60 mm stroke
+        length and the Microlab 600 is designed to move 60 mm in 48,000 steps. For
+        example to dispense 9 mL from a 10 mL syringe you would determine the number of
+        steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
+        """
+        flowrate_in_ml_sec = flowrate_in_ml_min / 60
+        flowrate_in_steps_sec = flowrate_in_ml_sec * self.steps_per_ml
+        assert 2 <= flowrate_in_steps_sec <= 3692
+        return round(flowrate_in_steps_sec)
+
+    def _volume_to_step(self, volume_in_ml: float) -> int:
+        return round(volume_in_ml * self.steps_per_ml) + self.offset_steps
+
+    def _to_step_position(self, position: int, speed: int = ''):
+        """ Absolute move to step position """
+        return self.send_command_and_read_reply(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed))
+
+    def to_volume(self, volume_in_ml: float, speed: int = ''):
+        """ Absolute move to volume """
+        self._to_step_position(self._volume_to_step(volume_in_ml), speed)
+
+    def pause(self):
+        """ Pause any running command """
+        return self.send_command_and_read_reply(ML600Commands.PAUSE)
+
+    def resume(self):
+        """ Resume any paused command """
+        return self.send_command_and_read_reply(ML600Commands.RESUME)
+
+    def stop(self):
+        """ Stops and abort any running command """
+        self.pause()
+        return self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
+
+    def wait_until_idle(self):
+        """ Returns when no more commands are present in the pump buffer. """
+        while self.is_busy:
+            time.sleep(0.1)
+
+    @property
+    def version(self) -> str:
+        """ Returns the current firmware version reported by the pump """
+        return self.send_command_and_read_reply(ML600Commands.STATUS)
+
+    @property
+    def is_idle(self) -> bool:
+        """ Checks if the pump is idle (not really, actually check if the last command has ended) """
+        return self.send_command_and_read_reply(ML600Commands.REQUEST_DONE) == "Y"
+
+    @property
+    def is_busy(self) -> bool:
+        """ Not idle """
+        return not self.is_idle
+
+    @property
+    def firmware_version(self) -> str:
+        """ Return firmware version """
+        return self.send_command_and_read_reply(ML600Commands.FIRMWARE_VERSION)
 
     @property
     def valve_position(self) -> ValvePositionName:
@@ -446,7 +459,11 @@ if __name__ == '__main__':
     logging.basicConfig()
     l = logging.getLogger(__name__)
     l.setLevel(logging.DEBUG)
-    pump_connection = HamiltonPumpIO(7)
+    pump_connection = HamiltonPumpIO(7, hw_initialization=False)
     test = ML600(pump_connection, syringe_volume=5)
-    test.valve_position = test.ValvePositionName.INPUT
+    test.to_volume(0)
+    test.wait_until_idle()
+    test.to_volume(4)
+    test.wait_until_idle()
+    test.to_volume(0)
     breakpoint()
