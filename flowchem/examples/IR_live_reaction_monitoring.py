@@ -1,10 +1,9 @@
 import datetime
-import scipy
 import pandas as pd
 import asyncio
+from lmfit.models import PseudoVoigtModel, LinearModel
+
 import matplotlib.pyplot as plt
-from lmfit import Minimizer, Parameters
-from lmfit.lineshapes import gaussian
 from asyncua import Client
 from matplotlib import style
 
@@ -12,22 +11,38 @@ from flowchem.devices.MettlerToledo.iCIR_async import FlowIR
 
 live_results = pd.DataFrame()
 
+# create the fitting parameters
+peak_chloride = PseudoVoigtModel(prefix="chloride_")
+peak_dimer = PseudoVoigtModel(prefix="dimer_")
+peak_monomer = PseudoVoigtModel(prefix="monomer_")
+offset = LinearModel()
+model = peak_chloride + peak_dimer + peak_monomer + offset
 
-def residual(pars, x, data):
-    """ Fitting model: 3 gaussian peaks centered at 1708, 1734 and 1796 cm-1 """
-    model = (gaussian(x, pars['amp_1'], 1708, pars['wid_1']) +
-             gaussian(x, pars['amp_2'], 1734, pars['wid_2']) +
-             gaussian(x, pars['amp_3'], 1796, pars['wid_3']))
-    return model - data
+pars = model.make_params()
+pars["chloride_center"].set(value=1800, min=1790, max=1810)
+pars["chloride_amplitude"].set(min=0)  # Positive peak
+pars["chloride_sigma"].set(min=5, max=50)  # Set full width half maximum
+
+pars["dimer_center"].set(value=1715, min=1706, max=1716)
+pars["dimer_amplitude"].set(min=0)  # Positive peak
+pars["dimer_sigma"].set(min=1, max=15)  # Set full width half maximum
+
+pars["monomer_center"].set(value=1740, min=1734, max=1752)
+pars["monomer_amplitude"].set(min=0)  # Positive peak
+pars["monomer_sigma"].set(min=4, max=30)  # Set full width half maximum
 
 
-pfit = Parameters()
-pfit.add(name='amp_1', value=0.50, min=0)
-pfit.add(name='amp_2', value=0.50, min=0)
-pfit.add(name='amp_3', value=0.50, min=0)
-pfit.add(name='wid_1', value=2, min=4, max=12)
-pfit.add(name='wid_2', value=5, min=5, max=15)
-pfit.add(name='wid_3', value=5, min=10, max=30)
+def calculate_yield(spectrum_df):
+    spectrum_df.query(f"{1600} <= index <= {1900}", inplace=True)
+    x_arr = spectrum_df.index.to_numpy()
+    y_arr = spectrum_df[0]
+
+    result = model.fit(y_arr, pars, x=x_arr)
+    product = result.values["chloride_amplitude"]
+    sm = result.values["dimer_amplitude"] + result.values["monomer_amplitude"]
+    latest_yield = product / (sm + product)
+    return latest_yield
+
 
 # PLOT SETUP
 style.use("seaborn-dark")
@@ -65,21 +80,7 @@ async def get_data():
             spectrum = await ir_spectrometer.get_last_spectrum_treated()
             # Restrict ROI to 1900 - 1600 cm-1
             spectrum_df = spectrum.as_df()
-            spectrum_df.query(f"{1600} <= index <= {1900}", inplace=True)
-            x_arr = spectrum_df.index.to_numpy()
-            y_arr = spectrum_df[0]
-
-            mini = Minimizer(residual, pfit, fcn_args=(x_arr, y_arr))
-            out = mini.leastsq()
-            # Get fitted gaussians
-            g1 = gaussian(x_arr, out.params["amp_1"], 1708, out.params["wid_1"])
-            g2 = gaussian(x_arr, out.params["amp_2"], 1734, out.params["wid_2"])
-            g3 = gaussian(x_arr, out.params["amp_3"], 1796, out.params["wid_3"])
-
-            # Calculate yield based on fitted peaks (less sensitive to baseline drift)
-            acid = scipy.integrate.trapezoid(g1 + g2, x_arr)
-            chloride = scipy.integrate.trapezoid(g3, x_arr)
-            latest_yield = chloride/(chloride + acid)
+            latest_yield = calculate_yield(spectrum_df)
             print(f"yield is {latest_yield}")
             reaction_time.append(datetime.datetime.now())
             reaction_yield.append(latest_yield)
@@ -89,9 +90,9 @@ async def get_data():
 
 async def plot_data():
     while True:
-        ax1.clear()
-        ax1.plot(reaction_time, reaction_yield)
-        plt.pause(0.01)
+        # ax1.clear()
+        # ax1.plot(reaction_time, reaction_yield)
+        # plt.pause(0.01)
         await asyncio.sleep(1)
 
 
