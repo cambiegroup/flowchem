@@ -424,19 +424,37 @@ class TwoPumpAssembly(Thread):
     The async version of this being possibly simpler w/ tasks and callback :)
     """
 
-    def __init__(self, pump1: ML600, pump2: ML600, target_flowrate: float):
+    def __init__(self, pump1: ML600, pump2: ML600, target_flowrate: float, init_seconds: int = 10):
         super(TwoPumpAssembly, self).__init__()
         self._p1 = pump1
         self._p2 = pump2
         self.daemon = True
-        self.cancelled = False
-        self.flowrate = target_flowrate
+        self.cancelled = threading.Event()
+        self._flowrate = target_flowrate
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
+        # How many seconds per stroke for first filling? application dependent, as fast as possible, but not too much.
+        self.init_secs = init_seconds
 
         # While in principle possible, using syringes of different volumes is discouraged, hence...
         assert pump1.syringe_volume == pump2.syringe_volume, "Syringes w/ equal volume are needed for continuous flow!"
         # self._p1.initialize_pump()
         # self._p2.initialize_pump()
+
+    @property
+    def flowrate(self):
+        return self._flowrate
+
+    @flowrate.setter
+    def flowrate(self, target_flowrate):
+        if target_flowrate == 0:
+            warnings.warn("Cannot set flowrate to 0! Pump stopped instead, restart previous flowrate with resume!")
+            self.cancel()
+        else:
+            self._flowrate = target_flowrate
+
+        # This will stop current movement, make wait_for_both_pumps() return and move on w/ updated speed
+        self._p1.stop()
+        self._p2.stop()
 
     def wait_for_both_pumps(self):
         """ Custom waiting method to wait a shorter time than normal (for better sync) """
@@ -445,39 +463,57 @@ class TwoPumpAssembly(Thread):
         self.log.debug("Pumps ready!")
 
     def _speed(self):
-        speed = self._p1.flowrate_to_seconds_per_stroke(self.flowrate)
+        speed = self._p1.flowrate_to_seconds_per_stroke(self._flowrate)
         self.log.debug(f"Speed calculated as {speed}")
         return speed
+
+    def execute_stroke(self, pump_full: ML600, pump_empty: ML600, speed_s_per_stroke: int):
+        pump_full.valve_position = pump_full.ValvePositionName.OUTPUT
+        pump_empty.valve_position = pump_full.ValvePositionName.INPUT
+        self.log.debug("Setting valves to target position...")
+        self.wait_for_both_pumps()
+
+        pump_full.to_volume(0, speed=speed_s_per_stroke)
+        pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke)
+        self.log.debug("Pumping...")
+        self.wait_for_both_pumps()
 
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every 10 milliseconds."""
+        # First initialize with fast speed...
+        self.execute_stroke(self._p1, self._p2, speed_s_per_stroke=self.init_secs)
+        self.log.info("Pumps initialized for continuous pumping!")
 
-        while not self.cancelled:
-            self._p1.valve_position = self._p1.ValvePositionName.OUTPUT
-            self._p2.valve_position = self._p2.ValvePositionName.INPUT
-            self.log.debug("Setting valves to target position... (phase 1)")
-            self.wait_for_both_pumps()
-
-            self._p1.to_volume(0, speed=self._speed())
-            self._p2.to_volume(self._p2.syringe_volume, speed=self._speed())
-            self.log.debug("Pumping... (phase 1)")
-            self.wait_for_both_pumps()
-
-            self._p1.valve_position = self._p1.ValvePositionName.INPUT
-            self._p2.valve_position = self._p2.ValvePositionName.OUTPUT
-            self.log.debug("Setting valves to target position... (phase 2)")
-            self.wait_for_both_pumps()
-
-            self._p1.to_volume(self._p1.syringe_volume, speed=self._speed())
-            self._p2.to_volume(0, speed=self._speed())
-            self.log.debug("Pumping... (phase 2)")
-            self.wait_for_both_pumps()
+        while True:
+            while not self.cancelled.is_set():
+                self.execute_stroke(self._p1, self._p2, speed_s_per_stroke=self._speed())
+                self.execute_stroke(self._p2, self._p1, speed_s_per_stroke=self._speed())
 
     def cancel(self):
         """ Cancel continuous-pumping assembly """
-        # SEND STOP COMMAND TO BOTH
-        self.cancelled = True
+        self.cancelled.set()
+        self._p1.stop()
+        self._p2.stop()
+
+    def resume(self):
+        """ Resume continuous-pumping assembly """
+        self.cancelled.clear()
+
+    def stop_and_return_solution_to_container(self):
+        """ Let´s not waste our precious stock solutions ;) """
+        self.cancel()
+        self.log.info("Returning the solution currently loaded in the syringes back to the inlet.\n"
+                      "Make sure the container is not removed yet!")
+        # Valve to input
+        self._p1.valve_position = self._p1.ValvePositionName.INPUT
+        self._p2.valve_position = self._p2.ValvePositionName.INPUT
+        self.wait_for_both_pumps()
+        # Volume to 0 with the init speed (supposedly safe for this application)
+        self._p1.to_volume(0, speed=self.init_secs)
+        self._p2.to_volume(0, speed=self.init_secs)
+        self.wait_for_both_pumps()
+        self.log.info("Pump flushing completed!")
 
 
 if __name__ == '__main__':
@@ -490,9 +526,7 @@ if __name__ == '__main__':
     pump_connection2 = HamiltonPumpIO(8)
     test2 = ML600(pump_connection2, syringe_volume=5)
 
-    metapump = TwoPumpAssembly(test1, test2, target_flowrate=20)
+    metapump = TwoPumpAssembly(test1, test2, target_flowrate=5, init_seconds=30)
     metapump.start()
-    time.sleep(20)
-    metapump.flowrate = 1
 
     breakpoint()
