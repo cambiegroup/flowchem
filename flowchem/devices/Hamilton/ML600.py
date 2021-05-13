@@ -339,6 +339,7 @@ class ML600:
         example to dispense 9 mL from a 10 mL syringe you would determine the number of
         steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
         """
+        assert flowrate_in_ml_min > 0
         flowrate_in_ml_sec = flowrate_in_ml_min / 60
         flowrate_in_steps_sec = flowrate_in_ml_sec * self.steps_per_ml
         seconds_per_stroke = round(48000 / flowrate_in_steps_sec)
