@@ -62,9 +62,10 @@ def remove_xp_from_source_df(index_to_remove):
     source_df.drop(index_to_remove, inplace=True)
     source_df.to_csv(SOURCE_FILE)
 
+
 # Loop execute the points that are needed
 for index, row in xp_data.iterrows():
-    print(row)
+    print(f"Applying the follwoiung conditions: tR={row['tR']}, SOCl2_eq={row['eq']}, temp={row['T']}")
 
     # Once experiment is performed remove it from the source CSV
     #remove_xp_from_source_df(index_to_remove=index)
