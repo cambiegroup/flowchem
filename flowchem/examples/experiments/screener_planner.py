@@ -15,5 +15,8 @@ conditions['eq'], conditions['tR'], conditions['T'] = zip(*experimental_conditio
 
 # Destination file
 path_to_write_csv = Path().home() / "Documents"
-conditions.to_csv(path_to_write_csv / "chlorination_14_05_21.csv")
-print(path_to_write_csv)
+filename = path_to_write_csv / "chlorination_14_05_21.csv"
+assert filename.exists() is False, "File already existing!"
+conditions.to_csv(filename)
+
+print(f"Experiment file written in {filename}")
