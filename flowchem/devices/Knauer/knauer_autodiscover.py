@@ -1,9 +1,8 @@
 from socket import *
-from typing import Tuple, List
 import getmac
 
 
-def autodiscover_knauer(source_ip: str = "192.168.1.116") -> dict:
+def autodiscover_knauer(source_ip: str = "192.168.1.1") -> dict:
     # Create a UDP socket
     sock = socket(AF_INET, SOCK_DGRAM)
     sock.bind((source_ip, 28688))
