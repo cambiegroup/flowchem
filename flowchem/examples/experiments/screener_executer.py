@@ -10,15 +10,18 @@ from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump
 from flowchem.devices.Knauer.knauer_autodiscover import autodiscover_knauer
 from flowchem.devices.MettlerToledo.iCIR import FlowIR
 
-# Temperature control is not automated yet
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("flowchem")
+
+# SETTINGS
 CURRENT_TEMPERATURE = 30
 
+# FILES AND PATHS
 WORKING_DIR = Path().home() / "Documents"
-
 SOURCE_FILE = WORKING_DIR / "chlorination_14_05_21.csv"
 assert SOURCE_FILE.exists()
-
-Path(WORKING_DIR / "spectra").mkdir(exist_ok=True)  # Also we will need to save stuff in this folder
+# Ensure spectra folder exits
+Path(WORKING_DIR / "spectra").mkdir(exist_ok=True)
 
 # Load xp data to run
 source_df = pd.read_csv(SOURCE_FILE, index_col=0)
@@ -28,10 +31,6 @@ if (xp_to_run := len(xp_data)) > 0:
 else:
     raise RuntimeError(f"No points left to run at {CURRENT_TEMPERATURE} in this experiment!")
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("flowchem")
-
-# Hardware
 # IR
 ir_spectrometer = FlowIR(opcua.Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS))
 if not ir_spectrometer.is_iCIR_connected:
@@ -39,7 +38,7 @@ if not ir_spectrometer.is_iCIR_connected:
 
 # Thionyl chloride pump
 pump_connection = PumpIO('COM5')
-pump_socl2 = Elite11(pump_connection, address=1, diameter=16.4)
+pump_socl2 = Elite11(pump_connection, address=1, diameter=14.6)
 
 # Acid pump
 _pump_acid_mac = '00:20:4a:cd:b7:44'
