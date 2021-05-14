@@ -331,7 +331,7 @@ class Elite11:
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address: int = address
         if diameter is not None:
-            self.diameter = diameter
+            self.syringe_diameter = diameter
         if volume_syringe is not None:
             self.syringe_volume = volume_syringe
         self.volume_syringe = volume_syringe
