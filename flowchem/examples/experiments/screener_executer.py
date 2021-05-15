@@ -5,6 +5,7 @@ from time import sleep, time, asctime, localtime
 from pathlib import Path
 import pandas as pd
 
+from flowchem.devices.Hamilton.ML600 import ML600, HamiltonPumpIO
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump
 from flowchem.devices.Knauer.knauer_autodiscover import autodiscover_knauer
@@ -36,11 +37,21 @@ ir_spectrometer = FlowIR(opcua.Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS
 if not ir_spectrometer.is_iCIR_connected:
     raise RuntimeError("FlowIR not connected :(")
 
-# Thionyl chloride pump
-pump_connection = PumpIO('COM5')
-pump_socl2 = Elite11(pump_connection, address=1, diameter=14.6)
+# loop A - 0.5 ml - filling with Elite11 pumping with ML600
+# Thionyl chloride - filling
+elite_pump_connection = PumpIO('COM5')
+pump_socl2_filling = Elite11(elite_pump_connection, address=1, diameter=14.6)  # 10 mL Gastight Syringe Model 1010 TLL, PTFE Luer Lock
 
-# Acid pump
+# Thionyl chloride - pumping
+ml600_socl2_connection = HamiltonPumpIO(port="COM7")
+pump_socl2_pumping = ML600(ml600_socl2_connection, syringe_volume=5)
+
+# loop B - 5.0 ml - filling
+# Hexyldecanoic acid - filling
+ml600_acid_connection = HamiltonPumpIO(port="COM8")
+pump_acid_pumping = ML600(ml600_acid_connection, syringe_volume=5)
+
+# Hexyldecanoic acid - pumping
 _pump_acid_mac = '00:20:4a:cd:b7:44'
 available_knauer_devices = autodiscover_knauer(source_ip='192.168.1.1')
 try:
@@ -48,13 +59,17 @@ try:
 except KeyError as e:
     raise RuntimeError("Acid pump unreachable. Is it connected and powered on?") from e
 
-# Start pumps
-pump_socl2.stop()
-pump_socl2.infusion_rate = 0.01
-pump_socl2.infuse_run()
+# Stop loop-filling pumps and start infusion pumps
+
+# Start infusion pumps
+# Thionyl chloride - filling
+pump_socl2_filling.stop()
+pump_socl2_filling.infusion_rate = 0.01
+pump_socl2_filling.infuse_run()
 
 pump_acid.set_flow(0.1)
 pump_acid.start_flow()
+
 
 
 # Loop execute the points that are needed
