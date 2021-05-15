@@ -7,7 +7,7 @@ import pandas as pd
 
 from flowchem.devices.Hamilton.ML600 import ML600, HamiltonPumpIO
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
-from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump
+from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump, KnauerValve
 from flowchem.devices.Knauer.knauer_autodiscover import autodiscover_knauer
 from flowchem.devices.MettlerToledo.iCIR import FlowIR
 
@@ -59,6 +59,16 @@ try:
 except KeyError as e:
     raise RuntimeError("Acid pump unreachable. Is it connected and powered on?") from e
 
+# Injection valve A
+_valve_A_mac = '00:80:a3:ce:7e:c4'
+valveA = KnauerValve(available_knauer_devices[_valve_A_mac])
+valveA.switch_to_position("LOAD")
+
+# Injection valve B
+_valve_B_mac = '00:80:a3:ce:8e:47'
+valveB = KnauerValve(available_knauer_devices[_valve_B_mac])
+valveB.switch_to_position("LOAD")
+
 # Stop loop-filling pumps and start infusion pumps
 
 # Start infusion pumps
@@ -77,5 +87,5 @@ for index, row in xp_data.iterrows():
     print(f"Applying the following conditions: tR={row['tR']}, SOCl2_eq={row['eq']}, temp={row['T']}")
 
     # Once experiment is performed remove it from the source CSV
-    source_df.drop(index, inplace=True)
-    source_df.to_csv(SOURCE_FILE)
+    # source_df.drop(index, inplace=True)
+    # source_df.to_csv(SOURCE_FILE)
