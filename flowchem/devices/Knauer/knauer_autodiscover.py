@@ -36,7 +36,7 @@ def autodiscover_knauer(source_ip: str = "192.168.1.1") -> dict:
     mac_to_ip = {}
 
     for device_ip in device:
-        mac=getmac.get_mac_address(ip=device_ip)
+        mac = getmac.get_mac_address(ip=device_ip)
         mac_to_ip[mac] = device_ip
     return mac_to_ip
 
