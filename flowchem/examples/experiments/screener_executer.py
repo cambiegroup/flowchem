@@ -88,19 +88,20 @@ for index, row in xp_data.iterrows():
     """
     Each cycle is an experiment, assumption is that the previous point is over.
     
-    1) Set temperature (done first as it might take a while to equilibrate)
-    2) stops and reload both ML600 if necessary    
-    3) Set flowrates of solvent pumps to match target residence time
-    4) Move valves in load positions
+    1) Set temperature
+    2) Stops and reload ML600 to target
+    3) Set flowrates of solvent pumps
+    4) Move valves to load position
     5) Fill loops
-    6) Verify that the target temperature has been reached
-    7) Switch both valves to INJECT
+    6) Wait for set temperature
+    7) Switch valves to inject
     8) Waits 1.5 tR, start acquiring IR spectra until steady state conditions are reached or max time has passed
     9) flushes loops+reactor at higher flowrate and save results
     """
     print(f"Applying the following conditions: tR={row['tR']}, SOCl2_eq={row['eq']}, temp={row['T']}")
 
     # 1) Set temperature
+    #  This is done first as it might take a while to equilibrate
     heater.set_temperature(channel=_reactor_position, target_temperature=row["T"], wait=False)
 
     # 2) Stops and reload ML600 to target
@@ -120,12 +121,12 @@ for index, row in xp_data.iterrows():
     pump_socl2_solvent.valve_position = pump_socl2_solvent.ValvePositionName.OUTPUT
     pump_acid_filling.valve_position = pump_acid_filling.ValvePositionName.OUTPUT
 
-    # 3) Set flowrate of solvent pumps
+    # 3) Set flowrates of solvent pumps
     _flowrate_socl2, _flowrate_acid = calculate_flowrate(row["tR"], row["eq"])
     pump_socl2_solvent.to_volume(0, speed=pump_socl2_solvent.flowrate_to_seconds_per_stroke(_flowrate_socl2))
     pump_acid_solvent.set_flow(_flowrate_acid)
 
-    # 4) Move valves to load
+    # 4) Move valves to load position
     valveA.switch_to_position("LOAD")
     valveB.switch_to_position("LOAD")
 
@@ -137,14 +138,14 @@ for index, row in xp_data.iterrows():
     pump_socl2_filling
     pump_acid_filling.wait_until_idle()
 
-    # 6) Wait for temperature
+    # 6) Wait for set temperature
     heater.wait_for_target_temp(channel=_reactor_position)
 
     # 7) Switch valves to inject
     valveA.switch_to_position("INJECT")
     valveB.switch_to_position("INJECT")
 
-
+    # 8) Waits 1.5 tR, start acquiring IR spectra until steady state conditions are reached or max time has passed
 
 
     # Once experiment is performed remove it from the source CSV
