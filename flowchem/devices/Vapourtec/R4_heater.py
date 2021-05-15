@@ -1,6 +1,6 @@
 import io
 import time
-from typing import Union, List, Tuple
+from typing import Union, Tuple
 
 import serial
 import logging
@@ -88,14 +88,31 @@ class R4Heater:
 
         return parsed_response
 
+    def wait_for_target_temp(self, channel: int):
+        """ Waits until the target channel has reached the desired temperature and is stable """
+        t_stable = False
+        while not t_stable:
+            ret_code = self.write_and_read_reply(VapourtecCommand.TEMP.set_argument(channel))
+            if ret_code[:1] == "S":
+                self.logger.debug(f"Target temperature reached on channel {channel}!")
+                t_stable = True
+
+    def set_temperature(self, channel, target_temperature, wait: bool = False):
+        """ Set temperature and optionally waits for S """
+        set_command = getattr(VapourtecCommand, f"SET_CH{channel}_TEMP")
+        self.write_and_read_reply(set_command.set_argument(target_temperature))
+        self.write_and_read_reply(VapourtecCommand.CH_ON.set_argument(channel))
+
+        if wait:
+            self.wait_for_target_temp(channel)
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     heat = R4Heater(11)
-    heat.write_and_read_reply(VapourtecCommand.SET_CH1_TEMP.set_argument(80))
-    heat.write_and_read_reply(VapourtecCommand.CH_ON.set_argument(0))
-    heat.write_and_read_reply(VapourtecCommand.TEMP.set_argument(0))
-    time.sleep(10)
-    heat.write_and_read_reply(VapourtecCommand.TEMP.set_argument(0))
-    heat.write_and_read_reply(VapourtecCommand.CH_OFF.set_argument(0))
+    heat.set_temperature(0, 30, wait=False)
+    print("not waiting")
+    heat.set_temperature(0, 30, wait=True)
+    print("actually I waited")
+
     breakpoint()
