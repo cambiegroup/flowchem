@@ -487,7 +487,12 @@ class Elite11:
 
         self.log.info("Pump stopped")
 
-        # metrics, syringe volume
+    def wait_until_idle(self):
+        """ Wait until the pump is no more moving """
+        is_still = False
+        while not is_still:
+            if not self.is_moving():
+                is_still = True
 
     @property
     def infusion_rate(self) -> float:
