@@ -404,6 +404,10 @@ class ML600:
     def valve_position(self, target_position: ValvePositionName):
         self.send_command_and_read_reply(ML600Commands.VALVE_BY_NAME_CW, command_value=str(int(target_position)))
 
+    def syringe_position(self):
+        current_steps = int(self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION)) - self.offset_steps
+        return current_steps / self.steps_per_ml
+
     def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
         self.valve_position = from_valve
         pass
