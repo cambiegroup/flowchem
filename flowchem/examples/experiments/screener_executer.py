@@ -163,12 +163,15 @@ for index, row in xp_data.iterrows():
 
     # 2) Stops and reload ML600 to target
     pump_acid_filling.stop()
+    pump_acid_filling.wait_until_idle()  # Wait for target reached
     pump_acid_filling.valve_position = pump_acid_filling.ValvePositionName.INPUT
+    pump_acid_filling.wait_until_idle()  # Wait for target reached
     pump_acid_filling.to_volume(_loopB, speed=30)  # Refill at 10 ml/min
     pump_acid_filling.wait_until_idle()  # Wait for target reached
 
     # Switch to outlet
     pump_acid_filling.valve_position = pump_acid_filling.ValvePositionName.OUTPUT
+    pump_acid_filling.wait_until_idle()  # Wait for target reached
     logger.debug(f"Hamilton s.pump reloaded")
 
     # 3) Set flowrates of solvent pumps
