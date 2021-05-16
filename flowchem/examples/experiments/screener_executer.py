@@ -1,3 +1,4 @@
+import numpy as np
 import opcua
 import logging
 from time import sleep, time, asctime, localtime
@@ -44,8 +45,14 @@ pump_socl2_filling = Elite11(elite_pump_connection, address=1, diameter=14.6)  #
 _loopA = 0.4
 
 # Thionyl chloride - pumping
-ml600_socl2_connection = HamiltonPumpIO(port="COM43")
+ml600_socl2_connection = HamiltonPumpIO(port="COM43", hw_initialization=False)
 pump_socl2_solvent = ML600(ml600_socl2_connection, syringe_volume=5)
+# Default initialization speed too high and defaults to outlet, reactor side, high pressure drop so it fails...
+# To save solvent and be faster we can assume the pump has already been primed (there´s a button just for that)
+# And initialize the valve, switching it to INPUT before syringe initialization and recycle the solvent
+pump_socl2_solvent.initialize_valve()
+pump_socl2_solvent.valve_position = pump_socl2_solvent.ValvePositionName.INPUT
+pump_socl2_solvent.initialize_syringe(speed=30)
 
 # loop B - 5.0 ml - filling
 # Hexyldecanoic acid - filling
@@ -74,9 +81,12 @@ valveB.switch_to_position("LOAD")  # Not necessary, used to check communication
 
 # Stop loop-filling pumps and start infusion pumps
 
+# Ensure pump initializations are over
+pump_acid_filling.wait_until_idle()
+pump_socl2_solvent.wait_until_idle()
+
 # Start HPLC pump
 pump_acid_solvent.set_flow(0.1)
-pump_acid_solvent.start_flow()
 
 breakpoint()
 
@@ -99,7 +109,8 @@ for index, row in xp_data.iterrows():
 
     # 1) Set temperature
     #  This is done first as it might take a while to equilibrate
-    heater.set_temperature(channel=_reactor_position, target_temperature=row["T"], wait=False)
+    if not np.isnan(row["T"]):
+        heater.set_temperature(channel=_reactor_position, target_temperature=row["T"], wait=False)
 
     # 2) Stops and reload ML600 to target
     pump_socl2_solvent.stop()
