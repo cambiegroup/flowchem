@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import copy
+from typing import Tuple
 
 import numpy as np
 import opcua
 import logging
-from time import sleep, time, asctime, localtime
+from time import sleep, time
 
 from pathlib import Path
 import pandas as pd
@@ -19,7 +20,8 @@ from flowchem.devices.Vapourtec.R4_heater import R4Heater, VapourtecCommand
 from flowchem.examples.experiments.step_one_chemometrics import measure_yield_step1
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("flowchem")
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # FILES AND PATHS
 WORKING_DIR = Path().home() / "Documents"
@@ -49,7 +51,7 @@ _reactor_position = 2
 # loop A - 0.5 ml - filling with Elite11 pumping with ML600
 # Thionyl chloride - filling
 elite_pump_connection = PumpIO(port="COM5")
-pump_socl2_filling = Elite11(elite_pump_connection, address=1, diameter=14.6)  # 10 mL Gastight Syringe Model 1010 TLL, PTFE Luer Lock
+pump_socl2_filling = Elite11(elite_pump_connection, address=1, diameter=14.6)  # 10 mL Gastight Syringe #1010
 _loopA = 0.4
 
 # Thionyl chloride - pumping
@@ -58,9 +60,12 @@ pump_socl2_solvent = ML600(ml600_socl2_connection, syringe_volume=5)
 # Default initialization speed too high and defaults to outlet, reactor side, high pressure drop so it fails...
 # To save solvent and be faster we can assume the pump has already been primed (there´s a button just for that)
 # And initialize the valve, switching it to INPUT before syringe initialization and recycle the solvent
+pump_socl2_solvent.stop()
+pump_socl2_solvent.return_steps = 100  # This is important to ensure the two loops meet at the same time at the Tee
 pump_socl2_solvent.initialize_valve()
 pump_socl2_solvent.valve_position = pump_socl2_solvent.ValvePositionName.INPUT
 pump_socl2_solvent.initialize_syringe(speed=30)
+pump_socl2_solvent.log.setLevel(logging.DEBUG)
 
 # loop B - 5.0 ml - filling
 # Hexyldecanoic acid - filling
@@ -95,9 +100,10 @@ pump_socl2_solvent.wait_until_idle()
 
 # Start HPLC pump
 pump_acid_solvent.set_flow(0.1)
+pump_acid_solvent.start_flow()
 
 
-def calculate_flowrate(residence_time: float, equivalent: float) -> tuple[float, float]:
+def calculate_flowrate(residence_time: float, equivalent: float) -> Tuple[float, float]:
     """
     Given residence time, equivalent returns flowrate.
     Reactor volume is from global REACTOR_VOLUME, stock solution concentration are such that acid is 1/10 SOCl2.
@@ -112,7 +118,8 @@ def calculate_flowrate(residence_time: float, equivalent: float) -> tuple[float,
     flow_acid = total_flow - flow_socl2
     return flow_socl2, flow_acid
 
-def xp_measure_yield(max_scan: int) -> tuple[float, float]:
+
+def xp_measure_yield(max_scan: int) -> Tuple[float, float]:
     """
     Use the IR and peak fitting to measure yield.
     Keep on acquiring until CV<1% or max_scan is reached.
@@ -137,7 +144,9 @@ def xp_measure_yield(max_scan: int) -> tuple[float, float]:
         while ir_spectrometer.get_sample_count() == last_spectrum_num:
             sleep(1)
 
+
 # Loop execute the points that are needed
+logger.info("Initialization complete!")
 for index, row in xp_data.iterrows():
     """
     Each cycle is an experiment, assumption is that the previous point is over.
@@ -157,6 +166,7 @@ for index, row in xp_data.iterrows():
     # 1) Set temperature
     #  This is done first as it might take a while to equilibrate
     heater.set_temperature(channel=_reactor_position, target_temperature=row["T"], wait=False)
+    logger.debug(f"Setting temperature to {row['T']}")
 
     # 2) Stops and reload ML600 to target
     pump_socl2_solvent.stop()
@@ -174,47 +184,57 @@ for index, row in xp_data.iterrows():
     # Switch to outlet
     pump_socl2_solvent.valve_position = pump_socl2_solvent.ValvePositionName.OUTPUT
     pump_acid_filling.valve_position = pump_acid_filling.ValvePositionName.OUTPUT
+    logger.debug(f"Hamilton s.pump reloaded")
 
     # 3) Set flowrates of solvent pumps
     _flowrate_socl2, _flowrate_acid = calculate_flowrate(row["tR"], row["eq"])
     pump_socl2_solvent.to_volume(0, speed=pump_socl2_solvent.flowrate_to_seconds_per_stroke(_flowrate_socl2))
     pump_acid_solvent.set_flow(_flowrate_acid)
+    logger.debug(f"Started solvent infusion at target flow rate (SOCl2={_flowrate_socl2}, acid={_flowrate_acid})")
 
     # 4) Move valves to load position
     valveA.switch_to_position("LOAD")
     valveB.switch_to_position("LOAD")
+    logger.debug(f"Valve to load position")
 
     # 5) Fill loops
     pump_socl2_filling.target_volume = _loopA + 0.05
     pump_socl2_filling.infusion_rate = 1
     pump_socl2_filling.infuse_run()
     pump_acid_filling.to_volume(volume_in_ml=0, speed=30)
+    # Wait for filling complete
     pump_socl2_filling.wait_until_idle()
     pump_acid_filling.wait_until_idle()
+    logger.debug(f"Loops filled!")
 
     # 6) Wait for set temperature
-    heater.wait_for_target_temp(channel=_reactor_position)>
+    heater.wait_for_target_temp(channel=_reactor_position)
+    logger.debug(f"Target temperature reached")
 
     # 7) Switch valves to inject
+    sleep(3)  # Ensure filling is complete
     valveA.switch_to_position("INJECT")
     valveB.switch_to_position("INJECT")
-    print("XP started! :)")
+    logger.info(f"Experiment started!")
     start_time = time()
 
     # 8) Waits 1.5 tR, and measure yield and save
     sleep(60 * row["tR"] * 1.5)
+    logger.debug(f"Reached 1.5 tR")
 
     # Max 1.5 tR time to measure yield, integration is 15" so 4 scans per minute
     max_scan = row["tR"] * 4 * 1.5
     result_row = copy.deepcopy(row)
     result_row["yield"], result_row["cv"] = xp_measure_yield(max_scan)
+    logger.info(f"Yield obtained: {result_row['yield']}")
 
     # Write result to file
     results = pd.DataFrame(columns=list(result_row.keys()))
-    results.append(result_row)
+    results = results.append(result_row)
 
     # Append to existing file, header written only the first time
     results.to_csv(OUTPUT_FILE, mode='a', header=not OUTPUT_FILE.exists())
+    logger.debug(f"Updated results in {OUTPUT_FILE}")
 
     # 9) flushes loops+reactor at higher flowrate
     # For the flushes reach 6 reactor volumes.
@@ -230,9 +250,8 @@ for index, row in xp_data.iterrows():
     # Once experiment is performed remove it from the source CSV
     # source_df.drop(index, inplace=True)
     # source_df.to_csv(SOURCE_FILE)
+    logger.info(f"XP completed!")
 
 
 pump_acid_filling.stop()
 pump_socl2_filling.stop()
-
-
