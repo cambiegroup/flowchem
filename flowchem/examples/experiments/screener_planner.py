@@ -6,8 +6,8 @@ conditions = pd.DataFrame(columns=['eq', 'tR', 'T'])
 
 # Parameter range
 equivalents = {1, 1.1, 1.2}  # {1, 1.05, 1.1, 1.15, 1.2}
-residence_times = {0.5, 1, 2.5, 5, 10, 15, 20}
-temperature = {None, 30, 40, 50, 60}
+residence_times = {1, 2.5, 5, 10}
+temperature = {30}
 
 # Create df entry for each combination of parameter (fully factorial)
 experimental_conditions = [(eq, t_res, temp) for temp in temperature for t_res in residence_times for eq in equivalents]
@@ -16,7 +16,7 @@ conditions['eq'], conditions['tR'], conditions['T'] = zip(*experimental_conditio
 # Destination file
 path_to_write_csv = Path().home() / "Documents"
 filename = path_to_write_csv / "chlorination_14_05_21.csv"
-assert filename.exists() is False, "File already existing!"
+assert filename.exists() is False, f"File already existing! {filename}"
 conditions.to_csv(filename)
 
 print(f"Experiment file written in {filename}")
