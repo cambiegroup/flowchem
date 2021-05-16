@@ -36,27 +36,27 @@ if not ir_spectrometer.is_iCIR_connected:
     raise RuntimeError("FlowIR not connected :(")
 
 # Heater - R4
-heater = R4Heater(port=11)
+heater = R4Heater(port="COM41")
 firmware_version = heater.write_and_read_reply(VapourtecCommand.FIRMWARE)
 assert "V3.68" in firmware_version
 _reactor_position = 0
 
 # loop A - 0.5 ml - filling with Elite11 pumping with ML600
 # Thionyl chloride - filling
-elite_pump_connection = PumpIO('COM5')
+elite_pump_connection = PumpIO(port="COM5")
 pump_socl2_filling = Elite11(elite_pump_connection, address=1, diameter=14.6)  # 10 mL Gastight Syringe Model 1010 TLL, PTFE Luer Lock
-_loopA = 0.5
+_loopA = 0.4
 
 # Thionyl chloride - pumping
-ml600_socl2_connection = HamiltonPumpIO(port="COM7")
+ml600_socl2_connection = HamiltonPumpIO(port="COM43")
 pump_socl2_solvent = ML600(ml600_socl2_connection, syringe_volume=5)
 
 # loop B - 5.0 ml - filling
 # Hexyldecanoic acid - filling
-ml600_acid_connection = HamiltonPumpIO(port="COM8")
+ml600_acid_connection = HamiltonPumpIO(port="COM42")
 pump_acid_filling = ML600(ml600_acid_connection, syringe_volume=5)
 pump_acid_filling.offset_steps = 960  # Large positional offset, so that 0-loop is actually 0.1ml-loopB+0.1ml
-_loopB = 5
+_loopB = 4
 
 # Hexyldecanoic acid - pumping
 _pump_acid_mac = '00:20:4a:cd:b7:44'
@@ -78,12 +78,7 @@ valveB.switch_to_position("LOAD")  # Not necessary, used to check communication
 
 # Stop loop-filling pumps and start infusion pumps
 
-# Start infusion pumps
-# Thionyl chloride - filling
-pump_socl2_filling.stop()
-pump_socl2_filling.infusion_rate = 0.01
-pump_socl2_filling.infuse_run()
-
+# Start HPLC pump
 pump_acid_solvent.set_flow(0.1)
 pump_acid_solvent.start_flow()
 
@@ -109,29 +104,30 @@ for index, row in xp_data.iterrows():
     """
     Each cycle is an experiment, assumption is that the previous point is over.
     
-    1) Set temperature (done first as it might take a while to equilibrate)
-    2) stops and reload both ML600 if necessary    
-    3) Set flowrates of solvent pumps to match target residence time
-    4) Move valves in load positions
+    1) Set temperature
+    2) Stops and reload ML600 to target
+    3) Set flowrates of solvent pumps
+    4) Move valves to load position
     5) Fill loops
-    6) Verify that the target temperature has been reached
-    7) Switch both valves to INJECT
-    8) Waits 1.5 tR, and measure yield and save
+    6) Wait for set temperature
+    7) Switch valves to inject
+    8) Waits 1.5 tR, start acquiring IR spectra until steady state conditions are reached or max time has passed
     9) flushes loops+reactor at higher flowrate and save results
     """
     print(f"Applying the following conditions: tR={row['tR']}, SOCl2_eq={row['eq']}, temp={row['T']}")
 
     # 1) Set temperature
+    #  This is done first as it might take a while to equilibrate
     heater.set_temperature(channel=_reactor_position, target_temperature=row["T"], wait=False)
 
     # 2) Stops and reload ML600 to target
     pump_socl2_solvent.stop()
     pump_socl2_solvent.valve_position = pump_socl2_solvent.ValvePositionName.INPUT
-    pump_socl2_solvent.to_volume(5.0, speed=60)  # Refill at 5 ml/min
+    pump_socl2_solvent.to_volume(5.0, speed=30)  # Refill at 10 ml/min
 
     pump_acid_filling.stop()
     pump_acid_filling.valve_position = pump_acid_filling.ValvePositionName.INPUT
-    pump_acid_filling.to_volume(_loopB, speed=60)  # Refill at 5 ml/min
+    pump_acid_filling.to_volume(_loopB, speed=30)  # Refill at 10 ml/min
 
     # Wait for target reached
     pump_socl2_solvent.wait_until_idle()
@@ -141,24 +137,24 @@ for index, row in xp_data.iterrows():
     pump_socl2_solvent.valve_position = pump_socl2_solvent.ValvePositionName.OUTPUT
     pump_acid_filling.valve_position = pump_acid_filling.ValvePositionName.OUTPUT
 
-    # 3) Set flowrate of solvent pumps
+    # 3) Set flowrates of solvent pumps
     _flowrate_socl2, _flowrate_acid = calculate_flowrate(row["tR"], row["eq"])
     pump_socl2_solvent.to_volume(0, speed=pump_socl2_solvent.flowrate_to_seconds_per_stroke(_flowrate_socl2))
     pump_acid_solvent.set_flow(_flowrate_acid)
 
-    # 4) Move valves to load
+    # 4) Move valves to load position
     valveA.switch_to_position("LOAD")
     valveB.switch_to_position("LOAD")
 
     # 5) Fill loops
-    pump_socl2_filling.target_volume = _loopA
+    pump_socl2_filling.target_volume = _loopA + 0.05
     pump_socl2_filling.infusion_rate = 1
     pump_socl2_filling.infuse_run()
     pump_acid_filling.to_volume(volume_in_ml=0, speed=30)
     pump_socl2_filling.wait_until_idle()
     pump_acid_filling.wait_until_idle()
 
-    # 6) Wait for temperature
+    # 6) Wait for set temperature
     heater.wait_for_target_temp(channel=_reactor_position)
 
     # 7) Switch valves to inject
