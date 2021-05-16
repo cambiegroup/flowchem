@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import opcua
 import logging
@@ -26,6 +28,8 @@ Path(WORKING_DIR / "spectra").mkdir(exist_ok=True)
 # Load xp data to run
 xp_data = pd.read_csv(SOURCE_FILE, index_col=0)
 assert len(xp_data) > 0, "No experiments left to run! What am I supposed to do ? ;)"
+
+REACTOR_VOLUME = 1.0
 
 # Analytics - IR
 ir_spectrometer = FlowIR(opcua.Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS))
@@ -88,7 +92,22 @@ pump_socl2_solvent.wait_until_idle()
 # Start HPLC pump
 pump_acid_solvent.set_flow(0.1)
 
-breakpoint()
+
+def calculate_flowrate(residence_time: float, equivalent: float) -> tuple[float, float]:
+    """
+    Given residence time, equivalent returns flowrate.
+    Reactor volume is from global REACTOR_VOLUME, stock solution concentration are such that acid is 1/10 SOCl2.
+    """
+    total_flow = REACTOR_VOLUME / residence_time
+    # 0.1 is the concentration ratio, so...
+    ratio_socl2 = equivalent * 0.1
+    # flow_socl2 = flow_acid * ratio_socl2
+    # flow_socl2 + flow_acid = total_flow
+    # Hence...
+    flow_socl2 = (total_flow * ratio_socl2) / (1+ratio_socl2)
+    flow_acid = total_flow - flow_socl2
+    return flow_socl2, flow_acid
+
 
 # Loop execute the points that are needed
 for index, row in xp_data.iterrows():
@@ -143,6 +162,7 @@ for index, row in xp_data.iterrows():
     pump_socl2_filling.infusion_rate = 1
     pump_socl2_filling.infuse_run()
     pump_acid_filling.to_volume(volume_in_ml=0, speed=30)
+    pump_socl2_filling.wait_until_idle()
     pump_acid_filling.wait_until_idle()
 
     # 6) Wait for set temperature
@@ -151,8 +171,31 @@ for index, row in xp_data.iterrows():
     # 7) Switch valves to inject
     valveA.switch_to_position("INJECT")
     valveB.switch_to_position("INJECT")
+    print("XP started! :)")
+    start_time = time()
 
-    # 8) Waits 1.5 tR, start acquiring IR spectra until steady state conditions are reached or max time has passed
+    # 8) Waits 1.5 tR, and measure yield and save
+    sleep(60 * row["tR"] * 1.5)
+    # DO IR STUFF
+    # Start acquiring IR spectra until steady state conditions are reached or max time has passed
+
+
+    # 9) flushes loops+reactor at higher flowrate
+    # For the flushes reach 8 reactor volumes.
+    current_time = time()
+    reactor_volumes_infused = current_time - start_time / (row["tR"] * 60)
+    reactor_volumes_to_flush = 8 - reactor_volumes_infused
+    # Now let's flush the remaining reactor volume with the flowrate of 1min tR
+    _fast_flowrate_socl2, _fast_flowrate_acid = calculate_flowrate(1, row["eq"])  # Flush flowrate is tR=1
+    pump_socl2_solvent.to_volume(0, speed=pump_socl2_solvent.flowrate_to_seconds_per_stroke(_flowrate_socl2))
+    pump_acid_solvent.set_flow(_fast_flowrate_acid)
+    sleep(reactor_volumes_to_flush*60)
+
+    # Given that the loop hosts 5.5 reactor volumes, and at least 1.5 have already been waited for, just flash 4 VR
+    pump_socl2_solvent
+
+pump_acid_filling.stop()
+pump_socl2_filling.stop()
 
 
     # Once experiment is performed remove it from the source CSV
