@@ -40,7 +40,7 @@ if not ir_spectrometer.is_iCIR_connected:
 heater = R4Heater(port="COM41")
 firmware_version = heater.write_and_read_reply(VapourtecCommand.FIRMWARE)
 assert "V3.68" in firmware_version
-_reactor_position = 0
+_reactor_position = 2
 
 # loop A - 0.5 ml - filling with Elite11 pumping with ML600
 # Thionyl chloride - filling
@@ -108,6 +108,16 @@ def calculate_flowrate(residence_time: float, equivalent: float) -> tuple[float,
     flow_acid = total_flow - flow_socl2
     return flow_socl2, flow_acid
 
+def measure_yield_step1(max_scan: int) -> tuple[float, float]:
+    """
+    Use the IR and peak fitting to measure yield.
+    Keep on acquiring until CV<2% or max_scan is reached.
+    """
+
+    measured_yield = []
+    cv = 1
+    while cv > 0.02 and current_scan < max_scan:
+        # FIXME  DO STUFF
 
 # Loop execute the points that are needed
 for index, row in xp_data.iterrows():
@@ -128,8 +138,7 @@ for index, row in xp_data.iterrows():
 
     # 1) Set temperature
     #  This is done first as it might take a while to equilibrate
-    if not np.isnan(row["T"]):
-        heater.set_temperature(channel=_reactor_position, target_temperature=row["T"], wait=False)
+    heater.set_temperature(channel=_reactor_position, target_temperature=row["T"], wait=False)
 
     # 2) Stops and reload ML600 to target
     pump_socl2_solvent.stop()
@@ -166,7 +175,7 @@ for index, row in xp_data.iterrows():
     pump_acid_filling.wait_until_idle()
 
     # 6) Wait for set temperature
-    heater.wait_for_target_temp(channel=_reactor_position)
+    heater.wait_for_target_temp(channel=_reactor_position)>
 
     # 7) Switch valves to inject
     valveA.switch_to_position("INJECT")
@@ -176,28 +185,28 @@ for index, row in xp_data.iterrows():
 
     # 8) Waits 1.5 tR, and measure yield and save
     sleep(60 * row["tR"] * 1.5)
-    # DO IR STUFF
-    # Start acquiring IR spectra until steady state conditions are reached or max time has passed
 
+    # Max 1.5 tR time to measure yield, integration is 15" so 4 scans per minute
+    max_scan = row["tR"] * 4 * 1.5
+    avg_yield, st_dev = measure_yield_step1(max_scan)
 
     # 9) flushes loops+reactor at higher flowrate
-    # For the flushes reach 8 reactor volumes.
+    # For the flushes reach 6 reactor volumes.
     current_time = time()
-    reactor_volumes_infused = current_time - start_time / (row["tR"] * 60)
-    reactor_volumes_to_flush = 8 - reactor_volumes_infused
+    reactor_volumes_infused = (current_time - start_time) / (row["tR"] * 60)
+    reactor_volumes_to_flush = 6 - reactor_volumes_infused
     # Now let's flush the remaining reactor volume with the flowrate of 1min tR
     _fast_flowrate_socl2, _fast_flowrate_acid = calculate_flowrate(1, row["eq"])  # Flush flowrate is tR=1
     pump_socl2_solvent.to_volume(0, speed=pump_socl2_solvent.flowrate_to_seconds_per_stroke(_flowrate_socl2))
     pump_acid_solvent.set_flow(_fast_flowrate_acid)
     sleep(reactor_volumes_to_flush*60)
 
-    # Given that the loop hosts 5.5 reactor volumes, and at least 1.5 have already been waited for, just flash 4 VR
-    pump_socl2_solvent
+    # Once experiment is performed remove it from the source CSV
+    # source_df.drop(index, inplace=True)
+    # source_df.to_csv(SOURCE_FILE)
+
 
 pump_acid_filling.stop()
 pump_socl2_filling.stop()
 
 
-    # Once experiment is performed remove it from the source CSV
-    # source_df.drop(index, inplace=True)
-    # source_df.to_csv(SOURCE_FILE)
