@@ -88,7 +88,7 @@ valveA = KnauerValve(available_knauer_devices[_valve_A_mac])
 valveA.switch_to_position("LOAD")  # Not necessary, used to check communication
 
 # Injection valve B
-_valve_B_mac = '00:80:a3:ce:8e:47'
+_valve_B_mac = '00:80:a3:ce:7e:15'
 valveB = KnauerValve(available_knauer_devices[_valve_B_mac])
 valveB.switch_to_position("LOAD")  # Not necessary, used to check communication
 
