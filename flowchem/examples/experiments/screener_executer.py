@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+
 import numpy as np
 import opcua
 import logging
@@ -14,6 +16,7 @@ from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump, KnauerValve
 from flowchem.devices.Knauer.knauer_autodiscover import autodiscover_knauer
 from flowchem.devices.MettlerToledo.iCIR import FlowIR
 from flowchem.devices.Vapourtec.R4_heater import R4Heater, VapourtecCommand
+from flowchem.examples.experiments.step_one_chemometrics import measure_yield_step1
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("flowchem")
@@ -22,6 +25,7 @@ logger = logging.getLogger("flowchem")
 WORKING_DIR = Path().home() / "Documents"
 SOURCE_FILE = WORKING_DIR / "chlorination_14_05_21.csv"
 assert SOURCE_FILE.exists()
+OUTPUT_FILE = WORKING_DIR / f"{SOURCE_FILE.stem}_results{SOURCE_FILE.suffix}"
 # Ensure spectra folder exits
 Path(WORKING_DIR / "spectra").mkdir(exist_ok=True)
 
@@ -108,16 +112,30 @@ def calculate_flowrate(residence_time: float, equivalent: float) -> tuple[float,
     flow_acid = total_flow - flow_socl2
     return flow_socl2, flow_acid
 
-def measure_yield_step1(max_scan: int) -> tuple[float, float]:
+def xp_measure_yield(max_scan: int) -> tuple[float, float]:
     """
     Use the IR and peak fitting to measure yield.
-    Keep on acquiring until CV<2% or max_scan is reached.
+    Keep on acquiring until CV<1% or max_scan is reached.
     """
-
     measured_yield = []
-    cv = 1
-    while cv > 0.02 and current_scan < max_scan:
-        # FIXME  DO STUFF
+    while True:
+        spectrum = ir_spectrometer.get_last_spectrum_treated()
+        latest_yield = measure_yield_step1(spectrum.as_df())
+        measured_yield.append(latest_yield)
+        print(f"Acquired new spectrum -> yield is {latest_yield}!")
+
+        # Evaluate if results are stable enough to return
+        if len(measured_yield) >= 3:
+            n_yield = np.array(measured_yield)
+            if n_yield.var() < 0.01 or len(measured_yield) > max_scan:
+                print(f"Stop analytics! Calculated yield is {n_yield.mean()} CV {n_yield.var()} after "
+                      f"{len(measured_yield)} measurements!")
+                return n_yield.mean(), n_yield.var()
+
+        last_spectrum_num = ir_spectrometer.get_sample_count()
+        # Wait for new spectrum
+        while ir_spectrometer.get_sample_count() == last_spectrum_num:
+            sleep(1)
 
 # Loop execute the points that are needed
 for index, row in xp_data.iterrows():
@@ -188,7 +206,15 @@ for index, row in xp_data.iterrows():
 
     # Max 1.5 tR time to measure yield, integration is 15" so 4 scans per minute
     max_scan = row["tR"] * 4 * 1.5
-    avg_yield, st_dev = measure_yield_step1(max_scan)
+    result_row = copy.deepcopy(row)
+    result_row["yield"], result_row["cv"] = xp_measure_yield(max_scan)
+
+    # Write result to file
+    results = pd.DataFrame(columns=list(result_row.keys()))
+    results.append(result_row)
+
+    # Append to existing file, header written only the first time
+    results.to_csv(OUTPUT_FILE, mode='a', header=not OUTPUT_FILE.exists())
 
     # 9) flushes loops+reactor at higher flowrate
     # For the flushes reach 6 reactor volumes.
