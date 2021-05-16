@@ -200,7 +200,7 @@ for index, row in xp_data.iterrows():
     # 5) Fill loops
     pump_socl2_filling.target_volume = _loopA + 0.05
     pump_socl2_filling.infusion_rate = 1
-    pump_socl2_filling.infuse_run()
+    pump_socl2_filling.run()
     pump_acid_filling.to_volume(volume_in_ml=0, speed=30)
     # Wait for filling complete
     pump_socl2_filling.wait_until_idle()
