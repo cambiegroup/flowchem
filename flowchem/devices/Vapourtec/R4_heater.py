@@ -96,6 +96,8 @@ class R4Heater:
             if ret_code[:1] == "S":
                 self.logger.debug(f"Target temperature reached on channel {channel}!")
                 t_stable = True
+            else:
+                time.sleep(1)
 
     def set_temperature(self, channel, target_temperature: int, wait: bool = False):
         """ Set temperature and optionally waits for S """
