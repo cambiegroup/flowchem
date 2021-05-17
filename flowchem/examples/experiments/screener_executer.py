@@ -19,14 +19,14 @@ from flowchem.devices.MettlerToledo.iCIR import FlowIR
 from flowchem.devices.Vapourtec.R4_heater import R4Heater, VapourtecCommand
 from flowchem.examples.experiments.step_one_chemometrics import measure_yield_step1
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logging.getLogger('opcua').setLevel(logging.CRITICAL)
 
 # FILES AND PATHS
 WORKING_DIR = Path().home() / "Documents"
-SOURCE_FILE = WORKING_DIR / "chlorination_14_05_21.csv"
+SOURCE_FILE = WORKING_DIR / "chlorination_T_study_17_05_21.csv"
 assert SOURCE_FILE.exists()
 OUTPUT_FILE = WORKING_DIR / f"{SOURCE_FILE.stem}_results{SOURCE_FILE.suffix}"
 # Ensure spectra folder exits
