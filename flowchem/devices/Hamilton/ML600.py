@@ -237,10 +237,12 @@ class ML600Commands:
     ERROR_STATUS = Protocol1CommandTemplate(command="T2")
     # PARAMETER REQUEST
     SYRINGE_DEFAULT_SPEED = Protocol1CommandTemplate(command="YQS")  # 2-3692 seconds per stroke
-    SYRINGE_DEFAULT_RETURN = Protocol1CommandTemplate(command="YQN")  # 0-1000 steps
     CURRENT_SYRINGE_POSITION = Protocol1CommandTemplate(command="YQP")  # 0-52800 steps
     SYRINGE_DEFAULT_BACKOFF = Protocol1CommandTemplate(command="YQP")  # 0-1000 steps
     CURRENT_VALVE_POSITION = Protocol1CommandTemplate(command="LQP")  # 1-8 (see docs, Table 3.2.2)
+    GET_RETURN_STEPS = Protocol1CommandTemplate(command="YQN")  # 0-1000 steps
+    # PARAMETER CHANGE
+    SET_RETURN_STEPS = Protocol1CommandTemplate(command="YSN")  # 0-1000
     # VALVE REQUEST
     VALVE_ANGLE = Protocol1CommandTemplate(command="LQA")  # 0-359 degrees
     VALVE_CONFIGURATION = Protocol1CommandTemplate(command="YQS")  # 11-20 (see docs, Table 3.2.2)
@@ -404,6 +406,19 @@ class ML600:
     def valve_position(self, target_position: ValvePositionName):
         self.send_command_and_read_reply(ML600Commands.VALVE_BY_NAME_CW, command_value=str(int(target_position)))
 
+    @property
+    def return_steps(self) -> int:
+        """ Represent the position of the valve: getter returns Enum, setter needs Enum """
+        return int(self.send_command_and_read_reply(ML600Commands.GET_RETURN_STEPS))
+
+    @return_steps.setter
+    def return_steps(self, target_steps: int):
+        self.send_command_and_read_reply(ML600Commands.SET_RETURN_STEPS, command_value=str(int(target_steps)))
+
+    def syringe_position(self):
+        current_steps = int(self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION)) - self.offset_steps
+        return current_steps / self.steps_per_ml
+
     def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
         self.valve_position = from_valve
         pass
@@ -521,12 +536,14 @@ if __name__ == '__main__':
     l = logging.getLogger(__name__+".TwoPumpAssembly")
     # l = logging.getLogger(__name__)
     l.setLevel(logging.DEBUG)
-    pump_connection = HamiltonPumpIO(7)
-    test1 = ML600(pump_connection, syringe_volume=5)
-    pump_connection2 = HamiltonPumpIO(8)
-    test2 = ML600(pump_connection2, syringe_volume=5)
+    #pump_connection = HamiltonPumpIO(7)
+    #test1 = ML600(pump_connection, syringe_volume=5)
+    #pump_connection2 = HamiltonPumpIO(8)
+    #test2 = ML600(pump_connection2, syringe_volume=5)
+    #metapump = TwoPumpAssembly(test1, test2, target_flowrate=5, init_seconds=30)
+    #metapump.start()
 
-    metapump = TwoPumpAssembly(test1, test2, target_flowrate=5, init_seconds=30)
-    metapump.start()
+    pump_connection = HamiltonPumpIO(43)
+    test1 = ML600(pump_connection, syringe_volume=5)
 
     breakpoint()

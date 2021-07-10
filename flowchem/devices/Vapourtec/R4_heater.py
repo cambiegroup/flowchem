@@ -81,7 +81,7 @@ class R4Heater:
             response = self._read_reply()
 
         if not response:
-            raise InvalidConfiguration(f"No response received from pump!")
+            raise InvalidConfiguration(f"No response received from heating module!")
 
         # Parse reply
         success, parsed_response = self.parse_response(response)
@@ -96,11 +96,13 @@ class R4Heater:
             if ret_code[:1] == "S":
                 self.logger.debug(f"Target temperature reached on channel {channel}!")
                 t_stable = True
+            else:
+                time.sleep(1)
 
-    def set_temperature(self, channel, target_temperature, wait: bool = False):
+    def set_temperature(self, channel, target_temperature: int, wait: bool = False):
         """ Set temperature and optionally waits for S """
         set_command = getattr(VapourtecCommand, f"SET_CH{channel}_TEMP")
-        self.write_and_read_reply(set_command.set_argument(target_temperature))
+        self.write_and_read_reply(set_command.set_argument(int(target_temperature)))  # int casting imp! np.float fails
         self.write_and_read_reply(VapourtecCommand.CH_ON.set_argument(channel))
 
         if wait:
