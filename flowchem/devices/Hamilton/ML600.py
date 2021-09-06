@@ -405,6 +405,7 @@ class ML600:
     @valve_position.setter
     def valve_position(self, target_position: ValvePositionName):
         self.send_command_and_read_reply(ML600Commands.VALVE_BY_NAME_CW, command_value=str(int(target_position)))
+        self.wait_until_idle()
 
     @property
     def return_steps(self) -> int:
