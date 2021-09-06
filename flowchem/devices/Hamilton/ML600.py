@@ -358,6 +358,7 @@ class ML600:
     def to_volume(self, volume_in_ml: float, speed: int = ''):
         """ Absolute move to volume """
         self._to_step_position(self._volume_to_step(volume_in_ml), speed)
+        self.log.debug(f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}")
 
     def pause(self):
         """ Pause any running command """
@@ -374,6 +375,7 @@ class ML600:
 
     def wait_until_idle(self):
         """ Returns when no more commands are present in the pump buffer. """
+        self.log.debug(f"Pump {self.name} wait until idle")
         while self.is_busy:
             time.sleep(0.1)
 
@@ -404,6 +406,7 @@ class ML600:
 
     @valve_position.setter
     def valve_position(self, target_position: ValvePositionName):
+        self.log.debug(f"{self.name} valve position set to {target_position.name}")
         self.send_command_and_read_reply(ML600Commands.VALVE_BY_NAME_CW, command_value=str(int(target_position)))
         self.wait_until_idle()
 
