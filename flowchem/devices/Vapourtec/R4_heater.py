@@ -91,8 +91,18 @@ class R4Heater:
     def wait_for_target_temp(self, channel: int):
         """ Waits until the target channel has reached the desired temperature and is stable """
         t_stable = False
+        failure = 0
         while not t_stable:
-            ret_code = self.write_and_read_reply(VapourtecCommand.TEMP.set_argument(channel))
+            try:
+                ret_code = self.write_and_read_reply(VapourtecCommand.TEMP.set_argument(channel))
+            except InvalidConfiguration as e:
+                ret_code = "N"
+                failure += 1
+                if failure > 3:
+                    raise e
+            else:
+                failure = 0
+
             if ret_code[:1] == "S":
                 self.logger.debug(f"Target temperature reached on channel {channel}!")
                 t_stable = True
