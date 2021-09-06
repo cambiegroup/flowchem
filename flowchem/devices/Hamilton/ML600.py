@@ -487,21 +487,28 @@ class TwoPumpAssembly(Thread):
         return speed
 
     def execute_stroke(self, pump_full: ML600, pump_empty: ML600, speed_s_per_stroke: int):
-        pump_full.valve_position = pump_full.ValvePositionName.OUTPUT
-        pump_empty.valve_position = pump_full.ValvePositionName.INPUT
-        self.log.debug("Setting valves to target position...")
-        self.wait_for_both_pumps()
+        # Logic is a bit complex here to ensure pause-less pumping
+        # This needs the pump that withdraws to move faster than the pumping one. no way around.
 
+        # First start pumping with the full syringe already prepared
         pump_full.to_volume(0, speed=speed_s_per_stroke)
-        pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke)
         self.log.debug("Pumping...")
-        self.wait_for_both_pumps()
+        # Then start refilling the empty one
+        pump_empty.valve_position = pump_empty.ValvePositionName.INPUT
+        # And do that fast so that we finish refill before the pumping is over
+        pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke-5)
+        pump_empty.wait_until_idle()
+        # This allows us to set the reight pump position on the pump that was empty (not full and ready for next cycle)
+        pump_empty.valve_position = pump_empty.ValvePositionName.OUTPUT
+        pump_full.wait_until_idle()
 
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every 10 milliseconds."""
-        # First initialize with fast speed...
-        self.execute_stroke(self._p1, self._p2, speed_s_per_stroke=self.init_secs)
+        # First initialize with init_secs speed...
+        self._p1.to_volume(self._p1.syringe_volume, speed=self.init_secs)
+        self._p1.wait_until_idle()
+        self._p1.valve_position = self._p1.ValvePositionName.OUTPUT
         self.log.info("Pumps initialized for continuous pumping!")
 
         while True:
