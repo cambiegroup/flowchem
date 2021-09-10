@@ -237,10 +237,12 @@ class ML600Commands:
     ERROR_STATUS = Protocol1CommandTemplate(command="T2")
     # PARAMETER REQUEST
     SYRINGE_DEFAULT_SPEED = Protocol1CommandTemplate(command="YQS")  # 2-3692 seconds per stroke
-    SYRINGE_DEFAULT_RETURN = Protocol1CommandTemplate(command="YQN")  # 0-1000 steps
     CURRENT_SYRINGE_POSITION = Protocol1CommandTemplate(command="YQP")  # 0-52800 steps
     SYRINGE_DEFAULT_BACKOFF = Protocol1CommandTemplate(command="YQP")  # 0-1000 steps
     CURRENT_VALVE_POSITION = Protocol1CommandTemplate(command="LQP")  # 1-8 (see docs, Table 3.2.2)
+    GET_RETURN_STEPS = Protocol1CommandTemplate(command="YQN")  # 0-1000 steps
+    # PARAMETER CHANGE
+    SET_RETURN_STEPS = Protocol1CommandTemplate(command="YSN")  # 0-1000
     # VALVE REQUEST
     VALVE_ANGLE = Protocol1CommandTemplate(command="LQA")  # 0-359 degrees
     VALVE_CONFIGURATION = Protocol1CommandTemplate(command="YQS")  # 11-20 (see docs, Table 3.2.2)
@@ -356,6 +358,7 @@ class ML600:
     def to_volume(self, volume_in_ml: float, speed: int = ''):
         """ Absolute move to volume """
         self._to_step_position(self._volume_to_step(volume_in_ml), speed)
+        self.log.debug(f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}")
 
     def pause(self):
         """ Pause any running command """
@@ -372,6 +375,7 @@ class ML600:
 
     def wait_until_idle(self):
         """ Returns when no more commands are present in the pump buffer. """
+        self.log.debug(f"Pump {self.name} wait until idle")
         while self.is_busy:
             time.sleep(0.1)
 
@@ -402,7 +406,22 @@ class ML600:
 
     @valve_position.setter
     def valve_position(self, target_position: ValvePositionName):
+        self.log.debug(f"{self.name} valve position set to {target_position.name}")
         self.send_command_and_read_reply(ML600Commands.VALVE_BY_NAME_CW, command_value=str(int(target_position)))
+        self.wait_until_idle()
+
+    @property
+    def return_steps(self) -> int:
+        """ Represent the position of the valve: getter returns Enum, setter needs Enum """
+        return int(self.send_command_and_read_reply(ML600Commands.GET_RETURN_STEPS))
+
+    @return_steps.setter
+    def return_steps(self, target_steps: int):
+        self.send_command_and_read_reply(ML600Commands.SET_RETURN_STEPS, command_value=str(int(target_steps)))
+
+    def syringe_position(self):
+        current_steps = int(self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION)) - self.offset_steps
+        return current_steps / self.steps_per_ml
 
     def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
         self.valve_position = from_valve
@@ -468,21 +487,28 @@ class TwoPumpAssembly(Thread):
         return speed
 
     def execute_stroke(self, pump_full: ML600, pump_empty: ML600, speed_s_per_stroke: int):
-        pump_full.valve_position = pump_full.ValvePositionName.OUTPUT
-        pump_empty.valve_position = pump_full.ValvePositionName.INPUT
-        self.log.debug("Setting valves to target position...")
-        self.wait_for_both_pumps()
+        # Logic is a bit complex here to ensure pause-less pumping
+        # This needs the pump that withdraws to move faster than the pumping one. no way around.
 
+        # First start pumping with the full syringe already prepared
         pump_full.to_volume(0, speed=speed_s_per_stroke)
-        pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke)
         self.log.debug("Pumping...")
-        self.wait_for_both_pumps()
+        # Then start refilling the empty one
+        pump_empty.valve_position = pump_empty.ValvePositionName.INPUT
+        # And do that fast so that we finish refill before the pumping is over
+        pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke-5)
+        pump_empty.wait_until_idle()
+        # This allows us to set the reight pump position on the pump that was empty (not full and ready for next cycle)
+        pump_empty.valve_position = pump_empty.ValvePositionName.OUTPUT
+        pump_full.wait_until_idle()
 
     def run(self):
         """Overloaded Thread.run, runs the update
         method once per every 10 milliseconds."""
-        # First initialize with fast speed...
-        self.execute_stroke(self._p1, self._p2, speed_s_per_stroke=self.init_secs)
+        # First initialize with init_secs speed...
+        self._p1.to_volume(self._p1.syringe_volume, speed=self.init_secs)
+        self._p1.wait_until_idle()
+        self._p1.valve_position = self._p1.ValvePositionName.OUTPUT
         self.log.info("Pumps initialized for continuous pumping!")
 
         while True:
@@ -519,14 +545,12 @@ class TwoPumpAssembly(Thread):
 if __name__ == '__main__':
     logging.basicConfig()
     l = logging.getLogger(__name__+".TwoPumpAssembly")
-    # l = logging.getLogger(__name__)
     l.setLevel(logging.DEBUG)
-    pump_connection = HamiltonPumpIO(7)
-    test1 = ML600(pump_connection, syringe_volume=5)
-    pump_connection2 = HamiltonPumpIO(8)
-    test2 = ML600(pump_connection2, syringe_volume=5)
-
-    metapump = TwoPumpAssembly(test1, test2, target_flowrate=5, init_seconds=30)
+    l = logging.getLogger(__name__+".ML600")
+    l.setLevel(logging.DEBUG)
+    pump_connection = HamiltonPumpIO(41)
+    test1 = ML600(pump_connection, syringe_volume=5, address=1)
+    test2 = ML600(pump_connection, syringe_volume=5, address=2)
+    metapump = TwoPumpAssembly(test1, test2, target_flowrate=15, init_seconds=20)
     metapump.start()
-
-    breakpoint()
+    input()

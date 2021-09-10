@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Optional
 
 from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -54,12 +55,12 @@ class PressureSensor:
         """  """
         return bool(self.phidget.getAttached())
 
-    def current_to_pressure(self, current_in_ampere: float):
+    def current_to_pressure(self, current_in_ampere: float) -> float:
         """ Converts current reading into pressure value """
-        ma = current_in_ampere / 1000
+        ma = current_in_ampere * 1000
         # minP..maxP is 4..20mA
         measured_P = self._minP + ((ma - 4) / 16) * (self._maxP - self._minP)
-        self.log.debug(f"Read pressure {measured_P}")
+        self.log.debug(f"Read pressure {measured_P} barg")
         return measured_P
 
     def read(self) -> Optional[float]:
@@ -78,12 +79,16 @@ class PressureSensor:
         """
         try:
             current = self.phidget.getCurrent()
+            self.log.debug(f"Current read: {current}")
         except PhidgetException as e:
             return None
-        return self.current_to_pressure(current)
+        else:
+            return self.current_to_pressure(current)
 
 
 if __name__ == '__main__':
-    test = PressureSensor(sensor_min_bar=2, sensor_max_bar=10, vint_serial_number=627768, vint_channel=0)
-    print(test.read())
-    breakpoint()
+
+    test = PressureSensor(sensor_min_bar=0, sensor_max_bar=25, vint_serial_number=627768, vint_channel=0)
+    while True:
+        print(test.read())
+        time.sleep(1)
