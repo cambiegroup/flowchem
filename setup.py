@@ -14,6 +14,6 @@ setuptools.setup(
     url="https://github.com/cambiegroup/flowchem",
     packages=setuptools.find_packages(),
     install_requires=['pyserial', 'pyserial-asyncio', 'pint', 'pandas','scipy', 'numpy', 'opcua', 'asyncua',
-                      'async_property', 'phidget22', 'getmac'],
+                      'phidget22', 'getmac', 'nmrglue'],
     python_requires='>=3.6',
 )
