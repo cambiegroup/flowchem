@@ -16,4 +16,7 @@ setuptools.setup(
     install_requires=['pyserial', 'pyserial-asyncio', 'pint', 'pandas','scipy', 'numpy', 'opcua', 'asyncua',
                       'phidget22', 'getmac', 'nmrglue'],
     python_requires='>=3.6',
+    entry_points={
+        'console_scripts': ['flowchem=flowchem.cli:main'],
+    }
 )
