@@ -1,0 +1,1 @@
+git+https://github.com/jjhelmus/nmrglue.git@57aa9b61b779b570d9fbf3536ec1f0c8c642242e

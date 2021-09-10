@@ -3,7 +3,7 @@ import warnings
 import logging
 from typing import List, Optional
 
-from flowchem.constants.spectrum import IRSpectrum
+from flowchem.analysis.spectrum import IRSpectrum
 
 # ASYNC ONLY
 import asyncio
