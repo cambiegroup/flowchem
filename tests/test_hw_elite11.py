@@ -1,3 +1,8 @@
+"""
+HA Elite11 tests
+Run with python -m pytest ./tests -m HApump and updates pump com port and address in pump below
+"""
+
 import pytest
 import time
 import math
@@ -21,21 +26,25 @@ def pump():
     return Elite11(serial_pump_chain, 9)
 
 
+@pytest.mark.HApump
 def test_version(pump: Elite11):
     assert "11 ELITE" in pump.version
 
 
+@pytest.mark.HApump
 def test_status_idle(pump: Elite11):
     pump.stop()
     assert pump.get_status() is PumpStatus.IDLE
 
 
+@pytest.mark.HApump
 def test_status_infusing(pump: Elite11):
     move_infuse(pump)
     assert pump.get_status() is PumpStatus.INFUSING
     pump.stop()
 
 
+@pytest.mark.HApump
 def test_status_withdrawing(pump: Elite11):
     pump.diameter = 10
     pump.withdrawing_rate = 1
@@ -44,6 +53,7 @@ def test_status_withdrawing(pump: Elite11):
     pump.stop()
 
 
+@pytest.mark.HApump
 def test_is_moving(pump: Elite11):
     assert pump.is_moving() is False
     move_infuse(pump)
@@ -51,6 +61,7 @@ def test_is_moving(pump: Elite11):
     pump.stop()
 
 
+@pytest.mark.HApump
 def test_syringe_volume(pump: Elite11):
     import math
     assert isinstance(pump.syringe_volume, (float, int))
@@ -62,6 +73,7 @@ def test_syringe_volume(pump: Elite11):
     assert math.isclose(pump.syringe_volume, 3.2e-9)
 
 
+@pytest.mark.HApump
 def test_infusion_rate(pump: Elite11):
     pump.diameter = 10
     pump.infusion_rate = 5
@@ -76,6 +88,7 @@ def test_infusion_rate(pump: Elite11):
     assert math.isclose(pump.infusion_rate, math.pi, abs_tol=0.001)
 
 
+@pytest.mark.HApump
 def test_get_infused_volume(pump: Elite11):
     pump.clear_volumes()
     pump.infusion_rate = 10
@@ -85,6 +98,7 @@ def test_get_infused_volume(pump: Elite11):
     assert pump.get_infused_volume() == 0.1
 
 
+@pytest.mark.HApump
 def test_get_withdrawn_volume(pump: Elite11):
     pump.clear_volumes()
     pump.withdrawing_rate = 10
@@ -94,6 +108,7 @@ def test_get_withdrawn_volume(pump: Elite11):
     assert pump.get_withdrawn_volume() == 0.1
 
 
+@pytest.mark.HApump
 def test_force(pump: Elite11):
     pump.force = 10
     assert pump.force == 10
@@ -105,6 +120,7 @@ def test_force(pump: Elite11):
     assert pump.force == 50
 
 
+@pytest.mark.HApump
 def test_diameter(pump: Elite11):
     pump.diameter = 10
     assert pump.diameter == 10
@@ -121,6 +137,7 @@ def test_diameter(pump: Elite11):
     math.isclose(pump.diameter, math.pi)
 
 
+@pytest.mark.HApump
 def test_target_volume(pump: Elite11):
     pump.target_volume = math.pi
     assert math.isclose(pump.target_volume, math.pi, abs_tol=10e-4)
