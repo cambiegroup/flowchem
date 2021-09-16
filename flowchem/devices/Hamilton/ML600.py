@@ -14,7 +14,7 @@ import logging
 import threading
 from enum import IntEnum
 from dataclasses import dataclass
-from typing import Union, List, Tuple, Optional
+from typing import Union, Tuple, Optional
 from serial import PARITY_EVEN, SEVENBITS, STOPBITS_ONE
 from threading import Thread
 
@@ -651,10 +651,10 @@ class TwoPumpAssembly(Thread):
 
 if __name__ == "__main__":
     logging.basicConfig()
-    l = logging.getLogger(__name__ + ".TwoPumpAssembly")
-    l.setLevel(logging.DEBUG)
-    l = logging.getLogger(__name__ + ".ML600")
-    l.setLevel(logging.DEBUG)
+    log = logging.getLogger(__name__ + ".TwoPumpAssembly")
+    log.setLevel(logging.DEBUG)
+    log = logging.getLogger(__name__ + ".ML600")
+    log.setLevel(logging.DEBUG)
     pump_connection = HamiltonPumpIO(41)
     test1 = ML600(pump_connection, syringe_volume=5, address=1)
     test2 = ML600(pump_connection, syringe_volume=5, address=2)

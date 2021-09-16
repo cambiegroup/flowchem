@@ -28,5 +28,5 @@ setuptools.setup(
         "nmrglue",
     ],
     python_requires=">=3.6",
-    entry_points={"console_scripts": ["flowchem=flowchem.cli:main"],},
+    entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},
 )
