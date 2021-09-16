@@ -5,7 +5,7 @@ import threading
 import warnings
 import pprint as pp
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from lxml import etree
 from packaging import version
@@ -91,9 +91,10 @@ class Spinsolve:
         if self._folder_mapper is not None:
             assert self._folder_mapper(self.data_folder) is not None
 
-        # Sets default sample and solvent value (otherwise the previous ones are re-used)
+        # Sets default sample, solvent value and user data
         self.sample = kwargs.get("sample_name", "FlowChem Experiment")
         self.solvent = kwargs.get("solvent", "Chloroform?")
+        self.user_data = dict(control_software="flowchem")
 
         # Finally check version
         if version.parse(self.software_version) < version.parse("1.18.1.3062"):
@@ -176,11 +177,11 @@ class Spinsolve:
         return self._data_folder  # No command available to directly query Spinsolve :(
 
     @data_folder.setter
-    def data_folder(self, location: str, folder_type="TimeStampTree"):
+    def data_folder(self, location: str):
         """ Sets the location provided as data folder. optionally, with typeThese are included in acq.par """
         if location is not None:
             self._data_folder = location
-            self.send_message(set_data_folder(location, folder_type))
+            self.send_message(set_data_folder(location))
 
     @property
     def user_data(self) -> dict:
@@ -257,7 +258,7 @@ class Spinsolve:
 
         return protocols
 
-    async def run_protocol(self, protocol_name, protocol_options=None) -> Optional[str, Path]:
+    async def run_protocol(self, protocol_name, protocol_options=None) -> Optional[Union[str, Path]]:
         """
         Runs a protocol
 
@@ -273,12 +274,7 @@ class Spinsolve:
             return None
 
         # Validate protocol options (check values and remove invalid ones, with warning)
-        if protocol_options is None:
-            valid_protocol_options = dict()
-        else:
-            valid_protocol_options = self._validate_protocol_request(
-                protocol_name, protocol_options
-            )
+        valid_protocol_options = self._validate_protocol_request(protocol_name, protocol_options)
 
         # Start protocol
         self._reader.clear_replies()
@@ -340,6 +336,8 @@ class Spinsolve:
         """ Ensures the protocol names, option name and option values are valid. """
         # Valid option for protocol
         valid_options = self.protocols_option.get(protocol_name)
+        if valid_options is None or protocol_options is None:
+            return dict()
 
         # For each option, check if valid. If not, remove it, raise warning and continue
         for option_name, option_value in list(protocol_options.items()):

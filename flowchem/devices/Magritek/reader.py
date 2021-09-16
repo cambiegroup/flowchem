@@ -93,7 +93,7 @@ class Reader:
 
         self.parse_buffer()
 
-    def parse_buffer(self) -> bool:
+    def parse_buffer(self):
         """
         Split then buffer into individual XML trees and parse them.
         """

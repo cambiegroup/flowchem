@@ -26,7 +26,7 @@ Currently, those includes:
  
 ## Installation
 ```javascript
-pip install flowchem[all]
+pip install flowchem
 ```
 
 

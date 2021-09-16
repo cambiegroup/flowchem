@@ -22,13 +22,13 @@ class StatusNotification(Enum):
     UNKNOWN = 7
 
 
-def extract_error(xml_message: etree._Element) -> str:
-    """
-    Search for an error tag in the XML tree provided.
-    If an error is found returns its error message, empty string if no errors are present.
-    """
-    error = xml_message.find(".//Error")
-    return error.get("error") if error is not None else ""
+# def extract_error(xml_message: etree._Element) -> str:
+#     """
+#     Search for an error tag in the XML tree provided.
+#     If an error is found returns its error message, empty string if no errors are present.
+#     """
+#     error = xml_message.find(".//Error")
+#     return error.get("error") if error is not None else ""
 
 
 def parse_status_notification(xml_message: etree._Element):

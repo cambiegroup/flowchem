@@ -39,20 +39,15 @@ def get_request(name) -> etree._Element:
     return base
 
 
-def set_data_folder(location, folder_type="TimeStampTree") -> etree._Element:
+def set_data_folder(location) -> etree._Element:
     """
     Create a Set DataFolder message
     """
-    # Validate folder_type
-    if folder_type not in ("TimeStampTree", "TimeStamp", "UserFolder"):
-        warnings.warn("Invalid data folder type! Assuming TimeStampTree.")
-        folder_type = "TimeStampTree"
-
     # Get base request
     data_folder = set_attribute("DataFolder")
 
     # Add folder specific tag
-    full_tree = etree.SubElement(data_folder.find(".//DataFolder"), folder_type)
+    full_tree = etree.SubElement(data_folder.find(".//DataFolder"), "TimeStampTree")
     full_tree.text = (
         location.as_posix() if isinstance(location, WindowsPath) else location
     )
