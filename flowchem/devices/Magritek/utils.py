@@ -49,7 +49,7 @@ async def get_streams_for_connection(host, port) -> (asyncio.StreamReader, async
     try:
         read, write = await asyncio.open_connection(host, port)
     except Exception as e:
-        raise ConnectionError(f"Error connecting to {host}:{port} -- {x}") from e
+        raise ConnectionError(f"Error connecting to {host}:{port} -- {e}") from e
     return read, write
 
 
