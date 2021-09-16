@@ -19,16 +19,20 @@ class Spectrum:
         integration_interval = self.as_df().query(f"{x_start} <= index <= {x_end}")[0]
         # Index sorting prevent negative integrals in IR spectra
         integration_interval.sort_index(inplace=True)
-        return integrate.trapezoid(integration_interval.values, integration_interval.index.to_numpy())
+        return integrate.trapezoid(
+            integration_interval.values, integration_interval.index.to_numpy()
+        )
 
     def as_df(self) -> pd.DataFrame:
         """ Returns spectrum as pd.DataFrame """
         return pd.DataFrame(data=self._y, index=self._x)
 
     def __str__(self):
-        return f"Spectrum object [" \
-               f"X: min={min(self._x):.2f}, max={max(self._x):.2f}, len={len(self._x)}," \
-               f"Y: min={min(self._y):.2f}, max={max(self._y):.2f}, len={len(self._y)}]"
+        return (
+            f"Spectrum object ["
+            f"X: min={min(self._x):.2f}, max={max(self._x):.2f}, len={len(self._x)},"
+            f"Y: min={min(self._y):.2f}, max={max(self._y):.2f}, len={len(self._y)}]"
+        )
 
 
 class IRSpectrum(Spectrum):
@@ -37,9 +41,10 @@ class IRSpectrum(Spectrum):
     Consider rampy for advance features (baseline fit, etc)
     See e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb
     """
+
     def __init__(self, wavenumber, intensity):
         super().__init__(wavenumber, intensity)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

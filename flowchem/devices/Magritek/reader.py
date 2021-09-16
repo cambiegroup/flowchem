@@ -15,6 +15,7 @@ class Reader:
     This class is responsible for collecting and parsing replies from the spectrometer.
     It does not contain functionality to handle I/O.
     """
+
     def __init__(self, reply_queue: queue.Queue, xml_schema=None):
         self._queue = reply_queue
 
@@ -22,7 +23,9 @@ class Reader:
             # This is the default location upon Spinsolve installation. However, remote control can be from remote ;)
             my_docs = get_my_docs_path()
             try:
-                self.schema = etree.XMLSchema(file=str(my_docs / "Magritek" / "Spinsolve" / "RemoteControl.xsd"))
+                self.schema = etree.XMLSchema(
+                    file=str(my_docs / "Magritek" / "Spinsolve" / "RemoteControl.xsd")
+                )
             except etree.XMLSchemaParseError:  # i.e. not found
                 self.schema = None
         else:
@@ -64,7 +67,9 @@ class Reader:
             # First tag in message is response type
             if reply[0].tag.endswith(reply_type):
                 if remove:
-                    self._replies.remove(reply)  # yes, I am also surprised that this is possible ;)
+                    self._replies.remove(
+                        reply
+                    )  # yes, I am also surprised that this is possible ;)
                 return reply
 
     def clear_replies(self, reply_type=""):
@@ -77,7 +82,6 @@ class Reader:
         for reply in self._replies:
             if reply[0].tag.endswith(reply_type):
                 self._replies.remove(reply)
-
 
     def fetch_replies(self):
         """

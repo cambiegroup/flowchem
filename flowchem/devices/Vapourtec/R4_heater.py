@@ -11,7 +11,9 @@ from serial import PARITY_NONE, STOPBITS_ONE, EIGHTBITS
 try:
     from flowchem.devices.Vapourtec.commands import R4Command, VapourtecCommand
 except ImportError as e:
-    raise PermissionError("Cannot redistribute Vapourtec commands... Contact them to get it!") from e
+    raise PermissionError(
+        "Cannot redistribute Vapourtec commands... Contact them to get it!"
+    ) from e
 
 
 class R4Exception(Exception):
@@ -32,20 +34,30 @@ class R4Heater:
 
         try:
             # noinspection PyPep8
-            self._serial = serial.Serial(port=port, baudrate=19200, parity=PARITY_NONE,
-                                         stopbits=STOPBITS_ONE, bytesize=EIGHTBITS,
-                                         timeout=0.1)  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
+            self._serial = serial.Serial(
+                port=port,
+                baudrate=19200,
+                parity=PARITY_NONE,
+                stopbits=STOPBITS_ONE,
+                bytesize=EIGHTBITS,
+                timeout=0.1,
+            )  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
         except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration(f"Check serial port availability! [{port}]") from e
+            raise InvalidConfiguration(
+                f"Check serial port availability! [{port}]"
+            ) from e
 
-        self.sio = io.TextIOWrapper(buffer=io.BufferedRWPair(self._serial, self._serial), line_buffering=True,
-                                    newline="\r\n")
+        self.sio = io.TextIOWrapper(
+            buffer=io.BufferedRWPair(self._serial, self._serial),
+            line_buffering=True,
+            newline="\r\n",
+        )
 
     def _write(self, command: str):
         """ Writes a command to the pump """
         self.logger.debug(f"Sending {repr(command)}")
         try:
-            self.sio.write(command+"\r\n")
+            self.sio.write(command + "\r\n")
         except serial.serialutil.SerialException as e:
             raise InvalidConfiguration from e
 
@@ -94,7 +106,9 @@ class R4Heater:
         failure = 0
         while not t_stable:
             try:
-                ret_code = self.write_and_read_reply(VapourtecCommand.TEMP.set_argument(channel))
+                ret_code = self.write_and_read_reply(
+                    VapourtecCommand.TEMP.set_argument(channel)
+                )
             except InvalidConfiguration as e:
                 ret_code = "N"
                 failure += 1
@@ -112,14 +126,16 @@ class R4Heater:
     def set_temperature(self, channel, target_temperature: int, wait: bool = False):
         """ Set temperature and optionally waits for S """
         set_command = getattr(VapourtecCommand, f"SET_CH{channel}_TEMP")
-        self.write_and_read_reply(set_command.set_argument(int(target_temperature)))  # int casting imp! np.float fails
+        self.write_and_read_reply(
+            set_command.set_argument(int(target_temperature))
+        )  # int casting imp! np.float fails
         self.write_and_read_reply(VapourtecCommand.CH_ON.set_argument(channel))
 
         if wait:
             self.wait_for_target_temp(channel)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     heat = R4Heater(11)
     heat.set_temperature(0, 30, wait=False)

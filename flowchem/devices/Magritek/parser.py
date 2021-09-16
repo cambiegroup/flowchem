@@ -10,10 +10,13 @@ class StatusNotification(Enum):
     """
     Represent the type of the status notification
     """
+
     STARTED = 1  # <State status="Ready"> received, starting protocol
     RUNNING = 2  # All good, <Progress> received, protocol is running
     STOPPING = 3  # Abort called, waiting for current scan end
-    FINISHING = 4  # Upon <State status="Ready", scan acquisition over, not saving/processing
+    FINISHING = (
+        4  # Upon <State status="Ready", scan acquisition over, not saving/processing
+    )
     COMPLETED = 5  # Upon <Completed>, means also processing/saving data is over
     ERROR = 6  # If an error occurs
     UNKNOWN = 7
@@ -38,7 +41,9 @@ def parse_status_notification(xml_message: etree._Element):
 
     # No status notification found
     if status is None:
-        warnings.warn("Parse status notification called on a message with no StatusNotification tags!")
+        warnings.warn(
+            "Parse status notification called on a message with no StatusNotification tags!"
+        )
         return None
 
     # First (only) child of StatusNotification can be <State> <Progress> or <Completed>

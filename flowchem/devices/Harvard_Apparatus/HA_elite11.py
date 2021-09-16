@@ -17,55 +17,71 @@ import serial
 
 class Elite11Exception(Exception):
     """ General pump exception """
+
     pass
 
 
 class InvalidConfiguration(Elite11Exception):
     """ Used for failure in the serial communication """
+
     pass
 
 
 class PumpStalled(Elite11Exception):
     """ The pump has stalled (back pressure is too high or syringe empty) """
+
     pass
 
 
 class InvalidCommand(Elite11Exception):
     """ The provided command is invalid. This can be caused by the pump state e.g. if display is not in Quick Start! """
+
     pass
 
 
 class InvalidArgument(Elite11Exception):
     """ A valid command was followed by an invalid argument, usually out of accepted range """
+
     pass
 
 
 class UnachievableMove(Elite11Exception):
     """ Essentially for target volumes beyond the available volume """
+
     pass
 
 
 @dataclass
 class Protocol11CommandTemplate:
     """ Class representing a pump command and its expected reply, but without target pump number """
+
     command_string: str
     reply_lines: int  # Reply line without considering leading newline and tailing prompt!
     requires_argument: bool
 
-    def to_pump(self, address: int, argument: str = '') -> Protocol11Command:
+    def to_pump(self, address: int, argument: str = "") -> Protocol11Command:
         """ Returns a Protocol11Command by adding to the template pump address and command arguments """
         if self.requires_argument and not argument:
-            raise InvalidArgument(f"Cannot send command {self.command_string} without an argument!")
+            raise InvalidArgument(
+                f"Cannot send command {self.command_string} without an argument!"
+            )
         elif self.requires_argument is False and argument:
-            raise InvalidArgument(f"Cannot provide an argument to command {self.command_string}!")
-        return Protocol11Command(command_string=self.command_string, reply_lines=self.reply_lines,
-                                 requires_argument=self.requires_argument, target_pump_address=address,
-                                 command_argument=argument)
+            raise InvalidArgument(
+                f"Cannot provide an argument to command {self.command_string}!"
+            )
+        return Protocol11Command(
+            command_string=self.command_string,
+            reply_lines=self.reply_lines,
+            requires_argument=self.requires_argument,
+            target_pump_address=address,
+            command_argument=argument,
+        )
 
 
 @dataclass
 class Protocol11Command(Protocol11CommandTemplate):
     """ Class representing a pump command and its expected reply """
+
     target_pump_address: int
     command_argument: str
 
@@ -77,13 +93,27 @@ class Protocol11Command(Protocol11CommandTemplate):
         assert 0 <= self.target_pump_address < 99
         # end character needs to be '\r\n'. Since this command building is specific for elite 11, that should be fine
         if fast:
-            return str(self.target_pump_address) + "@" + self.command_string + ' ' + self.command_argument + "\r\n"
+            return (
+                str(self.target_pump_address)
+                + "@"
+                + self.command_string
+                + " "
+                + self.command_argument
+                + "\r\n"
+            )
         else:
-            return str(self.target_pump_address) + self.command_string + ' ' + self.command_argument + "\r\n"
+            return (
+                str(self.target_pump_address)
+                + self.command_string
+                + " "
+                + self.command_argument
+                + "\r\n"
+            )
 
 
 class PumpStatus(Enum):
     """ Possible pump statuses, as defined by the reply prompt. """
+
     IDLE = ":"
     INFUSING = ">"
     WITHDRAWING = "<"
@@ -107,7 +137,9 @@ class PumpIO:
 
         try:
             # noinspection PyPep8
-            self._serial = serial.Serial(port=port, baudrate=baud_rate, timeout=0.1)  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
+            self._serial = serial.Serial(
+                port=port, baudrate=baud_rate, timeout=0.1
+            )  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
         except serial.serialutil.SerialException as e:
             raise InvalidConfiguration from e
 
@@ -123,9 +155,13 @@ class PumpIO:
     def _read_reply(self, command) -> List[str]:
         """ Reads the pump reply from serial communication """
         reply_string = []
-        self.logger.debug(f"I am going to read {command.reply_lines} line for this command (+prompt)")
+        self.logger.debug(
+            f"I am going to read {command.reply_lines} line for this command (+prompt)"
+        )
 
-        for line_num in range(command.reply_lines + 2):  # +1 for leading newline character in reply + 1 for prompt
+        for line_num in range(
+            command.reply_lines + 2
+        ):  # +1 for leading newline character in reply + 1 for prompt
             chunk = self._serial.readline().decode("ascii")
             self.logger.debug(f"Read line: {repr(chunk)} ")
 
@@ -156,7 +192,9 @@ class PumpIO:
             return pump_address, status, line[3:]
 
     @staticmethod
-    def parse_response(response: List[str]) -> Tuple[List[int], List[PumpStatus], List[str]]:
+    def parse_response(
+        response: List[str],
+    ) -> Tuple[List[int], List[PumpStatus], List[str]]:
         """ Aggregates address prompt and reply body from all the reply lines and return them """
         parsed_lines = list(map(PumpIO.parse_response_line, response))
         # noinspection PyTypeChecker
@@ -166,18 +204,26 @@ class PumpIO:
     def check_for_errors(last_response_line, command_sent):
         """ Further response parsing, checks for error messages """
         if "Command error" in last_response_line:
-            raise InvalidCommand(f"The command {command_sent} is invalid for pump {command_sent.target_pump_address}!"
-                                 f"[Reply: {last_response_line}]")
+            raise InvalidCommand(
+                f"The command {command_sent} is invalid for pump {command_sent.target_pump_address}!"
+                f"[Reply: {last_response_line}]"
+            )
         elif "Unknown command" in last_response_line:
-            raise InvalidCommand(f"The command {command_sent} is unknown to pump {command_sent.target_pump_address}!"
-                                 f"[Maybe a withdraw command has been used with an infuse only pump?]"
-                                 f"[Reply: {last_response_line}]")
+            raise InvalidCommand(
+                f"The command {command_sent} is unknown to pump {command_sent.target_pump_address}!"
+                f"[Maybe a withdraw command has been used with an infuse only pump?]"
+                f"[Reply: {last_response_line}]"
+            )
         elif "Argument error" in last_response_line:
-            raise InvalidArgument(f"The command {command_sent} to pump {command_sent.target_pump_address} has an "
-                                  f"invalid argument [Reply: {last_response_line}]")
+            raise InvalidArgument(
+                f"The command {command_sent} to pump {command_sent.target_pump_address} has an "
+                f"invalid argument [Reply: {last_response_line}]"
+            )
         elif "Out of range" in last_response_line:
-            raise InvalidArgument(f"The command {command_sent} to pump {command_sent.target_pump_address} has an "
-                                  f"argument out of range! [Reply: {last_response_line}]")
+            raise InvalidArgument(
+                f"The command {command_sent} to pump {command_sent.target_pump_address} has an "
+                f"argument out of range! [Reply: {last_response_line}]"
+            )
 
     def reset_buffer(self):
         """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
@@ -186,7 +232,9 @@ class PumpIO:
         except serial.PortNotOpenError as e:
             raise InvalidConfiguration from e
 
-    def write_and_read_reply(self, command: Protocol11Command, return_parsed: bool = True) -> Union[List[str], str]:
+    def write_and_read_reply(
+        self, command: Protocol11Command, return_parsed: bool = True
+    ) -> Union[List[str], str]:
         """ Main PumpIO method. Sends a command to the pump, read the replies and returns it, optionally parsed """
         with self.lock:
             self.reset_buffer()
@@ -194,8 +242,10 @@ class PumpIO:
             response = self._read_reply(command)
 
         if not response:
-            raise InvalidConfiguration(f"No response received from pump, check pump address! "
-                                       f"(Currently set to {command.target_pump_address})")
+            raise InvalidConfiguration(
+                f"No response received from pump, check pump address! "
+                f"(Currently set to {command.target_pump_address})"
+            )
 
         # Parse reply
         pump_address, return_status, parsed_response = PumpIO.parse_response(response)
@@ -235,91 +285,177 @@ class Elite11Commands:
     # Other methods not included: dim display, usb echo, footswitch, poll, version (verbose ver), input,
     #                             output (if pin state high or low)
 
-    EMPTY_MESSAGE = Protocol11CommandTemplate(command_string=" ", reply_lines=0, requires_argument=False)
-    GET_VERSION = Protocol11CommandTemplate(command_string="VER", reply_lines=1, requires_argument=False)
+    EMPTY_MESSAGE = Protocol11CommandTemplate(
+        command_string=" ", reply_lines=0, requires_argument=False
+    )
+    GET_VERSION = Protocol11CommandTemplate(
+        command_string="VER", reply_lines=1, requires_argument=False
+    )
 
     # RUN commands (no parameters, start movement in same direction/reverse direction/infuse/withdraw respectively)
-    RUN = Protocol11CommandTemplate(command_string='run', reply_lines=0, requires_argument=False)
-    REVERSE_RUN = Protocol11CommandTemplate(command_string='rrun', reply_lines=0, requires_argument=False)
-    INFUSE = Protocol11CommandTemplate(command_string='irun', reply_lines=0, requires_argument=False)
-    WITHDRAW = Protocol11CommandTemplate(command_string="wrun", reply_lines=0, requires_argument=False)
+    RUN = Protocol11CommandTemplate(
+        command_string="run", reply_lines=0, requires_argument=False
+    )
+    REVERSE_RUN = Protocol11CommandTemplate(
+        command_string="rrun", reply_lines=0, requires_argument=False
+    )
+    INFUSE = Protocol11CommandTemplate(
+        command_string="irun", reply_lines=0, requires_argument=False
+    )
+    WITHDRAW = Protocol11CommandTemplate(
+        command_string="wrun", reply_lines=0, requires_argument=False
+    )
 
     # STOP movement
-    STOP = Protocol11CommandTemplate(command_string='stp', reply_lines=0, requires_argument=False)
+    STOP = Protocol11CommandTemplate(
+        command_string="stp", reply_lines=0, requires_argument=False
+    )
 
     # FORCE Pump force getter and setter, see Elite11.force property for range and suggested values
-    GET_FORCE = Protocol11CommandTemplate(command_string="FORCE", reply_lines=1, requires_argument=False)
-    SET_FORCE = Protocol11CommandTemplate(command_string="FORCE", reply_lines=1, requires_argument=True)
+    GET_FORCE = Protocol11CommandTemplate(
+        command_string="FORCE", reply_lines=1, requires_argument=False
+    )
+    SET_FORCE = Protocol11CommandTemplate(
+        command_string="FORCE", reply_lines=1, requires_argument=True
+    )
 
     # DIAMETER Syringe diameter getter and setter, see Elite11.diameter property for range and suggested values
-    SET_DIAMETER = Protocol11CommandTemplate(command_string="diameter", reply_lines=1, requires_argument=True)
-    GET_DIAMETER = Protocol11CommandTemplate(command_string="diameter", reply_lines=1, requires_argument=False)
+    SET_DIAMETER = Protocol11CommandTemplate(
+        command_string="diameter", reply_lines=1, requires_argument=True
+    )
+    GET_DIAMETER = Protocol11CommandTemplate(
+        command_string="diameter", reply_lines=1, requires_argument=False
+    )
 
-    METRICS = Protocol11CommandTemplate(command_string="metrics", reply_lines=20, requires_argument=False)
-    CURRENT_MOVING_RATE = Protocol11CommandTemplate(command_string="crate", reply_lines=1, requires_argument=False)
+    METRICS = Protocol11CommandTemplate(
+        command_string="metrics", reply_lines=20, requires_argument=False
+    )
+    CURRENT_MOVING_RATE = Protocol11CommandTemplate(
+        command_string="crate", reply_lines=1, requires_argument=False
+    )
 
     # RAMP Ramping commands (infuse or withdraw)
     # setter: iramp [{start rate} {start units} {end rate} {end units} {ramp time in seconds}]
-    GET_INFUSE_RAMP = Protocol11CommandTemplate(command_string="iramp", reply_lines=1, requires_argument=False)
-    SET_INFUSE_RAMP = Protocol11CommandTemplate(command_string="iramp", reply_lines=1, requires_argument=True)
-    GET_WITHDRAW_RAMP = Protocol11CommandTemplate(command_string="wramp", reply_lines=1, requires_argument=False)
-    SET_WITHDRAW_RAMP = Protocol11CommandTemplate(command_string="wramp", reply_lines=1, requires_argument=True)
+    GET_INFUSE_RAMP = Protocol11CommandTemplate(
+        command_string="iramp", reply_lines=1, requires_argument=False
+    )
+    SET_INFUSE_RAMP = Protocol11CommandTemplate(
+        command_string="iramp", reply_lines=1, requires_argument=True
+    )
+    GET_WITHDRAW_RAMP = Protocol11CommandTemplate(
+        command_string="wramp", reply_lines=1, requires_argument=False
+    )
+    SET_WITHDRAW_RAMP = Protocol11CommandTemplate(
+        command_string="wramp", reply_lines=1, requires_argument=True
+    )
 
     # RATE
     # returns or set rate irate [max | min | lim | {rate} {rate units}]
-    GET_INFUSE_RATE = Protocol11CommandTemplate(command_string="irate", reply_lines=1, requires_argument=False)
-    GET_INFUSE_RATE_LIMITS = Protocol11CommandTemplate(command_string="irate lim", reply_lines=1,
-                                                       requires_argument=False)
-    SET_INFUSE_RATE = Protocol11CommandTemplate(command_string="irate", reply_lines=1, requires_argument=True)
-    GET_WITHDRAW_RATE = Protocol11CommandTemplate(command_string="wrate", reply_lines=1, requires_argument=False)
-    GET_WITHDRAW_RATE_LIMITS = Protocol11CommandTemplate(command_string="wrate lim", reply_lines=1,
-                                                         requires_argument=False)
-    SET_WITHDRAW_RATE = Protocol11CommandTemplate(command_string="wrate", reply_lines=1, requires_argument=True)
+    GET_INFUSE_RATE = Protocol11CommandTemplate(
+        command_string="irate", reply_lines=1, requires_argument=False
+    )
+    GET_INFUSE_RATE_LIMITS = Protocol11CommandTemplate(
+        command_string="irate lim", reply_lines=1, requires_argument=False
+    )
+    SET_INFUSE_RATE = Protocol11CommandTemplate(
+        command_string="irate", reply_lines=1, requires_argument=True
+    )
+    GET_WITHDRAW_RATE = Protocol11CommandTemplate(
+        command_string="wrate", reply_lines=1, requires_argument=False
+    )
+    GET_WITHDRAW_RATE_LIMITS = Protocol11CommandTemplate(
+        command_string="wrate lim", reply_lines=1, requires_argument=False
+    )
+    SET_WITHDRAW_RATE = Protocol11CommandTemplate(
+        command_string="wrate", reply_lines=1, requires_argument=True
+    )
 
     # GET VOLUME
-    INFUSED_VOLUME = Protocol11CommandTemplate(command_string="ivolume", reply_lines=1, requires_argument=False)
-    GET_SYRINGE_VOLUME = Protocol11CommandTemplate(command_string="svolume", reply_lines=1, requires_argument=False)
-    SET_SYRINGE_VOLUME = Protocol11CommandTemplate(command_string="svolume", reply_lines=1, requires_argument=True)
-    WITHDRAWN_VOLUME = Protocol11CommandTemplate(command_string="wvolume", reply_lines=1, requires_argument=False)
+    INFUSED_VOLUME = Protocol11CommandTemplate(
+        command_string="ivolume", reply_lines=1, requires_argument=False
+    )
+    GET_SYRINGE_VOLUME = Protocol11CommandTemplate(
+        command_string="svolume", reply_lines=1, requires_argument=False
+    )
+    SET_SYRINGE_VOLUME = Protocol11CommandTemplate(
+        command_string="svolume", reply_lines=1, requires_argument=True
+    )
+    WITHDRAWN_VOLUME = Protocol11CommandTemplate(
+        command_string="wvolume", reply_lines=1, requires_argument=False
+    )
 
     # TARGET VOLUME
-    GET_TARGET_VOLUME = Protocol11CommandTemplate(command_string="tvolume", reply_lines=1, requires_argument=False)
-    SET_TARGET_VOLUME = Protocol11CommandTemplate(command_string="tvolume", reply_lines=1, requires_argument=True)
+    GET_TARGET_VOLUME = Protocol11CommandTemplate(
+        command_string="tvolume", reply_lines=1, requires_argument=False
+    )
+    SET_TARGET_VOLUME = Protocol11CommandTemplate(
+        command_string="tvolume", reply_lines=1, requires_argument=True
+    )
 
     # CLEAR VOLUME
-    CLEAR_INFUSED_VOLUME = Protocol11CommandTemplate(command_string="civolume", reply_lines=0, requires_argument=False)
-    CLEAR_WITHDRAWN_VOLUME = Protocol11CommandTemplate(command_string="cwvolume", reply_lines=0,
-                                                       requires_argument=False)
-    CLEAR_INFUSED_WITHDRAWN_VOLUME = Protocol11CommandTemplate(command_string="cvolume", reply_lines=0,
-                                                               requires_argument=False)
-    CLEAR_TARGET_VOLUME = Protocol11CommandTemplate(command_string="ctvolume", reply_lines=0, requires_argument=False)
+    CLEAR_INFUSED_VOLUME = Protocol11CommandTemplate(
+        command_string="civolume", reply_lines=0, requires_argument=False
+    )
+    CLEAR_WITHDRAWN_VOLUME = Protocol11CommandTemplate(
+        command_string="cwvolume", reply_lines=0, requires_argument=False
+    )
+    CLEAR_INFUSED_WITHDRAWN_VOLUME = Protocol11CommandTemplate(
+        command_string="cvolume", reply_lines=0, requires_argument=False
+    )
+    CLEAR_TARGET_VOLUME = Protocol11CommandTemplate(
+        command_string="ctvolume", reply_lines=0, requires_argument=False
+    )
 
     # GET TIME
-    WITHDRAWN_TIME = Protocol11CommandTemplate(command_string="wtime", reply_lines=1, requires_argument=False)
-    INFUSED_TIME = Protocol11CommandTemplate(command_string="itime", reply_lines=1, requires_argument=False)
+    WITHDRAWN_TIME = Protocol11CommandTemplate(
+        command_string="wtime", reply_lines=1, requires_argument=False
+    )
+    INFUSED_TIME = Protocol11CommandTemplate(
+        command_string="itime", reply_lines=1, requires_argument=False
+    )
 
     # TARGET TIME
-    GET_TARGET_TIME = Protocol11CommandTemplate(command_string="ttime", reply_lines=1, requires_argument=False)
-    SET_TARGET_TIME = Protocol11CommandTemplate(command_string="ttime", reply_lines=1, requires_argument=True)
+    GET_TARGET_TIME = Protocol11CommandTemplate(
+        command_string="ttime", reply_lines=1, requires_argument=False
+    )
+    SET_TARGET_TIME = Protocol11CommandTemplate(
+        command_string="ttime", reply_lines=1, requires_argument=True
+    )
 
     # CLEAR TIME
-    CLEAR_INFUSED_TIME = Protocol11CommandTemplate(command_string="citime", reply_lines=0, requires_argument=False)
-    CLEAR_INFUSED_WITHDRAW_TIME = Protocol11CommandTemplate(command_string="ctime", reply_lines=0,
-                                                            requires_argument=False)
-    CLEAR_TARGET_TIME = Protocol11CommandTemplate(command_string="cttime", reply_lines=0, requires_argument=False)
-    CLEAR_WITHDRAW_TIME = Protocol11CommandTemplate(command_string="cwtime", reply_lines=0, requires_argument=False)
+    CLEAR_INFUSED_TIME = Protocol11CommandTemplate(
+        command_string="citime", reply_lines=0, requires_argument=False
+    )
+    CLEAR_INFUSED_WITHDRAW_TIME = Protocol11CommandTemplate(
+        command_string="ctime", reply_lines=0, requires_argument=False
+    )
+    CLEAR_TARGET_TIME = Protocol11CommandTemplate(
+        command_string="cttime", reply_lines=0, requires_argument=False
+    )
+    CLEAR_WITHDRAW_TIME = Protocol11CommandTemplate(
+        command_string="cwtime", reply_lines=0, requires_argument=False
+    )
 
 
 class Elite11:
     """
     Not ready for full usage.  Usable with: init with syringe diameter and volume. Set target volume and rate. run.
     """
+
     # noinspection SpellCheckingInspection
-    ureg = UnitRegistry()  # Unit converter, defaults are fine, but it would be wise explicitly list the units needed
+    ureg = (
+        UnitRegistry()
+    )  # Unit converter, defaults are fine, but it would be wise explicitly list the units needed
 
     # first pump in chain/pump connected directly to computer, if pump chain connected MUST have address 0
-    def __init__(self, pump_io: PumpIO, address: int = 0, name: str = None, diameter: float = None,
-                 volume_syringe: float = None):
+    def __init__(
+        self,
+        pump_io: PumpIO,
+        address: int = 0,
+        name: str = None,
+        diameter: float = None,
+        volume_syringe: float = None,
+    ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
         are XXY, where XX is the address and Y is pump status. :, > or <
@@ -339,7 +475,9 @@ class Elite11:
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
         # This command is used to test connection: failure handled by PumpIO
-        self.log.info(f"Connected to pump '{self.name}' on port {self.pump_io.name}:{address} version: {self.version}!")
+        self.log.info(
+            f"Connected to pump '{self.name}' on port {self.pump_io.name}:{address} version: {self.version}!"
+        )
         # Enable withdraw commands only on pumps that support them...
         self._withdraw_enabled = True if "I/W" in self.version else False
 
@@ -356,17 +494,24 @@ class Elite11:
     def ensure_withdraw_is_enabled(self):
         """ To be used on methods that need withdraw capabilities """
         if not self._withdraw_enabled:
-            raise InvalidCommand("Cannot call this method with an infuse-only pump! Withdraw needed :(")
+            raise InvalidCommand(
+                "Cannot call this method with an infuse-only pump! Withdraw needed :("
+            )
 
-    def send_command_and_read_reply(self, command_template: Protocol11CommandTemplate, parameter='',
-                                    parse=True) -> Union[str, List[str]]:
+    def send_command_and_read_reply(
+        self, command_template: Protocol11CommandTemplate, parameter="", parse=True
+    ) -> Union[str, List[str]]:
         """ Sends a command based on its template and return the corresponding reply as str """
-        return self.pump_io.write_and_read_reply(command_template.to_pump(self.address, parameter), return_parsed=parse)
+        return self.pump_io.write_and_read_reply(
+            command_template.to_pump(self.address, parameter), return_parsed=parse
+        )
 
     def bound_rate_to_pump_limits(self, rate_in_ml_min: float) -> float:
         """ Bound the rate provided to pump's limit. NOTE: Infusion and withdraw limits are equal! """
         # Get current pump limits (those are function of the syringe diameter)
-        limits_raw = self.send_command_and_read_reply(Elite11Commands.GET_INFUSE_RATE_LIMITS)
+        limits_raw = self.send_command_and_read_reply(
+            Elite11Commands.GET_INFUSE_RATE_LIMITS
+        )
 
         # Lower limit usually expressed in nl/min so unit-aware quantities are needed
         lower_limit, upper_limit = map(Elite11.ureg, limits_raw.split(" to "))
@@ -379,18 +524,26 @@ class Elite11:
 
         # If the set rate was adjusted to fit limits warn user
         if set_rate != rate_in_ml_min:
-            warnings.warn(f"The requested rate {rate_in_ml_min} ml/min was outside the acceptance range"
-                          f"[{lower_limit} - {upper_limit}] and was bounded to {set_rate} ml/min!")
+            warnings.warn(
+                f"The requested rate {rate_in_ml_min} ml/min was outside the acceptance range"
+                f"[{lower_limit} - {upper_limit}] and was bounded to {set_rate} ml/min!"
+            )
         return set_rate
 
     @property
     def version(self) -> str:
         """ Returns the current firmware version reported by the pump """
-        return self.send_command_and_read_reply(Elite11Commands.GET_VERSION)  # '11 ELITE I/W Single 3.0.4
+        return self.send_command_and_read_reply(
+            Elite11Commands.GET_VERSION
+        )  # '11 ELITE I/W Single 3.0.4
 
     def get_status(self):
         """ Empty message to trigger a new reply and evaluate connection and pump current status via reply prompt """
-        return PumpStatus(self.send_command_and_read_reply(Elite11Commands.EMPTY_MESSAGE, parse=False)[0][2:3])
+        return PumpStatus(
+            self.send_command_and_read_reply(
+                Elite11Commands.EMPTY_MESSAGE, parse=False
+            )[0][2:3]
+        )
 
     def is_moving(self) -> bool:
         """ Evaluate prompt for current status, i.e. moving or not """
@@ -400,12 +553,18 @@ class Elite11:
     @property
     def syringe_volume(self) -> float:
         """ Sets/returns the syringe volume in ml. """
-        volume_w_units = self.send_command_and_read_reply(Elite11Commands.GET_SYRINGE_VOLUME)  # e.g. '100 ml'
-        return Elite11.ureg(volume_w_units).m_as("ml")  # Unit registry does the unit conversion and returns ml
+        volume_w_units = self.send_command_and_read_reply(
+            Elite11Commands.GET_SYRINGE_VOLUME
+        )  # e.g. '100 ml'
+        return Elite11.ureg(volume_w_units).m_as(
+            "ml"
+        )  # Unit registry does the unit conversion and returns ml
 
     @syringe_volume.setter
     def syringe_volume(self, volume_in_ml: float = None):
-        self.send_command_and_read_reply(Elite11Commands.SET_SYRINGE_VOLUME, parameter=f"{volume_in_ml} m")
+        self.send_command_and_read_reply(
+            Elite11Commands.SET_SYRINGE_VOLUME, parameter=f"{volume_in_ml} m"
+        )
 
     def update_stored_volume(self):
         """ FIXME: write docstring and check this """
@@ -414,7 +573,7 @@ class Elite11:
             withdrawn = self.get_withdrawn_volume()
         else:
             withdrawn = 0
-        net_volume = withdrawn-infused
+        net_volume = withdrawn - infused
         # not really nice, also the target_volume and rate should be class attributes?
         self._volume_stored += net_volume
         # clear stored i w volume
@@ -435,7 +594,10 @@ class Elite11:
             raise UnachievableMove("Pump already is moving")
 
         # if target volume is set, check if this is achievable
-        elif self._target_volume is not None and self._volume_stored < self._target_volume:
+        elif (
+            self._target_volume is not None
+            and self._volume_stored < self._target_volume
+        ):
             raise UnachievableMove("Pump contains less volume than required")
         else:
             self.send_command_and_read_reply(Elite11Commands.RUN)
@@ -497,35 +659,51 @@ class Elite11:
     @property
     def infusion_rate(self) -> float:
         """ Returns/set the infusion rate in ml*min-1 """
-        rate_w_units = self.send_command_and_read_reply(Elite11Commands.GET_INFUSE_RATE)  # e.g. '0.2 ml/min'
-        return Elite11.ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
+        rate_w_units = self.send_command_and_read_reply(
+            Elite11Commands.GET_INFUSE_RATE
+        )  # e.g. '0.2 ml/min'
+        return Elite11.ureg(rate_w_units).m_as(
+            "ml/min"
+        )  # Unit registry does the unit conversion and returns ml/min
 
     @infusion_rate.setter
     def infusion_rate(self, rate_in_ml_min: float):
         set_rate = self.bound_rate_to_pump_limits(rate_in_ml_min=rate_in_ml_min)
-        self.send_command_and_read_reply(Elite11Commands.SET_INFUSE_RATE, parameter=f"{set_rate:.10f} m/m")
+        self.send_command_and_read_reply(
+            Elite11Commands.SET_INFUSE_RATE, parameter=f"{set_rate:.10f} m/m"
+        )
 
     @property
     def withdrawing_rate(self) -> float:
         """ Returns/set the infusion rate in ml*min-1 """
         self.ensure_withdraw_is_enabled()
-        rate_w_units = self.send_command_and_read_reply(Elite11Commands.GET_WITHDRAW_RATE)
-        return Elite11.ureg(rate_w_units).m_as("ml/min")  # Unit registry does the unit conversion and returns ml/min
+        rate_w_units = self.send_command_and_read_reply(
+            Elite11Commands.GET_WITHDRAW_RATE
+        )
+        return Elite11.ureg(rate_w_units).m_as(
+            "ml/min"
+        )  # Unit registry does the unit conversion and returns ml/min
 
     @withdrawing_rate.setter
     def withdrawing_rate(self, rate_in_ml_min: float):
         self.ensure_withdraw_is_enabled()
         set_rate = self.bound_rate_to_pump_limits(rate_in_ml_min=rate_in_ml_min)
-        self.send_command_and_read_reply(Elite11Commands.SET_WITHDRAW_RATE, parameter=f"{set_rate} m/m")
+        self.send_command_and_read_reply(
+            Elite11Commands.SET_WITHDRAW_RATE, parameter=f"{set_rate} m/m"
+        )
 
     def get_infused_volume(self) -> float:
         """ Return infused volume in ml """
-        return Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)).m_as("ml")
+        return Elite11.ureg(
+            self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)
+        ).m_as("ml")
 
     def get_withdrawn_volume(self):
         """ Returns the withdrawn volume from the last clear_*_volume() command, according to the pump """
         self.ensure_withdraw_is_enabled()
-        return Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)).m_as("ml")
+        return Elite11.ureg(
+            self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)
+        ).m_as("ml")
 
     def clear_infused_volume(self):
         """ Reset the pump infused volume counter to 0 """
@@ -593,19 +771,27 @@ class Elite11:
 
     @force.setter
     def force(self, force_percent: int):
-        self.send_command_and_read_reply(Elite11Commands.SET_FORCE, parameter=str(int(force_percent)))
+        self.send_command_and_read_reply(
+            Elite11Commands.SET_FORCE, parameter=str(int(force_percent))
+        )
 
     @property
     def diameter(self) -> float:
         """
         Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
         """
-        warnings.warn("Deprecated property, use more explicit syringe_diamter instead!", FutureWarning)
+        warnings.warn(
+            "Deprecated property, use more explicit syringe_diamter instead!",
+            FutureWarning,
+        )
         return self.syringe_diameter
 
     @diameter.setter
     def diameter(self, diameter_in_mm: float):
-        warnings.warn("Deprecated property, use more explicit syringe_diamter instead!", FutureWarning)
+        warnings.warn(
+            "Deprecated property, use more explicit syringe_diamter instead!",
+            FutureWarning,
+        )
         self.syringe_diameter = diameter_in_mm
 
     @property
@@ -613,14 +799,20 @@ class Elite11:
         """
         Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
         """
-        return float(self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)[:-3])  # "31.1232 mm" removes unit
+        return float(
+            self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)[:-3]
+        )  # "31.1232 mm" removes unit
 
     @syringe_diameter.setter
     def syringe_diameter(self, diameter_in_mm: float):
         if not 1 <= diameter_in_mm <= 33:
-            raise InvalidArgument(f"Diameter provided ({diameter_in_mm}) is not valid! [Accepted range: 1-33 mm]")
+            raise InvalidArgument(
+                f"Diameter provided ({diameter_in_mm}) is not valid! [Accepted range: 1-33 mm]"
+            )
 
-        self.send_command_and_read_reply(Elite11Commands.SET_DIAMETER, parameter=f"{diameter_in_mm:.4f}")
+        self.send_command_and_read_reply(
+            Elite11Commands.SET_DIAMETER, parameter=f"{diameter_in_mm:.4f}"
+        )
 
     def display_current_rate(self):
         """
@@ -634,7 +826,9 @@ class Elite11:
         """
         Set/returns target volume in ml. If the volume is set to 0, the target is cleared.
         """
-        target_volume = Elite11.ureg(self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME))
+        target_volume = Elite11.ureg(
+            self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME)
+        )
         return target_volume.m_as("ml")
 
     @target_volume.setter
@@ -642,12 +836,16 @@ class Elite11:
         if target_volume_in_ml == 0:
             self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME)
         else:
-            self.send_command_and_read_reply(Elite11Commands.SET_TARGET_VOLUME, parameter=f"{target_volume_in_ml} m")
+            self.send_command_and_read_reply(
+                Elite11Commands.SET_TARGET_VOLUME, parameter=f"{target_volume_in_ml} m"
+            )
 
     def clear_times(self):
         """ Clear all pump measured times (i.e. infused and withdrawn) """
         if self._withdraw_enabled:
-            self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAW_TIME)
+            self.send_command_and_read_reply(
+                Elite11Commands.CLEAR_INFUSED_WITHDRAW_TIME
+            )
         else:
             self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_TIME)
         self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_TIME)
@@ -655,7 +853,9 @@ class Elite11:
     @property
     def metrics(self):
         """ Returns many info :D  FIXME check this and improve docstring """
-        non_parsed_reply: List[str] = self.send_command_and_read_reply(Elite11Commands.METRICS, parse=False)
+        non_parsed_reply: List[str] = self.send_command_and_read_reply(
+            Elite11Commands.METRICS, parse=False
+        )
         _, _, parsed_multiline_response = PumpIO.parse_response(non_parsed_reply)
         return parsed_multiline_response
 
@@ -672,11 +872,11 @@ TODO:
 """
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # from flowchem.devices.Harvard_Apparatus.HA_elite11 import *
     # import logging
     logging.basicConfig()
-    logging.getLogger('flowchem').setLevel(logging.DEBUG)
+    logging.getLogger("flowchem").setLevel(logging.DEBUG)
 
     a = PumpIO(6)
     p = Elite11(a, 9)

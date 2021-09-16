@@ -2,8 +2,9 @@ import nmrglue as ng
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-class Spectrum():
-    def __init__(self, location:Path):
+
+class Spectrum:
+    def __init__(self, location: Path):
         self.dic, self.raw_data = ng.spinsolve.read(dir=location.as_posix())
         self.processed_data = None
 
@@ -15,13 +16,17 @@ class Spectrum():
     def process(self):
         """ Basic spectrum processing. Application-specific processing suggested. """
         # Zerofill
-        self.processed_data = ng.proc_base.zf_auto(ng.proc_base.zf_double(self.raw_data, 1))
+        self.processed_data = ng.proc_base.zf_auto(
+            ng.proc_base.zf_double(self.raw_data, 1)
+        )
 
         # FT
         self.processed_data = ng.proc_base.fft(self.processed_data)
 
         # Autophase
-        self.processed_data = ng.proc_autophase.autops(self.processed_data, "acme", disp=False)
+        self.processed_data = ng.proc_autophase.autops(
+            self.processed_data, "acme", disp=False
+        )
 
         # Delete imaginary
         self.processed_data = ng.proc_base.di(self.processed_data)

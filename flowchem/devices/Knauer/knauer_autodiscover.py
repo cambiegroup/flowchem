@@ -10,7 +10,7 @@ def autodiscover_knauer(source_ip: str = "192.168.1.1") -> dict:
     sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
     sock.settimeout(5)
 
-    server_address = ('255.255.255.255', 30718)
+    server_address = ("255.255.255.255", 30718)
     message = b"\x00\x01\x00\xf6"
     device = []
 
@@ -41,7 +41,7 @@ def autodiscover_knauer(source_ip: str = "192.168.1.1") -> dict:
     return mac_to_ip
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     devices = autodiscover_knauer()
     print(devices)
     # Currently returns:

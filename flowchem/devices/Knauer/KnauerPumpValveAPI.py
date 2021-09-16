@@ -10,7 +10,9 @@ import logging
 import socket
 import time
 from enum import Enum
+
 # from pint import UnitRegistry
+
 
 class KnauerError(Exception):
     pass
@@ -28,11 +30,11 @@ class CommandError(KnauerError):
     pass
 
 
-
 class KnauerPumpHeads(Enum):
     """
     Two Pumpheads exist, 50 mL/min and 10 mL/min
     """
+
     FLOWRATE_FIFTY_ML = 50
     FLOWRATE_TEN_ML = 10
 
@@ -41,15 +43,16 @@ class KnauerValveHeads(Enum):
     """
     Four different valve types can be used. 6port2position valve, and 6 12 16 multiposition valves
     """
-    SIX_PORT_TWO_POSITION = 'LI'
+
+    SIX_PORT_TWO_POSITION = "LI"
     SIX_PORT_SIX_POSITION = 6
     TWELVE_PORT_TWELVE_POSITION = 12
     SIXTEEN_PORT_SIXTEEN_POSITION = 16
 
 
-
-
 """ CONSTANTS """
+
+
 class KnauerCommunicationConstants(Enum):
 
     TCP_PORT = 10001
@@ -62,7 +65,11 @@ class EthernetDevice:
         self.port = int(port)
         self.buffersize = buffersize
         self.sock = self._try_connection()
-        logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
+        logging.basicConfig(
+            format="%(asctime)s %(levelname)s %(message)s",
+            datefmt="%m/%d/%Y %I:%M:%S %p",
+            level=logging.DEBUG,
+        )
 
     def __del__(self):
         self.sock.close()
@@ -74,36 +81,40 @@ class EthernetDevice:
         try:
             sock.connect((self.address, self.port))
         except socket.timeout:
-            logging.error(f'No connection possible to device with IP {self.address}')
-            raise ConnectionError(f'No Connection possible to device with address {self.address}')
+            logging.error(f"No connection possible to device with IP {self.address}")
+            raise ConnectionError(
+                f"No Connection possible to device with address {self.address}"
+            )
 
         return sock
 
     def _send_and_receive(self, message):
         self.sock.send(message.encode())
         time.sleep(0.01)
-        reply = ''
+        reply = ""
         while True:
             chunk = self.sock.recv(self.buffersize).decode()
             reply += chunk
             if "\r" in chunk:
                 break
-        return reply.strip('\r').rstrip()
+        return reply.strip("\r").rstrip()
 
     # idea is: try to send message, when reply is received return that. returned reply can be checked against expected
     def _send_and_receive_handler(self, message):
         try:
-            reply=self._send_and_receive(message)
+            reply = self._send_and_receive(message)
         # use other error. if socket somehow ceased to exist, try to reestablish connection. if not possible, rause error
         except socket.timeout:
             try:
-            # logger: tell response received, might be good to resend
+                # logger: tell response received, might be good to resend
                 # try to reestablish connection, send and receive afterwards
                 self.sock = self._try_connection(self.address, self.port)
                 reply = self._send_and_receive(message)
             # no further handling necessery, if this does not work there is a serious problem. Powercycle or check hardware
             except OSError:
-                raise ConnectionError(f'Failed to reestablish connection to {self.address}')
+                raise ConnectionError(
+                    f"Failed to reestablish connection to {self.address}"
+                )
         return reply
 
 
@@ -118,15 +129,19 @@ class KnauerValve(EthernetDevice):
     https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_benutzerhandbuch_de.pdf
     dip switch for valve selection
     """
-    def __init__(self, address, port=KnauerCommunicationConstants.TCP_PORT.value,
-                 buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value):
+
+    def __init__(
+        self,
+        address,
+        port=KnauerCommunicationConstants.TCP_PORT.value,
+        buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value,
+    ):
 
         super().__init__(address, port, buffersize)
 
         self._valve_state = self.get_current_position()
         # this gets the valve type as valve [type] and strips away valve_
-        self.valve_type= self.get_valve_type() # checks against allowed valve types
-
+        self.valve_type = self.get_valve_type()  # checks against allowed valve types
 
     def communicate(self, message: str or int):
         """
@@ -134,14 +149,16 @@ class KnauerValve(EthernetDevice):
         :param message:
         :return: reply: str
         """
-        reply = super()._send_and_receive_handler(str(message)+'\r\n')
+        reply = super()._send_and_receive_handler(str(message) + "\r\n")
         if reply == "?":
             # retry once
-            reply = super()._send_and_receive_handler(str(message) + '\r\n')
+            reply = super()._send_and_receive_handler(str(message) + "\r\n")
             if reply == "?":
-                CommandError(f'Command not supported, your valve is of type {self.valve_type}')
+                CommandError(
+                    f"Command not supported, your valve is of type {self.valve_type}"
+                )
         try:
-            reply=int(reply)
+            reply = int(reply)
         except ValueError:
             pass
         return reply
@@ -164,63 +181,70 @@ class KnauerValve(EthernetDevice):
 
         # switching necessary?
         if position == self._valve_state:
-            logging.debug('already at that position')
+            logging.debug("already at that position")
 
         else:
 
-            #these prechecks are not really necessery, since sending wrong value would throw an error by wrong reply
+            # these prechecks are not really necessery, since sending wrong value would throw an error by wrong reply
             # check if switching can be achieved
             if self.valve_type == KnauerValveHeads.SIX_PORT_TWO_POSITION:
                 if position not in self.valve_type.value:
-                    SwitchingException(f'Internal check: Position {position} not available on instantiated valve {self.valve_type}')
+                    SwitchingException(
+                        f"Internal check: Position {position} not available on instantiated valve {self.valve_type}"
+                    )
 
             if self.valve_type != KnauerValveHeads.SIX_PORT_TWO_POSITION:
                 try:
                     if not 0 <= position <= self.valve_type.value:
-                        SwitchingException(f'Internal Check: Position {position} not available on instantiated valve {self.valve_type}')
+                        SwitchingException(
+                            f"Internal Check: Position {position} not available on instantiated valve {self.valve_type}"
+                        )
                 except TypeError:
-                    raise ParameterError(f'Please provide a number to switch to. You provided {position}')
+                    raise ParameterError(
+                        f"Please provide a number to switch to. You provided {position}"
+                    )
 
-
-        # change to selected position
+            # change to selected position
             reply = self.communicate(position)
             # check if this was done
             if reply == "OK":
-                logging.debug('switching successful')
+                logging.debug("switching successful")
                 self._valve_state = position
-
 
             elif "E0" in reply:
 
-                logging.error('valve was not switched because valve refused')
-                raise SwitchingException('valve was not switched because valve refused')
+                logging.error("valve was not switched because valve refused")
+                raise SwitchingException("valve was not switched because valve refused")
 
             elif "E1" in reply:
-                logging.error('Motor current to high. Check that')
-                raise SwitchingException('Motor current to high. Check that')
+                logging.error("Motor current to high. Check that")
+                raise SwitchingException("Motor current to high. Check that")
 
             else:
-                raise SwitchingException(f'Unknown reply received. Reply is {reply}')
+                raise SwitchingException(f"Unknown reply received. Reply is {reply}")
 
     def get_valve_type(self):
         """aquires valve type, if not supported will throw error. This also prevents to initialize some device as a KnauerValve"""
-        reply = self.communicate('T')[6:]
+        reply = self.communicate("T")[6:]
         # could be more pretty by passing expected answer to communicate
         try:
-            reply=int(reply)
+            reply = int(reply)
         except ValueError:
             pass
         try:
-            headtype= KnauerValveHeads(reply)
+            headtype = KnauerValveHeads(reply)
         except ValueError as e:
-            raise KnauerError(f'It seems you\'re trying instantiate a unknown device/unknown valve type {e} as Knauer Valve.'
-                  'Only Valves of type 16, 12, 10 and LI are supported') from e
-        logging.info(f'Valve successfully connected, Type is {headtype} at address {self.address}')
+            raise KnauerError(
+                f"It seems you're trying instantiate a unknown device/unknown valve type {e} as Knauer Valve."
+                "Only Valves of type 16, 12, 10 and LI are supported"
+            ) from e
+        logging.info(
+            f"Valve successfully connected, Type is {headtype} at address {self.address}"
+        )
         return headtype
 
-
     def close_connection(self):
-        logging.info(f'Valve at address closed connection {self.address}')
+        logging.info(f"Valve at address closed connection {self.address}")
         self.sock.close()
 
 
@@ -238,8 +262,8 @@ STARTLEVEL = "STARTLEVEL"  # 0, 1 configures start in: 0 means only start pump w
 ERRIO = "ERRIO"  # 0, 1 write/read error in/output ??? sets errio either 1 or 0, reports errio:ok
 STARTMODE = "STARTMODE"  # 0, 1; 0=pause pump after switchon, 1=start immediatley with previous set flow rate
 # no idea what these do...
-ADJ10 = 'ADJ10'  # 100-2000
-ADJ50 = 'ADJ50'  # 100-2000
+ADJ10 = "ADJ10"  # 100-2000
+ADJ50 = "ADJ50"  # 100-2000
 CORR10 = "CORR10"  # 0-300
 CORR50 = "CORR50"  # 0-300
 
@@ -250,7 +274,9 @@ PRESSURE = "PRESSURE?"  # reads the pressure in 0.1 MPa
 ERRORS = "ERRORS?"  # displays last 5 error codes
 
 # WR only
-EXTCONTR = "EXTCONTR:"  # 0, 1; 1= allows flow control via external analog input, 0 dont allow
+EXTCONTR = (
+    "EXTCONTR:"  # 0, 1; 1= allows flow control via external analog input, 0 dont allow
+)
 LOCAL = "LOCAL"  # no parameter, releases pump to manual control
 REMOTE = "REMOTE"  # manual param input prevented
 PUMP_ON = "ON"  # starts flow
@@ -258,9 +284,12 @@ PUMP_OFF = "OFF"  # stops flow
 
 
 class KnauerPump(EthernetDevice):
-
-
-    def __init__(self, address, port=KnauerCommunicationConstants.TCP_PORT.value, buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value):
+    def __init__(
+        self,
+        address,
+        port=KnauerCommunicationConstants.TCP_PORT.value,
+        buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value,
+    ):
         super().__init__(address, port, buffersize)
         self.headtype
 
@@ -272,38 +301,46 @@ class KnauerPump(EthernetDevice):
         """
 
         # beware: I think the pumps want \n\r as end of message, the valves \r\n
-        message = str(message)+'\n\r'
+        message = str(message) + "\n\r"
         reply = super()._send_and_receive_handler(message).rstrip()
         if "ERROR:1" in reply:
-            CommandError(f'Invalid message sent to device. Message was: {message}. Reply is {reply}')
+            CommandError(
+                f"Invalid message sent to device. Message was: {message}. Reply is {reply}"
+            )
 
         elif "ERROR:2" in reply:
-            ParameterError(f"Setpoint refused by device. Refer to manual for allowed values.  Message was: '{message}'. "
-                           f"Reply is '{reply}'")
+            ParameterError(
+                f"Setpoint refused by device. Refer to manual for allowed values.  Message was: '{message}'. "
+                f"Reply is '{reply}'"
+            )
 
-        elif ':OK' in reply:
-            logging.info('setpoint successfully set')
+        elif ":OK" in reply:
+            logging.info("setpoint successfully set")
 
-        elif message.rstrip()[:-1] + ':' in reply:
-            logging.info(f'setpoint successfully acquired, is {reply}')
-            return reply.split(':')[-1]
+        elif message.rstrip()[:-1] + ":" in reply:
+            logging.info(f"setpoint successfully acquired, is {reply}")
+            return reply.split(":")[-1]
         elif not reply:
-            raise CommandError('No reply received')
+            raise CommandError("No reply received")
         return reply
 
     # read and write. write: append ":value", read: append "?"
-    def message_constructor_dispatcher(self, message, setpoint: int = None, setpoint_range: tuple = None):
+    def message_constructor_dispatcher(
+        self, message, setpoint: int = None, setpoint_range: tuple = None
+    ):
 
         if not setpoint:
-            return self.communicate(message+"?")
+            return self.communicate(message + "?")
 
         elif setpoint_range:
             if setpoint in range(*setpoint_range):
-                return self.communicate(message+":"+str(setpoint))
+                return self.communicate(message + ":" + str(setpoint))
 
             else:
-                ParameterError(f'Internal check shows that setpoint provided ({setpoint}) is not in range({setpoint_range}). Refer to'
-                           ' manual.')
+                ParameterError(
+                    f"Internal check shows that setpoint provided ({setpoint}) is not in range({setpoint_range}). Refer to"
+                    " manual."
+                )
 
         else:
             return self.communicate(message + ":" + str(setpoint))
@@ -315,62 +352,91 @@ class KnauerPump(EthernetDevice):
         :return: nothing
         """
         set_flowrate_ul_min = int(setpoint_in_ml_min * 1000)
-        flow = self.message_constructor_dispatcher(FLOW, setpoint=set_flowrate_ul_min, setpoint_range=(0, self.achievable_flow + 1))
-        logging.info(f'Flow of pump {self.address} is set to {setpoint_in_ml_min}, returns {flow}')
+        flow = self.message_constructor_dispatcher(
+            FLOW,
+            setpoint=set_flowrate_ul_min,
+            setpoint_range=(0, self.achievable_flow + 1),
+        )
+        logging.info(
+            f"Flow of pump {self.address} is set to {setpoint_in_ml_min}, returns {flow}"
+        )
 
     @property
     def headtype(self):
         reply = int(self.message_constructor_dispatcher(HEADTYPE)[-2:])
         try:
-            headtype=KnauerPumpHeads(reply)
+            headtype = KnauerPumpHeads(reply)
         except ValueError as e:
-            raise KnauerError('It seems you\'re trying instantiate an unknown device/unknown pump type as Knauer Pump.'
-                  'Only Knauer Azura Compact is supported') from e
+            raise KnauerError(
+                "It seems you're trying instantiate an unknown device/unknown pump type as Knauer Pump."
+                "Only Knauer Azura Compact is supported"
+            ) from e
 
-        logging.info(f'Headtype of pump {self.address} is {headtype}')
-        self.achievable_pressure, self.achievable_flow = (400, 10000) if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML \
+        logging.info(f"Headtype of pump {self.address} is {headtype}")
+        self.achievable_pressure, self.achievable_flow = (
+            (400, 10000)
+            if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML
             else (150, 50000)
+        )
         return headtype
 
     @headtype.setter
     def headtype(self, setpoint: KnauerPumpHeads):
         reply = self.message_constructor_dispatcher(HEADTYPE, setpoint=setpoint.value)
-        self.achievable_pressure, self.achievable_flow = (400, 10000) if setpoint == KnauerPumpHeads.FLOWRATE_TEN_ML \
+        self.achievable_pressure, self.achievable_flow = (
+            (400, 10000)
+            if setpoint == KnauerPumpHeads.FLOWRATE_TEN_ML
             else (150, 50000)
-        logging.info(f'Headtype of pump {self.address} is set to {setpoint}, returns {reply}')
+        )
+        logging.info(
+            f"Headtype of pump {self.address} is set to {setpoint}, returns {reply}"
+        )
         return setpoint
-
 
     def set_minimum_pressure(self, pressure_in_bar=None):
 
         command = PMIN10 if self.headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMIN50
 
-        reply = self.message_constructor_dispatcher(command, setpoint=pressure_in_bar,
-                                                    setpoint_range=(0, self.achievable_pressure+1))
+        reply = self.message_constructor_dispatcher(
+            command,
+            setpoint=pressure_in_bar,
+            setpoint_range=(0, self.achievable_pressure + 1),
+        )
 
-        logging.info(f'Minimum pressure of pump {self.address} is set to {pressure_in_bar}, returns {reply}')
-
+        logging.info(
+            f"Minimum pressure of pump {self.address} is set to {pressure_in_bar}, returns {reply}"
+        )
 
     def set_maximum_pressure(self, pressure_in_bar=None):
         command = PMAX10 if self.headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMAX50
 
-        reply = self.message_constructor_dispatcher(command, setpoint=pressure_in_bar,
-                                                    setpoint_range=(0, self.achievable_pressure + 1))
+        reply = self.message_constructor_dispatcher(
+            command,
+            setpoint=pressure_in_bar,
+            setpoint_range=(0, self.achievable_pressure + 1),
+        )
 
-        logging.info(f'Maximum pressure of pump {self.address} is set to {pressure_in_bar}, returns {reply}')
+        logging.info(
+            f"Maximum pressure of pump {self.address} is set to {pressure_in_bar}, returns {reply}"
+        )
 
     def set_minimum_motor_current(self, setpoint=None):
         command = IMIN10 if self.headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else IMIN50
 
-        reply = self.message_constructor_dispatcher(command, setpoint=setpoint,
-                                                    setpoint_range=(0, 101))
-        logging.info(f'Minimum motor current of pump {self.address} is set to {setpoint}, returns {reply}')
-
+        reply = self.message_constructor_dispatcher(
+            command, setpoint=setpoint, setpoint_range=(0, 101)
+        )
+        logging.info(
+            f"Minimum motor current of pump {self.address} is set to {setpoint}, returns {reply}"
+        )
 
     def set_start_level(self, setpoint=None):
-        reply= self.message_constructor_dispatcher(STARTLEVEL, setpoint=setpoint, setpoint_range= (0, 2))
-        logging.info(f'Start level of pump {self.address} is set to {setpoint}, returns {reply}')
-
+        reply = self.message_constructor_dispatcher(
+            STARTLEVEL, setpoint=setpoint, setpoint_range=(0, 2)
+        )
+        logging.info(
+            f"Start level of pump {self.address} is set to {setpoint}, returns {reply}"
+        )
 
     def set_start_mode(self, setpoint=None):
         """
@@ -379,86 +445,94 @@ class KnauerPump(EthernetDevice):
         :return: device message
         """
         if setpoint in (0, 1):
-            reply= self.message_constructor_dispatcher(STARTMODE, setpoint=setpoint)
-            logging.info(f'Start mode of pump {self.address} is set to {setpoint}, returns {reply}')
+            reply = self.message_constructor_dispatcher(STARTMODE, setpoint=setpoint)
+            logging.info(
+                f"Start mode of pump {self.address} is set to {setpoint}, returns {reply}"
+            )
         else:
-            logging.warning('Supply binary value')
+            logging.warning("Supply binary value")
 
     def set_adjusting_factor(self, setpoint: int = None):
         command = ADJ10 if self.headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else ADJ50
-        reply = self.message_constructor_dispatcher(command, setpoint=setpoint, setpoint_range=(0,2001))
-        logging.info(f'Adjusting factor of pump {self.address} is set to {setpoint}, returns {reply}')
-
+        reply = self.message_constructor_dispatcher(
+            command, setpoint=setpoint, setpoint_range=(0, 2001)
+        )
+        logging.info(
+            f"Adjusting factor of pump {self.address} is set to {setpoint}, returns {reply}"
+        )
 
     def set_correction_factor(self, setpoint=None):
         command = CORR10 if self.headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else CORR50
-        reply = self.message_constructor_dispatcher(command, setpoint=setpoint, setpoint_range=(0,301))
-        logging.info(f'Correction factor of pump {self.address} is set to {setpoint}, returns {reply}')
-
+        reply = self.message_constructor_dispatcher(
+            command, setpoint=setpoint, setpoint_range=(0, 301)
+        )
+        logging.info(
+            f"Correction factor of pump {self.address} is set to {setpoint}, returns {reply}"
+        )
 
     # read only
     def read_pressure(self):
         reply = int(self.communicate(PRESSURE))
-        logging.info(f'Pressure reading of pump {self.address} returns {reply} bar')
+        logging.info(f"Pressure reading of pump {self.address} returns {reply} bar")
         return reply
 
     def read_extflow(self):
-        reply =int(self.communicate(EXTFLOW))
-        logging.info(f'Extflow reading of pump {self.address} returns {reply}')
+        reply = int(self.communicate(EXTFLOW))
+        logging.info(f"Extflow reading of pump {self.address} returns {reply}")
         return reply
 
     def read_errors(self):
         reply = self.communicate(ERRORS)
-        logging.info(f'Error reading of pump {self.address} returns {reply}')
+        logging.info(f"Error reading of pump {self.address} returns {reply}")
         return reply
 
     def read_motor_current(self):
         reply = int(self.communicate(IMOTOR))
-        logging.info(f'Motor current reading of pump {self.address} returns {reply} A')
+        logging.info(f"Motor current reading of pump {self.address} returns {reply} A")
         return reply
 
-    #TODO run flag
+    # TODO run flag
     # write only
     def start_flow(self):
         self.communicate(PUMP_ON)
-        logging.info('Pump switched on')
+        logging.info("Pump switched on")
 
     def stop_flow(self):
         self.communicate(PUMP_OFF)
-        logging.info('Pump switched off')
+        logging.info("Pump switched off")
 
     def set_local(self, param: int):
         if param in (0, 1):
-            logging.info(f'Pump {self.address} set local {param}')
-            self.communicate(LOCAL + ':' + str(param))
+            logging.info(f"Pump {self.address} set local {param}")
+            self.communicate(LOCAL + ":" + str(param))
         else:
-            logging.warning('Supply binary value')
+            logging.warning("Supply binary value")
 
     def set_remote(self, param: int):
         if param in (0, 1):
-            logging.info(f'Pump {self.address} set remote {param}')
-            self.communicate(REMOTE + ':' + str(param))
+            logging.info(f"Pump {self.address} set remote {param}")
+            self.communicate(REMOTE + ":" + str(param))
         else:
-            logging.warning('Supply binary value')
+            logging.warning("Supply binary value")
 
     # no idea what this exactly does...
     def set_errio(self, param: int):
         if param in (0, 1):
-            logging.info(f'Pump {self.address} set errio {param}')
-            self.communicate(ERRIO + ':' + str(param))
+            logging.info(f"Pump {self.address} set errio {param}")
+            self.communicate(ERRIO + ":" + str(param))
         else:
-            logging.warning('Supply binary value')
+            logging.warning("Supply binary value")
 
     def set_extcontrol(self, param: int):
-        if param in (0,1):
-            logging.info(f'Pump {self.address} set extcontrol {param}')
-            self.communicate(EXTCONTR+':'+str(param))
+        if param in (0, 1):
+            logging.info(f"Pump {self.address} set extcontrol {param}")
+            self.communicate(EXTCONTR + ":" + str(param))
         else:
-            logging.warning('Supply binary value')
+            logging.warning("Supply binary value")
 
     def close_connection(self):
         self.sock.close()
-        logging.info(f'Connection with {self.address} closed')
+        logging.info(f"Connection with {self.address} closed")
 
 
 # Valve
@@ -482,4 +556,4 @@ class KnauerPump(EthernetDevice):
 
 
 if __name__ == "__main__":
-    p = KnauerPump('192.168.1.119')
+    p = KnauerPump("192.168.1.119")

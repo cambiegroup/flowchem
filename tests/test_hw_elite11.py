@@ -7,10 +7,16 @@ import pytest
 import time
 import math
 
-from flowchem.devices.Harvard_Apparatus.HA_elite11 import PumpIO, Elite11, PumpStatus, InvalidArgument
+from flowchem.devices.Harvard_Apparatus.HA_elite11 import (
+    PumpIO,
+    Elite11,
+    PumpStatus,
+    InvalidArgument,
+)
 import logging
+
 logging.basicConfig()
-logging.getLogger('flowchem').setLevel(logging.DEBUG)
+logging.getLogger("flowchem").setLevel(logging.DEBUG)
 
 
 def move_infuse(pump):
@@ -64,6 +70,7 @@ def test_is_moving(pump: Elite11):
 @pytest.mark.HApump
 def test_syringe_volume(pump: Elite11):
     import math
+
     assert isinstance(pump.syringe_volume, (float, int))
     pump.syringe_volume = 10
     assert pump.syringe_volume == 10

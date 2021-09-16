@@ -21,39 +21,54 @@ from threading import Thread
 
 class ML600Exception(Exception):
     """ General pump exception """
+
     pass
 
 
 class InvalidConfiguration(ML600Exception):
     """ Used for failure in the serial communication """
+
     pass
 
 
 class InvalidArgument(ML600Exception):
     """ A valid command was followed by an invalid command_value, usually out of accepted range """
+
     pass
 
 
 @dataclass
 class Protocol1CommandTemplate:
     """ Class representing a pump command and its expected reply, but without target pump number """
+
     command: str
     optional_parameter: str = ""
     execute_command: bool = True
 
-    def to_pump(self, address: int, command_value: str = '',  argument_value: str = '') -> Protocol1Command:
+    def to_pump(
+        self, address: int, command_value: str = "", argument_value: str = ""
+    ) -> Protocol1Command:
         """ Returns a Protocol11Command by adding to the template pump address and command arguments """
-        return Protocol1Command(target_pump_num=address, command=self.command,
-                                optional_parameter=self.optional_parameter, command_value=command_value,
-                                argument_value=argument_value, execute_command=self.execute_command)
+        return Protocol1Command(
+            target_pump_num=address,
+            command=self.command,
+            optional_parameter=self.optional_parameter,
+            command_value=command_value,
+            argument_value=argument_value,
+            execute_command=self.execute_command,
+        )
 
 
 @dataclass
 class Protocol1Command(Protocol1CommandTemplate):
     """ Class representing a pump command and its expected reply """
+
     # TODO move these two vars elsewhere!
     # ':' is used for broadcast within the daisy chain.
-    PUMP_ADDRESS = {pump_num: address for (pump_num, address) in enumerate(string.ascii_lowercase[:16], start=1)}
+    PUMP_ADDRESS = {
+        pump_num: address
+        for (pump_num, address) in enumerate(string.ascii_lowercase[:16], start=1)
+    }
     REVERSED_PUMP_ADDRESS = {value: key for (key, value) in PUMP_ADDRESS.items()}
     # i.e. PUMP_ADDRESS = {1:"a", 2:"b"... }
 
@@ -67,12 +82,13 @@ class Protocol1Command(Protocol1CommandTemplate):
         """
         assert self.target_pump_num in range(1, 17)
 
-        compiled_command = f"{self.PUMP_ADDRESS[self.target_pump_num]}" \
-                           f"{self.command}{self.command_value}"
+        compiled_command = (
+            f"{self.PUMP_ADDRESS[self.target_pump_num]}"
+            f"{self.command}{self.command_value}"
+        )
 
         if self.argument_value:
-            compiled_command += f"{self.optional_parameter}{self.argument_value}"\
-
+            compiled_command += f"{self.optional_parameter}{self.argument_value}"
         # Add execution flag at the end
         if self.execute_command is True:
             compiled_command += "R"
@@ -82,10 +98,16 @@ class Protocol1Command(Protocol1CommandTemplate):
 
 class HamiltonPumpIO:
     """ Setup with serial parameters, low level IO"""
+
     ACKNOWLEDGE = chr(6)
     NEGATIVE_ACKNOWLEDGE = chr(21)
 
-    def __init__(self, port: Union[int, str], baud_rate: int = 9600, hw_initialization: bool = True):
+    def __init__(
+        self,
+        port: Union[int, str],
+        baud_rate: int = 9600,
+        hw_initialization: bool = True,
+    ):
         """
         Initialize communication on the serial port where the pumps are located and initialize them
         Args:
@@ -104,14 +126,24 @@ class HamiltonPumpIO:
 
         try:
             # noinspection PyPep8
-            self._serial = serial.Serial(port=port, baudrate=baud_rate, parity=PARITY_EVEN,
-                                         stopbits=STOPBITS_ONE, bytesize=SEVENBITS,
-                                         timeout=0.1)  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
+            self._serial = serial.Serial(
+                port=port,
+                baudrate=baud_rate,
+                parity=PARITY_EVEN,
+                stopbits=STOPBITS_ONE,
+                bytesize=SEVENBITS,
+                timeout=0.1,
+            )  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
         except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration(f"Check serial port availability! [{port}]") from e
+            raise InvalidConfiguration(
+                f"Check serial port availability! [{port}]"
+            ) from e
 
-        self.sio = io.TextIOWrapper(buffer=io.BufferedRWPair(self._serial, self._serial), line_buffering=True,
-                                    newline="\r")
+        self.sio = io.TextIOWrapper(
+            buffer=io.BufferedRWPair(self._serial, self._serial),
+            line_buffering=True,
+            newline="\r",
+        )
 
         # This has to be run after each power cycle to assign addresses to pumps
         self._assign_pump_address()
@@ -180,8 +212,10 @@ class HamiltonPumpIO:
             response = self._read_reply()
 
         if not response:
-            raise InvalidConfiguration(f"No response received from pump, check pump address! "
-                                       f"(Currently set to {command.target_pump_num})")
+            raise InvalidConfiguration(
+                f"No response received from pump, check pump address! "
+                f"(Currently set to {command.target_pump_num})"
+            )
 
         # Parse reply
         success, parsed_response = self.parse_response(response)
@@ -200,6 +234,7 @@ class HamiltonPumpIO:
 
 class ML600Commands:
     """ Just a collection of commands. Grouped here to ease future, unlikely, changes. """
+
     PAUSE = Protocol1CommandTemplate(command="K", execute_command=False)
     RESUME = Protocol1CommandTemplate(command="$", execute_command=False)
     CLEAR_BUFFER = Protocol1CommandTemplate(command="V", execute_command=False)
@@ -236,21 +271,29 @@ class ML600Commands:
     BUSY_STATUS = Protocol1CommandTemplate(command="T1")
     ERROR_STATUS = Protocol1CommandTemplate(command="T2")
     # PARAMETER REQUEST
-    SYRINGE_DEFAULT_SPEED = Protocol1CommandTemplate(command="YQS")  # 2-3692 seconds per stroke
+    SYRINGE_DEFAULT_SPEED = Protocol1CommandTemplate(
+        command="YQS"
+    )  # 2-3692 seconds per stroke
     CURRENT_SYRINGE_POSITION = Protocol1CommandTemplate(command="YQP")  # 0-52800 steps
     SYRINGE_DEFAULT_BACKOFF = Protocol1CommandTemplate(command="YQP")  # 0-1000 steps
-    CURRENT_VALVE_POSITION = Protocol1CommandTemplate(command="LQP")  # 1-8 (see docs, Table 3.2.2)
+    CURRENT_VALVE_POSITION = Protocol1CommandTemplate(
+        command="LQP"
+    )  # 1-8 (see docs, Table 3.2.2)
     GET_RETURN_STEPS = Protocol1CommandTemplate(command="YQN")  # 0-1000 steps
     # PARAMETER CHANGE
     SET_RETURN_STEPS = Protocol1CommandTemplate(command="YSN")  # 0-1000
     # VALVE REQUEST
     VALVE_ANGLE = Protocol1CommandTemplate(command="LQA")  # 0-359 degrees
-    VALVE_CONFIGURATION = Protocol1CommandTemplate(command="YQS")  # 11-20 (see docs, Table 3.2.2)
+    VALVE_CONFIGURATION = Protocol1CommandTemplate(
+        command="YQS"
+    )  # 11-20 (see docs, Table 3.2.2)
     VALVE_SPEED = Protocol1CommandTemplate(command="LQF")  # 15-720 degrees per sec
     # TIMER REQUEST
     TIMER_DELAY = Protocol1CommandTemplate(command="<T")  # 0–99999999 ms
     # FIRMWARE REQUEST
-    FIRMWARE_VERSION = Protocol1CommandTemplate(command="U")  # xxii.jj.k (ii major, jj minor, k revision)
+    FIRMWARE_VERSION = Protocol1CommandTemplate(
+        command="U"
+    )  # xxii.jj.k (ii major, jj minor, k revision)
 
 
 class ML600:
@@ -263,8 +306,10 @@ class ML600:
     example to dispense 9 mL from a 10 mL syringe you would determine the number of
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
+
     class ValvePositionName(IntEnum):
         """ Maps valve position to the corresponding number """
+
         POSITION_1 = 1
         # POSITION_2 = 2
         POSITION_3 = 3
@@ -272,9 +317,28 @@ class ML600:
         OUTPUT = 10  # 10 is default outlet, i.e. 3
         WASH = 11  # 11 is default wash, i.e. undefined
 
-    VALID_SYRINGE_VOLUME = {0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 25.0, 50.0}
+    VALID_SYRINGE_VOLUME = {
+        0.01,
+        0.025,
+        0.05,
+        0.1,
+        0.25,
+        0.5,
+        1.0,
+        2.5,
+        5.0,
+        10.0,
+        25.0,
+        50.0,
+    }
 
-    def __init__(self, pump_io: HamiltonPumpIO, syringe_volume: float, address: int = 1, name: str = None):
+    def __init__(
+        self,
+        pump_io: HamiltonPumpIO,
+        syringe_volume: float,
+        address: int = 1,
+        name: str = None,
+    ):
         """
 
         Args:
@@ -287,8 +351,10 @@ class ML600:
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address: int = address
         if syringe_volume not in ML600.VALID_SYRINGE_VOLUME:
-            raise InvalidConfiguration(f"The specified syringe volume ({syringe_volume}) does not seem to be valid!\n"
-                                       f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}")
+            raise InvalidConfiguration(
+                f"The specified syringe volume ({syringe_volume}) does not seem to be valid!\n"
+                f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}"
+            )
         self.syringe_volume = syringe_volume
         self.steps_per_ml = 48000 / self.syringe_volume
         self.offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
@@ -296,12 +362,20 @@ class ML600:
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
         # This command is used to test connection: failure handled by HamiltonPumpIO
-        self.log.info(f"Connected to pump '{self.name}'  FW version: {self.firmware_version}!")
+        self.log.info(
+            f"Connected to pump '{self.name}'  FW version: {self.firmware_version}!"
+        )
 
-    def send_command_and_read_reply(self, command_template: Protocol1CommandTemplate, command_value='',
-                                    argument_value='') -> str:
+    def send_command_and_read_reply(
+        self,
+        command_template: Protocol1CommandTemplate,
+        command_value="",
+        argument_value="",
+    ) -> str:
         """ Sends a command based on its template and return the corresponding reply as str """
-        return self.pump_io.write_and_read_reply(command_template.to_pump(self.address, command_value, argument_value))
+        return self.pump_io.write_and_read_reply(
+            command_template.to_pump(self.address, command_value, argument_value)
+        )
 
     def initialize_pump(self, speed: int = None):
         """
@@ -310,7 +384,9 @@ class ML600:
         """
         if speed:
             assert 2 < speed < 3692
-            return self.send_command_and_read_reply(ML600Commands.INIT_ALL, argument_value=str(speed))
+            return self.send_command_and_read_reply(
+                ML600Commands.INIT_ALL, argument_value=str(speed)
+            )
         else:
             return self.send_command_and_read_reply(ML600Commands.INIT_ALL)
 
@@ -327,7 +403,9 @@ class ML600:
         """
         if speed:
             assert 2 < speed < 3692
-            return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY, argument_value=str(speed))
+            return self.send_command_and_read_reply(
+                ML600Commands.INIT_SYRINGE_ONLY, argument_value=str(speed)
+            )
         else:
             return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY)
 
@@ -351,14 +429,18 @@ class ML600:
     def _volume_to_step(self, volume_in_ml: float) -> int:
         return round(volume_in_ml * self.steps_per_ml) + self.offset_steps
 
-    def _to_step_position(self, position: int, speed: int = ''):
+    def _to_step_position(self, position: int, speed: int = ""):
         """ Absolute move to step position """
-        return self.send_command_and_read_reply(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed))
+        return self.send_command_and_read_reply(
+            ML600Commands.ABSOLUTE_MOVE, str(position), str(speed)
+        )
 
-    def to_volume(self, volume_in_ml: float, speed: int = ''):
+    def to_volume(self, volume_in_ml: float, speed: int = ""):
         """ Absolute move to volume """
         self._to_step_position(self._volume_to_step(volume_in_ml), speed)
-        self.log.debug(f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}")
+        self.log.debug(
+            f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}"
+        )
 
     def pause(self):
         """ Pause any running command """
@@ -402,12 +484,16 @@ class ML600:
     @property
     def valve_position(self) -> ValvePositionName:
         """ Represent the position of the valve: getter returns Enum, setter needs Enum """
-        return ML600.ValvePositionName(int(self.send_command_and_read_reply(ML600Commands.CURRENT_VALVE_POSITION)))
+        return ML600.ValvePositionName(
+            int(self.send_command_and_read_reply(ML600Commands.CURRENT_VALVE_POSITION))
+        )
 
     @valve_position.setter
     def valve_position(self, target_position: ValvePositionName):
         self.log.debug(f"{self.name} valve position set to {target_position.name}")
-        self.send_command_and_read_reply(ML600Commands.VALVE_BY_NAME_CW, command_value=str(int(target_position)))
+        self.send_command_and_read_reply(
+            ML600Commands.VALVE_BY_NAME_CW, command_value=str(int(target_position))
+        )
         self.wait_until_idle()
 
     @property
@@ -417,10 +503,17 @@ class ML600:
 
     @return_steps.setter
     def return_steps(self, target_steps: int):
-        self.send_command_and_read_reply(ML600Commands.SET_RETURN_STEPS, command_value=str(int(target_steps)))
+        self.send_command_and_read_reply(
+            ML600Commands.SET_RETURN_STEPS, command_value=str(int(target_steps))
+        )
 
     def syringe_position(self):
-        current_steps = int(self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION)) - self.offset_steps
+        current_steps = (
+            int(
+                self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION)
+            )
+            - self.offset_steps
+        )
         return current_steps / self.steps_per_ml
 
     def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
@@ -443,7 +536,9 @@ class TwoPumpAssembly(Thread):
     The async version of this being possibly simpler w/ tasks and callback :)
     """
 
-    def __init__(self, pump1: ML600, pump2: ML600, target_flowrate: float, init_seconds: int = 10):
+    def __init__(
+        self, pump1: ML600, pump2: ML600, target_flowrate: float, init_seconds: int = 10
+    ):
         super(TwoPumpAssembly, self).__init__()
         self._p1 = pump1
         self._p2 = pump2
@@ -455,7 +550,9 @@ class TwoPumpAssembly(Thread):
         self.init_secs = init_seconds
 
         # While in principle possible, using syringes of different volumes is discouraged, hence...
-        assert pump1.syringe_volume == pump2.syringe_volume, "Syringes w/ equal volume are needed for continuous flow!"
+        assert (
+            pump1.syringe_volume == pump2.syringe_volume
+        ), "Syringes w/ equal volume are needed for continuous flow!"
         # self._p1.initialize_pump()
         # self._p2.initialize_pump()
 
@@ -466,7 +563,9 @@ class TwoPumpAssembly(Thread):
     @flowrate.setter
     def flowrate(self, target_flowrate):
         if target_flowrate == 0:
-            warnings.warn("Cannot set flowrate to 0! Pump stopped instead, restart previous flowrate with resume!")
+            warnings.warn(
+                "Cannot set flowrate to 0! Pump stopped instead, restart previous flowrate with resume!"
+            )
             self.cancel()
         else:
             self._flowrate = target_flowrate
@@ -486,7 +585,9 @@ class TwoPumpAssembly(Thread):
         self.log.debug(f"Speed calculated as {speed}")
         return speed
 
-    def execute_stroke(self, pump_full: ML600, pump_empty: ML600, speed_s_per_stroke: int):
+    def execute_stroke(
+        self, pump_full: ML600, pump_empty: ML600, speed_s_per_stroke: int
+    ):
         # Logic is a bit complex here to ensure pause-less pumping
         # This needs the pump that withdraws to move faster than the pumping one. no way around.
 
@@ -496,7 +597,7 @@ class TwoPumpAssembly(Thread):
         # Then start refilling the empty one
         pump_empty.valve_position = pump_empty.ValvePositionName.INPUT
         # And do that fast so that we finish refill before the pumping is over
-        pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke-5)
+        pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke - 5)
         pump_empty.wait_until_idle()
         # This allows us to set the reight pump position on the pump that was empty (not full and ready for next cycle)
         pump_empty.valve_position = pump_empty.ValvePositionName.OUTPUT
@@ -513,8 +614,12 @@ class TwoPumpAssembly(Thread):
 
         while True:
             while not self.cancelled.is_set():
-                self.execute_stroke(self._p1, self._p2, speed_s_per_stroke=self._speed())
-                self.execute_stroke(self._p2, self._p1, speed_s_per_stroke=self._speed())
+                self.execute_stroke(
+                    self._p1, self._p2, speed_s_per_stroke=self._speed()
+                )
+                self.execute_stroke(
+                    self._p2, self._p1, speed_s_per_stroke=self._speed()
+                )
 
     def cancel(self):
         """ Cancel continuous-pumping assembly """
@@ -529,8 +634,10 @@ class TwoPumpAssembly(Thread):
     def stop_and_return_solution_to_container(self):
         """ Let´s not waste our precious stock solutions ;) """
         self.cancel()
-        self.log.info("Returning the solution currently loaded in the syringes back to the inlet.\n"
-                      "Make sure the container is not removed yet!")
+        self.log.info(
+            "Returning the solution currently loaded in the syringes back to the inlet.\n"
+            "Make sure the container is not removed yet!"
+        )
         # Valve to input
         self._p1.valve_position = self._p1.ValvePositionName.INPUT
         self._p2.valve_position = self._p2.ValvePositionName.INPUT
@@ -542,11 +649,11 @@ class TwoPumpAssembly(Thread):
         self.log.info("Pump flushing completed!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
-    l = logging.getLogger(__name__+".TwoPumpAssembly")
+    l = logging.getLogger(__name__ + ".TwoPumpAssembly")
     l.setLevel(logging.DEBUG)
-    l = logging.getLogger(__name__+".ML600")
+    l = logging.getLogger(__name__ + ".ML600")
     l.setLevel(logging.DEBUG)
     pump_connection = HamiltonPumpIO(41)
     test1 = ML600(pump_connection, syringe_volume=5, address=1)
