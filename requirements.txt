@@ -1,6 +1,5 @@
 git+https://github.com/jjhelmus/nmrglue.git@master
 pint~=0.16.1
-flowchem~=0.1.0
 pytest~=6.2.1
 getmac~=0.8.2
 pyserial~=3.5
