@@ -1,5 +1,14 @@
+Welcome to flowchem
+===================
+
+|build-status| |docs| |coverage|
+
+
 # flowchem
-Flowchem is a {BRIEF DESCRIPTION}
+Flowchem is {BRIEF DESCRIPTION}
+
+
+
 
 Test it now with pipex!
 
@@ -18,3 +27,18 @@ Implementation design:
 - Each device module should be independent. Code sharing is possible via flowchem.analysis (or flowchem.utils et simil.) 
 - Each device module should be accompanied by tests and documentation (at least in form of examples).
 - Device objects should use generic flowchem.exceptions or sublcasses thereof.
+
+
+.. |build-status| image:: https://circleci.com/gh/cambiegroup/flowchem.svg?style=svg
+    :alt: build status
+    :target: https://circleci.com/gh/cambiegroup/flowchem
+
+.. |docs| image:: https://readthedocs.org/projects/flowchem/badge/?version=latest
+    :alt: Documentation Status
+    :scale: 100%
+    :target: https://flowchem.readthedocs.io/en/latest/?badge=latest
+
+.. |coverage| image:: https://codecov.io/analytics/gh/cambiegroup/flowchem/settings/badge.svg
+    :alt: Test coverage
+    :scale: 100%
+    :target: https://codecov.io/github/cambiegroup/flowchem
