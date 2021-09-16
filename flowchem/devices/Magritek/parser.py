@@ -36,8 +36,6 @@ def parse_status_notification(xml_message: etree._Element):
     Parse a status notification reply.
     """
     status = xml_message.find(".//StatusNotification")
-    remote_folder = None
-    status_type = StatusNotification.UNKNOWN
 
     # No status notification found
     if status is None:
@@ -46,25 +44,23 @@ def parse_status_notification(xml_message: etree._Element):
         )
         return None
 
-    # First (only) child of StatusNotification can be <State> <Progress> or <Completed>
+    # StatusNotification child can be <State> (w/ submsg). <Progress>, <Completed> or <Error>
     child = status[0]
 
     if child.tag == "State":
-        status_type, remote_folder = parse_state(child)
+        return parse_state(child)
 
-    elif child.tag == "Progress":
-        status_type = StatusNotification.RUNNING
+    if child.tag == "Progress":
+        return StatusNotification.RUNNING, None
 
-    elif child.tag == "Completed":
-        status_type = StatusNotification.COMPLETED
+    if child.tag == "Completed":
+        return StatusNotification.COMPLETED, None
 
-    elif child.tag == "Error":
-        status_type = StatusNotification.ERROR
+    if child.tag == "Error":
+        return StatusNotification.ERROR, None
 
-    if status_type is StatusNotification.UNKNOWN:
-        warnings.warn("Could not detect StatusNotification state!")
-
-    return status_type, remote_folder
+    warnings.warn("Could not detect StatusNotification state!")
+    return StatusNotification.UNKNOWN, None
 
 
 def parse_state(xml_message: etree._Element):

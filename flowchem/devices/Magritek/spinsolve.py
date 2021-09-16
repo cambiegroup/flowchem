@@ -106,14 +106,14 @@ class Spinsolve:
         """ Create instance from config dict """
         # Get loop if passed or existing
         loop = config.get("loop", asyncio.get_event_loop())
-        # Creaete stream reader/writer pair
+        # Create stream reader/writer pair
         reader, writer = loop.run_until_complete(
             get_streams_for_connection(config.get("host"), config.get("port", "13000"))
         )
         # Drop keys
         for key in ("host", "port", "loop"):
             config.pop(key, None)
-        # Istanciate with the rest of config
+        # Instantiate with the rest of config
         return cls(reader, writer, loop, **config)
 
     def __del__(self):
@@ -257,7 +257,7 @@ class Spinsolve:
 
         return protocols
 
-    async def run_protocol(self, protocol_name, protocol_options=None) -> Optional[str]:
+    async def run_protocol(self, protocol_name, protocol_options=None) -> Optional[str, Path]:
         """
         Runs a protocol
 
