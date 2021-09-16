@@ -26,7 +26,7 @@ logging.getLogger('opcua').setLevel(logging.CRITICAL)
 
 # FILES AND PATHS
 WORKING_DIR = Path().home() / "Documents"
-SOURCE_FILE = WORKING_DIR / "chlorination_T_study_17_05_21.csv"
+SOURCE_FILE = WORKING_DIR / "chlorination_T_study_18_05_21.csv"
 assert SOURCE_FILE.exists()
 OUTPUT_FILE = WORKING_DIR / f"{SOURCE_FILE.stem}_results{SOURCE_FILE.suffix}"
 # Ensure spectra folder exits
@@ -117,9 +117,12 @@ def xp_measure_yield(max_scan: int) -> Tuple[float, float]:
     Keep on acquiring until CV<1% or max_scan is reached.
     """
     measured_yield = []
+    num=0
     while True:
-        spectrum = ir_spectrometer.get_last_spectrum_treated()
-        latest_yield = measure_yield_step1(spectrum.as_df())
+        spectrum = ir_spectrometer.get_last_spectrum_treated().as_df()
+        latest_yield = measure_yield_step1(spectrum)
+        num += 1
+        spectrum.to_csv(WORKING_DIR / "spectra" / f"spectrum_{round(time())}_n{num}.csv")
         measured_yield.append(latest_yield)
         print(f"Acquired new spectrum -> yield is {latest_yield}!")
 
