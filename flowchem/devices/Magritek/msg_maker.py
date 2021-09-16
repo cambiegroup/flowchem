@@ -35,7 +35,7 @@ def get_request(name) -> etree._Element:
     Used for name = {Solvent | Sample | UserData} + indirectly by UserData and DataFolder
     """
     base = create_message("GetRequest")
-    attribute = etree.SubElement(base.find("./GetRequest"), name)
+    etree.SubElement(base.find("./GetRequest"), name)
     return base
 
 

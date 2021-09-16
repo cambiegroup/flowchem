@@ -158,7 +158,7 @@ if __name__ == "__main__":
     client = opcua.Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS, timeout=10)
     ir_spectrometer = FlowIR(client)
     if ir_spectrometer.is_iCIR_connected:
-        print(f"FlowIR connected!")
+        print("FlowIR connected!")
     else:
         print("FlowIR not connected :(")
         import sys
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         while ir_spectrometer.get_sample_count() == spectra_count:
             time.sleep(1)
 
-        print(f"New spectrum!")
+        print("New spectrum!")
         spectrum = ir_spectrometer.get_last_spectrum_treated()
         print(spectrum)
 

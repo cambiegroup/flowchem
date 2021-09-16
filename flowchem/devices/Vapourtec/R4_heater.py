@@ -93,7 +93,7 @@ class R4Heater:
             response = self._read_reply()
 
         if not response:
-            raise InvalidConfiguration(f"No response received from heating module!")
+            raise InvalidConfiguration("No response received from heating module!")
 
         # Parse reply
         success, parsed_response = self.parse_response(response)

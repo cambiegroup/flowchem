@@ -5,7 +5,7 @@ import threading
 import warnings
 import pprint as pp
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 from lxml import etree
 from packaging import version
@@ -395,15 +395,6 @@ class Spinsolve:
     #     # Return LineWidth and BaseWidth
     #     return float(reply.find(".//LineWidth").text), float(reply.find(".//BaseWidth").text)
 
-    def shim(self, reference: float):
+    def shim(self):
         """ Performs a shim on sample """
-        """
-        print(nmr.protocols_option["SHIM 1H SAMPLE"])
-        {'SampleReference': [], 'Shim': ['CheckShim', 'LockAndCalibrateOnly', 'QuickShim1', 'QuickShim2', 'QuickShimAll', 'PowerShim']}
-        
-        print(nmr.protocols_option["SHIM RM"])
-        {'Shim': ['CheckShim', 'LockAndCalibrateOnly', 'QuickShim1', 'QuickShim2', 'QuickShimAll', 'PowerShim']}
-        
-        print(nmr.protocols_option["SHIM"])
-        {'Shim': ['CheckShim', 'QuickShim', 'QuickShim1st2nd', 'PowerShim']}
-        """
+        raise NotImplementedError("Use run protocol with a shimming protocol instead!")

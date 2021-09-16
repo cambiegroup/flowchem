@@ -50,21 +50,7 @@ def parse_status_notification(xml_message: etree._Element):
     child = status[0]
 
     if child.tag == "State":
-        status = child.get("status")
-
-        # Set status
-        if status == "Running":
-            status_type = StatusNotification.STARTED
-        elif status == "Ready":
-            status_type = StatusNotification.FINISHING
-        elif status == "Stopping":
-            status_type = StatusNotification.STOPPING
-        else:
-            warnings.warn(f"Unidentified notification status: {status}")
-
-        # Full path only shown on experiment end, thus Ready and Stopping
-        if status in ("Ready", "Stopping"):
-            remote_folder = child.get("dataFolder")
+        status_type, remote_folder = parse_state(child)
 
     elif child.tag == "Progress":
         status_type = StatusNotification.RUNNING
@@ -79,3 +65,27 @@ def parse_status_notification(xml_message: etree._Element):
         warnings.warn("Could not detect StatusNotification state!")
 
     return status_type, remote_folder
+
+
+def parse_state(xml_message: etree._Element):
+    """ Parse state message """
+    status_type = StatusNotification.UNKNOWN
+
+    # Parse status
+    status = xml_message.get("status")
+    if status == "Running":
+        status_type = StatusNotification.STARTED
+    elif status == "Ready":
+        status_type = StatusNotification.FINISHING
+    elif status == "Stopping":
+        status_type = StatusNotification.STOPPING
+    else:
+        warnings.warn(f"Unidentified notification status: {status}")
+
+    # Full path is only available on experiment, so often this string is empty
+    remote_folder = xml_message.get("dataFolder")
+
+    if remote_folder:
+        return status_type, remote_folder
+    else:
+        return status_type, None

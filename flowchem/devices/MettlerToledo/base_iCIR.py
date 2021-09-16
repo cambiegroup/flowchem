@@ -53,7 +53,7 @@ class iCIR_spectrometer:
         (i.e. iC IR, iC FBRM, iC Vision, iC Raman). Note that you must provide the name of an existing experiment
         template file that can be used as a basis for the new experiment.
         The template file must be located in a specific folder on the iC OPC UA Server computer.
-        This is usually C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates.
+        This is usually C:\\ProgramData\\METTLER TOLEDO\\iC OPC UA Server\\1.2\\Templates.
         """
 
         template_directory = Path(

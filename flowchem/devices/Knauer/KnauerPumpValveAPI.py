@@ -206,7 +206,8 @@ class KnauerValve(EthernetDevice):
             raise SwitchingException(f"Unknown reply received. Reply is {reply}")
 
     def get_valve_type(self):
-        """aquires valve type, if not supported will throw error. This also prevents to initialize some device as a KnauerValve"""
+        """aquires valve type, if not supported will throw error.
+        This also prevents to initialize some device as a KnauerValve"""
         reply = self.communicate("T")[6:]
         # could be more pretty by passing expected answer to communicate
         try:
@@ -240,7 +241,7 @@ PMAX50 = "PMAX50"  # 0-150 in 0.1 MPa, chosen automatically by selecting pumphea
 IMIN10 = "IMIN10"  # 0-100 minimum motor current
 IMIN50 = "IMIN50"  # 0-100 minimum motor current
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
-STARTLEVEL = "STARTLEVEL"  # 0, 1 configures start in: 0 means only start pump when shorted to GND, 1 start without short circuit
+STARTLEVEL = "STARTLEVEL"  # 0, 1 configures start. 0 -> only start pump when shorted to GND, 1 -> always allow start
 ERRIO = "ERRIO"  # 0, 1 write/read error in/output ??? sets errio either 1 or 0, reports errio:ok
 STARTMODE = "STARTMODE"  # 0, 1; 0=pause pump after switchon, 1=start immediatley with previous set flow rate
 # no idea what these do...
@@ -277,7 +278,8 @@ class KnauerPump(EthernetDevice):
 
     def communicate(self, message: str):
         """
-        sends command and receives reply, deals with all communication based stuff and checks that the valve is of expected type
+        sends command and receives reply, deals with all communication based stuff and checks
+        that the valve is of expected type
         :param message:
         :return: reply: str
         """

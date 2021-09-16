@@ -89,7 +89,7 @@ class PressureSensor:
         try:
             current = self.phidget.getCurrent()
             self.log.debug(f"Current read: {current}")
-        except PhidgetException as e:
+        except PhidgetException:
             return None
         else:
             return self.current_to_pressure(current)
