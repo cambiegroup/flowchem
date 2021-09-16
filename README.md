@@ -1,8 +1,9 @@
 Welcome to flowchem
 ===================
 
-| ![CircleCI](https://circleci.com/gh/cambiegroup/flowchem.svg?style=svg) | 
-![Docs](https://readthedocs.org/projects/flowchem/badge/?version=latest) |
+ 
+|![Docs](https://readthedocs.org/projects/flowchem/badge/?version=latest) |
+![github-actions](https://github.com/cambiegroup/flowchem/actions/workflows/python-app.yml/badge.svg)
 ![Tests](https://codecov.io/analytics/gh/cambiegroup/flowchem/settings/badge.svg) |
 [![PyPI version fury.io](https://badge.fury.io/py/flowchem.svg)](https://pypi.org/project/flowchem/)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/flowchem.svg)](https://pypi.python.org/pypi/flowchem/)
