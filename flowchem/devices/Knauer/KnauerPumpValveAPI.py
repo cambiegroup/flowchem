@@ -124,7 +124,7 @@ class KnauerValve(EthernetDevice):
 
     Valve type can be 6, 12, 16
     or it can be 6 ports, two positions, which will be simply 2 (two states)
-    in this case,response for T is LI. load and inject can be switched by sending l or i
+    in this case,response for T is LI. load and inject can be switched by sending log or i
     maybe valves should have an initial state which is set during init and updated, if no  change don't schedule command
     https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_benutzerhandbuch_de.pdf
     dip switch for valve selection
@@ -145,7 +145,8 @@ class KnauerValve(EthernetDevice):
 
     def communicate(self, message: str or int):
         """
-        sends command and receives reply, deals with all communication based stuff and checks that the valve is of expected type
+        Sends command and receives reply, deals with all communication based stuff and checks that the valve is
+        of expected type
         :param message:
         :return: reply: str
         """
@@ -182,46 +183,27 @@ class KnauerValve(EthernetDevice):
         # switching necessary?
         if position == self._valve_state:
             logging.debug("already at that position")
+            return
+
+        # change to selected position
+        reply = self.communicate(position)
+
+        # check if this was done
+        if reply == "OK":
+            logging.debug("switching successful")
+            self._valve_state = position
+
+        elif "E0" in reply:
+
+            logging.error("valve was not switched because valve refused")
+            raise SwitchingException("valve was not switched because valve refused")
+
+        elif "E1" in reply:
+            logging.error("Motor current to high. Check that")
+            raise SwitchingException("Motor current to high. Check that")
 
         else:
-
-            # these prechecks are not really necessery, since sending wrong value would throw an error by wrong reply
-            # check if switching can be achieved
-            if self.valve_type == KnauerValveHeads.SIX_PORT_TWO_POSITION:
-                if position not in self.valve_type.value:
-                    SwitchingException(
-                        f"Internal check: Position {position} not available on instantiated valve {self.valve_type}"
-                    )
-
-            if self.valve_type != KnauerValveHeads.SIX_PORT_TWO_POSITION:
-                try:
-                    if not 0 <= position <= self.valve_type.value:
-                        SwitchingException(
-                            f"Internal Check: Position {position} not available on instantiated valve {self.valve_type}"
-                        )
-                except TypeError:
-                    raise ParameterError(
-                        f"Please provide a number to switch to. You provided {position}"
-                    )
-
-            # change to selected position
-            reply = self.communicate(position)
-            # check if this was done
-            if reply == "OK":
-                logging.debug("switching successful")
-                self._valve_state = position
-
-            elif "E0" in reply:
-
-                logging.error("valve was not switched because valve refused")
-                raise SwitchingException("valve was not switched because valve refused")
-
-            elif "E1" in reply:
-                logging.error("Motor current to high. Check that")
-                raise SwitchingException("Motor current to high. Check that")
-
-            else:
-                raise SwitchingException(f"Unknown reply received. Reply is {reply}")
+            raise SwitchingException(f"Unknown reply received. Reply is {reply}")
 
     def get_valve_type(self):
         """aquires valve type, if not supported will throw error. This also prevents to initialize some device as a KnauerValve"""
