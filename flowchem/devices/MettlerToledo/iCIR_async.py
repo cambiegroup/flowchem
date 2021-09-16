@@ -3,13 +3,12 @@ import warnings
 import logging
 from typing import List, Optional
 
-from flowchem.constants.spectrum import IRSpectrum
+from flowchem.analysis.spectrum import IRSpectrum
 
 # ASYNC ONLY
 import asyncio
 import asyncua
 import asyncua.ua.uaerrors
-from async_property import async_property
 from asyncua import ua
 from asyncua.ua.uaerrors import BadOutOfService, Bad
 
@@ -53,25 +52,21 @@ class FlowIR(iCIR_spectrometer):
     def trigger_collection(self):
         raise NotImplementedError
 
-    @async_property
     async def is_iCIR_connected(self) -> bool:
         """ Check connection with instrument """
         return await self.opcua.get_node(self.CONNECTION_STATUS).get_value()
 
-    @property
     async def probe_info(self) -> ProbeInfo:
         """ Return FlowIR probe information """
         probe_info = await self.opcua.get_node(self.PROBE_DESCRIPTION).get_value()
         return self.parse_probe_info(probe_info)
 
-    @async_property
     async def probe_status(self):
         return await self.opcua.get_node(self.PROBE_STATUS).get_value()
 
-    @async_property
     async def is_running(self) -> bool:
         """ Is the probe currently measuring? """
-        return await self.probe_status == "Running"
+        return await self.probe_status() == "Running"
 
     async def get_last_sample_time(self) -> datetime.datetime:
         """ Returns date/time of latest scan """
@@ -115,12 +110,12 @@ class FlowIR(iCIR_spectrometer):
         if FlowIR.is_template_name_valid(template) is False:
             raise FlowIRError(f"Cannot start template {template}: name not valid! Check if is in: "
                               r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates")
-        if await self.is_running:
+        if await self.is_running():
             warnings.warn("I was asked to start an experiment while a current experiment is already running!"
                           "I will have to stop that first! Sorry for that :)")
             await self.stop_experiment()
             # And wait for ready...
-            while await self.is_running:
+            while await self.is_running():
                 await asyncio.sleep(1)
 
         start_xp_nodeid = self.opcua.get_node(self.START_EXPERIMENT).nodeid
@@ -143,7 +138,7 @@ async def main():
         ir_spectrometer = FlowIR(opcua_client)
         await ir_spectrometer.check_version()
 
-        if await ir_spectrometer.is_iCIR_connected:
+        if await ir_spectrometer.is_iCIR_connected():
             print(f"FlowIR connected!")
         else:
             print("FlowIR not connected :(")

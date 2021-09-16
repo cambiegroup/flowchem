@@ -6,14 +6,17 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setuptools.setup(
     name="flowchem",
     version="0.1.0",
-    author="Dario Cambie, Jakob Wolf",
+    author="Dario Cambié, Jakob Wolf",
     author_email="dario.cambie@mpikg.mpg.de, jakob.wolf@mpikg.mpg.de",
-    description="Misc utilities for flow",
+    description="",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/cambiegroup/flowchem",
     packages=setuptools.find_packages(),
-    install_requires=['pyserial', 'pyserial-asyncio', 'pint', 'pandas','scipy', 'numpy', 'opcua', 'asyncua',
-                      'async_property', 'phidget22', 'getmac', 'lmfit'],
+    install_requires=['pyserial', 'pyserial-asyncio', 'pint', 'pandas', 'scipy', 'numpy', 'opcua', 'asyncua',
+                      'phidget22', 'getmac', 'lmfit', 'nmrglue'],
     python_requires='>=3.6',
+    entry_points={
+        'console_scripts': ['flowchem=flowchem.cli:main'],
+    }
 )
