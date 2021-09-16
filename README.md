@@ -24,9 +24,10 @@ Currently, those includes:
 
  
 ## Installation
-´´´bash
+'''
 pip install flowchem[all]
-´´´
+'''
+
 
 ## Usage
 {WRITE ME}
