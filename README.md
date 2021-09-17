@@ -10,7 +10,7 @@ Welcome to flowchem
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
-Flowchem is a python library to control a variety of instruments commonly used in chemistry labs.
+Flowchem is a python library to control a variety of instruments commonly found in chemistry labs.
 
 Currently, those includes:
  - Pumps (Knauer P2.1, Harvard Apparatus Elite 11, Hamilton ML600)

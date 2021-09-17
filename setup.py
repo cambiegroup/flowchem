@@ -5,10 +5,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="flowchem",
-    version="0.1.0",
+    version="0.0.1",
     author="Dario Cambié, Jakob Wolf",
     author_email="dario.cambie@mpikg.mpg.de, jakob.wolf@mpikg.mpg.de",
-    description="",
+    description="Flowchem is a python library to control a variety of instruments commonly found in chemistry labs.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/cambiegroup/flowchem",
