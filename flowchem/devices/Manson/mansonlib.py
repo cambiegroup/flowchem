@@ -30,7 +30,7 @@ class InvalidOrNoReply(MansonException):
 
 
 class PowerSupply:
-    MODEL_ALT_RANGE = ['HCS-3102', 'HCS-3014', 'HCS-3204', 'HCS-3202']
+    MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
     def __init__(self, com_port, baud_rate=9600):
         self.open(com_port, baud_rate)
@@ -40,7 +40,14 @@ class PowerSupply:
         if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
             raise MansonException(f"Invalid baud rate provided {baud_rate}!")
         try:
-            self.sp = serial.Serial(com_port, baudrate=baud_rate, bytesize=8, parity='N', stopbits=1, timeout=0.1)
+            self.sp = serial.Serial(
+                com_port,
+                baudrate=baud_rate,
+                bytesize=8,
+                parity="N",
+                stopbits=1,
+                timeout=0.1,
+            )
             self.sp.reset_input_buffer()
             self.sp.reset_output_buffer()
 
@@ -50,29 +57,36 @@ class PowerSupply:
 
         # for the unlikely case
         if self.get_info() not in self.MODEL_ALT_RANGE:
-            raise InvalidOrNoReply(f'Device on {com_port} is either not supported or no MansonLib Device')
+            raise InvalidOrNoReply(
+                f"Device on {com_port} is either not supported or no MansonLib Device"
+            )
 
     def close(self):
         """" Closes serial connection. """
         self.sp.close()
 
-    def _send_command(self, command: str, multiline_reply: bool = False, no_reply_expected: bool = False) -> str:
+    def _send_command(
+        self,
+        command: str,
+        multiline_reply: bool = False,
+        no_reply_expected: bool = False,
+    ) -> str:
         """ Internal function to send command and read reply. """
 
         # Flush buffer, write command and read reply
         try:
             self.sp.reset_input_buffer()
-            self.sp.write(f"{command}\r".encode('ascii'))
-            response = self.sp.readline().decode('ascii').strip()
+            self.sp.write(f"{command}\r".encode("ascii"))
+            response = self.sp.readline().decode("ascii").strip()
         except serial.serialutil.SerialException:
-            NotConnectedError('Connection seems closed')
+            NotConnectedError("Connection seems closed")
 
         if not response and not no_reply_expected:
             raise InvalidOrNoReply("No reply received!")
 
         # Get multiple lines if needed
         if multiline_reply:
-            while additional_response := self.sp.readline().decode('ascii').strip():
+            while additional_response := self.sp.readline().decode("ascii").strip():
                 response += "\n" + additional_response
 
         return response
@@ -81,7 +95,7 @@ class PowerSupply:
         """ Returns the model name of the connected device """
         response = self._send_command("GMOD")
 
-        pattern = re.compile(r'.*\d{4}\s')
+        pattern = re.compile(r".*\d{4}\s")
         match = pattern.match(response)
 
         if match:
@@ -108,9 +122,9 @@ class PowerSupply:
         except ValueError:
             raise InvalidOrNoReply
 
-        if response[8:9] == '0':
+        if response[8:9] == "0":
             mode = "CV"
-        elif response[8:9] == '1':
+        elif response[8:9] == "1":
             mode = "CC"
         else:
             mode = False
@@ -249,7 +263,7 @@ class PowerSupply:
         """ Set Voltage and Current using values saved in one of the three memory locations: 0, 1 or 2 """
         if not 0 <= int(index) < 3:
             raise InvalidArgument
-        cmd = 'RUNM' + str(int(index))
+        cmd = "RUNM" + str(int(index))
         response = self._send_command(cmd)
         return response == "OK"
 

@@ -1,384 +1,398 @@
-"""
-Module to control Magritek SpinSolve benchtop NMR.
-"""
+import logging
+import queue
+import asyncio
+import threading
+import warnings
+import pprint as pp
 from pathlib import Path
+from typing import Optional, Union
 
-# Store shim coils parameters in custom location
-SHIMMING_LOCATION = Path.home() / "flowchem" / "spinsolve_shimming.json"
-SHIMMING_LOCATION.parent.mkdir(exist_ok=True)
-SHIMMING_LOCATION.touch(exist_ok=True)
+from lxml import etree
+from packaging import version
+
+from flowchem.devices.Magritek.msg_maker import (
+    create_message,
+    create_protocol_message,
+    set_user_data,
+    set_data_folder,
+    set_attribute,
+    get_request,
+)
+from flowchem.devices.Magritek.reader import Reader
+from flowchem.devices.Magritek.utils import run_loop, get_streams_for_connection
+from flowchem.devices.Magritek.parser import (
+    parse_status_notification,
+    StatusNotification,
+)
 
 
-class SpinsolveNMR:
-    def __init__(self, address: str = None, port: int = 13000):
+class Spinsolve:
+    """
+    Spinsolve class, gives access to the spectrometer remote control API
+    """
+
+    default_port = 13000
+
+    def __init__(
+        self,
+        io_reader: asyncio.StreamReader,
+        io_writer: asyncio.StreamWriter,
+        loop,
+        **kwargs,
+    ):
         """
-        Args:
-            address: IP address of the local host
-            port: port number
-        """
+        Constructor, actuates the connection upon instantiation.
 
-        # Queue for storing path of the measured spectrum
-        self.data_folder_queue = queue.Queue()
-
-        # Flag for check the instrument status
-        self._device_ready_flag = threading.Event()
-
-        # Instantiating submodules
-        self._parser = ReplyParser(self._device_ready_flag, self.data_folder_queue)
-        self._connection = SpinsolveConnection(HOST=address, PORT=port)
-        self.cmd = ProtocolCommands(spinsolve_options_path)
-        self.req_cmd = RequestCommands()
-        self.spectrum = SpinsolveNMRSpectrum()
-
-        # placeholder to store shimming parameters
-        self.last_shimming_results = {}
-
-        # placeholders for experiment data
-        self._user_data = {}
-        self._solvent = None
-        self._sample = None
-
-    def check_last_shimming(self):
-        """ Checks last shimming.
-
-        Returns:
-            bool: False if shimming procedure is required, True otherwise.
-        """
-        if not self.last_shimming_results:
-            try:
-                with open(SHIMMING_PATH) as fobj:
-                    self.last_shimming_results = json.load(fobj)
-            except FileNotFoundError:
-                self.logger.warning('Last shimming was not recorded, please run\
- any shimming protocol to update!')
-                return False
-        now = time.time()
-        # if the last shimming was performed more than 24 hours ago
-        if now - self.last_shimming_results['timestamp'] > 24*3600:
-            self.logger.critical('Last shimming was performed more than 24 \
-hours ago, please perform CheckShim to check spectrometer performance!')
-            return False
-        return True
-
-    def connect(self):
-        """Connects to the instrument"""
-
-        self.logger.debug("Connection requested")
-        self._connection.open_connection()
-
-    def disconnect(self):
-        """Closes the socket connection"""
-
-        self.logger.info("Request to close the connection received")
-        self._connection.close_connection()
-        self.logger.info("The instrument is disconnected")
-
-    def send_message(self, msg):
-        """Sends the message to the instrument"""
-
-        if self._parser.connected_tag != "true":
-            raise HardwareError("The instrument is not connected, check the Spinsolve software")
-        self.logger.debug("Waiting for the device to be ready")
-        self._device_ready_flag.wait()
-        self.logger.debug("Sending the message \n%s", msg)
-        self._connection.transmit(msg)
-        self.logger.debug("Message sent")
-
-    def receive_reply(self, parse=True):
-        """Receives the reply from the instrument and parses it if necessary"""
-
-        while True:
-            self.logger.debug("Reply requested from the connection")
-            reply = self._connection.receive()
-            self.logger.debug("Reply received")
-            if parse:
-                reply = self._parser.parse(reply)
-            if self._device_ready_flag.is_set():
-                return reply
-
-    def initialise(self):
-        """Initialises the instrument by sending HardwareRequest"""
-
-        cmd = self.req_cmd.request_hardware()
-        self._connection.transmit(cmd)
-        return self.receive_reply()
-
-    def is_instrument_ready(self):
-        """Checks if the instrument is ready for the next command"""
-
-        if self._parser.connected_tag == "true" and self._device_ready_flag.is_set():
-            return True
-        else:
-            return False
-
-    def load_commands(self):
-        """Requests the available commands from the instrument"""
-
-        cmd = self.req_cmd.request_available_protocol_options()
-        self.send_message(cmd)
-        reply = self.receive_reply()
-        self.cmd.reload_commands(reply)
-        self.logger.info("Commands updated, see available protocols \n <%s>", list(self.cmd._protocols.keys())) # pylint: disable=protected-access
-
-    @shimming
-    def shim(
-            self,
-            option="CheckShimRequest",
-            *,
-            line_width_threshold=1,
-            base_width_threshold=40,
-        ):
-        """Initialise shimming protocol
-
-        Consider checking <Spinsolve>.cmd.get_protocol(<Spinsolve>.cmd.SHIM_PROTOCOL) for available options
-
-        Args:
-            option (str, optional): A name of the instrument shimming method
+        Dependency injection is used here with async stream reader/writer.
+        This also simplifies testing.
         """
 
-        # updating default values
-        self._parser.shimming_line_width_threshold = line_width_threshold
-        self._parser.shimming_base_width_threshold = base_width_threshold
+        # Logger
+        self._log = logging.getLogger(__name__)
 
-        cmd = self.req_cmd.request_shim(option)
-        self.send_message(cmd)
-        return self.receive_reply()
+        # IOs
+        self._io_writer = io_writer
+        self._io_reader = io_reader
+        self._replies = (
+            queue.Queue()
+        )  # Queue needed for thread-safe operation, the reader is in a different thread
+        self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
 
-    @shimming
-    def shim_on_sample(self, reference_peak, option="LockAndCalibrateOnly", *, line_width_threshold=1, base_width_threshold=40):
-        """Initialise shimming on sample protocol
+        # Event loop to run the connection listener
+        self._loop = loop
+        self._loop.create_task(self.connection_listener())
+        threading.Thread(target=lambda: run_loop(self._loop), daemon=True).start()
 
-        Consider checking <Spinsolve>.cmd.get_protocol(<Spinsolve>.cmd.SHIM_ON_SAMPLE_PROTOCOL) for available options
+        # Check if the instrument is connected
+        hw_info = self.hw_request()
 
-        Args:
-            reference_peak (float): A reference peak to shim and calibrate on
-            option (str, optional): A name of the instrument shimming method
-            line_width_threshold (float, optional): Spectrum line width at 50%, should be below 1
-                for good quality spectrums
-            base_width_threshold (float, optional): Spectrum line width at 0.55%, should be below 40
-                for good quality spectrums
-        """
+        # If not raise ConnectionError
+        if hw_info.find(".//ConnectedToHardware").text != "true":
+            raise ConnectionError(
+                "The spectrometer is not connected to the control PC running Spinsolve software!"
+            )
 
-        self._parser.shimming_line_width_threshold = line_width_threshold
-        self._parser.shimming_base_width_threshold = base_width_threshold
-        cmd = self.cmd.shim_on_sample(reference_peak, option)
-        self.send_message(cmd)
-        return self.receive_reply()
-
-    def set_user_folder(self, data_path, data_folder_method="TimeStamp"):
-        """Indicate the path and the method for saving NMR data
-
-        Args:
-            data_folder_path (str): Valid path to save the spectral data
-            data_folder_method (str, optional): One of three methods according to the manual:
-                'UserFolder' - Data is saved directly in the provided path
-                'TimeStamp' (default) - Data is saved in newly created folder in format
-                    yyyymmddhhmmss in the provided path
-                'TimeStampTree' - Data is saved in the newly created folders in format
-                    yyyy/mm/dd/hh/mm/ss in the provided path
-
-        Returns:
-            bool: True if successfull
-        """
-
-        cmd = self.req_cmd.set_data_folder(data_path, data_folder_method)
-        self.send_message(cmd)
-        return True
-
-    @property
-    def user_data(self):
-        """ Dictionary with user specific data. """
-        if not self._user_data:
-            user_data_req = self.req_cmd.get_user_data()
-            self.send_message(user_data_req)
-            self._user_data = self.receive_reply()
-
-        return self._user_data
-
-    @user_data.setter
-    def user_data(self, user_data):
-        """ Sets the user data.
-
-        Args:
-            user_data (Dict): Dictionary with user data.
-        """
-        # updating placeholder
-        self._user_data.update(user_data)
-        # sending command
-        user_data_cmd = self.req_cmd.set_user_data(user_data)
-        self.send_message(user_data_cmd)
-
-    @user_data.deleter
-    def user_data(self):
-        """ Removes previously stored user data. """
-
-        # generating command to reset the data in spinsolve
-        empty_user_data_command = self.req_cmd.set_user_data(
-            {key: '' for key in self._user_data}
+        # If connected parse and log instrument info
+        self.software_version = hw_info.find(".//SpinsolveSoftware").text
+        self.hardware_type = hw_info.find(".//SpinsolveType").text
+        self._log.debug(
+            f"Connected with Spinsolve model {self.hardware_type}, SW version: {self.software_version}"
         )
-        self.send_message(empty_user_data_command)
 
-        # updating placeholder
-        self._user_data = {}
+        # Load available protocols
+        self.protocols_option = self.request_available_protocols()
+
+        # Set experimental variable
+        self.data_folder = kwargs.get("data_folder")
+
+        # An optional mapping between remote and local folder location can be used for remote use
+        self._folder_mapper = kwargs.get("remote_to_local_mapping")
+        # Ensure mapper validity before starting. This will save you time later ;)
+        if self._folder_mapper is not None:
+            assert self._folder_mapper(self.data_folder) is not None
+
+        # Sets default sample, solvent value and user data
+        self.sample = kwargs.get("sample_name", "FlowChem Experiment")
+        self.solvent = kwargs.get("solvent", "Chloroform?")
+        self.user_data = dict(control_software="flowchem")
+
+        # Finally check version
+        if version.parse(self.software_version) < version.parse("1.18.1.3062"):
+            warnings.warn(
+                f"Spinsolve version {self.software_version} is older than the reference (1.18.1.3062)"
+            )
+
+    @classmethod
+    def from_config(cls, config):
+        """ Create instance from config dict """
+        # Get loop if passed or existing
+        loop = config.get("loop", asyncio.get_event_loop())
+        # Create stream reader/writer pair
+        reader, writer = loop.run_until_complete(
+            get_streams_for_connection(config.get("host"), config.get("port", "13000"))
+        )
+        # Drop keys
+        for key in ("host", "port", "loop"):
+            config.pop(key, None)
+        # Instantiate with the rest of config
+        return cls(reader, writer, loop, **config)
+
+    def __del__(self):
+        self._loop.stop()
+
+    async def connection_listener(self):
+        """
+        Listen for replies and puts them in the queue
+        """
+        while True:
+            try:
+                chunk = await self._io_reader.read(1024)
+            except asyncio.CancelledError:
+                break
+            self._replies.put(chunk)
+
+    def _transmit(self, message: bytes):
+        """
+        Sends the message to the spectrometer
+        """
+        self._io_writer.write(message)
 
     @property
-    def solvent(self):
-        """ Solvent record to be stored with spectrum acquisition params. """
-        if self._solvent is None:
-            solvent_req = self.req_cmd.get_solvent()
-            self.send_message(solvent_req)
-            self._solvent = self.receive_reply()
-        return self._solvent
+    def solvent(self) -> str:
+        """ Get current solvent """
+        # Send request
+        self.send_message(get_request("Solvent"))
+
+        # Get reply
+        reply = self._read_reply(reply_type="GetResponse")
+
+        # Parse and return
+        return reply.find(".//Solvent").text
 
     @solvent.setter
-    def solvent(self, solvent):
-        """ Sets the solvent record for the current experiment. """
-        self._solvent = solvent
-        solvent_data_cmd = self.req_cmd.set_solvent_data(solvent)
-        self.send_message(solvent_data_cmd)
-
-    @solvent.deleter
-    def solvent(self):
-        """ Removes the solvent record for the current experiment. """
-        self._solvent = None
-        empty_solvent_data_cmd = self.req_cmd.set_solvent_data('')
-        self.send_message(empty_solvent_data_cmd)
+    def solvent(self, solvent: str):
+        """ Sets the solvent """
+        self.send_message(set_attribute("Solvent", solvent))
 
     @property
-    def sample(self):
-        """ Sample record to be stored with spectrum acquisition params. """
-        if self._sample is None:
-            sample_req = self.req_cmd.get_sample()
-            self.send_message(sample_req)
-            self._sample = self.receive_reply()
-        return self._sample
+    def sample(self) -> str:
+        """ Get current solvent (appears in acqu.par) """
+        # Send request
+        self.send_message(get_request("Sample"))
+
+        # Get reply
+        reply = self._read_reply(reply_type="GetResponse")
+
+        # Parse and return
+        return reply.find(".//Sample").text
 
     @sample.setter
-    def sample(self, sample):
-        """ Sets the sample record for the current experiment.
-
-        Also sets the folder to save the spectrum, so avoid special characters.
-        """
-        self._sample = sample
-        sample_data_cmd = self.req_cmd.set_sample_data(sample)
-        self.send_message(sample_data_cmd)
-
-    @sample.deleter
-    def sample(self):
-        """ Removes the sample record for the current experiment. """
-        self._sample = None
-        empty_sample_data_cmd = self.req_cmd.set_sample_data('')
-        self.send_message(empty_sample_data_cmd)
-
-    def get_duration(self, protocol, options):
-        """Requests for an approximate duration of a specific protocol
-
-        Args:
-            protocol (str): A name of the specific protocol
-            options (dict): Options for the selected protocol
-        """
-
-        cmd = self.cmd.generate_command((protocol, options), self.cmd.ESTIMATE_DURATION_REQUEST)
-        self.send_message(cmd)
-        return self.receive_reply()
-
-    def proton(self, option="QuickScan"):
-        """Initialise simple 1D Proton experiment"""
-
-        cmd = self.cmd.generate_command((self.cmd.PROTON, {"Scan": f"{option}"}))
-        self.send_message(cmd)
-        return self.receive_reply()
-
-    def proton_extended(self, options):
-        """Initialise extended 1D Proton experiment"""
-
-        cmd = self.cmd.generate_command((self.cmd.PROTON_EXTENDED, options))
-        self.send_message(cmd)
-        return self.receive_reply()
-
-    def carbon(self, options=None):
-        """Initialise simple 1D Carbon experiment"""
-
-        if options is None:
-            options = {"Number": "128", "RepetitionTime": "2"}
-        cmd = self.cmd.generate_command((self.cmd.CARBON, options))
-        self.send_message(cmd)
-        return self.receive_reply()
-
-    def carbon_extended(self, options):
-        """Initialise extended 1D Carbon experiment"""
-
-        cmd = self.cmd.generate_command((self.cmd.CARBON_EXTENDED, options))
-        self.send_message(cmd)
-        return self.receive_reply()
-
-    def fluorine(self, option="QuickScan"):
-        """Initialise simple 1D Fluorine experiment"""
-
-        cmd = self.cmd.generate_command((self.cmd.FLUORINE, option))
-        self.send_message(cmd)
-        return self.receive_reply()
-
-    def fluorine_extended(self, options):
-        """Initialise extended 1D Fluorine experiment"""
-
-        cmd = self.cmd.generate_command((self.cmd.FLUORINE_EXTENDED, options))
-        self.send_message(cmd)
-        return self.receive_reply()
-
-    def wait_until_ready(self):
-        """Blocks until the instrument is ready"""
-
-        self._device_ready_flag.wait()
-
-    def calibrate(self, reference_peak, option="LockAndCalibrateOnly"):
-        """Performs shimming on sample protocol"""
-
-        self.logger.warning("DEPRECATION WARNING: use shim_on_sample() method instead")
-        return self.shim_on_sample(reference_peak, option)
+    def sample(self, sample: str):
+        """ Sets the sample name (appears in acqu.par) """
+        self.send_message(set_attribute("Sample", sample))
 
     @property
-    def protocols_list(self):
-        """Returns a list of all available protocols"""
+    def data_folder(self):
+        """ Get current data_folder location """
+        return self._data_folder  # No command available to directly query Spinsolve :(
 
-        return list(self.cmd)
+    @data_folder.setter
+    def data_folder(self, location: str):
+        """ Sets the location provided as data folder. optionally, with typeThese are included in acq.par """
+        if location is not None:
+            self._data_folder = location
+            self.send_message(set_data_folder(location))
 
-    def get_spectrum(self, protocol=None):
-        """Wrapper method to load the spectral data to inner Spectrum class.
+    @property
+    def user_data(self) -> dict:
+        """ Create a get user data request and parse result """
+        # Send request
+        self.send_message(get_request("UserData"))
 
-        Loads the last measured data. If no data previously measured, will
-            perform self.DEFAULT_EXPERIMENT and load its data.
+        # Get reply
+        reply = self._read_reply(reply_type="GetResponse")
+
+        # Parse and return
+        return {
+            data_item.get("key"): data_item.get("value")
+            for data_item in reply.findall(".//Data")
+        }
+
+    @user_data.setter
+    def user_data(self, data_to_be_set: dict):
+        """ Sets the user data proewqvided in the dict. These are included in acq.par """
+        self.send_message(set_user_data(data_to_be_set))
+
+    def _read_reply(self, reply_type="", timeout=5):
+        """ Looks in the received replies for one of type reply_type """
+        # Get reply of reply_type from the reader object that holds the StreamReader
+        reply = self._reader.wait_for_reply(reply_type=reply_type, timeout=timeout)
+        self._log.debug(f"Got a reply from spectrometer: {etree.tostring(reply)}")
+
+        return reply
+
+    async def _async_read_reply(self, *args):
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._read_reply, *args)
+
+    def send_message(self, root: etree.Element):
         """
+        Sends the tree connected XML etree.Element provided
+        """
+        # Turn the etree.Element provided into an ElementTree
+        tree = etree.ElementTree(root)
 
-        if self.data_folder_queue.empty():
-            self.logger.warning('No previous data.')
-            if protocol is None:
-                protocol = self.DEFAULT_EXPERIMENT
-                self.logger.warning('Running default <%s> protocol.',
-                                    self.DEFAULT_EXPERIMENT[0])
-            cmd = self.cmd.generate_command(protocol)
-            self.send_message(cmd)
-            self.receive_reply()
+        # Export to string with declaration
+        message = etree.tostring(tree, xml_declaration=True, encoding="utf-8")
 
-        # will block if spectrum is measuring
-        data_folder = self.data_folder_queue.get()
+        # Transmit
+        self._log.debug(f"Transmitting request to spectrometer: {message}")
+        self._transmit(message)
 
-        self.spectrum.load_spectrum(data_folder)
+    def hw_request(self):
+        """
+        Sends an HW request to the spectrometer, receive the reply and returns it
+        """
+        self.send_message(create_message("HardwareRequest"))
+        # Larger timeout than usual as this is the first request sent to the spectrometer
+        # When the PC/Spinsolve is in standby, the reply to the first req is slower than usual
+        return self._read_reply(reply_type="HardwareResponse", timeout=15)
 
-        warning_message = 'Method "get_spectrum" will no longer return the \
-spectropic data. Please use .spectrum class to access the spectral data and \
-to the documentation for its usage.'
+    def request_available_protocols(self) -> dict:
+        """
+        Get a list of available protocol on the current spectrometer
+        """
+        # Request available protocols
+        self.send_message(create_message("AvailableProtocolOptionsRequest"))
+        # Get reply
+        tree = self._read_reply(reply_type="AvailableProtocolOptionsResponse")
 
-        warnings.warn(warning_message, DeprecationWarning)
+        # Parse reply and construct the dict with protocols available
+        protocols = dict()
+        for element in tree.findall(".//Protocol"):
+            protocol_name = element.get("protocol")
+            protocols[protocol_name] = {
+                option.get("name"): [value.text for value in option.findall("Value")]
+                for option in element.findall("Option")
+            }
 
-        # for backwards compatibility
-        data1d = os.path.join(data_folder, 'data.1d')
-        _, fid_real, fid_img = self.spectrum.extract_data(data1d)
+        return protocols
 
-        fid_complex = [
-            complex(real, img)
-            for real, img
-            in zip(fid_real, fid_img)
-        ]
+    async def run_protocol(self, protocol_name, protocol_options=None) -> Optional[Union[str, Path]]:
+        """
+        Runs a protocol
 
-        return fid_complex
+        Returns true if the protocol is started correctly, false otherwise.
+        """
+        # All protocol names are UPPERCASE, so force upper here to avoid case issues
+        protocol_name = protocol_name.upper()
+        if not self.is_protocol_available(protocol_name):
+            warnings.warn(
+                f"The protocol requested '{protocol_name}' is not available on the spectrometer!\n"
+                f"Valid options are: {pp.pformat(sorted(self.protocols_option.keys()))}"
+            )
+            return None
+
+        # Validate protocol options (check values and remove invalid ones, with warning)
+        valid_protocol_options = self._validate_protocol_request(protocol_name, protocol_options)
+
+        # Start protocol
+        self._reader.clear_replies()
+        self.send_message(
+            create_protocol_message(protocol_name, valid_protocol_options)
+        )
+
+        # Follow status notifications and finally get location of remote data
+        remote_data_folder = await self.check_notifications()
+        self._log.info(f"Protocol over - remote data folder is {remote_data_folder}")
+
+        # If a folder mapper is present use it to translate the location
+        if self._folder_mapper:
+            return self._folder_mapper(remote_data_folder)
+        else:
+            return remote_data_folder
+
+    async def check_notifications(self) -> Path:
+        """
+        Read all the StatusNotification and returns the dataFolder
+        """
+        remote_folder = ""
+        while True:
+            # Get all StatusNotification
+            # status_update = self._read_reply("StatusNotification", 6000)
+            status_update = await self._async_read_reply("StatusNotification", 6000)
+
+            # Parse them
+            status, folder = parse_status_notification(status_update)
+            self._log.debug(
+                f"Status update: Status is {status} and data folder={folder}"
+            )
+
+            # When I get a response with folder, save the location!
+            if folder:
+                remote_folder = Path(folder)
+
+            # If it is complete leave loop
+            if status is StatusNotification.COMPLETED:
+                break
+
+            if status is StatusNotification.ERROR:
+                warnings.warn(
+                    "Error detected on running protocol -- aborting."
+                )  # Usually device busy
+                self.abort()  # Abort running experiment
+                break
+        return remote_folder
+
+    def abort(self):
+        """ Abort current running command """
+        self.send_message(create_message("Abort"))
+
+    def is_protocol_available(self, desired_protocol):
+        """ Check if the desired protocol is available on the current instrument """
+        return desired_protocol in self.protocols_option
+
+    def _validate_protocol_request(self, protocol_name, protocol_options) -> dict:
+        """ Ensures the protocol names, option name and option values are valid. """
+        # Valid option for protocol
+        valid_options = self.protocols_option.get(protocol_name)
+        if valid_options is None or protocol_options is None:
+            return dict()
+
+        # For each option, check if valid. If not, remove it, raise warning and continue
+        for option_name, option_value in list(protocol_options.items()):
+            if option_name not in valid_options:
+                protocol_options.pop(option_name)
+                warnings.warn(
+                    f"Invalid option {option_name} for protocol {protocol_name} -- DROPPED!"
+                )
+                continue
+
+            # Get valid option values (list of them or empty list if not a multiple choice)
+            valid_values = valid_options[option_name]
+
+            # If there is no list of valid options accept anything
+            if not valid_values:
+                continue
+            # otherwise validate the value as well
+            elif str(option_value) not in valid_values:
+                protocol_options.pop(option_name)
+                warnings.warn(
+                    f"Invalid value {option_value} for option {option_name} in protocol {protocol_name}"
+                    f" -- DROPPED!"
+                )
+
+        # Returns the dict with only valid options/value pairs
+        return protocol_options
+
+    # def shim(self, shim_type="CheckShim") -> Tuple[float, float]:
+    #     """ Perform one of the standard shimming routine {CheckShim | QuickShim | PowerShim} """
+    #     # Check shim type
+    #     if shim_type not in self.STD_SHIM_REQUEST:
+    #         warnings.warn(f"Invalid shimming protocol: {shim_type} not in {self.STD_SHIM_REQUEST}. Assuming CheckShim")
+    #         shim_type = "CheckShim"
+    #
+    #     # Submit request
+    #     self.send_message(create_message(shim_type+"Request"))
+    #
+    #     # Wait for reply
+    #     response_tag = shim_type + "Response"
+    #     wait_time = {
+    #         "CheckShim": 180,
+    #         "QuickShim": 600,
+    #         "PowerShim": 3600,
+    #     }
+    #     reply = self._read_reply(reply_type=response_tag, timeout=wait_time[shim_type])
+    #
+    #     # Check for errors
+    #     error = reply.find(f".//{response_tag}").get("error")
+    #     if error:
+    #         warnings.warn(f"Error occurred during shimming: {error}")
+    #         return None, None
+    #
+    #     # Return LineWidth and BaseWidth
+    #     return float(reply.find(".//LineWidth").text), float(reply.find(".//BaseWidth").text)
+
+    def shim(self):
+        """ Performs a shim on sample """
+        raise NotImplementedError("Use run protocol with a shimming protocol instead!")
