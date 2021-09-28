@@ -146,11 +146,11 @@ class HamiltonPumpIO:
         )
 
         # This has to be run after each power cycle to assign addresses to pumps
-        self._assign_pump_address()
+        self.num_pump_connected = self._assign_pump_address()
         if hw_initialization:
             self._hw_init()
 
-    def _assign_pump_address(self):
+    def _assign_pump_address(self) -> int:
         """
         To be run on init, auto assign addresses to pumps based on their position on the daisy chain!
         A custom command syntax with no addresses is used here so read and write has been rewritten
@@ -160,7 +160,7 @@ class HamiltonPumpIO:
         if reply and reply[:1] == "1":
             last_pump = Protocol1Command.REVERSED_PUMP_ADDRESS[reply[1:2]]
             self.logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
-            return last_pump
+            return int(last_pump)
         else:
             raise InvalidConfiguration(f"No pump available on {self._serial.port}")
 
