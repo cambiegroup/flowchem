@@ -69,8 +69,7 @@ class Protocol1Command(Protocol1CommandTemplate):
         pump_num: address
         for (pump_num, address) in enumerate(string.ascii_lowercase[:16], start=1)
     }
-    REVERSED_PUMP_ADDRESS = {value: key for (key, value) in PUMP_ADDRESS.items()}
-    # i.e. PUMP_ADDRESS = {1:"a", 2:"b"... }
+    # # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
 
     target_pump_num: Optional[int] = 1
     command_value: Optional[str] = None
@@ -160,7 +159,15 @@ class HamiltonPumpIO:
         self._write("1a\r")
         reply = self._read_reply()
         if reply and reply[:1] == "1":
-            last_pump = Protocol1Command.REVERSED_PUMP_ADDRESS[reply[1:2]]
+            # reply[1:2] should be the address of the last pump. However, this does not work reliably.
+            # So here we enumerate the pumps explicitly instead
+            last_pump = 0
+            for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
+                self._write(f"{address}UR\r")
+                if "NV01" in self._read_reply():
+                    last_pump = pump_num
+                else:
+                    break
             self.logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
             return int(last_pump)
         else:
