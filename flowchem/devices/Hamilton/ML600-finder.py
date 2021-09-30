@@ -28,4 +28,7 @@ def ml600_finder():
 
 if __name__ == "__main__":
     ml600_pumps = ml600_finder()
-    print(f"The following serial port are connected to ML600: {ml600_pumps}")
+    if len(ml600_pumps) > 0:
+        print(f"The following serial port are connected to ML600: {ml600_pumps}")
+    else:
+        print("No ML600 found")
