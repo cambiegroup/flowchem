@@ -11,10 +11,12 @@ def get_my_docs_path():
     XSD and XML schema are installed in my documents, whose location, if custom, can be obtained as follows.
     """
     # From https://stackoverflow.com/questions/6227590
-    CSIDL_PERSONAL = 5       # My Documents
-    SHGFP_TYPE_CURRENT = 0   # Get current, not default value
-    buf= ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-    ctypes.windll.shell32.SHGetFolderPathW(None, CSIDL_PERSONAL, None, SHGFP_TYPE_CURRENT, buf)
+    CSIDL_PERSONAL = 5  # My Documents
+    SHGFP_TYPE_CURRENT = 0  # Get current, not default value
+    buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
+    ctypes.windll.shell32.SHGetFolderPathW(
+        None, CSIDL_PERSONAL, None, SHGFP_TYPE_CURRENT, buf
+    )
     return Path(buf.value)
 
 
@@ -23,6 +25,7 @@ def create_folder_mapper(remote_root: Path, local_root: Path) -> callable:
     Returns a function that converts path relative to remote_root to their corresponding on local_root
     Used when using spinsolve on a remote PC to share the result data via a remotely mounted network drive
     """
+
     def folder_mapper(path_to_be_translated: Union[Path, str]):
         """
         Given a remote path converts it to the corresponding local location, or None + warning if not possible.
@@ -37,19 +40,24 @@ def create_folder_mapper(remote_root: Path, local_root: Path) -> callable:
             suffix = path_to_be_translated.relative_to(remote_root)
             return local_root / suffix
         else:
-            warnings.warn(f"Cannot translate remote path {path_to_be_translated} to a local path!"
-                          f"{path_to_be_translated} is not relative to {remote_root}")
+            warnings.warn(
+                f"Cannot translate remote path {path_to_be_translated} to a local path!"
+                f"{path_to_be_translated} is not relative to {remote_root}"
+            )
+
     return folder_mapper
 
 
-async def get_streams_for_connection(host, port) -> (asyncio.StreamReader, asyncio.StreamWriter):
+async def get_streams_for_connection(
+    host, port
+) -> (asyncio.StreamReader, asyncio.StreamWriter):
     """
     Given a target (host, port) returns the corresponding asyncio streams (I/O).
     """
     try:
         read, write = await asyncio.open_connection(host, port)
     except Exception as e:
-        raise ConnectionError(f"Error connecting to {host}:{port} -- {x}") from e
+        raise ConnectionError(f"Error connecting to {host}:{port} -- {e}") from e
     return read, write
 
 

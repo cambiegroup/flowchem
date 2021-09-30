@@ -5,24 +5,41 @@ import threading
 import warnings
 import pprint as pp
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Union
 
 from lxml import etree
 from packaging import version
 
-from flowchem.devices.Magritek.msg_maker import create_message, create_protocol_message, set_user_data, set_data_folder, set_attribute, get_request
+from flowchem.devices.Magritek.msg_maker import (
+    create_message,
+    create_protocol_message,
+    set_user_data,
+    set_data_folder,
+    set_attribute,
+    get_request,
+)
 from flowchem.devices.Magritek.reader import Reader
 from flowchem.devices.Magritek.utils import run_loop, get_streams_for_connection
-from flowchem.devices.Magritek.parser import parse_status_notification, StatusNotification
+from flowchem.devices.Magritek.parser import (
+    parse_status_notification,
+    StatusNotification,
+)
 
 
 class Spinsolve:
     """
     Spinsolve class, gives access to the spectrometer remote control API
     """
+
     default_port = 13000
 
-    def __init__(self, io_reader: asyncio.StreamReader, io_writer: asyncio.StreamWriter, loop, **kwargs):
+    def __init__(
+        self,
+        io_reader: asyncio.StreamReader,
+        io_writer: asyncio.StreamWriter,
+        loop,
+        **kwargs,
+    ):
         """
         Constructor, actuates the connection upon instantiation.
 
@@ -36,7 +53,9 @@ class Spinsolve:
         # IOs
         self._io_writer = io_writer
         self._io_reader = io_reader
-        self._replies = queue.Queue()  # Queue needed for thread-safe operation, the reader is in a different thread
+        self._replies = (
+            queue.Queue()
+        )  # Queue needed for thread-safe operation, the reader is in a different thread
         self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
 
         # Event loop to run the connection listener
@@ -49,12 +68,16 @@ class Spinsolve:
 
         # If not raise ConnectionError
         if hw_info.find(".//ConnectedToHardware").text != "true":
-            raise ConnectionError("The spectrometer is not connected to the control PC running Spinsolve software!")
+            raise ConnectionError(
+                "The spectrometer is not connected to the control PC running Spinsolve software!"
+            )
 
         # If connected parse and log instrument info
         self.software_version = hw_info.find(".//SpinsolveSoftware").text
         self.hardware_type = hw_info.find(".//SpinsolveType").text
-        self._log.debug(f"Connected with Spinsolve model {self.hardware_type}, SW version: {self.software_version}")
+        self._log.debug(
+            f"Connected with Spinsolve model {self.hardware_type}, SW version: {self.software_version}"
+        )
 
         # Load available protocols
         self.protocols_option = self.request_available_protocols()
@@ -68,25 +91,30 @@ class Spinsolve:
         if self._folder_mapper is not None:
             assert self._folder_mapper(self.data_folder) is not None
 
-        # Sets default sample and solvent value (otherwise the previous ones are re-used)
+        # Sets default sample, solvent value and user data
         self.sample = kwargs.get("sample_name", "FlowChem Experiment")
         self.solvent = kwargs.get("solvent", "Chloroform?")
+        self.user_data = dict(control_software="flowchem")
 
         # Finally check version
         if version.parse(self.software_version) < version.parse("1.18.1.3062"):
-            warnings.warn(f"Spinsolve version {self.software_version} is older than the reference (1.18.1.3062)")
+            warnings.warn(
+                f"Spinsolve version {self.software_version} is older than the reference (1.18.1.3062)"
+            )
 
     @classmethod
     def from_config(cls, config):
         """ Create instance from config dict """
         # Get loop if passed or existing
         loop = config.get("loop", asyncio.get_event_loop())
-        # Creaete stream reader/writer pair
-        reader, writer = loop.run_until_complete(get_streams_for_connection(config.get("host"), config.get("port", "13000")))
+        # Create stream reader/writer pair
+        reader, writer = loop.run_until_complete(
+            get_streams_for_connection(config.get("host"), config.get("port", "13000"))
+        )
         # Drop keys
         for key in ("host", "port", "loop"):
             config.pop(key, None)
-        # Istanciate with the rest of config
+        # Instantiate with the rest of config
         return cls(reader, writer, loop, **config)
 
     def __del__(self):
@@ -121,9 +149,8 @@ class Spinsolve:
         # Parse and return
         return reply.find(".//Solvent").text
 
-
     @solvent.setter
-    def solvent(self, solvent:str):
+    def solvent(self, solvent: str):
         """ Sets the solvent """
         self.send_message(set_attribute("Solvent", solvent))
 
@@ -140,7 +167,7 @@ class Spinsolve:
         return reply.find(".//Sample").text
 
     @sample.setter
-    def sample(self, sample:str):
+    def sample(self, sample: str):
         """ Sets the sample name (appears in acqu.par) """
         self.send_message(set_attribute("Sample", sample))
 
@@ -150,11 +177,11 @@ class Spinsolve:
         return self._data_folder  # No command available to directly query Spinsolve :(
 
     @data_folder.setter
-    def data_folder(self, location:str, folder_type="TimeStampTree"):
+    def data_folder(self, location: str):
         """ Sets the location provided as data folder. optionally, with typeThese are included in acq.par """
         if location is not None:
             self._data_folder = location
-            self.send_message(set_data_folder(location, folder_type))
+            self.send_message(set_data_folder(location))
 
     @property
     def user_data(self) -> dict:
@@ -166,7 +193,10 @@ class Spinsolve:
         reply = self._read_reply(reply_type="GetResponse")
 
         # Parse and return
-        return {data_item.get("key"): data_item.get("value") for data_item in reply.findall(".//Data")}
+        return {
+            data_item.get("key"): data_item.get("value")
+            for data_item in reply.findall(".//Data")
+        }
 
     @user_data.setter
     def user_data(self, data_to_be_set: dict):
@@ -221,11 +251,14 @@ class Spinsolve:
         protocols = dict()
         for element in tree.findall(".//Protocol"):
             protocol_name = element.get("protocol")
-            protocols[protocol_name] = {option.get("name"):[value.text for value in option.findall("Value")] for option in element.findall("Option")}
+            protocols[protocol_name] = {
+                option.get("name"): [value.text for value in option.findall("Value")]
+                for option in element.findall("Option")
+            }
 
         return protocols
 
-    async def run_protocol(self, protocol_name, protocol_options=None) -> Optional[str]:
+    async def run_protocol(self, protocol_name, protocol_options=None) -> Optional[Union[str, Path]]:
         """
         Runs a protocol
 
@@ -234,19 +267,20 @@ class Spinsolve:
         # All protocol names are UPPERCASE, so force upper here to avoid case issues
         protocol_name = protocol_name.upper()
         if not self.is_protocol_available(protocol_name):
-            warnings.warn(f"The protocol requested '{protocol_name}' is not available on the spectrometer!\n"
-                          f"Valid options are: {pp.pformat(sorted(self.protocols_option.keys()))}")
+            warnings.warn(
+                f"The protocol requested '{protocol_name}' is not available on the spectrometer!\n"
+                f"Valid options are: {pp.pformat(sorted(self.protocols_option.keys()))}"
+            )
             return None
 
         # Validate protocol options (check values and remove invalid ones, with warning)
-        if protocol_options is None:
-            valid_protocol_options = dict()
-        else:
-            valid_protocol_options = self._validate_protocol_request(protocol_name, protocol_options)
+        valid_protocol_options = self._validate_protocol_request(protocol_name, protocol_options)
 
         # Start protocol
         self._reader.clear_replies()
-        self.send_message(create_protocol_message(protocol_name, valid_protocol_options))
+        self.send_message(
+            create_protocol_message(protocol_name, valid_protocol_options)
+        )
 
         # Follow status notifications and finally get location of remote data
         remote_data_folder = await self.check_notifications()
@@ -270,7 +304,9 @@ class Spinsolve:
 
             # Parse them
             status, folder = parse_status_notification(status_update)
-            self._log.debug(f"Status update: Status is {status} and data folder={folder}")
+            self._log.debug(
+                f"Status update: Status is {status} and data folder={folder}"
+            )
 
             # When I get a response with folder, save the location!
             if folder:
@@ -281,7 +317,9 @@ class Spinsolve:
                 break
 
             if status is StatusNotification.ERROR:
-                warnings.warn("Error detected on running protocol -- aborting.")  # Usually device busy
+                warnings.warn(
+                    "Error detected on running protocol -- aborting."
+                )  # Usually device busy
                 self.abort()  # Abort running experiment
                 break
         return remote_folder
@@ -298,12 +336,16 @@ class Spinsolve:
         """ Ensures the protocol names, option name and option values are valid. """
         # Valid option for protocol
         valid_options = self.protocols_option.get(protocol_name)
+        if valid_options is None or protocol_options is None:
+            return dict()
 
         # For each option, check if valid. If not, remove it, raise warning and continue
         for option_name, option_value in list(protocol_options.items()):
             if option_name not in valid_options:
                 protocol_options.pop(option_name)
-                warnings.warn(f"Invalid option {option_name} for protocol {protocol_name} -- DROPPED!")
+                warnings.warn(
+                    f"Invalid option {option_name} for protocol {protocol_name} -- DROPPED!"
+                )
                 continue
 
             # Get valid option values (list of them or empty list if not a multiple choice)
@@ -315,8 +357,10 @@ class Spinsolve:
             # otherwise validate the value as well
             elif str(option_value) not in valid_values:
                 protocol_options.pop(option_name)
-                warnings.warn(f"Invalid value {option_value} for option {option_name} in protocol {protocol_name}"
-                              f" -- DROPPED!")
+                warnings.warn(
+                    f"Invalid value {option_value} for option {option_name} in protocol {protocol_name}"
+                    f" -- DROPPED!"
+                )
 
         # Returns the dict with only valid options/value pairs
         return protocol_options
@@ -349,18 +393,6 @@ class Spinsolve:
     #     # Return LineWidth and BaseWidth
     #     return float(reply.find(".//LineWidth").text), float(reply.find(".//BaseWidth").text)
 
-
-    def shim(self, reference:float):
+    def shim(self):
         """ Performs a shim on sample """
-        """
-        print(nmr.protocols_option["SHIM 1H SAMPLE"])
-        {'SampleReference': [], 'Shim': ['CheckShim', 'LockAndCalibrateOnly', 'QuickShim1', 'QuickShim2', 'QuickShimAll', 'PowerShim']}
-        
-        print(nmr.protocols_option["SHIM RM"])
-        {'Shim': ['CheckShim', 'LockAndCalibrateOnly', 'QuickShim1', 'QuickShim2', 'QuickShimAll', 'PowerShim']}
-        
-        print(nmr.protocols_option["SHIM"])
-        {'Shim': ['CheckShim', 'QuickShim', 'QuickShim1st2nd', 'PowerShim']}
-        """
-
-
+        raise NotImplementedError("Use run protocol with a shimming protocol instead!")

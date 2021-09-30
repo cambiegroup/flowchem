@@ -21,9 +21,15 @@ class PressureSensorError(Exception):
 
 class PressureSensor:
     """ Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value """
-    def __init__(self, sensor_min_bar: float = 0, sensor_max_bar: float = 10,
-                 vint_serial_number: int = None, vint_channel: int = None,
-                 phidget_is_remote: bool = False):
+
+    def __init__(
+        self,
+        sensor_min_bar: float = 0,
+        sensor_max_bar: float = 10,
+        vint_serial_number: int = None,
+        vint_channel: int = None,
+        phidget_is_remote: bool = False,
+    ):
         # Sensor range
         self._minP = sensor_min_bar
         self._maxP = sensor_max_bar
@@ -41,6 +47,7 @@ class PressureSensor:
         if phidget_is_remote:
             from Phidget22.Net import Net
             from Phidget22.PhidgetServerType import PhidgetServerType
+
             Net.enableServerDiscovery(PhidgetServerType.PHIDGETSERVER_DEVICEREMOTE)
             self.phidget.setIsRemote(True)
 
@@ -48,7 +55,9 @@ class PressureSensor:
             self.phidget.openWaitForAttachment(1000)
             self.log.debug("Pressure sensor connected!")
         except PhidgetException as e:
-            raise PressureSensorError("Cannot connect to sensor! Check settings...") from e
+            raise PressureSensorError(
+                "Cannot connect to sensor! Check settings..."
+            ) from e
 
         # Set power supply to 24V
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)
@@ -86,15 +95,17 @@ class PressureSensor:
         try:
             current = self.phidget.getCurrent()
             self.log.debug(f"Current read: {current}")
-        except PhidgetException as e:
+        except PhidgetException:
             return None
         else:
             return self.current_to_pressure(current)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    test = PressureSensor(sensor_min_bar=0, sensor_max_bar=25, vint_serial_number=627768, vint_channel=0)
+    test = PressureSensor(
+        sensor_min_bar=0, sensor_max_bar=25, vint_serial_number=627768, vint_channel=0
+    )
     while True:
         print(test.read())
         time.sleep(1)

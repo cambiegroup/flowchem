@@ -35,25 +35,22 @@ def get_request(name) -> etree._Element:
     Used for name = {Solvent | Sample | UserData} + indirectly by UserData and DataFolder
     """
     base = create_message("GetRequest")
-    attribute = etree.SubElement(base.find("./GetRequest"), name)
+    etree.SubElement(base.find("./GetRequest"), name)
     return base
 
 
-def set_data_folder(location, folder_type="TimeStampTree") -> etree._Element:
+def set_data_folder(location) -> etree._Element:
     """
     Create a Set DataFolder message
     """
-    # Validate folder_type
-    if folder_type not in ("TimeStampTree", "TimeStamp", "UserFolder"):
-        warnings.warn("Invalid data folder type! Assuming TimeStampTree.")
-        folder_type = "TimeStampTree"
-
     # Get base request
     data_folder = set_attribute("DataFolder")
 
     # Add folder specific tag
-    full_tree = etree.SubElement(data_folder.find(".//DataFolder"), folder_type)
-    full_tree.text = location.as_posix() if isinstance(location, WindowsPath) else location
+    full_tree = etree.SubElement(data_folder.find(".//DataFolder"), "TimeStampTree")
+    full_tree.text = (
+        location.as_posix() if isinstance(location, WindowsPath) else location
+    )
 
     return data_folder
 
@@ -65,11 +62,15 @@ def set_user_data(data: dict) -> etree._Element:
     """
     user_data = set_attribute("UserData")
     for key, value in data.items():
-        etree.SubElement(user_data.find(".//UserData"), "Data", dict(key=key, value=value))
+        etree.SubElement(
+            user_data.find(".//UserData"), "Data", dict(key=key, value=value)
+        )
     return user_data
 
 
-def create_protocol_message(protocol_name: str, protocol_options: dict) -> etree._Element:
+def create_protocol_message(
+    protocol_name: str, protocol_options: dict
+) -> etree._Element:
     """
     Create an XML request to run a protocol
     """

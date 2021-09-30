@@ -11,7 +11,11 @@ import opcua
 from opcua import ua
 from opcua.ua.uaerrors import BadOutOfService, Bad
 
-from flowchem.devices.MettlerToledo.base_iCIR import iCIR_spectrometer, IRSpectrometerError, ProbeInfo
+from flowchem.devices.MettlerToledo.base_iCIR import (
+    iCIR_spectrometer,
+    IRSpectrometerError,
+    ProbeInfo,
+)
 
 
 class FlowIRError(IRSpectrometerError):
@@ -37,12 +41,18 @@ class FlowIR(iCIR_spectrometer):
     def check_version(self):
         """ Check if iCIR is installed and open and if the version is supported. """
         try:
-            self.version = self.opcua.get_node(self.SOFTWARE_VERSION).get_value()  # "7.1.91.0"
+            self.version = self.opcua.get_node(
+                self.SOFTWARE_VERSION
+            ).get_value()  # "7.1.91.0"
             if self.version not in FlowIR._supported_versions:
-                warnings.warn(f"The current version of iCIR [self.version] has not been tested!"
-                              f"Pleas use one of the supported versions: {FlowIR._supported_versions}")
+                warnings.warn(
+                    f"The current version of iCIR [self.version] has not been tested!"
+                    f"Pleas use one of the supported versions: {FlowIR._supported_versions}"
+                )
         except ua.UaStatusCodeError as e:  # iCIR app closed
-            raise FlowIRError("iCIR app not installed or closed or no instrument available!") from e
+            raise FlowIRError(
+                "iCIR app not installed or closed or no instrument available!"
+            ) from e
 
     def acquire_background(self):
         raise NotImplementedError
@@ -102,20 +112,26 @@ class FlowIR(iCIR_spectrometer):
 
     def get_last_spectrum_raw(self) -> IRSpectrum:
         """ RAW result latest scan """
-        return  FlowIR.get_spectrum_from_node(self.opcua.get_node(self.SPECTRA_RAW))
+        return FlowIR.get_spectrum_from_node(self.opcua.get_node(self.SPECTRA_RAW))
 
     def get_last_spectrum_background(self) -> IRSpectrum:
         """ RAW result latest scan """
-        return FlowIR.get_spectrum_from_node(self.opcua.get_node(self.SPECTRA_BACKGROUND))
+        return FlowIR.get_spectrum_from_node(
+            self.opcua.get_node(self.SPECTRA_BACKGROUND)
+        )
 
     def start_experiment(self, template: str, name: str = "Unnamed flowchem exp."):
         template = FlowIR._normalize_template_name(template)
         if FlowIR.is_template_name_valid(template) is False:
-            raise FlowIRError(f"Cannot start template {template}: name not valid! Check if is in: "
-                              r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates")
+            raise FlowIRError(
+                f"Cannot start template {template}: name not valid! Check if is in: "
+                r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
+            )
         if self.is_running:
-            warnings.warn("I was asked to start an experiment while a current experiment is already running!"
-                          "I will have to stop that first! Sorry for that :)")
+            warnings.warn(
+                "I was asked to start an experiment while a current experiment is already running!"
+                "I will have to stop that first! Sorry for that :)"
+            )
             self.stop_experiment()
             # And wait for ready...
             while self.is_running:
@@ -127,8 +143,10 @@ class FlowIR(iCIR_spectrometer):
             collect_bg = False  # This parameter does not work properly so it is not exposed in the method signature
             method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
         except Bad as e:
-            raise FlowIRError("The experiment could not be started!"
-                              "Check iCIR status and close any open experiment.") from e
+            raise FlowIRError(
+                "The experiment could not be started!"
+                "Check iCIR status and close any open experiment."
+            ) from e
 
     def stop_experiment(self):
         method_parent = self.opcua.get_node(self.METHODS)
@@ -136,14 +154,15 @@ class FlowIR(iCIR_spectrometer):
         method_parent.call_method(stop_nodeid)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     client = opcua.Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS, timeout=10)
     ir_spectrometer = FlowIR(client)
     if ir_spectrometer.is_iCIR_connected:
-        print(f"FlowIR connected!")
+        print("FlowIR connected!")
     else:
         print("FlowIR not connected :(")
         import sys
+
         sys.exit()
 
     template_name = "15_sec_integration.iCIRTemplate"
@@ -159,7 +178,7 @@ if __name__ == '__main__':
         while ir_spectrometer.get_sample_count() == spectra_count:
             time.sleep(1)
 
-        print(f"New spectrum!")
+        print("New spectrum!")
         spectrum = ir_spectrometer.get_last_spectrum_treated()
         print(spectrum)
 

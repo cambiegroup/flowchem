@@ -10,22 +10,25 @@ class StatusNotification(Enum):
     """
     Represent the type of the status notification
     """
+
     STARTED = 1  # <State status="Ready"> received, starting protocol
     RUNNING = 2  # All good, <Progress> received, protocol is running
     STOPPING = 3  # Abort called, waiting for current scan end
-    FINISHING = 4  # Upon <State status="Ready", scan acquisition over, not saving/processing
+    FINISHING = (
+        4  # Upon <State status="Ready", scan acquisition over, not saving/processing
+    )
     COMPLETED = 5  # Upon <Completed>, means also processing/saving data is over
     ERROR = 6  # If an error occurs
     UNKNOWN = 7
 
 
-def extract_error(xml_message: etree._Element) -> str:
-    """
-    Search for an error tag in the XML tree provided.
-    If an error is found returns its error message, empty string if no errors are present.
-    """
-    error = xml_message.find(".//Error")
-    return error.get("error") if error is not None else ""
+# def extract_error(xml_message: etree._Element) -> str:
+#     """
+#     Search for an error tag in the XML tree provided.
+#     If an error is found returns its error message, empty string if no errors are present.
+#     """
+#     error = xml_message.find(".//Error")
+#     return error.get("error") if error is not None else ""
 
 
 def parse_status_notification(xml_message: etree._Element):
@@ -33,44 +36,52 @@ def parse_status_notification(xml_message: etree._Element):
     Parse a status notification reply.
     """
     status = xml_message.find(".//StatusNotification")
-    remote_folder = None
-    status_type = StatusNotification.UNKNOWN
 
     # No status notification found
     if status is None:
-        warnings.warn("Parse status notification called on a message with no StatusNotification tags!")
+        warnings.warn(
+            "Parse status notification called on a message with no StatusNotification tags!"
+        )
         return None
 
-    # First (only) child of StatusNotification can be <State> <Progress> or <Completed>
+    # StatusNotification child can be <State> (w/ submsg). <Progress>, <Completed> or <Error>
     child = status[0]
 
     if child.tag == "State":
-        status = child.get("status")
+        return parse_state(child)
 
-        # Set status
-        if status == "Running":
-            status_type = StatusNotification.STARTED
-        elif status == "Ready":
-            status_type = StatusNotification.FINISHING
-        elif status == "Stopping":
-            status_type = StatusNotification.STOPPING
-        else:
-            warnings.warn(f"Unidentified notification status: {status}")
+    if child.tag == "Progress":
+        return StatusNotification.RUNNING, None
 
-        # Full path only shown on experiment end, thus Ready and Stopping
-        if status in ("Ready", "Stopping"):
-            remote_folder = child.get("dataFolder")
+    if child.tag == "Completed":
+        return StatusNotification.COMPLETED, None
 
-    elif child.tag == "Progress":
-        status_type = StatusNotification.RUNNING
+    if child.tag == "Error":
+        return StatusNotification.ERROR, None
 
-    elif child.tag == "Completed":
-        status_type = StatusNotification.COMPLETED
+    warnings.warn("Could not detect StatusNotification state!")
+    return StatusNotification.UNKNOWN, None
 
-    elif child.tag == "Error":
-        status_type = StatusNotification.ERROR
 
-    if status_type is StatusNotification.UNKNOWN:
-        warnings.warn("Could not detect StatusNotification state!")
+def parse_state(xml_message: etree._Element):
+    """ Parse state message """
+    status_type = StatusNotification.UNKNOWN
 
-    return status_type, remote_folder
+    # Parse status
+    status = xml_message.get("status")
+    if status == "Running":
+        status_type = StatusNotification.STARTED
+    elif status == "Ready":
+        status_type = StatusNotification.FINISHING
+    elif status == "Stopping":
+        status_type = StatusNotification.STOPPING
+    else:
+        warnings.warn(f"Unidentified notification status: {status}")
+
+    # Full path is only available on experiment, so often this string is empty
+    remote_folder = xml_message.get("dataFolder")
+
+    if remote_folder:
+        return status_type, remote_folder
+    else:
+        return status_type, None

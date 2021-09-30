@@ -12,7 +12,11 @@ import asyncua.ua.uaerrors
 from asyncua import ua
 from asyncua.ua.uaerrors import BadOutOfService, Bad
 
-from flowchem.devices.MettlerToledo.base_iCIR import iCIR_spectrometer, IRSpectrometerError, ProbeInfo
+from flowchem.devices.MettlerToledo.base_iCIR import (
+    iCIR_spectrometer,
+    IRSpectrometerError,
+    ProbeInfo,
+)
 
 
 class FlowIRError(IRSpectrometerError):
@@ -36,12 +40,18 @@ class FlowIR(iCIR_spectrometer):
     async def check_version(self):
         """ Check if iCIR is installed and open and if the version is supported. """
         try:
-            self.version = await self.opcua.get_node(self.SOFTWARE_VERSION).get_value()  # "7.1.91.0"
+            self.version = await self.opcua.get_node(
+                self.SOFTWARE_VERSION
+            ).get_value()  # "7.1.91.0"
             if self.version not in FlowIR._supported_versions:
-                warnings.warn(f"The current version of iCIR [self.version] has not been tested!"
-                              f"Pleas use one of the supported versions: {FlowIR._supported_versions}")
+                warnings.warn(
+                    f"The current version of iCIR [self.version] has not been tested!"
+                    f"Pleas use one of the supported versions: {FlowIR._supported_versions}"
+                )
         except ua.UaStatusCodeError as e:  # iCIR app closed
-            raise FlowIRError("iCIR app not installed or closed or no instrument available!") from e
+            raise FlowIRError(
+                "iCIR app not installed or closed or no instrument available!"
+            ) from e
 
     def acquire_background(self):
         raise NotImplementedError
@@ -95,24 +105,36 @@ class FlowIR(iCIR_spectrometer):
 
     async def get_last_spectrum_treated(self) -> IRSpectrum:
         """ Returns an IRSpectrum element for the last acquisition """
-        return await FlowIR.get_spectrum_from_node(self.opcua.get_node(self.SPECTRA_TREATED))
+        return await FlowIR.get_spectrum_from_node(
+            self.opcua.get_node(self.SPECTRA_TREATED)
+        )
 
     async def get_last_spectrum_raw(self) -> IRSpectrum:
         """ RAW result latest scan """
-        return await FlowIR.get_spectrum_from_node(self.opcua.get_node(self.SPECTRA_RAW))
+        return await FlowIR.get_spectrum_from_node(
+            self.opcua.get_node(self.SPECTRA_RAW)
+        )
 
     async def get_last_spectrum_background(self) -> IRSpectrum:
         """ RAW result latest scan """
-        return await FlowIR.get_spectrum_from_node(self.opcua.get_node(self.SPECTRA_BACKGROUND))
+        return await FlowIR.get_spectrum_from_node(
+            self.opcua.get_node(self.SPECTRA_BACKGROUND)
+        )
 
-    async def start_experiment(self, template: str, name: str = "Unnamed flowchem exp."):
+    async def start_experiment(
+        self, template: str, name: str = "Unnamed flowchem exp."
+    ):
         template = FlowIR._normalize_template_name(template)
         if FlowIR.is_template_name_valid(template) is False:
-            raise FlowIRError(f"Cannot start template {template}: name not valid! Check if is in: "
-                              r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates")
+            raise FlowIRError(
+                f"Cannot start template {template}: name not valid! Check if is in: "
+                r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
+            )
         if await self.is_running():
-            warnings.warn("I was asked to start an experiment while a current experiment is already running!"
-                          "I will have to stop that first! Sorry for that :)")
+            warnings.warn(
+                "I was asked to start an experiment while a current experiment is already running!"
+                "I will have to stop that first! Sorry for that :)"
+            )
             await self.stop_experiment()
             # And wait for ready...
             while await self.is_running():
@@ -124,8 +146,10 @@ class FlowIR(iCIR_spectrometer):
             collect_bg = False  # This parameter does not work properly so it is not exposed in the method signature
             await method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
         except Bad as e:
-            raise FlowIRError("The experiment could not be started!"
-                              "Check iCIR status and close any open experiment.") from e
+            raise FlowIRError(
+                "The experiment could not be started!"
+                "Check iCIR status and close any open experiment."
+            ) from e
 
     async def stop_experiment(self):
         method_parent = self.opcua.get_node(self.METHODS)
@@ -134,19 +158,24 @@ class FlowIR(iCIR_spectrometer):
 
 
 async def main():
-    async with asyncua.Client(url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS) as opcua_client:
+    async with asyncua.Client(
+        url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS
+    ) as opcua_client:
         ir_spectrometer = FlowIR(opcua_client)
         await ir_spectrometer.check_version()
 
         if await ir_spectrometer.is_iCIR_connected():
-            print(f"FlowIR connected!")
+            print("FlowIR connected!")
         else:
             print("FlowIR not connected :(")
             import sys
+
             sys.exit()
 
         template_name = "15_sec_integration.iCIRTemplate"
-        await ir_spectrometer.start_experiment(name="reaction_monitoring", template=template_name)
+        await ir_spectrometer.start_experiment(
+            name="reaction_monitoring", template=template_name
+        )
 
         spectrum = await ir_spectrometer.get_last_spectrum_treated()
         while spectrum.empty:
@@ -158,12 +187,12 @@ async def main():
             while await ir_spectrometer.get_sample_count() == spectra_count:
                 await asyncio.sleep(1)
 
-            print(f"New spectrum!")
+            print("New spectrum!")
             spectrum = await ir_spectrometer.get_last_spectrum_treated()
             print(spectrum)
 
         await ir_spectrometer.stop_experiment()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())
