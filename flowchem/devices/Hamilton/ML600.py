@@ -81,6 +81,8 @@ class Protocol1Command(Protocol1CommandTemplate):
         Create actual command byte by prepending pump address to command and appending executing command.
         """
         assert self.target_pump_num in range(1, 17)
+        if not self.command_value:
+            self.command_value = ""
 
         compiled_command = (
             f"{self.PUMP_ADDRESS[self.target_pump_num]}"
