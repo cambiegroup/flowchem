@@ -1,12 +1,18 @@
 import logging
 import time
+import warnings
 from typing import Optional
 
 from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
 from Phidget22.Devices.Log import Log, LogLevel
 from Phidget22.PhidgetException import PhidgetException
 
-Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
+try:
+    Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
+except FileNotFoundError as e:
+    warnings.warn("Have you installed the phidget library?"
+                  "Get it from https://www.phidgets.com/docs/Operating_System_Support")
+    raise e
 
 
 class PressureSensorError(Exception):

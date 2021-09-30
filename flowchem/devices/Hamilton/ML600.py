@@ -69,8 +69,7 @@ class Protocol1Command(Protocol1CommandTemplate):
         pump_num: address
         for (pump_num, address) in enumerate(string.ascii_lowercase[:16], start=1)
     }
-    REVERSED_PUMP_ADDRESS = {value: key for (key, value) in PUMP_ADDRESS.items()}
-    # i.e. PUMP_ADDRESS = {1:"a", 2:"b"... }
+    # # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
 
     target_pump_num: Optional[int] = 1
     command_value: Optional[str] = None
@@ -81,6 +80,8 @@ class Protocol1Command(Protocol1CommandTemplate):
         Create actual command byte by prepending pump address to command and appending executing command.
         """
         assert self.target_pump_num in range(1, 17)
+        if not self.command_value:
+            self.command_value = ""
 
         compiled_command = (
             f"{self.PUMP_ADDRESS[self.target_pump_num]}"
@@ -146,11 +147,11 @@ class HamiltonPumpIO:
         )
 
         # This has to be run after each power cycle to assign addresses to pumps
-        self._assign_pump_address()
+        self.num_pump_connected = self._assign_pump_address()
         if hw_initialization:
             self._hw_init()
 
-    def _assign_pump_address(self):
+    def _assign_pump_address(self) -> int:
         """
         To be run on init, auto assign addresses to pumps based on their position on the daisy chain!
         A custom command syntax with no addresses is used here so read and write has been rewritten
@@ -158,9 +159,17 @@ class HamiltonPumpIO:
         self._write("1a\r")
         reply = self._read_reply()
         if reply and reply[:1] == "1":
-            last_pump = Protocol1Command.REVERSED_PUMP_ADDRESS[reply[1:2]]
+            # reply[1:2] should be the address of the last pump. However, this does not work reliably.
+            # So here we enumerate the pumps explicitly instead
+            last_pump = 0
+            for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
+                self._write(f"{address}UR\r")
+                if "NV01" in self._read_reply():
+                    last_pump = pump_num
+                else:
+                    break
             self.logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
-            return last_pump
+            return int(last_pump)
         else:
             raise InvalidConfiguration(f"No pump available on {self._serial.port}")
 
