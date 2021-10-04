@@ -12,8 +12,62 @@ import time
 from enum import Enum
 
 # from pint import UnitRegistry
-from flowchem import autodiscover_knauer
+import getmac
 
+
+def autodiscover_knauer(source_ip: str = "") -> dict:
+    """
+
+    Args:
+        source_ip: source IP for autodiscover (only relevant if multiple network interfaces are available!)
+
+    Returns:
+        Dictionary of tuples (IP, MAC), one per device replying to autodiscover
+
+    """
+
+    # Define source IP resolving local hostname.
+    if not source_ip:
+        import socket
+        hostname = socket.gethostname()
+        source_ip = socket.gethostbyname(hostname)
+
+    # Create a UDP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((source_ip, 28688))
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.settimeout(5)
+
+    server_address = ("255.255.255.255", 30718)
+    message = b"\x00\x01\x00\xf6"
+    device = []
+
+    try:
+        # Send magic autodiscovery UDP packet
+        sock.sendto(message, server_address)
+
+        # Receive response
+        data = True
+        while data:
+            try:
+                data, server = sock.recvfrom(4096)
+            except socket.timeout:
+                data = False
+
+            if data:
+                # Save IP addresses that replied
+                device.append(server[0])
+
+    finally:
+        sock.close()
+
+    mac_to_ip = {}
+
+    for device_ip in device:
+        mac = getmac.get_mac_address(ip=device_ip)
+        mac_to_ip[mac] = device_ip
+    return mac_to_ip
 
 class KnauerError(Exception):
     pass
@@ -69,7 +123,7 @@ class KnauerEthernetDevice:
         )
 
     @classmethod
-    def from_mac(cls, mac_address, port, buffersize):
+    def from_mac(cls, mac_address, port=None, buffersize=None):
         """
         Instantiate object from mac address.
 
@@ -86,13 +140,10 @@ class KnauerEthernetDevice:
             a KnauerEthernetDevice object
 
         """
-        device_ip = None
-
         # Autodiscover IP from MAC address
         available_devices = autodiscover_knauer()
-        for ip, mac in available_devices:
-            if mac == mac_address:
-                device_ip = ip
+        # IP if found, None otherwise
+        device_ip = available_devices.get(mac_address)
 
         if device_ip:
             return cls(device_ip, port, buffersize)
@@ -564,4 +615,5 @@ class KnauerPump(KnauerEthernetDevice):
 
 
 if __name__ == "__main__":
-    p = KnauerPump("192.168.1.119")
+    p = KnauerPump.from_mac("00:80:a3:ba:c3:4a")
+    p.stop_flow()
