@@ -12,6 +12,7 @@ import time
 from enum import Enum
 
 # from pint import UnitRegistry
+from flowchem import autodiscover_knauer
 
 
 class KnauerError(Exception):
@@ -50,26 +51,53 @@ class KnauerValveHeads(Enum):
     SIXTEEN_PORT_SIXTEEN_POSITION = 16
 
 
-""" CONSTANTS """
-
-
-class KnauerCommunicationConstants(Enum):
+class KnauerEthernetDevice:
 
     TCP_PORT = 10001
     BUFFER_SIZE = 1024
 
+    def __init__(self, ip_address, port=None, buffersize=None):
+        self.ip_address = str(ip_address)
+        self.port = int(port) if port else KnauerEthernetDevice.TCP_PORT
+        self.buffersize = buffersize if buffersize else KnauerEthernetDevice.BUFFER_SIZE
 
-class EthernetDevice:
-    def __init__(self, address, port, buffersize):
-        self.address = str(address)
-        self.port = int(port)
-        self.buffersize = buffersize
         self.sock = self._try_connection()
         logging.basicConfig(
             format="%(asctime)s %(levelname)s %(message)s",
             datefmt="%m/%d/%Y %I:%M:%S %p",
             level=logging.DEBUG,
         )
+
+    @classmethod
+    def from_mac(cls, mac_address, port, buffersize):
+        """
+        Instantiate object from mac address.
+
+        This uses knauer_autodiscover to find the IP of the given MAC address.
+        This is desired if a DHCP server is used as the device MAC is fixed,
+        unlike its IP address.
+
+        Args:
+            mac_address: target MAC address
+            port: Optional, port
+            buffersize: Optional, buffersize
+
+        Returns:
+            a KnauerEthernetDevice object
+
+        """
+        device_ip = None
+
+        # Autodiscover IP from MAC address
+        available_devices = autodiscover_knauer()
+        for ip, mac in available_devices:
+            if mac == mac_address:
+                device_ip = ip
+
+        if device_ip:
+            return cls(device_ip, port, buffersize)
+        else:
+            raise ValueError(f"Device with MAC address={mac_address} not found! [Available: {available_devices}]")
 
     def __del__(self):
         self.sock.close()
@@ -79,11 +107,11 @@ class EthernetDevice:
         # set timeout to 5s
         sock.settimeout(5)
         try:
-            sock.connect((self.address, self.port))
+            sock.connect((self.ip_address, self.port))
         except socket.timeout:
-            logging.error(f"No connection possible to device with IP {self.address}")
+            logging.error(f"No connection possible to device with IP {self.ip_address}")
             raise ConnectionError(
-                f"No Connection possible to device with address {self.address}"
+                f"No Connection possible to device with ip_address {self.ip_address}"
             )
 
         return sock
@@ -108,17 +136,17 @@ class EthernetDevice:
             try:
                 # logger: tell response received, might be good to resend
                 # try to reestablish connection, send and receive afterwards
-                self.sock = self._try_connection(self.address, self.port)
+                self.sock = self._try_connection(self.ip_address, self.port)
                 reply = self._send_and_receive(message)
             # no further handling necessery, if this does not work there is a serious problem. Powercycle or check hardware
             except OSError:
                 raise ConnectionError(
-                    f"Failed to reestablish connection to {self.address}"
+                    f"Failed to reestablish connection to {self.ip_address}"
                 )
         return reply
 
 
-class KnauerValve(EthernetDevice):
+class KnauerValve(KnauerEthernetDevice):
     """
     Class to control Knauer multi position valves.
 
@@ -130,14 +158,9 @@ class KnauerValve(EthernetDevice):
     dip switch for valve selection
     """
 
-    def __init__(
-        self,
-        address,
-        port=KnauerCommunicationConstants.TCP_PORT.value,
-        buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value,
-    ):
+    def __init__(self, ip_address, port=KnauerEthernetDevice.TCP_PORT, buffersize=KnauerEthernetDevice.BUFFER_SIZE):
 
-        super().__init__(address, port, buffersize)
+        super().__init__(ip_address, port, buffersize)
 
         self._valve_state = self.get_current_position()
         # this gets the valve type as valve [type] and strips away valve_
@@ -222,12 +245,12 @@ class KnauerValve(EthernetDevice):
                 "Only Valves of type 16, 12, 10 and LI are supported"
             ) from e
         logging.info(
-            f"Valve successfully connected, Type is {headtype} at address {self.address}"
+            f"Valve successfully connected, Type is {headtype} at address {self.ip_address}"
         )
         return headtype
 
     def close_connection(self):
-        logging.info(f"Valve at address closed connection {self.address}")
+        logging.info(f"Valve at address closed connection {self.ip_address}")
         self.sock.close()
 
 
@@ -266,15 +289,16 @@ PUMP_ON = "ON"  # starts flow
 PUMP_OFF = "OFF"  # stops flow
 
 
-class KnauerPump(EthernetDevice):
+class KnauerPump(KnauerEthernetDevice):
     def __init__(
         self,
-        address,
-        port=KnauerCommunicationConstants.TCP_PORT.value,
-        buffersize=KnauerCommunicationConstants.BUFFER_SIZE.value,
+        ip_address,
+        port=None,
+        buffersize=None,
     ):
-        super().__init__(address, port, buffersize)
-        self.headtype
+        super().__init__(ip_address, port, buffersize)
+        # Check connection by reading pump head type
+        _ = self.headtype
 
     def communicate(self, message: str):
         """
@@ -342,7 +366,7 @@ class KnauerPump(EthernetDevice):
             setpoint_range=(0, self.achievable_flow + 1),
         )
         logging.info(
-            f"Flow of pump {self.address} is set to {setpoint_in_ml_min}, returns {flow}"
+            f"Flow of pump {self.ip_address} is set to {setpoint_in_ml_min}, returns {flow}"
         )
 
     @property
@@ -356,7 +380,7 @@ class KnauerPump(EthernetDevice):
                 "Only Knauer Azura Compact is supported"
             ) from e
 
-        logging.info(f"Headtype of pump {self.address} is {headtype}")
+        logging.info(f"Headtype of pump {self.ip_address} is {headtype}")
         self.achievable_pressure, self.achievable_flow = (
             (400, 10000)
             if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML
@@ -373,7 +397,7 @@ class KnauerPump(EthernetDevice):
             else (150, 50000)
         )
         logging.info(
-            f"Headtype of pump {self.address} is set to {setpoint}, returns {reply}"
+            f"Headtype of pump {self.ip_address} is set to {setpoint}, returns {reply}"
         )
         return setpoint
 
@@ -388,7 +412,7 @@ class KnauerPump(EthernetDevice):
         )
 
         logging.info(
-            f"Minimum pressure of pump {self.address} is set to {pressure_in_bar}, returns {reply}"
+            f"Minimum pressure of pump {self.ip_address} is set to {pressure_in_bar}, returns {reply}"
         )
 
     def set_maximum_pressure(self, pressure_in_bar=None):
@@ -401,7 +425,7 @@ class KnauerPump(EthernetDevice):
         )
 
         logging.info(
-            f"Maximum pressure of pump {self.address} is set to {pressure_in_bar}, returns {reply}"
+            f"Maximum pressure of pump {self.ip_address} is set to {pressure_in_bar}, returns {reply}"
         )
 
     def set_minimum_motor_current(self, setpoint=None):
@@ -411,7 +435,7 @@ class KnauerPump(EthernetDevice):
             command, setpoint=setpoint, setpoint_range=(0, 101)
         )
         logging.info(
-            f"Minimum motor current of pump {self.address} is set to {setpoint}, returns {reply}"
+            f"Minimum motor current of pump {self.ip_address} is set to {setpoint}, returns {reply}"
         )
 
     def set_start_level(self, setpoint=None):
@@ -419,7 +443,7 @@ class KnauerPump(EthernetDevice):
             STARTLEVEL, setpoint=setpoint, setpoint_range=(0, 2)
         )
         logging.info(
-            f"Start level of pump {self.address} is set to {setpoint}, returns {reply}"
+            f"Start level of pump {self.ip_address} is set to {setpoint}, returns {reply}"
         )
 
     def set_start_mode(self, setpoint=None):
@@ -431,7 +455,7 @@ class KnauerPump(EthernetDevice):
         if setpoint in (0, 1):
             reply = self.message_constructor_dispatcher(STARTMODE, setpoint=setpoint)
             logging.info(
-                f"Start mode of pump {self.address} is set to {setpoint}, returns {reply}"
+                f"Start mode of pump {self.ip_address} is set to {setpoint}, returns {reply}"
             )
         else:
             logging.warning("Supply binary value")
@@ -442,7 +466,7 @@ class KnauerPump(EthernetDevice):
             command, setpoint=setpoint, setpoint_range=(0, 2001)
         )
         logging.info(
-            f"Adjusting factor of pump {self.address} is set to {setpoint}, returns {reply}"
+            f"Adjusting factor of pump {self.ip_address} is set to {setpoint}, returns {reply}"
         )
 
     def set_correction_factor(self, setpoint=None):
@@ -451,28 +475,28 @@ class KnauerPump(EthernetDevice):
             command, setpoint=setpoint, setpoint_range=(0, 301)
         )
         logging.info(
-            f"Correction factor of pump {self.address} is set to {setpoint}, returns {reply}"
+            f"Correction factor of pump {self.ip_address} is set to {setpoint}, returns {reply}"
         )
 
     # read only
     def read_pressure(self):
         reply = int(self.communicate(PRESSURE))
-        logging.info(f"Pressure reading of pump {self.address} returns {reply} bar")
+        logging.info(f"Pressure reading of pump {self.ip_address} returns {reply} bar")
         return reply
 
     def read_extflow(self):
         reply = int(self.communicate(EXTFLOW))
-        logging.info(f"Extflow reading of pump {self.address} returns {reply}")
+        logging.info(f"Extflow reading of pump {self.ip_address} returns {reply}")
         return reply
 
     def read_errors(self):
         reply = self.communicate(ERRORS)
-        logging.info(f"Error reading of pump {self.address} returns {reply}")
+        logging.info(f"Error reading of pump {self.ip_address} returns {reply}")
         return reply
 
     def read_motor_current(self):
         reply = int(self.communicate(IMOTOR))
-        logging.info(f"Motor current reading of pump {self.address} returns {reply} A")
+        logging.info(f"Motor current reading of pump {self.ip_address} returns {reply} A")
         return reply
 
     # TODO run flag
@@ -487,14 +511,14 @@ class KnauerPump(EthernetDevice):
 
     def set_local(self, param: int):
         if param in (0, 1):
-            logging.info(f"Pump {self.address} set local {param}")
+            logging.info(f"Pump {self.ip_address} set local {param}")
             self.communicate(LOCAL + ":" + str(param))
         else:
             logging.warning("Supply binary value")
 
     def set_remote(self, param: int):
         if param in (0, 1):
-            logging.info(f"Pump {self.address} set remote {param}")
+            logging.info(f"Pump {self.ip_address} set remote {param}")
             self.communicate(REMOTE + ":" + str(param))
         else:
             logging.warning("Supply binary value")
@@ -502,21 +526,21 @@ class KnauerPump(EthernetDevice):
     # no idea what this exactly does...
     def set_errio(self, param: int):
         if param in (0, 1):
-            logging.info(f"Pump {self.address} set errio {param}")
+            logging.info(f"Pump {self.ip_address} set errio {param}")
             self.communicate(ERRIO + ":" + str(param))
         else:
             logging.warning("Supply binary value")
 
     def set_extcontrol(self, param: int):
         if param in (0, 1):
-            logging.info(f"Pump {self.address} set extcontrol {param}")
+            logging.info(f"Pump {self.ip_address} set extcontrol {param}")
             self.communicate(EXTCONTR + ":" + str(param))
         else:
             logging.warning("Supply binary value")
 
     def close_connection(self):
         self.sock.close()
-        logging.info(f"Connection with {self.address} closed")
+        logging.info(f"Connection with {self.ip_address} closed")
 
 
 # Valve
