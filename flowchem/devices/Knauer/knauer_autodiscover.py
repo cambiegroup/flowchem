@@ -2,7 +2,23 @@ import socket
 import getmac
 
 
-def autodiscover_knauer(source_ip: str = "192.168.1.1") -> dict:
+def autodiscover_knauer(source_ip: str = "") -> dict:
+    """
+
+    Args:
+        source_ip: source IP for autodiscover (only relevant if multiple network interfaces are available!)
+
+    Returns:
+        Dictionary of tuples (IP, MAC), one per device replying to autodiscover
+
+    """
+
+    # Define source IP resolving local hostname.
+    if not source_ip:
+        import socket
+        hostname = socket.gethostname()
+        source_ip = socket.gethostbyname(hostname)
+
     # Create a UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((source_ip, 28688))
