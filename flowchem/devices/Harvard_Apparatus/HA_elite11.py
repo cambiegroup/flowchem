@@ -781,7 +781,7 @@ class Elite11:
         Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
         """
         warnings.warn(
-            "Deprecated property, use more explicit syringe_diamter instead!",
+            "Deprecated property, use more explicit syringe_diameter instead!",
             FutureWarning,
         )
         return self.syringe_diameter
@@ -789,7 +789,7 @@ class Elite11:
     @diameter.setter
     def diameter(self, diameter_in_mm: float):
         warnings.warn(
-            "Deprecated property, use more explicit syringe_diamter instead!",
+            "Deprecated property, use more explicit syringe_diameter instead!",
             FutureWarning,
         )
         self.syringe_diameter = diameter_in_mm

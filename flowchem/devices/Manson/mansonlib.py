@@ -33,14 +33,10 @@ class PowerSupply:
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
     def __init__(self, com_port, baud_rate=9600):
-        self.open(com_port, baud_rate)
-
-    def open(self, com_port, baud_rate):
-        """ Opens serial connection. """
         if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
             raise MansonException(f"Invalid baud rate provided {baud_rate}!")
         try:
-            self.sp = serial.Serial(
+            self._sp = serial.Serial(
                 com_port,
                 baudrate=baud_rate,
                 bytesize=8,
@@ -48,8 +44,8 @@ class PowerSupply:
                 stopbits=1,
                 timeout=0.1,
             )
-            self.sp.reset_input_buffer()
-            self.sp.reset_output_buffer()
+            self._sp.reset_input_buffer()
+            self._sp.reset_output_buffer()
 
         except serial.SerialException as e:
             print(f"Could not connect to power supply: {e}")
@@ -63,7 +59,7 @@ class PowerSupply:
 
     def close(self):
         """" Closes serial connection. """
-        self.sp.close()
+        self._sp.close()
 
     def _send_command(
         self,
@@ -75,18 +71,18 @@ class PowerSupply:
 
         # Flush buffer, write command and read reply
         try:
-            self.sp.reset_input_buffer()
-            self.sp.write(f"{command}\r".encode("ascii"))
-            response = self.sp.readline().decode("ascii").strip()
+            self._sp.reset_input_buffer()
+            self._sp.write(f"{command}\r".encode("ascii"))
+            response = self._sp.readline().decode("ascii").strip()
         except serial.serialutil.SerialException:
-            NotConnectedError("Connection seems closed")
+            raise NotConnectedError("Connection seems closed")
 
         if not response and not no_reply_expected:
             raise InvalidOrNoReply("No reply received!")
 
         # Get multiple lines if needed
         if multiline_reply:
-            while additional_response := self.sp.readline().decode("ascii").strip():
+            while additional_response := self._sp.readline().decode("ascii").strip():
                 response += "\n" + additional_response
 
         return response
@@ -129,6 +125,7 @@ class PowerSupply:
         else:
             mode = False
 
+        # noinspection PyTypeChecker
         return volt, curr, mode
 
     def get_output_voltage(self) -> float:

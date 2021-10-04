@@ -1,6 +1,5 @@
 """ Functions related to the construction of instrument request """
 
-import warnings
 from pathlib import WindowsPath
 
 from lxml import etree

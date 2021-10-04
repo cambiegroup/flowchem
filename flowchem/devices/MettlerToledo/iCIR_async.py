@@ -24,6 +24,10 @@ class FlowIRError(IRSpectrometerError):
 
 
 class FlowIR(iCIR_spectrometer):
+    """
+    Object to interact with the iCIR software controlling the FlowIR and ReactIR.
+    """
+
     def __init__(self, client: asyncua.Client):
         """
         Initiate connection with OPC UA server.
@@ -62,6 +66,7 @@ class FlowIR(iCIR_spectrometer):
     def trigger_collection(self):
         raise NotImplementedError
 
+    # noinspection PyPep8Naming
     async def is_iCIR_connected(self) -> bool:
         """ Check connection with instrument """
         return await self.opcua.get_node(self.CONNECTION_STATUS).get_value()

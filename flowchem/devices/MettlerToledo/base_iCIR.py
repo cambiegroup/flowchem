@@ -20,6 +20,7 @@ class IRSpectrometerError(Exception):
     pass
 
 
+# noinspection PyPep8Naming
 class iCIR_spectrometer:
     iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
     _supported_versions = {"7.1.91.0"}

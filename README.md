@@ -11,7 +11,7 @@ Welcome to flowchem
 
 Flowchem is a python library to control a variety of instruments commonly found in chemistry labs.
 
-Currently, those includes:
+Currently, those include:
  - Pumps (Knauer P2.1, Harvard Apparatus Elite 11, Hamilton ML600)
  - Analytical instruments (Magritek Spinsolve benchtop NMR, Mattler Toledo FlowIR and ReactIR)
  - General purpose sensors-actuators from Phidgets (e.g. 4...20 mA sensor to interface with Swagelok pressure sensors)
@@ -24,7 +24,7 @@ Currently, those includes:
 
  
 ## Installation
-```javascript
+```bash
 pip install flowchem
 ```
 

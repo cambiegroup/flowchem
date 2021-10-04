@@ -28,7 +28,6 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
 
     # Define source IP resolving local hostname.
     if not source_ip:
-        import socket
         hostname = socket.gethostname()
         source_ip = socket.gethostbyname(hostname)
 
@@ -54,8 +53,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
                 data, server = sock.recvfrom(4096)
             except socket.timeout:
                 data = False
-
-            if data:
+            else:
                 # Save IP addresses that replied
                 device.append(server[0])
 
@@ -68,6 +66,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
         mac = getmac.get_mac_address(ip=device_ip)
         mac_to_ip[mac] = device_ip
     return mac_to_ip
+
 
 class KnauerError(Exception):
     pass
@@ -182,14 +181,14 @@ class KnauerEthernetDevice:
     def _send_and_receive_handler(self, message):
         try:
             reply = self._send_and_receive(message)
-        # use other error. if socket somehow ceased to exist, try to reestablish connection. if not possible, rause error
+        # use other error. if socket ceased to exist, try to reestablish connection. if not possible, raise error
         except socket.timeout:
             try:
                 # logger: tell response received, might be good to resend
                 # try to reestablish connection, send and receive afterwards
-                self.sock = self._try_connection(self.ip_address, self.port)
+                self.sock = self._try_connection()
                 reply = self._send_and_receive(message)
-            # no further handling necessery, if this does not work there is a serious problem. Powercycle or check hardware
+            # no further handling necessary, if this does not work there is a serious problem. Powercycle/check hardware
             except OSError:
                 raise ConnectionError(
                     f"Failed to reestablish connection to {self.ip_address}"
@@ -348,6 +347,7 @@ class KnauerPump(KnauerEthernetDevice):
         buffersize=None,
     ):
         super().__init__(ip_address, port, buffersize)
+        self.max_pressure, self.max_flow = None, None
         # Check connection by reading pump head type
         _ = self.headtype
 
@@ -397,8 +397,8 @@ class KnauerPump(KnauerEthernetDevice):
 
             else:
                 ParameterError(
-                    f"Internal check shows that setpoint provided ({setpoint}) is not in range({setpoint_range}). Refer to"
-                    " manual."
+                    f"Internal check shows that setpoint provided ({setpoint}) is not in range ({setpoint_range})."
+                    f"Refer to manual."
                 )
 
         else:
@@ -414,7 +414,7 @@ class KnauerPump(KnauerEthernetDevice):
         flow = self.message_constructor_dispatcher(
             FLOW,
             setpoint=set_flowrate_ul_min,
-            setpoint_range=(0, self.achievable_flow + 1),
+            setpoint_range=(0, self.max_flow + 1),
         )
         logging.info(
             f"Flow of pump {self.ip_address} is set to {setpoint_in_ml_min}, returns {flow}"
@@ -431,8 +431,8 @@ class KnauerPump(KnauerEthernetDevice):
                 "Only Knauer Azura Compact is supported"
             ) from e
 
-        logging.info(f"Headtype of pump {self.ip_address} is {headtype}")
-        self.achievable_pressure, self.achievable_flow = (
+        logging.info(f"Head type of pump {self.ip_address} is {headtype}")
+        self.max_pressure, self.max_flow = (
             (400, 10000)
             if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML
             else (150, 50000)
@@ -442,15 +442,14 @@ class KnauerPump(KnauerEthernetDevice):
     @headtype.setter
     def headtype(self, setpoint: KnauerPumpHeads):
         reply = self.message_constructor_dispatcher(HEADTYPE, setpoint=setpoint.value)
-        self.achievable_pressure, self.achievable_flow = (
+        self.max_pressure, self.max_flow = (
             (400, 10000)
             if setpoint == KnauerPumpHeads.FLOWRATE_TEN_ML
             else (150, 50000)
         )
         logging.info(
-            f"Headtype of pump {self.ip_address} is set to {setpoint}, returns {reply}"
+            f"Head type of pump {self.ip_address} is set to {setpoint}, returns {reply}"
         )
-        return setpoint
 
     def set_minimum_pressure(self, pressure_in_bar=None):
 
@@ -459,7 +458,7 @@ class KnauerPump(KnauerEthernetDevice):
         reply = self.message_constructor_dispatcher(
             command,
             setpoint=pressure_in_bar,
-            setpoint_range=(0, self.achievable_pressure + 1),
+            setpoint_range=(0, self.max_pressure + 1),
         )
 
         logging.info(
@@ -472,7 +471,7 @@ class KnauerPump(KnauerEthernetDevice):
         reply = self.message_constructor_dispatcher(
             command,
             setpoint=pressure_in_bar,
-            setpoint_range=(0, self.achievable_pressure + 1),
+            setpoint_range=(0, self.max_pressure + 1),
         )
 
         logging.info(

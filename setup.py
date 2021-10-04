@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="flowchem",
-    version="0.0.2.post3",
+    version="0.0.3dev",
     author="Dario Cambié, Jakob Wolf",
     author_email="dario.cambie@mpikg.mpg.de, jakob.wolf@mpikg.mpg.de",
     description="Flowchem is a python library to control a variety of instruments commonly found in chemistry labs.",
@@ -27,6 +27,6 @@ setuptools.setup(
         "lmfit",
         "nmrglue",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},
 )

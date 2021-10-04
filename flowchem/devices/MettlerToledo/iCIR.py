@@ -63,6 +63,7 @@ class FlowIR(iCIR_spectrometer):
     def trigger_collection(self):
         raise NotImplementedError
 
+    # noinspection PyPep8Naming
     @property
     def is_iCIR_connected(self) -> bool:
         """ Check connection with instrument """

@@ -47,6 +47,7 @@ class R4Heater:
                 f"Check serial port availability! [{port}]"
             ) from e
 
+        # noinspection PyTypeChecker
         self.sio = io.TextIOWrapper(
             buffer=io.BufferedRWPair(self._serial, self._serial),
             line_buffering=True,
