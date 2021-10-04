@@ -44,7 +44,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
 
             if data:
                 # Save IP addresses that replied
-                device.append(socket.server[0])
+                device.append(server[0])
 
     finally:
         sock.close()
