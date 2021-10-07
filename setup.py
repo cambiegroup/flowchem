@@ -20,7 +20,6 @@ setuptools.setup(
         "pandas",
         "scipy",
         "numpy",
-        "opcua",
         "asyncua",
         "phidget22",
         "getmac",

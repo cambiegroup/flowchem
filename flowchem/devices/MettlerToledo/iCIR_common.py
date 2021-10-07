@@ -28,6 +28,7 @@ class FlowIRError(IRSpectrometerError):
 
 # noinspection PyPep8Naming
 class iCIR_spectrometer:
+    """ Common code between sync and async implementations """
     iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
     _supported_versions = {"7.1.91.0"}
     SOFTWARE_VERSION = "ns=2;s=Local.iCIR.SoftwareVersion"
@@ -42,6 +43,10 @@ class iCIR_spectrometer:
     START_EXPERIMENT = "ns=2;s=Local.iCIR.Probe1.Methods.Start Experiment"
     STOP_EXPERIMENT = "ns=2;s=Local.iCIR.Probe1.Methods.Stop"
     METHODS = "ns=2;s=Local.iCIR.Probe1.Methods"
+
+    def is_local(self):
+        """ Returns true if the server is on the same machine running the python code. """
+        return any(x in self.opcua.aio_obj.server_url.netloc for x in ("localhost", "127.0.0.1"))
 
     @staticmethod
     def _normalize_template_name(template_name) -> str:
