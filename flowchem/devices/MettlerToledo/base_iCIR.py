@@ -17,6 +17,12 @@ class ProbeInfo(TypedDict):
 
 
 class IRSpectrometerError(Exception):
+    """ General iCIR exceptions (applying both to ReactIR and FlowIR)"""
+    pass
+
+
+class FlowIRError(IRSpectrometerError):
+    """ FlowIR specific exceptions """
     pass
 
 

@@ -4,6 +4,7 @@ import warnings
 import logging
 from typing import List, Optional
 
+from devices.MettlerToledo.base_iCIR import FlowIRError
 from flowchem.analysis.spectrum import IRSpectrum
 
 # SYNC ONLY
@@ -13,16 +14,15 @@ from opcua.ua.uaerrors import BadOutOfService, Bad
 
 from flowchem.devices.MettlerToledo.base_iCIR import (
     iCIR_spectrometer,
-    IRSpectrometerError,
     ProbeInfo,
+    FlowIRError
 )
 
 
-class FlowIRError(IRSpectrometerError):
-    pass
-
-
 class FlowIR(iCIR_spectrometer):
+    """
+    Object to interact with the iCIR software controlling the FlowIR and ReactIR.
+    """
     def __init__(self, client: opcua.Client):
         """
         Initiate connection with OPC UA server.
@@ -37,6 +37,10 @@ class FlowIR(iCIR_spectrometer):
         self.probe = None
         self.version = None
         self.check_version()
+
+    def __del__(self):
+        """ Terminate connection on exit """
+        self.opcua.disconnect()
 
     def check_version(self):
         """ Check if iCIR is installed and open and if the version is supported. """
@@ -53,6 +57,10 @@ class FlowIR(iCIR_spectrometer):
             raise FlowIRError(
                 "iCIR app not installed or closed or no instrument available!"
             ) from e
+
+    def is_local(self):
+        """ Returns true if the server is on the same machine running the python code. """
+        return any(x in self.opcua.server_url.netloc for x in ("localhost", "127.0.0.1"))
 
     def acquire_background(self):
         raise NotImplementedError
@@ -123,7 +131,7 @@ class FlowIR(iCIR_spectrometer):
 
     def start_experiment(self, template: str, name: str = "Unnamed flowchem exp."):
         template = FlowIR._normalize_template_name(template)
-        if FlowIR.is_template_name_valid(template) is False:
+        if self.is_local() and FlowIR.is_template_name_valid(template) is False:
             raise FlowIRError(
                 f"Cannot start template {template}: name not valid! Check if is in: "
                 r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"

@@ -11,16 +11,13 @@ import asyncua
 import asyncua.ua.uaerrors
 from asyncua import ua
 from asyncua.ua.uaerrors import BadOutOfService, Bad
+from asyncua.sync import Client
 
 from flowchem.devices.MettlerToledo.base_iCIR import (
     iCIR_spectrometer,
-    IRSpectrometerError,
+    FlowIRError,
     ProbeInfo,
 )
-
-
-class FlowIRError(IRSpectrometerError):
-    pass
 
 
 class FlowIR(iCIR_spectrometer):
@@ -35,11 +32,17 @@ class FlowIR(iCIR_spectrometer):
         """
         self.log = logging.getLogger(__name__)
 
-        assert isinstance(client, asyncua.Client)
+        # assert isinstance(client, asyncua.Client)
 
         self.opcua = client
         self.probe = None
         self.version = None
+
+    async def __aenter__(self):
+        await self.opcua.connect()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.opcua.disconnect()
 
     async def check_version(self):
         """ Check if iCIR is installed and open and if the version is supported. """
@@ -56,6 +59,10 @@ class FlowIR(iCIR_spectrometer):
             raise FlowIRError(
                 "iCIR app not installed or closed or no instrument available!"
             ) from e
+
+    def is_local(self):
+        """ Returns true if the server is on the same machine running the python code. """
+        return any(x in self.opcua.server_url.netloc for x in ("localhost", "127.0.0.1"))
 
     def acquire_background(self):
         raise NotImplementedError
@@ -130,7 +137,7 @@ class FlowIR(iCIR_spectrometer):
         self, template: str, name: str = "Unnamed flowchem exp."
     ):
         template = FlowIR._normalize_template_name(template)
-        if FlowIR.is_template_name_valid(template) is False:
+        if self.is_local() and FlowIR.is_template_name_valid(template) is False:
             raise FlowIRError(
                 f"Cannot start template {template}: name not valid! Check if is in: "
                 r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
@@ -152,7 +159,7 @@ class FlowIR(iCIR_spectrometer):
             await method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
         except Bad as e:
             raise FlowIRError(
-                "The experiment could not be started!"
+                "The experiment could not be started!\n"
                 "Check iCIR status and close any open experiment."
             ) from e
 
@@ -163,40 +170,47 @@ class FlowIR(iCIR_spectrometer):
 
 
 async def main():
-    async with asyncua.Client(
-        url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS
-    ) as opcua_client:
-        ir_spectrometer = FlowIR(opcua_client)
-        await ir_spectrometer.check_version()
+    opcua_client = Client(
+        url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
+    )
 
-        if await ir_spectrometer.is_iCIR_connected():
-            print("FlowIR connected!")
-        else:
-            print("FlowIR not connected :(")
-            import sys
+    opcua_client.connect()
 
-            sys.exit()
+    ir_spectrometer = FlowIR(opcua_client)
+    await ir_spectrometer.check_version()
 
-        template_name = "15_sec_integration.iCIRTemplate"
-        await ir_spectrometer.start_experiment(
-            name="reaction_monitoring", template=template_name
-        )
+    if await ir_spectrometer.is_iCIR_connected():
+        print("FlowIR connected!")
+    else:
+        print("FlowIR not connected :(")
+        import sys
 
-        spectrum = await ir_spectrometer.get_last_spectrum_treated()
-        while spectrum.empty:
-            spectrum = await ir_spectrometer.get_last_spectrum_treated()
+        sys.exit()
 
-        for x in range(3):
-            spectra_count = await ir_spectrometer.get_sample_count()
+    x =  ir_spectrometer.probe_info()
+    print(x)
 
-            while await ir_spectrometer.get_sample_count() == spectra_count:
-                await asyncio.sleep(1)
-
-            print("New spectrum!")
-            spectrum = await ir_spectrometer.get_last_spectrum_treated()
-            print(spectrum)
-
-        await ir_spectrometer.stop_experiment()
+    # template_name = "15_sec_integration.iCIRTemplate"
+    # await ir_spectrometer.start_experiment(
+    #     name="reaction_monitoring", template=template_name
+    # )
+    #
+    # spectrum = await ir_spectrometer.get_last_spectrum_treated()
+    # while spectrum.empty:
+    #     spectrum = await ir_spectrometer.get_last_spectrum_treated()
+    #
+    # for x in range(3):
+    #     spectra_count = await ir_spectrometer.get_sample_count()
+    #
+    #     while await ir_spectrometer.get_sample_count() == spectra_count:
+    #         await asyncio.sleep(1)
+    #
+    #     print("New spectrum!")
+    #     spectrum = await ir_spectrometer.get_last_spectrum_treated()
+    #     print(spectrum)
+    #
+    # await ir_spectrometer.stop_experiment()
+    await opcua_client.disconnect()
 
 
 if __name__ == "__main__":
