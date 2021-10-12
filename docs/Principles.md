@@ -13,3 +13,10 @@ Implementation design:
 - Each device module should be independent. Code sharing is possible via `flowchem.analysis` (or `flowchem.utils` et simil.) 
 - Each device module should be accompanied by tests and documentation (at least in form of examples).
 - Device objects should use generic `flowchem.exceptions` or sublcasses thereof.
+
+
+Inspired by many packages with similar aims, including (in alphabetical order):
+- [Chemios](https://github.com/Chemios/chemios)
+- [ChemOS](https://github.com/aspuru-guzik-group/ChemOS)
+- [MechWolf](https://github.com/MechWolf/MechWolf)
+- [Octopus](https://github.com/richardingham/octopus)
