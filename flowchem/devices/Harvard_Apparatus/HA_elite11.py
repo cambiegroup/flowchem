@@ -638,17 +638,17 @@ class Elite11:
         self.ensure_withdraw_is_enabled()
         self.update_stored_volume()
 
-            if self.is_moving():
-                raise UnachievableMove("Pump already is moving")
+        if self.is_moving():
+            raise UnachievableMove("Pump already is moving")
 
-            # if target volume is set, check if this is achievable
-            elif self._target_volume:
-                if self._volume_stored + self._target_volume > self.volume_syringe:
-                    raise UnachievableMove("Pump would be overfilled")
-            else:
-                self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
+        # if target volume is set, check if this is achievable
+        elif self._target_volume:
+            if self._volume_stored + self._target_volume > self.volume_syringe:
+                raise UnachievableMove("Pump would be overfilled")
+        else:
+            self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
 
-            self.log.info("Pump started to withdraw")
+        self.log.info("Pump started to withdraw")
 
     def stop(self):
         """stops pump"""
