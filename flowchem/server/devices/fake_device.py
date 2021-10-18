@@ -23,11 +23,11 @@ class FakeDevice:
 
         @router.get("/temperature")
         async def get_temp():
-            return device.temperature
+            return self.temperature
 
         @router.put("/temperature/{temp}")
         async def set_temp(temp: float):
-            device.temperature = temp
+            self.temperature = temp
 
         return router
 
