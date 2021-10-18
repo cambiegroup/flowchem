@@ -4,11 +4,12 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 def get_version(rel_path: str) -> str:
-    for line in read(rel_path).splitlines():
-        if line.startswith("__version__"):
-            # __version__ = "0.9"
-            delim = '"' if '"' in line else "'"
-            return line.split(delim)[1]
+    with open(rel_path, 'r') as f:
+        for line in f.read().splitlines():
+            if line.startswith("__version__"):
+                # __version__ = "0.9"
+                delim = '"' if '"' in line else "'"
+                return line.split(delim)[1]
     raise RuntimeError("Unable to find version string.")
 
 setuptools.setup(
