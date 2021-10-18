@@ -12,7 +12,7 @@ from typing import Iterable, Dict, Tuple, Union
 from fastapi import FastAPI
 from mdns_server import Server_mDNS
 from device_node_creator import DeviceNode
-from microflow import devices
+from flowchem.server import devices
 
 logger = logging.getLogger(__name__)
 
