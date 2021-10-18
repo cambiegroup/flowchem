@@ -1,7 +1,7 @@
 import inspect
 import logging
 
-from routers.Spinsolve_router import spinsolve_get_router
+from flowchem.server.routers.Spinsolve_router import spinsolve_get_router
 
 """
  NOTE:
@@ -17,9 +17,7 @@ def generate_router_for_device(device, prefix):
     """ Assign routers generators to devices """
     # TODO: use pattern matching here when 3.10 will be a thing ;)
     # Not using isinstance(device, object_type) here to avoid importing all the devices classes ;)
-    if device.__class__.__name__ == "FakeDevice":
-        return get_fakedevice_router(device, prefix)
-    elif device.__class__.__name__ == "Spinsolve":
+    if device.__class__.__name__ == "Spinsolve":
         return spinsolve_get_router(device, prefix)
 
 
@@ -40,7 +38,7 @@ class DeviceNode:
         except TypeError as e:
             raise ConnectionError(f"Wrong configuration provided for device: {self.title}!\n"
                                   f"Configuration: {device_config['parameters']}\n"
-                                  f"Accepted paramters: {inspect.getfullargspec(obj_type).args}") from e
+                                  f"Accepted parameters: {inspect.getfullargspec(obj_type).args}") from e
 
         # ROUTER CREATION
         if hasattr(obj_type, "get_router"):
