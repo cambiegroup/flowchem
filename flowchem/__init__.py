@@ -1,1 +1,3 @@
-from flowchem.devices.Petite_Fleur_chiller import Huber
+from .devices import *
+
+__version__ = "0.0.3"
