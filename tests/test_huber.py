@@ -14,7 +14,10 @@ class FakeSerial(aioserial.AioSerial):
             b"{M0A****\r\n": b"{S0AFFFF\r\n",  # Fake status reply
             b"{M00****\r\n": b"{S0004DA\r\n",  # Fake setpoint reply
             b"{M03****\r\n": b"{S030a00\r\n",  # Fake pressure reply
-
+            b"{M30****\r\n": b"{S30C4F9\r\n",  # Fake min temp -151.11 C
+            b"{M31****\r\n": b"{S307530\r\n",  # Fake max temp +300.00 C
+            b"{M0007D0\r\n": b"{S0007D0\r\n",  # Reply to set temp 20 C
+            b"{M00F830\r\n": b"{S00F830\r\n",  # Reply to set temp -20 C
         }
 
     async def write_async(self, text: bytes):
@@ -57,7 +60,7 @@ async def test_get_temperature_setpoint(chiller):
 
 @pytest.mark.asyncio
 async def test_set_temperature_setpoint(chiller):
-    chiller._serial.fixed_reply = b"{S000000"
+    chiller._serial.fixed_reply = None
     await chiller.set_temperature_setpoint(20)
     assert chiller._serial.last_command == b"{M0007D0\r\n"
 
@@ -67,12 +70,14 @@ async def test_set_temperature_setpoint(chiller):
 
 @pytest.mark.asyncio
 async def test_internal_temperature(chiller):
+    chiller._serial.fixed_reply = b"{S000000"
     await chiller.internal_temperature()
     assert chiller._serial.last_command == b"{M01****\r\n"
 
 
 @pytest.mark.asyncio
 async def test_return_temperature(chiller):
+    chiller._serial.fixed_reply = b"{S000000"
     await chiller.return_temperature()
     assert chiller._serial.last_command == b"{M02****\r\n"
 
@@ -122,3 +127,16 @@ async def test_circulation(chiller):
     await chiller.stop_circulation()
     assert chiller._serial.last_command == b"{M160000\r\n"
 
+
+@pytest.mark.asyncio
+async def test_min_setpoint(chiller):
+    chiller._serial.fixed_reply = None
+    min_t = await chiller.min_setpoint()
+    assert min_t == -151.11
+
+
+@pytest.mark.asyncio
+async def test_max_setpoint(chiller):
+    chiller._serial.fixed_reply = None
+    max_t = await chiller.max_setpoint()
+    assert max_t == 300
