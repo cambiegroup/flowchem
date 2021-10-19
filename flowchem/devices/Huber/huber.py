@@ -41,7 +41,9 @@ class PBCommand:
         return self.command[1] == "S"
 
     def parse_temperature(self):
-        self.data
+        # convert two's complement 16 bit signed hex to signed int
+        temp = (int(self.data, 16) - 65536) / 100 if int(self.data, 16) > 32767 else (int(self.data, 16)) / 100
+        return temp
 
 
 class Huber:
