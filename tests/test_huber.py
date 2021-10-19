@@ -32,6 +32,7 @@ def chiller():
 
 @pytest.mark.asyncio
 async def test_status(chiller):
+    chiller._serial.fixed_reply = None
     stat = await chiller.status()
     assert stat == ChillerStatus("1111111111111111")
 
@@ -43,6 +44,7 @@ async def test_status(chiller):
 
 @pytest.mark.asyncio
 async def test_get_temperature_setpoint(chiller):
+    chiller._serial.fixed_reply = None
     temp = await chiller.get_temperature_setpoint()
     assert temp == 12.42
 
