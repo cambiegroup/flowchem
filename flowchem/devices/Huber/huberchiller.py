@@ -93,7 +93,7 @@ class PBCommand:
         return int(self.data, 16) == 1
 
 
-class Huber:
+class HuberChiller:
     """
     Control class for Huber chillers.
     """
@@ -174,8 +174,6 @@ class Huber:
         else:
             await self.send_command_and_read_reply("{M160000")
 
-
-
     @staticmethod
     def temp_to_string(temp: float) -> str:
         assert -151 <= temp <= 327
@@ -190,7 +188,7 @@ if __name__ == '__main__':
     # logging.basicConfig()
     # logging.getLogger().setLevel(logging.DEBUG)
 
-    chiller = Huber(aioserial.AioSerial(port='COM1'))
+    chiller = HuberChiller(aioserial.AioSerial(port='COM1'))
 
     status = asyncio.run(chiller.status())
     print(status)
