@@ -53,12 +53,24 @@ class Huber:
     def __init__(self, aio: aioserial.AioSerial):
         self._serial = aio
 
-    async def get_set_temperature(self) -> float:
+    async def get_temperature_setpoint(self) -> float:
+        """ Returns the set point used by temperature controller. Internal if not probe, otherwise process temp. """
         reply = await self.send_command_and_read_reply("{M00****")
         return PBCommand(reply).parse_temperature()
 
-    async def get_current_temperature(self) -> float:
+    async def set_temperature_setpoint(self, temp) -> float:
+        """ Set the set point used by temperature controller. Internal if not probe, otherwise process temp. """
+        reply = await self.send_command_and_read_reply("{M00"+self.temp_to_string(temp))
+        return PBCommand(reply).parse_temperature()
+
+    async def internal_temperature(self) -> float:
+        """ Returns internal temp (bath temperature). """
         reply = await self.send_command_and_read_reply("{M01****")
+        return PBCommand(reply).parse_temperature()
+
+    async def return_temperature(self) -> float:
+        """ Returns the temp of the thermal fluid flowing back to the device. """
+        reply = await self.send_command_and_read_reply("{M02****")
         return PBCommand(reply).parse_temperature()
 
     async def send_command_and_read_reply(self, command: str) -> str:
@@ -70,14 +82,20 @@ class Huber:
         reply = await self._serial.readline_async()
         return reply.decode("ascii")
 
+    @staticmethod
+    def temp_to_string(temp: float) -> str:
+        assert -151 <= temp <= 327
+        # Hexadecimal two's complement to represent numbers
+        return f"{int(temp * 100) & 65535:04X}"
+
 
 if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
 
     async def main(chiller: Huber):
-        set = await chiller.get_set_temperature()
-        cur = await chiller.get_current_temperature()
+        set = await chiller.get_temperature_setpoint()
+        cur = await chiller.internal_temperature()
         print(f"I have set{set} and cur {cur}")
 
 
