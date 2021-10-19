@@ -131,7 +131,7 @@ class Huber:
     
     async def status(self) -> ChillerStatus:
         """ Returns the current power in Watts (negative for cooling, positive for heating). """
-        reply = await self.send_command_and_read_reply("{M04****")
+        reply = await self.send_command_and_read_reply("{M0A****")
         return PBCommand(reply).parse_status()
 
     async def fill_level(self) -> float:
