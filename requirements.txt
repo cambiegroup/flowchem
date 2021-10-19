@@ -17,3 +17,4 @@ PyYAML
 fastapi~=0.65.2
 pyyaml~=5.4.1
 uvicorn~=0.13.4
+aioserial
