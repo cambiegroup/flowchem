@@ -177,6 +177,11 @@ class HuberChiller:
         """ Stops circulation pump. """
         await self.send_command_and_read_reply("{M160000")
 
+    async def pump_speed(self):
+        """ Returns current circulation pump speed (in rpm). """
+        rpm = await self.send_command_and_read_reply("{M26****")
+        return PBCommand(rpm).parse_integer()
+
     @staticmethod
     def temp_to_string(temp: float) -> str:
         """ From temperature to string for command. f^-1 of PCommand.parse_temperature. """
