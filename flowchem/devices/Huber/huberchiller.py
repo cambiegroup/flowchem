@@ -40,6 +40,7 @@ class PBCommand:
     command: str
 
     def to_chiller(self) -> bytes:
+        """ Validate and encode to bytes array to be transmitted. """
         self.validate()
         return self.command.encode("ascii")
 
@@ -59,36 +60,31 @@ class PBCommand:
         assert self.command[8:10] == "\r\n"
 
     @property
-    def data(self):
+    def data(self) -> str:
+        """ Data portion of PBCommand. """
         return self.command[4:8]
 
     @property
-    def is_reply(self):
+    def is_reply(self) -> bool:
+        """ True if the command is a reply (i.e. w/ S) """
         return self.command[1] == "S"
 
     def parse_temperature(self):
-        # convert two's complement 16 bit signed hex to signed int
+        """ Parse a device temp from hex string to celsius float [two's complement 16 bit signed hex, see manual] """
         temp = (int(self.data, 16) - 65536) / 100 if int(self.data, 16) > 32767 else (int(self.data, 16)) / 100
         return temp
 
     def parse_integer(self):
+        """ Parse a device reply from hexadecimal string to to base 10 integers. """
         return int(self.data, 16)
 
-    def parse_status(self):
+    def parse_bits(self):
+        """" Parse a device reply from hexadecimal string to 16 constituting bits. """
         bits = f"{int(self.data, 16):016b}"
         return ChillerStatus(bits)
 
-    def parse_fill_level(self):
-        if self.data == "FFFF":
-            return None
-        value = int(self.data, 16)
-        if value == 0:
-            return None
-        value -= 1
-        value /= 10
-        return value
-
     def parse_boolean(self):
+        """" Parse a device reply from hexadecimal string (0x0000 or 0x0001) to boolean. """
         return self.parse_integer() == 1
 
 
@@ -135,12 +131,7 @@ class HuberChiller:
     async def status(self) -> ChillerStatus:
         """ Returns the current power in Watts (negative for cooling, positive for heating). """
         reply = await self.send_command_and_read_reply("{M0A****")
-        return PBCommand(reply).parse_status()
-
-    async def fill_level(self) -> float:
-        """ Returns the current fill level. None if unavailable """
-        reply = await self.send_command_and_read_reply("{M0F****")
-        return PBCommand(reply).parse_fill_level()
+        return PBCommand(reply).parse_bits()
 
     async def send_command_and_read_reply(self, command: str) -> str:
         # If newline is forgotten add it :D
