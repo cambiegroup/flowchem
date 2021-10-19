@@ -9,6 +9,7 @@ from dataclasses import dataclass
 
 
 class ChillerStatus:
+    """ Provide the chiller status response in a human-readable format. """
     def __init__(self, bit_values):
         self.temp_ctl_is_process = bit_values[0] == "1"
         self.circulation_active = bit_values[1] == "1"
@@ -134,12 +135,17 @@ class HuberChiller:
         return PBCommand(reply).parse_bits()
 
     async def send_command_and_read_reply(self, command: str) -> str:
-        # If newline is forgotten add it :D
-        if len(command) == 8:
-            command += "\r\n"
+        """ Sends a command to the chiller and reads the reply.
+
+        :param command: string to be transmitted
+        :return: reply received
+        """
+        # Send command. Using PBCommand ensure command validation, see PBCommand.to_chiller()
         pb_command = PBCommand(command)
         await self._serial.write_async(pb_command.to_chiller())
         self.logger.debug(f"Command {command[0:8]} sent to chiller!")
+
+        # Receive reply and return it after decoding
         reply = await self._serial.readline_async()
         self.logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
         return reply.decode("ascii")

@@ -1,3 +1,4 @@
+""" Test HuberChiller object. Does not require physical connection to the device. """
 import aioserial
 import pytest
 from flowchem.devices.Huber.huberchiller import HuberChiller, ChillerStatus
@@ -21,9 +22,11 @@ class FakeSerial(aioserial.AioSerial):
         }
 
     async def write_async(self, text: bytes):
+        """ Override AioSerial method """
         self.last_command = text
 
     async def readline_async(self,  size: int = -1) -> bytes:
+        """ Override AioSerial method """
         if self.fixed_reply:
             return self.fixed_reply
         return self.map_reply[self.last_command]
