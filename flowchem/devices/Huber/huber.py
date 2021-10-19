@@ -53,10 +53,13 @@ class Huber:
     def __init__(self, aio: aioserial.AioSerial):
         self._serial = aio
 
-    async def get_temperature(self) -> float:
+    async def get_set_temperature(self) -> float:
         reply = await self.send_command_and_read_reply("{M00****")
-        pb_reply = PBCommand(reply)
-        return pb_reply.parse_temperature(reply[4:8])
+        return PBCommand(reply).parse_temperature()
+
+    async def get_current_temperature(self) -> float:
+        reply = await self.send_command_and_read_reply("{M01****")
+        return PBCommand(reply).parse_temperature()
 
     async def send_command_and_read_reply(self, command: str) -> str:
         # If newline is forgotten add it :D
@@ -73,11 +76,11 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
 
     async def main(chiller: Huber):
-        rep = await chiller.send_command_and_read_reply("{M0007D0\r\n")
-        return rep
+        set = await chiller.get_set_temperature()
+        cur = await chiller.get_current_temperature()
+        print(f"I have set{set} and cur {cur}")
 
 
     chiller = Huber(aioserial.AioSerial(port='COM1'))
     coro = main(chiller)
-    x = asyncio.run(coro)
-    print(x)
+    asyncio.run(coro)
