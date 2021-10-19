@@ -288,13 +288,13 @@ if __name__ == "__main__":
     SugarPlatform = {
         # try to combine two pumps to one. flow rate with ratio gives individual flow rate
         'pumps': {
-            'donor': Elite11(pump_connection, address=0),
-            'donor_solvent': Elite11(pump_connection, address=1),
-            'acceptor': Elite11(pump_connection, address=2),
-            'acceptor_solvent': Elite11(pump_connection, address=3),
-            'activator': Elite11(pump_connection, address=4),
-            'activator_solvent': Elite11(pump_connection, address=5),
-            'quench': Elite11(pump_connection, address=6),
+            'donor': Elite11(pump_connection, address=2, diameter=4.608, volume_syringe=1),
+            'donor_solvent': Elite11(pump_connection, address=1, diameter=10.3, volume_syringe=5),
+            'acceptor': Elite11(pump_connection, address=4, diameter=10.3, volume_syringe=5),
+            'acceptor_solvent': Elite11(pump_connection, address=5, diameter=10.3, volume_syringe=5),
+            'activator': Elite11(pump_connection, address=6, diameter=4.608, volume_syringe=1),
+            'activator_solvent': Elite11(pump_connection, address=3, diameter=10.3, volume_syringe=5),
+            'quench': Elite11(pump_connection, address=0, diameter=14.57, volume_syringe=10),
         },
         'HPLC': ClarityInterface(remote=True, host='192.168.10.11', port=10349,
                                  path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
