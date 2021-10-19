@@ -94,6 +94,12 @@ class HuberChiller:
         self._serial = aio
         self.logger = logging.getLogger(__name__)
 
+    def get_router(self):
+        """ Creates an APIRouter for the instance. """
+        from fastapi import APIRouter
+        router = APIRouter()
+        router.add_api_route("/temperature/setpoint", self.get_temperature_setpoint, methods=["GET"])
+
     async def get_temperature_setpoint(self) -> float:
         """ Returns the set point used by temperature controller. Internal if not probe, otherwise process temp. """
         reply = await self.send_command_and_read_reply("{M00****")
