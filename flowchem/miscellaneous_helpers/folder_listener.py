@@ -3,9 +3,9 @@ from threading import Thread
 from queue import Queue
 from time import sleep
 import socket
-import subprocess
+
 import tenacity
-from typing import Union
+
 
 class FolderListener:
     # create the listener and create list of files present already
@@ -73,6 +73,7 @@ class FileSender:
                 new_file_path = queue_name.get()
                 self.open_socket_and_send(self.host, self.port, new_file_path)
                 queue_name.task_done()
+            sleep(1)
 
     @tenacity.retry(stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_fixed(2), reraise=True)
     def open_socket_and_send(self, host, port, path_to_file):

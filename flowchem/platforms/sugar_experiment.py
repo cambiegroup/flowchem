@@ -7,7 +7,7 @@ from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.Knauer.HPLC_control import ClarityInterface
 from flowchem.miscellaneous_helpers.folder_listener import FileReceiver, ResultListener
 import logging
-from flowchem.constants.constants import flowchem_ureg
+from flowchem.constants import flowchem_ureg
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
 
@@ -70,7 +70,7 @@ class FlowConditions:
     All private parameters are only internally needed for calculation (and maybe as checkpoints for simpler testing).
     """
 
-    # these can be calculated, from eqach pump 'package', the flow rate should be the same I suppose
+    # these can be calculated, from each pump 'package', the flow rate should be the same I suppose
     def __init__(self, experiment_conditions: ExperimentConditions,
                  flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and abstraction still low
 
@@ -82,6 +82,7 @@ class FlowConditions:
         self._concentration_donor = experiment_conditions.concentration_donor
         self._concentration_acceptor = self.get_dependent_concentration(self._concentration_donor,
                                                                         experiment_conditions.acceptor_equivalents)
+        # This is actually not needed -> the activator will always be neat / at some specific concentration
         self._concentration_activator = self.get_dependent_concentration(self._concentration_donor,
                                                                          experiment_conditions.activator_equivalents)
         self._total_flow_rate = self.get_flow_rate(self.platform_volumes['volume_reactor'],
