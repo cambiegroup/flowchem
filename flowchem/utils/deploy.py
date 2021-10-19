@@ -11,7 +11,7 @@ def install_from_folder(package: str, folder: Path):
 
 
 def download_to_folder(package: str, folder: Path):
-    subprocess.check_call([sys.executable, "-m", "pip", "download",  package, "-d", folder.as_posix()])
+    subprocess.check_call([sys.executable, "-m", "pip", "download", package, "-d", folder.as_posix()])
 
 
 def get_package_list():

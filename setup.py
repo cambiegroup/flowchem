@@ -3,6 +3,7 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+
 def get_version(rel_path: str) -> str:
     with open(rel_path, 'r') as f:
         for line in f.read().splitlines():
@@ -11,6 +12,7 @@ def get_version(rel_path: str) -> str:
                 delim = '"' if '"' in line else "'"
                 return line.split(delim)[1]
     raise RuntimeError("Unable to find version string.")
+
 
 setuptools.setup(
     name="flowchem",
