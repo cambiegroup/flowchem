@@ -12,7 +12,7 @@ import asyncua.ua.uaerrors
 from asyncua import ua
 from asyncua.ua.uaerrors import BadOutOfService, Bad
 
-from flowchem.devices.MettlerToledo.iCIR_common import *
+from flowchem.devices.MettlerToledo.iCIR_common import iCIR_spectrometer, FlowIRError, ProbeInfo
 
 
 class FlowIR_Async(iCIR_spectrometer):

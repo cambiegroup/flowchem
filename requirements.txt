@@ -1,4 +1,4 @@
-git+https://github.com/jjhelmus/nmrglue.git@master
+git+https://github.com/jjhelmus/nmrglue.git@master#egg=nmrglue
 pint~=0.16.1
 pytest~=6.2.1
 getmac~=0.8.2
@@ -14,7 +14,7 @@ scipy~=1.6.2
 setuptools~=58.0.4
 zeroconf~=0.36.2
 PyYAML
-fastapi~=0.63.0
+fastapi~=0.65.2
 pyyaml~=5.4.1
 uvicorn~=0.13.4
 tenacity
