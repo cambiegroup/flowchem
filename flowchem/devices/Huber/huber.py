@@ -188,34 +188,11 @@ if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
 
-    async def main(chiller: Huber):
-        await chiller.set_temperature_control(True)
-        await chiller.set_circulation(True)
-        status = await chiller.status()
-        print(status)
-        await chiller.set_temperature_setpoint(-5)
-        time.sleep(20)
-
-        set = await chiller.get_temperature_setpoint()
-        cur = await chiller.internal_temperature()
-        ret = await  chiller.return_temperature()
-        pp = await chiller.pump_pressure()
-        pow = await chiller.current_power()
-        fl = await chiller.fill_level()
-        print(f"I have set{set} and cur {cur} return temp is {ret} pump pressure {pp} mbar pow {pow} leve {fl}")
-        status = await chiller.status()
-        print(status)
-        await chiller.set_temperature_control(False)
-        await chiller.set_circulation(False)
-        status = await chiller.status()
-        print(status)
-        # t_ctl  =await chiller.get_temperature_control()
-        # print(t_ctl)
-
-    logging.basicConfig()
+    # logging.basicConfig()
     # logging.getLogger().setLevel(logging.DEBUG)
-    chiller = Huber(aioserial.AioSerial(port='COM1'))
-    coro = main(chiller)
-    asyncio.run(coro)
 
-    stauts = asyncio.run(chiller.status())
+    chiller = Huber(aioserial.AioSerial(port='COM1'))
+
+    status = asyncio.run(chiller.status())
+    print(status)
+
