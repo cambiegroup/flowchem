@@ -75,7 +75,7 @@ class PBCommand:
         return int(self.data, 16)
 
     def parse_status(self):
-        bits = format(int(self.data, 16), "0<16b")
+        bits = f"{int(self.data, 16):016b}"
         return ChillerStatus(bits)
 
     def parse_fill_level(self):
