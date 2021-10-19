@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 class ChillerStatus:
     def __init__(self, bit_values):
-        self.temp_ctl_active = bit_values[0] == "1"
+        self.temp_ctl_is_process = bit_values[0] == "1"
         self.circulation_active = bit_values[1] == "1"
         self.refrigerator_on = bit_values[2] == "1"
         self.temp_is_process = bit_values[3] == "1"
@@ -77,10 +77,12 @@ class PBCommand:
         return int(self.data, 16)
 
     def parse_status(self):
-        bits = format(int(self.data, 16), "0>16b")
+        bits = format(int(self.data, 16), "0<16b")
         return ChillerStatus(bits)
 
     def parse_fill_level(self):
+        if self.data == "FFFF":
+            return None
         value = int(self.data, 16)
         if value == 0:
             return None
@@ -98,6 +100,7 @@ class Huber:
     """
     def __init__(self, aio: aioserial.AioSerial):
         self._serial = aio
+        self.logger = logging.getLogger(__name__)
 
     async def get_temperature_setpoint(self) -> float:
         """ Returns the set point used by temperature controller. Internal if not probe, otherwise process temp. """
@@ -145,7 +148,9 @@ class Huber:
             command += "\r\n"
         pb_command = PBCommand(command)
         await self._serial.write_async(pb_command.to_chiller())
+        self.logger.debug(f"Command {command[0:8]} sent to chiller!")
         reply = await self._serial.readline_async()
+        self.logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
         return reply.decode("ascii")
 
     async def get_temperature_control(self) -> bool:
@@ -165,7 +170,7 @@ class Huber:
         return PBCommand(reply).parse_boolean()
 
     async def set_circulation(self, value: bool):
-        if value:
+        if value is True:
             await self.send_command_and_read_reply("{M160001")
         else:
             await self.send_command_and_read_reply("{M160000")
@@ -184,6 +189,13 @@ if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
 
     async def main(chiller: Huber):
+        await chiller.set_temperature_control(True)
+        await chiller.set_circulation(True)
+        status = await chiller.status()
+        print(status)
+        await chiller.set_temperature_setpoint(-5)
+        time.sleep(20)
+
         set = await chiller.get_temperature_setpoint()
         cur = await chiller.internal_temperature()
         ret = await  chiller.return_temperature()
@@ -193,18 +205,15 @@ if __name__ == '__main__':
         print(f"I have set{set} and cur {cur} return temp is {ret} pump pressure {pp} mbar pow {pow} leve {fl}")
         status = await chiller.status()
         print(status)
-        await chiller.set_temperature_control(True)
-        await chiller.set_circulation(True)
-        status = await chiller.status()
-        print(status)
-        await chiller.set_temperature_setpoint(15)
-        time.sleep(2)
         await chiller.set_temperature_control(False)
         await chiller.set_circulation(False)
         status = await chiller.status()
         print(status)
+        # t_ctl  =await chiller.get_temperature_control()
+        # print(t_ctl)
 
-
+    logging.basicConfig()
+    # logging.getLogger().setLevel(logging.DEBUG)
     chiller = Huber(aioserial.AioSerial(port='COM1'))
     coro = main(chiller)
     asyncio.run(coro)
