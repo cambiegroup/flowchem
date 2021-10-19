@@ -12,12 +12,12 @@ from flowchem.server.routers.Spinsolve_router import spinsolve_get_router
 """
 
 
-def generate_router_for_device(device, prefix):
+def generate_router_for_device(device):
     """ Assign routers generators to devices """
     # TODO: use pattern matching here when 3.10 will be a thing ;)
     # Not using isinstance(device, object_type) here to avoid importing all the devices classes ;)
     if device.__class__.__name__ == "Spinsolve":
-        return spinsolve_get_router(device, prefix)
+        return spinsolve_get_router(device)
 
 
 class DeviceNode:
