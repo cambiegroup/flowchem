@@ -47,6 +47,8 @@ class PBCommand:
 
     def validate(self):
         """ Check command structure to be compliant with PB format """
+        if len(self.command) == 8:
+            self.command += "\r\n"
         # 10 characters
         assert len(self.command) == 10
         # Starts with {
@@ -64,11 +66,6 @@ class PBCommand:
     def data(self) -> str:
         """ Data portion of PBCommand. """
         return self.command[4:8]
-
-    @property
-    def is_reply(self) -> bool:
-        """ True if the command is a reply (i.e. w/ S) """
-        return self.command[1] == "S"
 
     def parse_temperature(self):
         """ Parse a device temp from hex string to celsius float [two's complement 16 bit signed hex, see manual] """
@@ -224,14 +221,6 @@ class HuberChiller:
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
-
-    # logging.basicConfig()
-    # logging.getLogger().setLevel(logging.DEBUG)
-
     chiller = HuberChiller(aioserial.AioSerial(port='COM1'))
-
     status = asyncio.run(chiller.status())
     print(status)
-

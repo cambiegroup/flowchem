@@ -15,6 +15,8 @@ class FakeSerial(aioserial.AioSerial):
             b"{M0A****\r\n": b"{S0AFFFF\r\n",  # Fake status reply
             b"{M00****\r\n": b"{S0004DA\r\n",  # Fake setpoint reply
             b"{M03****\r\n": b"{S030a00\r\n",  # Fake pressure reply
+            b"{M04****\r\n": b"{S04000a\r\n",  # Fake current power reply (10 W)
+            b"{M26****\r\n": b"{S26000a\r\n",  # Fake current pump speed (10 rpm)
             b"{M30****\r\n": b"{S30C4F9\r\n",  # Fake min temp -151.11 C
             b"{M31****\r\n": b"{S307530\r\n",  # Fake max temp +300.00 C
             b"{M0007D0\r\n": b"{S0007D0\r\n",  # Reply to set temp 20 C
@@ -94,6 +96,14 @@ async def test_pump_pressure(chiller):
 
 
 @pytest.mark.asyncio
+async def test_current_power(chiller):
+    chiller._serial.fixed_reply = None
+    power = await chiller.current_power()
+    assert chiller._serial.last_command == b"{M04****\r\n"
+    assert power == 10
+
+
+@pytest.mark.asyncio
 async def test_get_temperature_control(chiller):
     chiller._serial.fixed_reply = b"{S140000"
     t_ctl = await chiller.get_temperature_control()
@@ -143,3 +153,39 @@ async def test_max_setpoint(chiller):
     chiller._serial.fixed_reply = None
     max_t = await chiller.max_setpoint()
     assert max_t == 300
+
+
+@pytest.mark.asyncio
+async def test_pump_speed(chiller):
+    chiller._serial.fixed_reply = None
+    speed = await chiller.pump_speed()
+    assert chiller._serial.last_command == b"{M26****\r\n"
+    assert speed == 10
+
+
+@pytest.mark.asyncio
+async def test_pump_speed_setpoint(chiller):
+    chiller._serial.fixed_reply = b"{S480000"
+    speed = await chiller.pump_speed_setpoint()
+    assert chiller._serial.last_command == b"{M48****\r\n"
+    assert speed == 0
+
+
+@pytest.mark.asyncio
+async def test_set_pump_speed(chiller):
+    chiller._serial.fixed_reply = b"{S480000"
+    await chiller.set_pump_speed(10)
+    assert chiller._serial.last_command == b"{M48000A\r\n"
+
+
+@pytest.mark.asyncio
+async def test_cooling_water_temp(chiller):
+    chiller._serial.fixed_reply = b"{S000000"
+    await chiller.cooling_water_temp()
+    assert chiller._serial.last_command == b"{M2C****\r\n"
+
+@pytest.mark.asyncio
+async def test_cooling_water_pressure(chiller):
+    chiller._serial.fixed_reply = b"{S000000"
+    await chiller.cooling_water_pressure()
+    assert chiller._serial.last_command == b"{M2D****\r\n"
