@@ -2,6 +2,8 @@
 Driver for Huber chillers.
 """
 import logging
+import time
+
 import aioserial
 import asyncio
 from dataclasses import dataclass
@@ -68,8 +70,8 @@ class PBCommand:
         return temp
 
     def parse_pressure(self):
-        # convert two's complement 16 bit signed hex to unsigned int
-        return int(self.data, 16)
+        # -1 bar to return mbarg
+        return int(self.data, 16) - 1000
 
     def parse_power(self):
         return int(self.data, 16)
@@ -85,6 +87,9 @@ class PBCommand:
         value -= 1
         value /= 10
         return value
+
+    def parse_boolean(self):
+        return int(self.data, 16) == 1
 
 
 class Huber:
@@ -143,6 +148,30 @@ class Huber:
         reply = await self._serial.readline_async()
         return reply.decode("ascii")
 
+    async def get_temperature_control(self) -> bool:
+        """ Returns whether temperature control is active or not. """
+        reply = await self.send_command_and_read_reply("{M14****")
+        return PBCommand(reply).parse_boolean()
+
+    async def set_temperature_control(self, value: bool):
+        if value:
+            await self.send_command_and_read_reply("{M140001")
+        else:
+            await self.send_command_and_read_reply("{M140000")
+
+    async def get_circulation(self) -> bool:
+        """ Returns whether temperature control is active or not. """
+        reply = await self.send_command_and_read_reply("{M16****")
+        return PBCommand(reply).parse_boolean()
+
+    async def set_circulation(self, value: bool):
+        if value:
+            await self.send_command_and_read_reply("{M160001")
+        else:
+            await self.send_command_and_read_reply("{M160000")
+
+
+
     @staticmethod
     def temp_to_string(temp: float) -> str:
         assert -151 <= temp <= 327
@@ -164,9 +193,16 @@ if __name__ == '__main__':
         print(f"I have set{set} and cur {cur} return temp is {ret} pump pressure {pp} mbar pow {pow} leve {fl}")
         status = await chiller.status()
         print(status)
-
-
-
+        await chiller.set_temperature_control(True)
+        await chiller.set_circulation(True)
+        status = await chiller.status()
+        print(status)
+        await chiller.set_temperature_setpoint(15)
+        time.sleep(2)
+        await chiller.set_temperature_control(False)
+        await chiller.set_circulation(False)
+        status = await chiller.status()
+        print(status)
 
 
     chiller = Huber(aioserial.AioSerial(port='COM1'))
