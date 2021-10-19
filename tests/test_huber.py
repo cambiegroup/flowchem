@@ -96,11 +96,11 @@ async def test_get_temperature_control(chiller):
 
 
 @pytest.mark.asyncio
-async def test_set_temperature_control(chiller):
+async def test_temperature_control(chiller):
     chiller._serial.fixed_reply = b"{S000000"
-    await chiller.set_temperature_control(True)
+    await chiller.start_temperature_control()
     assert chiller._serial.last_command == b"{M140001\r\n"
-    await chiller.set_temperature_control(False)
+    await chiller.stop_temperature_control()
     assert chiller._serial.last_command == b"{M140000\r\n"
 
 
@@ -115,10 +115,10 @@ async def test_get_circulation(chiller):
 
 
 @pytest.mark.asyncio
-async def test_set_circulation(chiller):
+async def test_circulation(chiller):
     chiller._serial.fixed_reply = b"{S000000"
-    await chiller.set_temperature_control(True)
-    assert chiller._serial.last_command == b"{M140001\r\n"
-    await chiller.set_temperature_control(False)
+    await chiller.start_circulation()
+    assert chiller._serial.last_command == b"{M160001\r\n"
+    await chiller.stop_circulation()
     assert chiller._serial.last_command == b"{M140000\r\n"
 

@@ -160,22 +160,26 @@ class HuberChiller:
         reply = await self.send_command_and_read_reply("{M14****")
         return PBCommand(reply).parse_boolean()
 
-    async def set_temperature_control(self, value: bool):
-        if value:
-            await self.send_command_and_read_reply("{M140001")
-        else:
-            await self.send_command_and_read_reply("{M140000")
+    async def start_temperature_control(self):
+        """ Starts temperature control, i.e. start operation. """
+        await self.send_command_and_read_reply("{M140001")
+
+    async def stop_temperature_control(self):
+        """ Stops temperature control, i.e. stop operation. """
+        await self.send_command_and_read_reply("{M140000")
 
     async def get_circulation(self) -> bool:
         """ Returns whether temperature control is active or not. """
         reply = await self.send_command_and_read_reply("{M16****")
         return PBCommand(reply).parse_boolean()
 
-    async def set_circulation(self, value: bool):
-        if value is True:
-            await self.send_command_and_read_reply("{M160001")
-        else:
-            await self.send_command_and_read_reply("{M160000")
+    async def start_circulation(self):
+        """ Starts circulation pump. """
+        await self.send_command_and_read_reply("{M160001")
+
+    async def stop_circulation(self):
+        """ Stops circulation pump. """
+        await self.send_command_and_read_reply("{M160000")
 
     @staticmethod
     def temp_to_string(temp: float) -> str:
