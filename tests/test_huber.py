@@ -5,12 +5,14 @@ from flowchem.devices.Huber.huberchiller import HuberChiller, ChillerStatus
 
 class FakeSerial(aioserial.AioSerial):
     """ Mock AioSerial. """
+
+    # noinspection PyMissingConstructor
     def __init__(self):
         self.fixed_reply = None
         self.last_command = b""
         self.map_reply = {
-            b"{M0A****\r\n": b"{S0AFFFF",  # Fake status reply
-            b"{M00****\r\n": b"{S0004DF",  # Fake setpoint reply
+            b"{M0A****\r\n": b"{S0AFFFF\r\n",  # Fake status reply
+            b"{M00****\r\n": b"{S0004DA\r\n",  # Fake setpoint reply
         }
 
     async def write_async(self, text: bytes):
@@ -34,18 +36,26 @@ async def test_status(chiller):
     assert stat == ChillerStatus("1111111111111111")
 
     # Set reply in FakeSerial
-    chiller._serial.fixed_reply = b"{S0AFFFF"
+    chiller._serial.fixed_reply = b"{S0A0000"
     stat = await chiller.status()
     assert stat == ChillerStatus("0000000000000000")
 
 
 @pytest.mark.asyncio
-async def test_status(chiller):
+async def test_get_temperature_setpoint(chiller):
     temp = await chiller.get_temperature_setpoint()
-    assert temp == 12.47
+    assert temp == 12.42
 
     chiller._serial.fixed_reply = b"{S00F2DF"
     temp = await chiller.get_temperature_setpoint()
     assert temp == -33.61
 
 
+@pytest.mark.asyncio
+async def test_set_temperature_setpoint(chiller):
+    chiller._serial.fixed_reply = b"{S000000"
+    await chiller.set_temperature_setpoint(20)
+    assert chiller._serial.last_command == b"{M0007D0\r\n"
+
+    await chiller.set_temperature_setpoint(-20)
+    assert chiller._serial.last_command == b"{M00F830\r\n"
