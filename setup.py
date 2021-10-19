@@ -5,6 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 
 def get_version(rel_path: str) -> str:
+    """ Get __version__ without importing init """
     with open(rel_path, 'r') as f:
         for line in f.read().splitlines():
             if line.startswith("__version__"):
@@ -26,7 +27,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "pyserial",
-        "pyserial-asyncio",
         "pint",
         "pandas",
         "scipy",
@@ -36,6 +36,7 @@ setuptools.setup(
         "getmac",
         "lmfit",
         "nmrglue",
+        "aioserial",
     ],
     python_requires=">=3.8",
     entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},
