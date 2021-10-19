@@ -7,6 +7,28 @@ import asyncio
 from dataclasses import dataclass
 
 
+class ChillerStatus:
+    def __init__(self, bit_values):
+        self.temp_ctl_active = bit_values[0] == "1"
+        self.circulation_active = bit_values[1] == "1"
+        self.refrigerator_on = bit_values[2] == "1"
+        self.temp_is_process = bit_values[3] == "1"
+        self.circulating_pump = bit_values[4] == "1"
+        self.cooling_power_available = bit_values[5] == "1"
+        self.tkeylock = bit_values[6] == "1"
+        self.is_pid_auto = bit_values[7] == "1"
+        self.error = bit_values[8] == "1"
+        self.warning = bit_values[9] == "1"
+        self.int_temp_mode = bit_values[10] == "1"
+        self.ext_temp_mode = bit_values[11] == "1"
+        self.dv_e_grade = bit_values[12] == "1"
+        self.power_failure = bit_values[13] == "1"
+        self.freeze_protection = bit_values[14] == "1"
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+
 @dataclass
 class PBCommand:
     """ Class representing a PBCommand """
@@ -45,6 +67,25 @@ class PBCommand:
         temp = (int(self.data, 16) - 65536) / 100 if int(self.data, 16) > 32767 else (int(self.data, 16)) / 100
         return temp
 
+    def parse_pressure(self):
+        # convert two's complement 16 bit signed hex to unsigned int
+        return int(self.data, 16)
+
+    def parse_power(self):
+        return int(self.data, 16)
+
+    def parse_status(self):
+        bits = format(int(self.data, 16), "0>16b")
+        return ChillerStatus(bits)
+
+    def parse_fill_level(self):
+        value = int(self.data, 16)
+        if value == 0:
+            return None
+        value -= 1
+        value /= 10
+        return value
+
 
 class Huber:
     """
@@ -73,6 +114,26 @@ class Huber:
         reply = await self.send_command_and_read_reply("{M02****")
         return PBCommand(reply).parse_temperature()
 
+    async def pump_pressure(self) -> float:
+        """ Return pump pressure in mbarg """
+        reply = await self.send_command_and_read_reply("{M03****")
+        return PBCommand(reply).parse_pressure()
+
+    async def current_power(self) -> float:
+        """ Returns the current power in Watts (negative for cooling, positive for heating). """
+        reply = await self.send_command_and_read_reply("{M04****")
+        return PBCommand(reply).parse_power()
+    
+    async def status(self) -> ChillerStatus:
+        """ Returns the current power in Watts (negative for cooling, positive for heating). """
+        reply = await self.send_command_and_read_reply("{M04****")
+        return PBCommand(reply).parse_status()
+
+    async def fill_level(self) -> float:
+        """ Returns the current fill level. None if unavailable """
+        reply = await self.send_command_and_read_reply("{M0F****")
+        return PBCommand(reply).parse_fill_level()
+
     async def send_command_and_read_reply(self, command: str) -> str:
         # If newline is forgotten add it :D
         if len(command) == 8:
@@ -96,7 +157,16 @@ if __name__ == '__main__':
     async def main(chiller: Huber):
         set = await chiller.get_temperature_setpoint()
         cur = await chiller.internal_temperature()
-        print(f"I have set{set} and cur {cur}")
+        ret = await  chiller.return_temperature()
+        pp = await chiller.pump_pressure()
+        pow = await chiller.current_power()
+        fl = await chiller.fill_level()
+        print(f"I have set{set} and cur {cur} return temp is {ret} pump pressure {pp} mbar pow {pow} leve {fl}")
+        status = await chiller.status()
+        print(status)
+
+
+
 
 
     chiller = Huber(aioserial.AioSerial(port='COM1'))
