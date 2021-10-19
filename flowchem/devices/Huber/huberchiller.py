@@ -71,11 +71,7 @@ class PBCommand:
         temp = (int(self.data, 16) - 65536) / 100 if int(self.data, 16) > 32767 else (int(self.data, 16)) / 100
         return temp
 
-    def parse_pressure(self):
-        # -1 bar to return mbarg
-        return int(self.data, 16) - 1000
-
-    def parse_power(self):
+    def parse_integer(self):
         return int(self.data, 16)
 
     def parse_status(self):
@@ -93,7 +89,7 @@ class PBCommand:
         return value
 
     def parse_boolean(self):
-        return int(self.data, 16) == 1
+        return self.parse_integer() == 1
 
 
 class HuberChiller:
@@ -127,12 +123,12 @@ class HuberChiller:
     async def pump_pressure(self) -> float:
         """ Return pump pressure in mbarg """
         reply = await self.send_command_and_read_reply("{M03****")
-        return PBCommand(reply).parse_pressure()
+        return PBCommand(reply).parse_integer() - 1000
 
     async def current_power(self) -> float:
         """ Returns the current power in Watts (negative for cooling, positive for heating). """
         reply = await self.send_command_and_read_reply("{M04****")
-        return PBCommand(reply).parse_power()
+        return PBCommand(reply).parse_integer()
 
     async def status(self) -> ChillerStatus:
         """ Returns the current power in Watts (negative for cooling, positive for heating). """
@@ -183,8 +179,9 @@ class HuberChiller:
 
     @staticmethod
     def temp_to_string(temp: float) -> str:
+        """ From temperature to string for command. f^-1 of PCommand.parse_temperature. """
         assert -151 <= temp <= 327
-        # Hexadecimal two's complement to represent numbers
+        # Hexadecimal two's complement
         return f"{int(temp * 100) & 65535:04X}"
 
 
