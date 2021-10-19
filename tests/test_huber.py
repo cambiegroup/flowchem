@@ -13,6 +13,8 @@ class FakeSerial(aioserial.AioSerial):
         self.map_reply = {
             b"{M0A****\r\n": b"{S0AFFFF\r\n",  # Fake status reply
             b"{M00****\r\n": b"{S0004DA\r\n",  # Fake setpoint reply
+            b"{M03****\r\n": b"{S030a00\r\n",  # Fake pressure reply
+
         }
 
     async def write_async(self, text: bytes):
@@ -61,3 +63,62 @@ async def test_set_temperature_setpoint(chiller):
 
     await chiller.set_temperature_setpoint(-20)
     assert chiller._serial.last_command == b"{M00F830\r\n"
+
+
+@pytest.mark.asyncio
+async def test_internal_temperature(chiller):
+    await chiller.internal_temperature()
+    assert chiller._serial.last_command == b"{M01****\r\n"
+
+
+@pytest.mark.asyncio
+async def test_return_temperature(chiller):
+    await chiller.return_temperature()
+    assert chiller._serial.last_command == b"{M02****\r\n"
+
+
+@pytest.mark.asyncio
+async def test_pump_pressure(chiller):
+    chiller._serial.fixed_reply = None
+    pressure = await chiller.pump_pressure()
+    assert chiller._serial.last_command == b"{M03****\r\n"
+    assert pressure == 1560
+
+
+@pytest.mark.asyncio
+async def test_get_temperature_control(chiller):
+    chiller._serial.fixed_reply = b"{S140000"
+    t_ctl = await chiller.get_temperature_control()
+    assert t_ctl is False
+    chiller._serial.fixed_reply = b"{S140001"
+    t_ctl = await chiller.get_temperature_control()
+    assert t_ctl is True
+
+
+@pytest.mark.asyncio
+async def test_set_temperature_control(chiller):
+    chiller._serial.fixed_reply = b"{S000000"
+    await chiller.set_temperature_control(True)
+    assert chiller._serial.last_command == b"{M140001\r\n"
+    await chiller.set_temperature_control(False)
+    assert chiller._serial.last_command == b"{M140000\r\n"
+
+
+@pytest.mark.asyncio
+async def test_get_circulation(chiller):
+    chiller._serial.fixed_reply = b"{S160000"
+    circulation = await chiller.get_circulation()
+    assert circulation is False
+    chiller._serial.fixed_reply = b"{S160001"
+    circulation = await chiller.get_circulation()
+    assert circulation is True
+
+
+@pytest.mark.asyncio
+async def test_set_circulation(chiller):
+    chiller._serial.fixed_reply = b"{S000000"
+    await chiller.set_temperature_control(True)
+    assert chiller._serial.last_command == b"{M140001\r\n"
+    await chiller.set_temperature_control(False)
+    assert chiller._serial.last_command == b"{M140000\r\n"
+
