@@ -9,7 +9,8 @@ class FakeSerial(aioserial.AioSerial):
         self.fixed_reply = None
         self.last_command = b""
         self.map_reply = {
-            b"{M0A****\r\n": b"{S0AFFFF",
+            b"{M0A****\r\n": b"{S0AFFFF",  # Fake status reply
+            b"{M00****\r\n": b"{S0004DF",  # Fake setpoint reply
         }
 
     async def write_async(self, text: bytes):
@@ -30,5 +31,21 @@ def chiller():
 @pytest.mark.asyncio
 async def test_status(chiller):
     stat = await chiller.status()
-    print(stat)
     assert stat == ChillerStatus("1111111111111111")
+
+    # Set reply in FakeSerial
+    chiller._serial.fixed_reply = b"{S0AFFFF"
+    stat = await chiller.status()
+    assert stat == ChillerStatus("0000000000000000")
+
+
+@pytest.mark.asyncio
+async def test_status(chiller):
+    temp = await chiller.get_temperature_setpoint()
+    assert temp == 12.47
+
+    chiller._serial.fixed_reply = b"{S00F2DF"
+    temp = await chiller.get_temperature_setpoint()
+    assert temp == -33.61
+
+
