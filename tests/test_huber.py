@@ -120,5 +120,5 @@ async def test_circulation(chiller):
     await chiller.start_circulation()
     assert chiller._serial.last_command == b"{M160001\r\n"
     await chiller.stop_circulation()
-    assert chiller._serial.last_command == b"{M140000\r\n"
+    assert chiller._serial.last_command == b"{M160000\r\n"
 
