@@ -521,8 +521,7 @@ class ML600:
         current_steps = (
             int(
                 self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION)
-            )
-            - self.offset_steps
+            ) - self.offset_steps
         )
         return current_steps / self.steps_per_ml
 

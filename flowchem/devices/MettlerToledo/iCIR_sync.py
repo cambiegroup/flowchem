@@ -12,7 +12,7 @@ from asyncua import ua
 from asyncua.ua.uaerrors import BadOutOfService, Bad
 import asyncua.sync as opcua
 
-from flowchem.devices.MettlerToledo.iCIR_common import *
+from flowchem.devices.MettlerToledo.iCIR_common import iCIR_spectrometer, FlowIRError, ProbeInfo
 
 
 class FlowIR_Sync(iCIR_spectrometer):

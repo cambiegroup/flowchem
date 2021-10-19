@@ -5,11 +5,10 @@ from flowchem.server.routers.Spinsolve_router import spinsolve_get_router
 
 """
  NOTE:
- 
  - parse config
  - create obj instance
  - inject into router creator
- - make zeroconf 
+ - make zeroconf
 """
 
 
@@ -51,19 +50,18 @@ class DeviceNode:
 
         self.service_info = None  # TODO: populate
 
-
-    @property
-    def description(self) -> str:
-        """ Human-readable description of the Node """
-        return self._description
-
-    @description.setter
-    def description(self, description: str):
-        """
-        Human-readable description of the Node
-        :param description: str:
-        """
-        self._description = description
+    # @property
+    # def description(self) -> str:
+    #     """ Human-readable description of the Node """
+    #     return self._description
+    #
+    # @description.setter
+    # def description(self, description: str):
+    #     """
+    #     Human-readable description of the Node
+    #     :param description: str:
+    #     """
+    #     self._description = description
 
     @property
     def title(self) -> str:
@@ -87,26 +85,3 @@ class DeviceNode:
         title = title.replace(" ", "")
         title = title.lower()
         return title
-
-
-
-#SEE CHEMPUTER CODE:
-# def devices(modules: Iterable[ModuleType], simulation: bool) -> Dict[str, type]:
-    """
-    Given a set of modules, each containing device classes, return a
-    dictionary of { device_class_name: DeviceClass }.
-
-    Args:
-        modules (Iterable[ModuleType]): The modules to probe for devices.
-            e.g. [ChemputerAPI, SerialLabware]. Any class within the top level
-            of each module is used.
-        simulation (bool): If true, the return dict is of the form:
-            { DeviceClassName: SimulationDeviceClass }. If no simulation device
-            is available for a certain device, the original class is used. This
-            is fine for stuff like ChemputerFlask as the flask doesn't do
-            anything so no SimChemputerFlask class is needed.
-
-    Returns:
-        device_dict (Dict[str, type]): Dict of device class names and their
-            respective classes, i.e. { device_class_name: DeviceClass }.
-    """
