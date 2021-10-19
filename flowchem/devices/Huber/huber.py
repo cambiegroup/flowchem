@@ -217,3 +217,5 @@ if __name__ == '__main__':
     chiller = Huber(aioserial.AioSerial(port='COM1'))
     coro = main(chiller)
     asyncio.run(coro)
+
+    stauts = asyncio.run(chiller.status())
