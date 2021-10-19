@@ -135,4 +135,3 @@ def test_invalid_protocol(nmr: Spinsolve):
     with pytest.warns(UserWarning, match="not available"):
         path = asyncio.run(nmr.run_protocol("1D PLUTONIUM", dict(Scan="QuickScan")))
     assert path is None
-

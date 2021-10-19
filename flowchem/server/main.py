@@ -12,12 +12,12 @@ from typing import Iterable, Dict, Tuple, Union
 from fastapi import FastAPI
 from mdns_server import Server_mDNS
 from device_node_creator import DeviceNode
-from microflow import devices
+from flowchem.server import test_devices
 
 logger = logging.getLogger(__name__)
 
 # packages containing the device class definitions. Target classes should be available in the module top level.
-DEVICE_MODULES = [flowchem, devices]
+DEVICE_MODULES = [flowchem, test_devices]
 
 
 def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:

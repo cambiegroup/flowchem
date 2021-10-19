@@ -1,11 +1,12 @@
+""" Example device with builtin router support """
 from fastapi import APIRouter
 
-try:
-    import fakelib
-except ImportError:
-    _has_fakelib = True  # Ought be False
-else:
-    _has_fakelib = True
+# try:
+#     import fakelib
+# except ImportError:
+#     _has_fakelib = True  # Ought be False
+# else:
+#     _has_fakelib = True
 
 
 class FakeDevice:
@@ -13,8 +14,8 @@ class FakeDevice:
     Templating fake device
     """
     def __init__(self, port):
-        if not _has_fakelib:
-            raise RuntimeError(f"Fakelib has to be installed to be able to create {self.__class__} objects!")
+        # if not _has_fakelib:
+        #     raise RuntimeError(f"Fakelib has to be installed to be able to create {self.__class__} objects!")
         self.port = port
         self._temp = 20
 
