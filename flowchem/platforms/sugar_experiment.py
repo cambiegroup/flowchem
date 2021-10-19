@@ -12,6 +12,7 @@ from flowchem.constants.constants import flowchem_ureg
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
 
 
+
 class ExperimentConditions:
     """This is actively changed, either by human or by optimizer. Goes into the queue.
     When the conditions are taken from the queue, a FlowConditions object is derived from ExperimentCondition.
@@ -24,14 +25,18 @@ class ExperimentConditions:
     _stock_concentration_quencher = 1 * flowchem_ureg.molar
     # how many reactor volumes until steady state reached
     _reactor_volumes = 3
+    _quencher_eq_to_activator = 2
 
-    # mutable
-    residence_time = 60 * flowchem_ureg.second  # sec
-    concentration_donor = 0.25 * flowchem_ureg.molar
-    acceptor_equivalents = 1.2
-    activator_equivalents = 1.5
-    _quencher_equivalents = 2 * activator_equivalents  # fixed, from SI, but eq with regards to activator
-    temperature = flowchem_ureg.Quantity(-80, flowchem_ureg.celsius)
+    # could always be initialised as starting condition and adjusted by optimizer/list. Or be initialised as the to use_condition
+    def __init__(self, residence_time_in_seconds=60, donor_concentration_molar=0.25, equivalents_acceptor=1.2, activator_equivalents=1.5, temperature_in_celsius=-80):
+        # mutable
+        self.residence_time = residence_time_in_seconds * flowchem_ureg.second  # sec
+        self.concentration_donor = donor_concentration_molar * flowchem_ureg.molar
+        self.acceptor_equivalents = equivalents_acceptor
+        self.activator_equivalents = activator_equivalents
+        self._quencher_equivalents = self._quencher_eq_to_activator * self.activator_equivalents
+        self.temperature = flowchem_ureg.Quantity(temperature_in_celsius, flowchem_ureg.celsius)
+        self.experiment_finished = False
 
     @property
     def stock_concentration_donor(self):
@@ -235,24 +240,18 @@ class Scheduler:
         self._experiment_running = experiment_running
 
     def data_handler(self):
-        x = 3
-        while True:
-            # check if analysis of started experiments returned results already. If so, indicate the run finished and
-            # clear the results list
-            sleep(1)
-            if len(self.analysed_samples) >= x:
-                self.experiment_running = False
-                print(f'Experiment Running was set to {self.experiment_running} by data handler')
-                x += 3
+        """Checks if there is new analysis results. Since there may be multiple result files, these need to be pruned to individual ID and put into the set"""
 
-        # while True:
-        #     if self.analysed_samples.keys():
-        #         # take the first, normally, there should not be more than one in there
-        #         analysis_id=self.analysed_samples.keys()[0]
-        #         analysis_results = self.analysed_samples.pop(analysis_id)
-        #         experimental_conditions=self.started_experiments.pop(analysis_id)
-        #         # TODO drop these somewhere: Timestamp : conditions : results
-        #     sleep(5)
+        while True:
+            for experiment_id, experiment_conditions in self.started_experiments:
+                if not experiment_conditions.experiment_finished:
+                    # needs to
+                    for analysed_samples_files in self.analysed_samples:
+                        if str(experiment_id) in analysed_samples_files:
+                            experiment_conditions.experiment_finished = True
+                            self.experiment_running = False
+                            # TODO this can be expanded to trigger the analysis of the sample
+
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
     def create_experiment(self, conditions: ExperimentConditions) -> None:
@@ -310,22 +309,13 @@ if __name__ == "__main__":
     fr = FileReceiver('192.168.10.20', 10359, allowed_address='192.168.10.11')
     scheduler = Scheduler(SugarPlatform)
 
+    # This obviously could be included into the scheduler
     results_listener = ResultListener('D:\\transferred_chromatograms', '*.txt', scheduler.analysed_samples)
 
-    e = ExperimentConditions()
-    e.residence_time = 1 * flowchem_ureg.seconds
-    scheduler.create_experiment(e)
-
-    e.residence_time = 2 * flowchem_ureg.seconds
-    scheduler.create_experiment(e)
-
-    e.residence_time = 3 * flowchem_ureg.seconds
-    scheduler.create_experiment(e)
-
-    e.residence_time = 4 * flowchem_ureg.seconds
-    scheduler.create_experiment(e)
-
-    e.residence_time = 5 * flowchem_ureg.seconds
-    scheduler.create_experiment(e)
+    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=1))
+    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=2))
+    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=5))
+    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=10))
+    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
 
     # TODO when queue empty, after some while everything should be switched off
