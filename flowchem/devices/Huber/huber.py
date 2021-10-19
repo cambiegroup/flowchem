@@ -2,7 +2,6 @@
 Driver for Huber chillers.
 """
 import logging
-import time
 
 import aioserial
 import asyncio
@@ -131,7 +130,7 @@ class Huber:
         """ Returns the current power in Watts (negative for cooling, positive for heating). """
         reply = await self.send_command_and_read_reply("{M04****")
         return PBCommand(reply).parse_power()
-    
+
     async def status(self) -> ChillerStatus:
         """ Returns the current power in Watts (negative for cooling, positive for heating). """
         reply = await self.send_command_and_read_reply("{M0A****")
