@@ -109,6 +109,7 @@ class HuberChiller:
         from fastapi import APIRouter
         router = APIRouter()
         router.add_api_route("/temperature/setpoint", self.get_temperature_setpoint, methods=["GET"])
+        return router
 
     async def get_temperature_setpoint(self) -> float:
         """ Returns the set point used by temperature controller. Internal if not probe, otherwise process temp. """
