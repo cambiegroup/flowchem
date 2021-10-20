@@ -1,12 +1,15 @@
 """
 Driver for Huber chillers.
 """
+import asyncio
 import logging
-from typing import List, Iterable, Dict
+from dataclasses import dataclass
+from typing import List, Dict
 
 import aioserial
-import asyncio
-from dataclasses import dataclass
+from serial import SerialException
+
+from flowchem.constants import InvalidConfiguration
 
 
 @dataclass
@@ -97,7 +100,11 @@ class HuberChiller:
 
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
-        serial_object = aioserial.AioSerial(**config)
+        try:
+            serial_object = aioserial.AioSerial(**config)
+        except SerialException as e:
+            raise InvalidConfiguration(f"Cannot connect to the HuberChiller on the port <{config.get('port')}>") from e
+
         return cls(serial_object)
 
     async def send_command_and_read_reply(self, command: str) -> str:
@@ -226,7 +233,7 @@ class HuberChiller:
         return f"{number:04X}"
 
     def get_router(self):
-        """ Creates an APIRouter for the instance. """
+        """ Creates an APIRouter for this HuberChiller instance. """
         # Local import to allow direct use of HuberChiller w/o fastapi installed
         from fastapi import APIRouter
 

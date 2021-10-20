@@ -8,9 +8,11 @@ Changes:
 """
 
 import re
-from typing import Union, Literal, Tuple, Optional, List
+from typing import Literal, Tuple, Optional, List
 
 import serial
+
+from flowchem.constants import InvalidConfiguration
 
 
 class MansonException(Exception):
@@ -47,13 +49,12 @@ class PowerSupply:
             self._sp.reset_output_buffer()
 
         except serial.SerialException as e:
-            print(f"Could not connect to power supply: {e}")
-            raise NotConnectedError from e
+            raise InvalidConfiguration(f"Could not connect to power supply on port <{com_port}>") from e
 
         # for the unlikely case
         if self.get_info() not in self.MODEL_ALT_RANGE:
-            raise InvalidOrNoReply(
-                f"Device on {com_port} is either not supported or no MansonLib Device"
+            raise InvalidConfiguration(
+                f"Device on {com_port} is either not supported! [Supported models: {self.MODEL_ALT_RANGE}]"
             )
 
     def close(self):

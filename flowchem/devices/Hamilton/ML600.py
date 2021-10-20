@@ -5,28 +5,24 @@ This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO
 from __future__ import annotations
 
 import io
+import logging
 import string
+import threading
 import time
 import warnings
+from dataclasses import dataclass
+from enum import IntEnum
+from threading import Thread
+from typing import Union, Tuple, Optional
 
 import serial
-import logging
-import threading
-from enum import IntEnum
-from dataclasses import dataclass
-from typing import Union, Tuple, Optional
 from serial import PARITY_EVEN, SEVENBITS, STOPBITS_ONE
-from threading import Thread
+
+from flowchem.constants import InvalidConfiguration
 
 
 class ML600Exception(Exception):
     """ General pump exception """
-
-    pass
-
-
-class InvalidConfiguration(ML600Exception):
-    """ Used for failure in the serial communication """
 
     pass
 

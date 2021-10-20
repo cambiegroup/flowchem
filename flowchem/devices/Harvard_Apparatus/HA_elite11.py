@@ -7,22 +7,19 @@ from __future__ import annotations
 import logging
 import threading
 import warnings
-from pint import UnitRegistry
-from enum import Enum
-from typing import Union, List, Optional, Tuple
 from dataclasses import dataclass
+from enum import Enum
 from time import sleep
+from typing import Union, List, Optional, Tuple
+
 import serial
+from pint import UnitRegistry
+
+from flowchem.constants import InvalidConfiguration
 
 
 class Elite11Exception(Exception):
     """ General pump exception """
-
-    pass
-
-
-class InvalidConfiguration(Elite11Exception):
-    """ Used for failure in the serial communication """
 
     pass
 
