@@ -1,7 +1,7 @@
 import inspect
 import logging
 
-from flowchem import Spinsolve, HuberChiller
+from flowchem import Spinsolve
 from flowchem.server.routers import *
 
 """
