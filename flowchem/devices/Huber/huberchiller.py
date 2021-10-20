@@ -109,6 +109,7 @@ class HuberChiller:
         from fastapi import APIRouter
         router = APIRouter()
         router.add_api_route("/temperature/setpoint", self.get_temperature_setpoint, methods=["GET"])
+        router.add_api_route("/temperature/setpoint", self.set_temperature_setpoint, methods=["PUT"])
         return router
 
     async def get_temperature_setpoint(self) -> float:
@@ -116,7 +117,7 @@ class HuberChiller:
         reply = await self.send_command_and_read_reply("{M00****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_temperature_setpoint(self, temp):
+    async def set_temperature_setpoint(self, temp: float):
         """ Set the set point used by temperature controller. Internal if not probe, otherwise process temp. """
         min_t = await self.min_setpoint()
         max_t = await self.max_setpoint()

@@ -20,7 +20,6 @@ class DeviceNode:
     # All callable take the device obj and return an APIRouter
     router_generator = {
         Spinsolve: spinsolve_get_router,
-        HuberChiller: huber_get_router,
     }
 
     def __init__(self, device_name, device_config, obj_type):
