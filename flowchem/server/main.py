@@ -71,7 +71,7 @@ def create_server_from_config(config: Union[Path, Dict]) -> Tuple[FastAPI, Serve
         logger.debug(f"Created device <{device_name}> with config: {device_config}")
 
         # Add to App
-        app.include_router(node.router)
+        app.include_router(node.router, prefix=node.router.prefix)
         logger.debug(f"Router for <{device_name}> added to app!")
 
         # Add to mDNS server
