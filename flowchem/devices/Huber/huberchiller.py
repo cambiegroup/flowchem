@@ -175,13 +175,13 @@ class HuberChiller:
 
     async def pump_speed(self) -> int:
         """ Returns current circulation pump speed (in rpm). """
-        rpm = await self.send_command_and_read_reply("{M26****")
-        return PBCommand(rpm).parse_integer()
+        reply = await self.send_command_and_read_reply("{M26****")
+        return PBCommand(reply).parse_integer()
 
     async def pump_speed_setpoint(self) -> int:
         """ Returns the set point of the circulation pump speed (in rpm). """
-        rpm = await self.send_command_and_read_reply("{M48****")
-        return PBCommand(rpm).parse_integer()
+        reply = await self.send_command_and_read_reply("{M48****")
+        return PBCommand(reply).parse_integer()
 
     async def set_pump_speed(self, rpm: int):
         """ Set the pump speed, in rpm. See device display for range. """
@@ -189,23 +189,23 @@ class HuberChiller:
 
     async def cooling_water_temp(self) -> float:
         """ Returns the cooling water inlet temperature (in Celsius). """
-        temp = await self.send_command_and_read_reply("{M2C****")
-        return PBCommand(temp).parse_temperature()
+        reply = await self.send_command_and_read_reply("{M2C****")
+        return PBCommand(reply).parse_temperature()
 
     async def cooling_water_pressure(self) -> float:
         """ Returns the cooling water inlet pressure (in mbar). """
-        pressure = await self.send_command_and_read_reply("{M2D****")
-        return PBCommand(pressure).parse_integer()
+        reply = await self.send_command_and_read_reply("{M2D****")
+        return PBCommand(reply).parse_integer()
 
     async def min_setpoint(self) -> float:
         """ Returns the minimum accepted value for the temperature setpoint (in Celsius). """
-        temp_reply = await self.send_command_and_read_reply("{M30****")
-        return PBCommand(temp_reply).parse_temperature()
+        reply = await self.send_command_and_read_reply("{M30****")
+        return PBCommand(reply).parse_temperature()
 
     async def max_setpoint(self) -> float:
         """ Returns the maximum accepted value for the temperature setpoint (in Celsius). """
-        temp_reply = await self.send_command_and_read_reply("{M31****")
-        return PBCommand(temp_reply).parse_temperature()
+        reply = await self.send_command_and_read_reply("{M31****")
+        return PBCommand(reply).parse_temperature()
 
     @staticmethod
     def temp_to_string(temp: float) -> str:
