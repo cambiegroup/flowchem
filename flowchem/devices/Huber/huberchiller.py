@@ -94,6 +94,16 @@ class HuberChiller:
         self._serial = aio
         self.logger = logging.getLogger(__name__)
 
+    @classmethod
+    def from_config(cls, config: dict):
+        """
+        Create instance from config dict. Used by server to initialize obj from config.
+
+        Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
+        """
+        serial_object = aioserial.AioSerial(**config)
+        return cls(serial_object)
+
     def get_router(self):
         """ Creates an APIRouter for the instance. """
         from fastapi import APIRouter
