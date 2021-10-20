@@ -1,3 +1,4 @@
+""" For each device node described in the configuration [graph] instantiated it and create endpoints """
 import inspect
 import logging
 
