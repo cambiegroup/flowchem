@@ -5,14 +5,6 @@ import logging
 from flowchem import Spinsolve
 from flowchem.server.routers import *
 
-"""
- NOTE:
- - parse config
- - create obj instance
- - inject into router creator
- - make zeroconf
-"""
-
 
 class DeviceNode:
     """ Represent a node in the device graph, holds the HW object and its metadata/config. """
