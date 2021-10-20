@@ -2,36 +2,11 @@
 Driver for Huber chillers.
 """
 import logging
+from typing import List, Iterable, Dict
 
 import aioserial
 import asyncio
 from dataclasses import dataclass
-
-
-class ChillerStatus:
-    """ Provide the chiller status response in a human-readable format. """
-    def __init__(self, bit_values):
-        self.temp_ctl_is_process = bit_values[0] == "1"
-        self.circulation_active = bit_values[1] == "1"
-        self.refrigerator_on = bit_values[2] == "1"
-        self.temp_is_process = bit_values[3] == "1"
-        self.circulating_pump = bit_values[4] == "1"
-        self.cooling_power_available = bit_values[5] == "1"
-        self.tkeylock = bit_values[6] == "1"
-        self.is_pid_auto = bit_values[7] == "1"
-        self.error = bit_values[8] == "1"
-        self.warning = bit_values[9] == "1"
-        self.int_temp_mode = bit_values[10] == "1"
-        self.ext_temp_mode = bit_values[11] == "1"
-        self.dv_e_grade = bit_values[12] == "1"
-        self.power_failure = bit_values[13] == "1"
-        self.freeze_protection = bit_values[14] == "1"
-
-    def __repr__(self):
-        return str(self.__dict__)
-
-    def __eq__(self, other):
-        return self.__dict__ == other.__dict__
 
 
 @dataclass
@@ -76,14 +51,35 @@ class PBCommand:
         """ Parse a device reply from hexadecimal string to to base 10 integers. """
         return int(self.data, 16)
 
-    def parse_bits(self):
+    def parse_bits(self) -> List[bool]:
         """" Parse a device reply from hexadecimal string to 16 constituting bits. """
         bits = f"{int(self.data, 16):016b}"
-        return ChillerStatus(bits)
+        return [bool(int(x)) for x in bits]
 
     def parse_boolean(self):
         """" Parse a device reply from hexadecimal string (0x0000 or 0x0001) to boolean. """
         return self.parse_integer() == 1
+
+    def parse_status1(self) -> Dict[str, bool]:
+        """ Parse response to status1 command and returns dict """
+        bits = self.parse_bits()
+        return dict(
+            temp_ctl_is_process=bits[0],
+            circulation_active=bits[1],
+            refrigerator_on=bits[2],
+            temp_is_process=bits[3],
+            circulating_pump=bits[4],
+            cooling_power_available=bits[5],
+            tkeylock=bits[6],
+            is_pid_auto=bits[7],
+            error=bits[8],
+            warning=bits[9],
+            int_temp_mode=bits[10],
+            ext_temp_mode=bits[11],
+            dv_e_grade=bits[12],
+            power_failure=bits[13],
+            freeze_protection=bits[14],
+        )
 
 
 class HuberChiller:
@@ -94,12 +90,38 @@ class HuberChiller:
         self._serial = aio
         self.logger = logging.getLogger(__name__)
 
+    @classmethod
+    def from_config(cls, config: dict):
+        """
+        Create instance from config dict. Used by server to initialize obj from config.
+
+        Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
+        """
+        serial_object = aioserial.AioSerial(**config)
+        return cls(serial_object)
+
+    async def send_command_and_read_reply(self, command: str) -> str:
+        """ Sends a command to the chiller and reads the reply.
+
+        :param command: string to be transmitted
+        :return: reply received
+        """
+        # Send command. Using PBCommand ensure command validation, see PBCommand.to_chiller()
+        pb_command = PBCommand(command)
+        await self._serial.write_async(pb_command.to_chiller())
+        self.logger.debug(f"Command {command[0:8]} sent to chiller!")
+
+        # Receive reply and return it after decoding
+        reply = await self._serial.readline_async()
+        self.logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
+        return reply.decode("ascii")
+
     async def get_temperature_setpoint(self) -> float:
         """ Returns the set point used by temperature controller. Internal if not probe, otherwise process temp. """
         reply = await self.send_command_and_read_reply("{M00****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_temperature_setpoint(self, temp):
+    async def set_temperature_setpoint(self, temp: float):
         """ Set the set point used by temperature controller. Internal if not probe, otherwise process temp. """
         min_t = await self.min_setpoint()
         max_t = await self.max_setpoint()
@@ -126,26 +148,10 @@ class HuberChiller:
         reply = await self.send_command_and_read_reply("{M04****")
         return PBCommand(reply).parse_integer()
 
-    async def status(self) -> ChillerStatus:
+    async def status(self) -> Dict[str, bool]:
         """ Returns the current power in Watts (negative for cooling, positive for heating). """
         reply = await self.send_command_and_read_reply("{M0A****")
-        return PBCommand(reply).parse_bits()
-
-    async def send_command_and_read_reply(self, command: str) -> str:
-        """ Sends a command to the chiller and reads the reply.
-
-        :param command: string to be transmitted
-        :return: reply received
-        """
-        # Send command. Using PBCommand ensure command validation, see PBCommand.to_chiller()
-        pb_command = PBCommand(command)
-        await self._serial.write_async(pb_command.to_chiller())
-        self.logger.debug(f"Command {command[0:8]} sent to chiller!")
-
-        # Receive reply and return it after decoding
-        reply = await self._serial.readline_async()
-        self.logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
-        return reply.decode("ascii")
+        return PBCommand(reply).parse_status1()
 
     async def get_temperature_control(self) -> bool:
         """ Returns whether temperature control is active or not. """
@@ -219,6 +225,33 @@ class HuberChiller:
         """ From temperature to string for command. f^-1 of PCommand.parse_integer. """
         return f"{number:04X}"
 
+    def get_router(self):
+        """ Creates an APIRouter for the instance. """
+        # Local import to allow direct use of HuberChiller w/o fastapi installed
+        from fastapi import APIRouter
+
+        router = APIRouter()
+        router.add_api_route("/temperature/setpoint", self.get_temperature_setpoint, methods=["GET"])
+        router.add_api_route("/temperature/setpoint/min", self.min_setpoint, methods=["GET"])
+        router.add_api_route("/temperature/setpoint/max", self.max_setpoint, methods=["GET"])
+        router.add_api_route("/temperature/setpoint", self.set_temperature_setpoint, methods=["PUT"])
+        router.add_api_route("/temperature/internal", self.internal_temperature, methods=["GET"])
+        router.add_api_route("/temperature/return", self.return_temperature, methods=["GET"])
+        router.add_api_route("/power-exchanged", self.current_power, methods=["GET"])
+        router.add_api_route("/status", self.status, methods=["GET"])
+        router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
+        router.add_api_route("/temperature-control", self.get_temperature_control, methods=["GET"])
+        router.add_api_route("/temperature-control/start", self.start_temperature_control, methods=["GET"])
+        router.add_api_route("/temperature-control/stop", self.stop_temperature_control, methods=["GET"])
+        router.add_api_route("/pump/circulation", self.get_circulation, methods=["GET"])
+        router.add_api_route("/pump/circulation/start", self.start_circulation, methods=["GET"])
+        router.add_api_route("/pump/circulation/stop", self.stop_circulation, methods=["GET"])
+        router.add_api_route("/pump/pressure", self.pump_pressure, methods=["GET"])
+        router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
+        router.add_api_route("/pump/speed/setpoint", self.pump_speed_setpoint, methods=["GET"])
+        router.add_api_route("/pump/speed/setpoint", self.set_pump_speed, methods=["PUT"])
+        router.add_api_route("/cooling-water/temperature", self.cooling_water_temp, methods=["GET"])
+        router.add_api_route("/cooling-water/pressure", self.cooling_water_pressure, methods=["GET"])
 
 if __name__ == '__main__':
     chiller = HuberChiller(aioserial.AioSerial(port='COM1'))

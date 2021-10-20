@@ -3,13 +3,13 @@ fakedevice1:
     class: FakeDevice
     parameters:
         port: COM2
-fakedevice2:
-    class: FakeDevice
-    parameters:
-        port: COM1
 nmr:
     class: Spinsolve
     parameters:
         host: BSMC-7WP43Y1
         port: 13000
         data_folder: W:\BS-FlowChemistry\Equipment\Magritek_NMR\data_exchange
+chiller:
+    class: HuberChiller
+    parameters:
+        port: COM1

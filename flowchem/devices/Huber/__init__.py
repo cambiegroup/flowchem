@@ -1,1 +1,1 @@
-from .huberchiller import HuberChiller, PBCommand, ChillerStatus
+from .huberchiller import HuberChiller, PBCommand
