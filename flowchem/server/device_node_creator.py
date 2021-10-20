@@ -13,16 +13,16 @@ from flowchem.server.routers import *
 """
 
 
-def generate_router_for_device(device):
-    """ Assign routers generators to devices """
-    # TODO: use pattern matching here when 3.10 will be a thing ;)
-    # Not using isinstance(device, object_type) here to avoid importing all the devices classes ;)
-    if device.__class__.__name__ == "Spinsolve":
-        return spinsolve_get_router(device)
-
-
 class DeviceNode:
     """ Represent a node in the device graph, holds the HW object and its metadata/config. """
+
+    # Router generators for device class that do not implement self.get_router()
+    # All callable take the device obj and return an APIRouter
+    router_generator = {
+        Spinsolve: spinsolve_get_router,
+        HuberChiller: huber_get_router,
+    }
+
     def __init__(self, device_name, device_config, obj_type):
         self.logger = logging.getLogger(__name__)
         self._title = device_name
@@ -44,7 +44,7 @@ class DeviceNode:
         if hasattr(obj_type, "get_router"):
             self.router = self.device.get_router()
         else:
-            self.router = generate_router_for_device(self.device)
+            self.router = DeviceNode.router_generator[obj_type](self.device)
         # Config router
         self.router.prefix = f"/{self.safe_title}"
         self.router.tags = self.safe_title

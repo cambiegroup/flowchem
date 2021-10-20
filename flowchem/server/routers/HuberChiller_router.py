@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from flowchem import HuberChiller
 
 
-def spinsolve_get_router(device: HuberChiller) -> APIRouter:
+def huber_get_router(device: HuberChiller) -> APIRouter:
     """ Adds an APIRouter on top of an existing Spinsolve object """
     router = APIRouter()
 
