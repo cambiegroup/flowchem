@@ -54,7 +54,7 @@ class PBCommand:
     def parse_bits(self) -> List[bool]:
         """" Parse a device reply from hexadecimal string to 16 constituting bits. """
         bits = f"{int(self.data, 16):016b}"
-        return list(map(bool, bits))
+        return [bool(int(x)) for x in bits]
 
     def parse_boolean(self):
         """" Parse a device reply from hexadecimal string (0x0000 or 0x0001) to boolean. """
