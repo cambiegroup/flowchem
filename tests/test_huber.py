@@ -1,7 +1,7 @@
 """ Test HuberChiller object. Does not require physical connection to the device. """
 import aioserial
 import pytest
-from flowchem.devices.Huber.huberchiller import HuberChiller, ChillerStatus
+from flowchem.devices.Huber.huberchiller import HuberChiller
 
 
 class FakeSerial(aioserial.AioSerial):
@@ -44,12 +44,14 @@ def chiller():
 async def test_status(chiller):
     chiller._serial.fixed_reply = None
     stat = await chiller.status()
-    assert stat == ChillerStatus("1111111111111111")
+    stat_content = [x for x in stat.values()]
+    assert all(stat_content)
 
     # Set reply in FakeSerial
     chiller._serial.fixed_reply = b"{S0A0000"
     stat = await chiller.status()
-    assert stat == ChillerStatus("0000000000000000")
+    stat_content = [x for x in stat.values()]
+    assert not any(stat_content)
 
 
 @pytest.mark.asyncio
