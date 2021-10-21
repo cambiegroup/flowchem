@@ -318,6 +318,8 @@ class ML600:
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
 
+    _io_instances = []
+
     class ValvePositionName(IntEnum):
         """ Maps valve position to the corresponding number """
 
@@ -374,8 +376,32 @@ class ML600:
 
         # This command is used to test connection: failure handled by HamiltonPumpIO
         self.log.info(
-            f"Connected to pump '{self.name}'  FW version: {self.firmware_version}!"
+            f"Connected to Hamilton ML600 pump  - FW version: {self.firmware_version}!"
         )
+
+    @classmethod
+    def from_config(cls, config):
+        """ This classmethod is used to create instances via config file by the server for HTTP interface. """
+        # Many pump can be present on the same serial port with different addresses.
+        # This shared list of HamiltonPumpIO objects allow shared state in a borg-inspired way, avoiding singletons
+        # This is only relevant to programmatic instantiation, i.e. when from_config() is called per each pump from a
+        # config file, as it is the case in the HTTP server.
+        # HamiltonPump_IO() manually instantiated are not accounted for.
+        pumpio = None
+        for obj in ML600._io_instances:
+            if obj._serial.port == config.get("port"):
+                pumpio = obj
+                break
+
+        # FIXME DELETE ME DEBUG
+        if pumpio is not None:
+            print(f"Already found a serial connection on port {config.get('port')}! Re-using that!")
+
+        if pumpio is None:
+            HamiltonPumpIO(port=config.get("port"), baudrate=config.get("baudrate"))
+
+        return cls(pumpio, syringe_volume=config.get("syringe_volume"), address=config.get("address"),
+                   name=config.get("name"))
 
     def send_command_and_read_reply(
         self,
