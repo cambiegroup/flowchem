@@ -1,15 +1,25 @@
 # Nodes
-fakedevice1:
-    class: FakeDevice
-    parameters:
-        port: COM2
-nmr:
-    class: Spinsolve
-    parameters:
-        host: BSMC-7WP43Y1
-        port: 13000
-        data_folder: W:\BS-FlowChemistry\Equipment\Magritek_NMR\data_exchange
-chiller:
-    class: HuberChiller
-    parameters:
-        port: COM1
+devices:
+    fakedevice1:
+        FakeDevice:
+            port: COM2
+    nmr:
+        Spinsolve:
+            host: BSMC-7WP43Y1
+            port: 13000
+            data_folder: W:\BS-FlowChemistry\Equipment\Magritek_NMR\data_exchange
+#    chiller:
+#        HuberChiller:
+#            port: COM1
+
+#    pump1:
+#        ML600:
+#            port: COM5
+#            address: 1
+#            syringe_volume: 5
+#
+#    pump2:
+#        ML600:
+#            port: COM5
+#            address: 2
+#            syringe_volume: 5

@@ -12,6 +12,10 @@ from serial import SerialException
 
 from flowchem.constants import InvalidConfiguration
 
+from serial import SerialException
+
+from devices.Hamilton.ML600 import InvalidConfiguration
+
 
 @dataclass
 class PBCommand:

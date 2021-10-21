@@ -25,13 +25,13 @@ class DeviceNode:
         try:
             # Special classmethod for initialization required for some devices
             if hasattr(obj_type, "from_config"):
-                self.device = obj_type.from_config(device_config["parameters"])
+                self.device = obj_type.from_config(device_config)
             else:
-                self.device = obj_type(**device_config["parameters"])
+                self.device = obj_type(**device_config)
             self.logger.debug(f"Created {self.title} instance: {self.device}")
         except TypeError as e:
             raise ConnectionError(f"Wrong configuration provided for device: {self.title}!\n"
-                                  f"Configuration: {device_config['parameters']}\n"
+                                  f"Configuration: {device_config}\n"
                                   f"Accepted parameters: {inspect.getfullargspec(obj_type).args}") from e
 
         # ROUTER CREATION
