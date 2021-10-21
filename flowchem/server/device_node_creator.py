@@ -2,6 +2,8 @@
 import inspect
 import logging
 
+from fastapi import APIRouter
+
 from flowchem import Spinsolve
 from flowchem.server.routers import *
 
@@ -37,6 +39,8 @@ class DeviceNode:
             self.router = self.device.get_router()
         else:
             self.router = DeviceNode.router_generator[obj_type](self.device)
+
+        assert isinstance(self.router, APIRouter)
         # Config router
         self.router.prefix = f"/{self.safe_title}"
         self.router.tags = self.safe_title

@@ -1,1 +1,1 @@
-from ML600 import ML600
+from .ML600 import ML600

@@ -3,6 +3,7 @@ Driver for Huber chillers.
 """
 import asyncio
 import logging
+import warnings
 from dataclasses import dataclass
 from typing import List, Dict
 
@@ -123,6 +124,16 @@ class HuberChiller:
         self.logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
         return reply.decode("ascii")
 
+        # FIXME handle no rpley with timeout
+        # reply = await asyncio.wait_for(self._serial.readline_async(), 3)
+        # try:
+        #
+        # except TimeoutError:
+        #     warnings.warn("No reply received - command not implemented on chiller!")
+        #     return ""
+        # else:
+
+
     async def get_temperature_setpoint(self) -> float:
         """ Returns the set point used by temperature controller. Internal if not probe, otherwise process temp. """
         reply = await self.send_command_and_read_reply("{M00****")
@@ -132,7 +143,16 @@ class HuberChiller:
         """ Set the set point used by temperature controller. Internal if not probe, otherwise process temp. """
         min_t = await self.min_setpoint()
         max_t = await self.max_setpoint()
-        assert min_t <= temp <= max_t
+
+        if temp > max_t:
+            temp = max_t
+            warnings.warn(f"Temperature requested {temp} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
+                          f"Setting to {max_t} instead.")
+        if temp < min_t:
+            temp = min_t
+            warnings.warn(f"Temperature requested {temp} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
+                          f"Setting to {min_t} instead.")
+
         await self.send_command_and_read_reply("{M00"+self.temp_to_string(temp))
 
     async def internal_temperature(self) -> float:
@@ -160,7 +180,7 @@ class HuberChiller:
         reply = await self.send_command_and_read_reply("{M0A****")
         return PBCommand(reply).parse_status1()
 
-    async def get_temperature_control(self) -> bool:
+    async def is_temperature_control_active(self) -> bool:
         """ Returns whether temperature control is active or not. """
         reply = await self.send_command_and_read_reply("{M14****")
         return PBCommand(reply).parse_boolean()
@@ -173,7 +193,7 @@ class HuberChiller:
         """ Stops temperature control, i.e. stop operation. """
         await self.send_command_and_read_reply("{M140000")
 
-    async def get_circulation(self) -> bool:
+    async def is_circulation_active(self) -> bool:
         """ Returns whether temperature control is active or not. """
         reply = await self.send_command_and_read_reply("{M16****")
         return PBCommand(reply).parse_boolean()
@@ -191,24 +211,26 @@ class HuberChiller:
         reply = await self.send_command_and_read_reply("{M26****")
         return PBCommand(reply).parse_integer()
 
-    async def pump_speed_setpoint(self) -> int:
-        """ Returns the set point of the circulation pump speed (in rpm). """
-        reply = await self.send_command_and_read_reply("{M48****")
-        return PBCommand(reply).parse_integer()
-
-    async def set_pump_speed(self, rpm: int):
-        """ Set the pump speed, in rpm. See device display for range. """
-        await self.send_command_and_read_reply("{M48"+self.int_to_string(rpm))
+    # async def pump_speed_setpoint(self) -> int:
+    #     """ Returns the set point of the circulation pump speed (in rpm). """
+    #     reply = await self.send_command_and_read_reply("{M48****")
+    #     return PBCommand(reply).parse_integer()
+    #
+    # async def set_pump_speed(self, rpm: int):
+    #     """ Set the pump speed, in rpm. See device display for range. """
+    #     await self.send_command_and_read_reply("{M48"+self.int_to_string(rpm))
 
     async def cooling_water_temp(self) -> float:
         """ Returns the cooling water inlet temperature (in Celsius). """
         reply = await self.send_command_and_read_reply("{M2C****")
         return PBCommand(reply).parse_temperature()
+    # FIXME -151 if not running
 
     async def cooling_water_pressure(self) -> float:
         """ Returns the cooling water inlet pressure (in mbar). """
         reply = await self.send_command_and_read_reply("{M2D****")
         return PBCommand(reply).parse_integer()
+    # FIXME 64536 if not running
 
     async def min_setpoint(self) -> float:
         """ Returns the minimum accepted value for the temperature setpoint (in Celsius). """
@@ -247,20 +269,25 @@ class HuberChiller:
         router.add_api_route("/power-exchanged", self.current_power, methods=["GET"])
         router.add_api_route("/status", self.status, methods=["GET"])
         router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
-        router.add_api_route("/temperature-control", self.get_temperature_control, methods=["GET"])
+        router.add_api_route("/temperature-control", self.is_temperature_control_active, methods=["GET"])
         router.add_api_route("/temperature-control/start", self.start_temperature_control, methods=["GET"])
         router.add_api_route("/temperature-control/stop", self.stop_temperature_control, methods=["GET"])
-        router.add_api_route("/pump/circulation", self.get_circulation, methods=["GET"])
+        router.add_api_route("/pump/circulation", self.is_circulation_active, methods=["GET"])
         router.add_api_route("/pump/circulation/start", self.start_circulation, methods=["GET"])
         router.add_api_route("/pump/circulation/stop", self.stop_circulation, methods=["GET"])
         router.add_api_route("/pump/pressure", self.pump_pressure, methods=["GET"])
         router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
-        router.add_api_route("/pump/speed/setpoint", self.pump_speed_setpoint, methods=["GET"])
-        router.add_api_route("/pump/speed/setpoint", self.set_pump_speed, methods=["PUT"])
+        # router.add_api_route("/pump/speed/setpoint", self.pump_speed_setpoint, methods=["GET"])
+        # router.add_api_route("/pump/speed/setpoint", self.set_pump_speed, methods=["PUT"])
         router.add_api_route("/cooling-water/temperature", self.cooling_water_temp, methods=["GET"])
         router.add_api_route("/cooling-water/pressure", self.cooling_water_pressure, methods=["GET"])
+        return router
+
 
 if __name__ == '__main__':
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
     chiller = HuberChiller(aioserial.AioSerial(port='COM1'))
     status = asyncio.run(chiller.status())
-    print(status)
+    pump_set = asyncio.run(chiller.pump_speed_setpoint())
+    print(pump_set)

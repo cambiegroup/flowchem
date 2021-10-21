@@ -108,10 +108,10 @@ async def test_current_power(chiller):
 @pytest.mark.asyncio
 async def test_get_temperature_control(chiller):
     chiller._serial.fixed_reply = b"{S140000"
-    t_ctl = await chiller.get_temperature_control()
+    t_ctl = await chiller.is_temperature_control_active()
     assert t_ctl is False
     chiller._serial.fixed_reply = b"{S140001"
-    t_ctl = await chiller.get_temperature_control()
+    t_ctl = await chiller.is_temperature_control_active()
     assert t_ctl is True
 
 
@@ -127,10 +127,10 @@ async def test_temperature_control(chiller):
 @pytest.mark.asyncio
 async def test_get_circulation(chiller):
     chiller._serial.fixed_reply = b"{S160000"
-    circulation = await chiller.get_circulation()
+    circulation = await chiller.is_circulation_active()
     assert circulation is False
     chiller._serial.fixed_reply = b"{S160001"
-    circulation = await chiller.get_circulation()
+    circulation = await chiller.is_circulation_active()
     assert circulation is True
 
 

@@ -614,5 +614,6 @@ class KnauerPump(KnauerEthernetDevice):
 
 
 if __name__ == "__main__":
-    p = KnauerPump.from_mac("00:80:a3:ba:c3:4a")
-    p.stop_flow()
+    print(autodiscover_knauer("192.168.10.20"))
+    # p = KnauerPump.from_mac("00:80:a3:ba:c3:4a")
+    # p.stop_flow()
