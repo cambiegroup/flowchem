@@ -8,6 +8,10 @@ import aioserial
 import asyncio
 from dataclasses import dataclass
 
+from serial import SerialException
+
+from devices.Hamilton.ML600 import InvalidConfiguration
+
 
 @dataclass
 class PBCommand:
@@ -97,7 +101,10 @@ class HuberChiller:
 
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
-        serial_object = aioserial.AioSerial(**config)
+        try:
+            serial_object = aioserial.AioSerial(**config)
+        except SerialException as e:
+            raise InvalidConfiguration(f"The configuration provided is not valid: {config} ") from e
         return cls(serial_object)
 
     async def send_command_and_read_reply(self, command: str) -> str:
