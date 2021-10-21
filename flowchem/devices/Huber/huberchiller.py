@@ -5,7 +5,7 @@ import asyncio
 import logging
 import warnings
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import aioserial
 from serial import SerialException
@@ -120,19 +120,15 @@ class HuberChiller:
         self.logger.debug(f"Command {command[0:8]} sent to chiller!")
 
         # Receive reply and return it after decoding
-        reply = await self._serial.readline_async()
+        try:
+            reply = await asyncio.wait_for(self._serial.readline_async(), 1)
+        except asyncio.TimeoutError:
+            warnings.warn("No reply received. Likely the command is not supported by the hardware!")
+            self.logger.error(f"No reply received")
+            return command.replace("M", "S").replace("****", "0000")  # Fake reply to keep going
+
         self.logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
         return reply.decode("ascii")
-
-        # FIXME handle no rpley with timeout
-        # reply = await asyncio.wait_for(self._serial.readline_async(), 3)
-        # try:
-        #
-        # except TimeoutError:
-        #     warnings.warn("No reply received - command not implemented on chiller!")
-        #     return ""
-        # else:
-
 
     async def get_temperature_setpoint(self) -> float:
         """ Returns the set point used by temperature controller. Internal if not probe, otherwise process temp. """
@@ -220,17 +216,21 @@ class HuberChiller:
     #     """ Set the pump speed, in rpm. See device display for range. """
     #     await self.send_command_and_read_reply("{M48"+self.int_to_string(rpm))
 
-    async def cooling_water_temp(self) -> float:
+    async def cooling_water_temp(self) -> Optional[float]:
         """ Returns the cooling water inlet temperature (in Celsius). """
         reply = await self.send_command_and_read_reply("{M2C****")
-        return PBCommand(reply).parse_temperature()
-    # FIXME -151 if not running
+        if temp := PBCommand(reply).parse_temperature() == -151:
+            return None
+        else:
+            return temp
 
-    async def cooling_water_pressure(self) -> float:
+    async def cooling_water_pressure(self) -> Optional[float]:
         """ Returns the cooling water inlet pressure (in mbar). """
         reply = await self.send_command_and_read_reply("{M2D****")
-        return PBCommand(reply).parse_integer()
-    # FIXME 64536 if not running
+        if pressure := PBCommand(reply).parse_integer() == 64536:
+            return None
+        else:
+            return pressure
 
     async def min_setpoint(self) -> float:
         """ Returns the minimum accepted value for the temperature setpoint (in Celsius). """
@@ -287,7 +287,6 @@ class HuberChiller:
 if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
-    chiller = HuberChiller(aioserial.AioSerial(port='COM1'))
+    chiller = HuberChiller(aioserial.AioSerial(port='COM8'))
     status = asyncio.run(chiller.status())
-    pump_set = asyncio.run(chiller.pump_speed_setpoint())
-    print(pump_set)
+    print(status)
