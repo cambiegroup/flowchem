@@ -106,18 +106,18 @@ class HamiltonPumpIO:
     def __init__(
         self,
         port: Union[int, str],
-        baud_rate: int = 9600,
+        baudrate: int = 9600,
         hw_initialization: bool = True,
     ):
         """
         Initialize communication on the serial port where the pumps are located and initialize them
         Args:
             port: Serial port identifier
-            baud_rate: Well, the baud rate :D
+            baudrate: Well, the baud rate :D
             hw_initialization: Whether each pumps has to be initialized. Note that this might be undesired!
         """
-        if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
-            raise InvalidConfiguration(f"Invalid baud rate provided {baud_rate}!")
+        if baudrate not in serial.serialutil.SerialBase.BAUDRATES:
+            raise InvalidConfiguration(f"Invalid baud rate provided {baudrate}!")
 
         if isinstance(port, int):
             port = f"COM{port}"
@@ -129,7 +129,7 @@ class HamiltonPumpIO:
             # noinspection PyPep8
             self._serial = serial.Serial(
                 port=port,
-                baudrate=baud_rate,
+                baudrate=baudrate,
                 parity=PARITY_EVEN,
                 stopbits=STOPBITS_ONE,
                 bytesize=SEVENBITS,
@@ -195,14 +195,15 @@ class HamiltonPumpIO:
 
     def parse_response(self, response: str) -> Tuple[bool, str]:
         """ Split a received line in its components: success, reply """
-        if response[:1] == HamiltonPumpIO.ACKNOWLEDGE:
+        status = response[:1]
+        assert status in (HamiltonPumpIO.ACKNOWLEDGE, HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE), "Invalid status reply"
+
+        if status == HamiltonPumpIO.ACKNOWLEDGE:
             self.logger.debug("Positive acknowledge received")
             success = True
-        elif response[:1] == HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE:
+        else:
             self.logger.debug("Negative acknowledge received")
             success = False
-        else:
-            raise ML600Exception(f"This should not happen. Invalid reply: {response}!")
 
         return success, response[1:].rstrip()
 
@@ -401,9 +402,7 @@ class ML600:
             return self.send_command_and_read_reply(ML600Commands.INIT_ALL)
 
     def initialize_valve(self):
-        """
-        Initialize valve only
-        """
+        """ Initialize valve only """
         return self.send_command_and_read_reply(ML600Commands.INIT_VALVE_ONLY)
 
     def initialize_syringe(self, speed: int = None):
@@ -467,9 +466,10 @@ class ML600:
 
     def wait_until_idle(self):
         """ Returns when no more commands are present in the pump buffer. """
-        self.log.debug(f"Pump {self.name} wait until idle")
+        self.log.debug(f"ML600 pump {self.name} wait until idle...")
         while self.is_busy:
             time.sleep(0.1)
+        self.log.debug(f"...ML600 pump {self.name} idle now!")
 
     @property
     def version(self) -> str:
@@ -597,6 +597,7 @@ class TwoPumpAssembly(Thread):
     def execute_stroke(
         self, pump_full: ML600, pump_empty: ML600, speed_s_per_stroke: int
     ):
+        """ Perform a cycle (1 syringe stroke) in the continuous-operation mode. See also run(). """
         # Logic is a bit complex here to ensure pause-less pumping
         # This needs the pump that withdraws to move faster than the pumping one. no way around.
 
@@ -608,7 +609,7 @@ class TwoPumpAssembly(Thread):
         # And do that fast so that we finish refill before the pumping is over
         pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke - 5)
         pump_empty.wait_until_idle()
-        # This allows us to set the reight pump position on the pump that was empty (not full and ready for next cycle)
+        # This allows us to set the right pump position on the pump that was empty (not full and ready for next cycle)
         pump_empty.valve_position = pump_empty.ValvePositionName.OUTPUT
         pump_full.wait_until_idle()
 

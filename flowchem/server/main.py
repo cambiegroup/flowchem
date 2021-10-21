@@ -33,7 +33,7 @@ def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
             respective classes, i.e. {device_class_name: DeviceClass}.
     """
     # Get (name, obj) tuple for the top level of each modules.
-    objects_in_modules = [inspect.getmembers(module, inspect.isclass) for module in DEVICE_MODULES]
+    objects_in_modules = [inspect.getmembers(module, inspect.isclass) for module in modules]
 
     # Return them as dict (itertools to flatten the nested, per module, lists)
     return {k: v for (k, v) in itertools.chain.from_iterable(objects_in_modules)}
@@ -41,12 +41,9 @@ def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
 
 def create_server_from_config(config: Union[Path, Dict]) -> Tuple[FastAPI, Server_mDNS]:
     """
+    Based on the yaml device graph provided, creates device objects and connect to them + .
 
-    Args:
-        config: Path to the yaml file with the device config or dict.
-
-    Returns:
-
+    config: Path to the yaml file with the device config or dict.
     """
     if isinstance(config, Path):
         with config.open() as stream:
@@ -63,9 +60,14 @@ def create_server_from_config(config: Union[Path, Dict]) -> Tuple[FastAPI, Serve
     logger.debug(f"The following device classes have been found: {device_mapper.keys()}")
 
     # Parse list of devices and generate endpoints
-    for device_name, device_config in config.items():
-        # Create object
-        obj_type = device_mapper[device_config["class"]]
+
+    for device_name, node_config in config["devices"].items():
+        # Schema validation ensures only 1 hit here
+        device_class = [name for name in device_mapper.keys() if name in node_config].pop()
+
+        # Object type
+        obj_type = device_mapper[device_class]
+        device_config = node_config[device_class]
 
         node = DeviceNode(device_name, device_config, obj_type)
         logger.debug(f"Created device <{device_name}> with config: {device_config}")
