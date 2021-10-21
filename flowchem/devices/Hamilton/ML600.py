@@ -4,7 +4,6 @@ This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO
 
 from __future__ import annotations
 
-import io
 import logging
 import string
 import threading
@@ -13,10 +12,10 @@ import warnings
 from dataclasses import dataclass
 from enum import IntEnum
 from threading import Thread
-from typing import Union, Tuple, Optional
+from typing import Tuple, Optional
 
-import serial
-from serial import PARITY_EVEN, SEVENBITS, STOPBITS_ONE
+import aioserial
+from aioserial import SerialException
 
 from flowchem.constants import InvalidConfiguration
 
@@ -59,13 +58,12 @@ class Protocol1CommandTemplate:
 class Protocol1Command(Protocol1CommandTemplate):
     """ Class representing a pump command and its expected reply """
 
-    # TODO move these two vars elsewhere!
-    # ':' is used for broadcast within the daisy chain.
     PUMP_ADDRESS = {
         pump_num: address
         for (pump_num, address) in enumerate(string.ascii_lowercase[:16], start=1)
     }
-    # # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
+    # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
+    # Note ':' is used for broadcast within the daisy chain.
 
     target_pump_num: Optional[int] = 1
     command_value: Optional[str] = None
@@ -99,93 +97,74 @@ class HamiltonPumpIO:
     ACKNOWLEDGE = chr(6)
     NEGATIVE_ACKNOWLEDGE = chr(21)
 
-    def __init__(
-        self,
-        port: Union[int, str],
-        baudrate: int = 9600,
-        hw_initialization: bool = True,
-    ):
+    def __init__(self, aio_port: aioserial.Serial, hw_initialization: bool = True):
         """
         Initialize communication on the serial port where the pumps are located and initialize them
         Args:
-            port: Serial port identifier
-            baudrate: Well, the baud rate :D
+            aio_port: aioserial.Serial() object
             hw_initialization: Whether each pumps has to be initialized. Note that this might be undesired!
         """
-        if baudrate not in serial.serialutil.SerialBase.BAUDRATES:
-            raise InvalidConfiguration(f"Invalid baud rate provided {baudrate}!")
-
-        if isinstance(port, int):
-            port = f"COM{port}"
 
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
+        self._serial = aio_port
+
+        # Lock for thread-safe serial communication when multiple pumps are on the same serial port
         self.lock = threading.Lock()
-
-        try:
-            # noinspection PyPep8
-            self._serial = serial.Serial(
-                port=port,
-                baudrate=baudrate,
-                parity=PARITY_EVEN,
-                stopbits=STOPBITS_ONE,
-                bytesize=SEVENBITS,
-                timeout=0.1,
-            )  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
-        except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration(
-                f"Check serial port availability! [{port}]"
-            ) from e
-
-        # noinspection PyTypeChecker
-        self.sio = io.TextIOWrapper(
-            buffer=io.BufferedRWPair(self._serial, self._serial),
-            line_buffering=True,
-            newline="\r",
-        )
 
         # This has to be run after each power cycle to assign addresses to pumps
         self.num_pump_connected = self._assign_pump_address()
         if hw_initialization:
             self._hw_init()
 
+    @classmethod
+    def from_config(cls, config):
+        """ Create HamiltonPumpIO from config. """
+        try:
+            serial_object = aioserial.AioSerial(**config)
+        except SerialException as e:
+            raise InvalidConfiguration(f"Cannot connect to the HuberChiller on the port <{config.get('port')}>") from e
+
+        return cls(serial_object, config.get("hw_initialization", True))
+
     def _assign_pump_address(self) -> int:
         """
         To be run on init, auto assign addresses to pumps based on their position on the daisy chain!
         A custom command syntax with no addresses is used here so read and write has been rewritten
         """
-        self._write("1a\r")
-        reply = self._read_reply()
+        try:
+            self._serial.write("1a\r")  # Do not use async here as it is called during init()
+        except aioserial.SerialException as e:
+            raise InvalidConfiguration from e
+
+        reply = self._serial.readline()
         if reply and reply[:1] == "1":
             # reply[1:2] should be the address of the last pump. However, this does not work reliably.
             # So here we enumerate the pumps explicitly instead
             last_pump = 0
             for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
-                self._write(f"{address}UR\r")
-                if "NV01" in self._read_reply():
+                self._serial.write(f"{address}UR\r")
+                if b"NV01" in self._serial.readline():
                     last_pump = pump_num
                 else:
                     break
             self.logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
             return int(last_pump)
         else:
-            raise InvalidConfiguration(f"No pump available on {self._serial.port}")
+            raise InvalidConfiguration(f"No pump found on {self._serial.port}")
 
-    def _hw_init(self):
+    async def _hw_init(self):
         """ Send to all pumps the HW initialization command (i.e. homing) """
-        self._write(":XR\r")  # Broadcast: initialize + execute
+        self._serial.write(":XR\r")  # Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
 
-    def _write(self, command: str):
+    async def _write(self, command: str):
         """ Writes a command to the pump """
-        self.logger.debug(f"Sending {repr(command)}")
-        try:
-            self.sio.write(command)
-        except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration from e
+        await self._serial.write_async(command)
+        self.logger.debug(f"Command {repr(command)} sent!")
 
-    def _read_reply(self) -> str:
+    async def _read_reply(self) -> str:
         """ Reads the pump reply from serial communication """
-        reply_string = self.sio.readline()
+        reply_string = await self._serial.readline_async()
         self.logger.debug(f"Reply received: {reply_string}")
         return reply_string
 
@@ -207,15 +186,15 @@ class HamiltonPumpIO:
         """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
         try:
             self._serial.reset_input_buffer()
-        except serial.PortNotOpenError as e:
+        except aioserial.PortNotOpenError as e:
             raise InvalidConfiguration from e
 
-    def write_and_read_reply(self, command: Protocol1Command) -> str:
+    async def write_and_read_reply(self, command: Protocol1Command) -> str:
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
         with self.lock:
             self.reset_buffer()
-            self._write(command.compile())
+            await self._write(command.compile())
             response = self._read_reply()
 
         if not response:
@@ -394,51 +373,55 @@ class ML600:
             print(f"Already found a serial connection on port {config.get('port')}! Re-using that!")
 
         if pumpio is None:
-            HamiltonPumpIO(port=config.get("port"), baudrate=config.get("baudrate"))
+            config_for_pumpio = config.copy()
+            ml600_specific_keys = ("syringe_volume", "address", "name")
+            for k in ml600_specific_keys:
+                config_for_pumpio.pop(k, None)
+            HamiltonPumpIO.from_config(config_for_pumpio)
 
         return cls(pumpio, syringe_volume=config.get("syringe_volume"), address=config.get("address"),
                    name=config.get("name"))
 
-    def send_command_and_read_reply(
+    async def send_command_and_read_reply(
         self,
         command_template: Protocol1CommandTemplate,
         command_value="",
         argument_value="",
     ) -> str:
         """ Sends a command based on its template and return the corresponding reply as str """
-        return self.pump_io.write_and_read_reply(
+        return await self.pump_io.write_and_read_reply(
             command_template.to_pump(self.address, command_value, argument_value)
         )
 
-    def initialize_pump(self, speed: int = None):
+    async def initialize_pump(self, speed: int = None):
         """
         Initialize both syringe and valve
         speed: 2-3692 is in seconds/stroke
         """
         if speed:
             assert 2 < speed < 3692
-            return self.send_command_and_read_reply(
+            return await self.send_command_and_read_reply(
                 ML600Commands.INIT_ALL, argument_value=str(speed)
             )
         else:
-            return self.send_command_and_read_reply(ML600Commands.INIT_ALL)
+            return await self.send_command_and_read_reply(ML600Commands.INIT_ALL)
 
-    def initialize_valve(self):
+    async def initialize_valve(self):
         """ Initialize valve only """
-        return self.send_command_and_read_reply(ML600Commands.INIT_VALVE_ONLY)
+        return await self.send_command_and_read_reply(ML600Commands.INIT_VALVE_ONLY)
 
-    def initialize_syringe(self, speed: int = None):
+    async def initialize_syringe(self, speed: int = None):
         """
         Initialize syringe only
         speed: 2-3692 is in seconds/stroke
         """
         if speed:
             assert 2 < speed < 3692
-            return self.send_command_and_read_reply(
+            return await self.send_command_and_read_reply(
                 ML600Commands.INIT_SYRINGE_ONLY, argument_value=str(speed)
             )
         else:
-            return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY)
+            return await self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY)
 
     def flowrate_to_seconds_per_stroke(self, flowrate_in_ml_min: float):
         """
@@ -460,33 +443,33 @@ class ML600:
     def _volume_to_step(self, volume_in_ml: float) -> int:
         return round(volume_in_ml * self.steps_per_ml) + self.offset_steps
 
-    def _to_step_position(self, position: int, speed: int = ""):
+    async def _to_step_position(self, position: int, speed: int = ""):
         """ Absolute move to step position """
-        return self.send_command_and_read_reply(
+        return await self.send_command_and_read_reply(
             ML600Commands.ABSOLUTE_MOVE, str(position), str(speed)
         )
 
-    def to_volume(self, volume_in_ml: float, speed: int = ""):
+    async def to_volume(self, volume_in_ml: float, speed: int = ""):
         """ Absolute move to volume """
-        self._to_step_position(self._volume_to_step(volume_in_ml), speed)
+        await self._to_step_position(self._volume_to_step(volume_in_ml), speed)
         self.log.debug(
             f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}"
         )
 
-    def pause(self):
+    async def pause(self):
         """ Pause any running command """
-        return self.send_command_and_read_reply(ML600Commands.PAUSE)
+        return await self.send_command_and_read_reply(ML600Commands.PAUSE)
 
-    def resume(self):
+    async def resume(self):
         """ Resume any paused command """
-        return self.send_command_and_read_reply(ML600Commands.RESUME)
+        return await self.send_command_and_read_reply(ML600Commands.RESUME)
 
-    def stop(self):
+    async def stop(self):
         """ Stops and abort any running command """
-        self.pause()
-        return self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
+        await self.pause()
+        return await self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
 
-    def wait_until_idle(self):
+    async def wait_until_idle(self):
         """ Returns when no more commands are present in the pump buffer. """
         self.log.debug(f"ML600 pump {self.name} wait until idle...")
         while self.is_busy:
@@ -503,10 +486,9 @@ class ML600:
         """ Checks if the pump is idle (not really, actually check if the last command has ended) """
         return self.send_command_and_read_reply(ML600Commands.REQUEST_DONE) == "Y"
 
-    @property
     def is_busy(self) -> bool:
         """ Not idle """
-        return not self.is_idle
+        return not await self.is_idle()
 
     @property
     def firmware_version(self) -> str:
