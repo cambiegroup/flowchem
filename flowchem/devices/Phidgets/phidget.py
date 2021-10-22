@@ -7,16 +7,14 @@ from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
 from Phidget22.Devices.Log import Log, LogLevel
 from Phidget22.PhidgetException import PhidgetException
 
+from flowchem.constants import DeviceError
+
 try:
     Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
 except FileNotFoundError as e:
     warnings.warn("Have you installed the phidget library?"
                   "Get it from https://www.phidgets.com/docs/Operating_System_Support")
     raise e
-
-
-class PressureSensorError(Exception):
-    pass
 
 
 class PressureSensor:
@@ -55,7 +53,7 @@ class PressureSensor:
             self.phidget.openWaitForAttachment(1000)
             self.log.debug("Pressure sensor connected!")
         except PhidgetException as e:
-            raise PressureSensorError(
+            raise DeviceError(
                 "Cannot connect to sensor! Check settings..."
             ) from e
 
@@ -67,7 +65,7 @@ class PressureSensor:
         self.phidget.close()
 
     def is_attached(self) -> bool:
-        """  """
+        """ Whether the device is connected """
         return bool(self.phidget.getAttached())
 
     def current_to_pressure(self, current_in_ampere: float) -> float:
