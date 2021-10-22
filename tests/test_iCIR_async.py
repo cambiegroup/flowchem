@@ -5,7 +5,7 @@ import sys
 import asyncua
 import pytest
 
-from flowchem.analysis.spectrum import IRSpectrum
+from devices.MettlerToledo.iCIR_common import IRSpectrum
 from flowchem import FlowIR_Async
 
 

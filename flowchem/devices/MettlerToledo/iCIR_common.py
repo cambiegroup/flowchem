@@ -1,6 +1,7 @@
 import warnings
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, List
+from pydantic import BaseModel
 
 
 class ProbeInfo(TypedDict):
@@ -105,3 +106,14 @@ class iCIR_spectrometer:
                     ].strip()
 
         return probe_info
+
+
+class IRSpectrum(BaseModel):
+    """
+    IR spectrum class.
+    Consider rampy for advance features (baseline fit, etc)
+    See e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb
+    """
+
+    wavenumber: List[float]
+    intensity: List[float]

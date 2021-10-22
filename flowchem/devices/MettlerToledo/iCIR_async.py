@@ -6,7 +6,7 @@ import logging
 from typing import List, Optional
 
 from flowchem.constants import DeviceError
-from flowchem.analysis.spectrum import IRSpectrum
+from devices.MettlerToledo.iCIR_common import IRSpectrum
 
 import asyncio
 import asyncua.ua.uaerrors
@@ -98,10 +98,10 @@ class FlowIR_Async(iCIR_spectrometer):
         try:
             intensity = await node.get_value()
             wavenumber = await FlowIR_Async._wavenumber_from_spectrum_node(node)
-            return IRSpectrum(wavenumber, intensity)
+            return IRSpectrum(wavenumber=wavenumber, intensity=intensity)
 
         except BadOutOfService:
-            return IRSpectrum([], [])
+            return IRSpectrum(wavenumber=[], intensity=[])
 
     async def last_spectrum_treated(self) -> IRSpectrum:
         """ Returns an IRSpectrum element for the last acquisition """

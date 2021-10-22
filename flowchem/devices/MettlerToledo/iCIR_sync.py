@@ -7,7 +7,7 @@ import logging
 from typing import List, Optional
 
 from flowchem.constants import DeviceError
-from flowchem.analysis.spectrum import IRSpectrum
+from devices.MettlerToledo.iCIR_common import IRSpectrum
 
 from asyncua import ua
 from asyncua.ua.uaerrors import BadOutOfService, Bad
@@ -96,9 +96,9 @@ class FlowIR_Sync(iCIR_spectrometer):
         try:
             intensity = node.get_value()
             wavenumber = FlowIR_Sync._wavenumber_from_spectrum_node(node)
-            return IRSpectrum(wavenumber, intensity)
+            return IRSpectrum(wavenumber=wavenumber, intensity=intensity)
         except BadOutOfService:
-            return IRSpectrum([], [])
+            return IRSpectrum(wavenumber=[], intensity=[])
 
     def last_spectrum_treated(self) -> IRSpectrum:
         """ Returns an IRSpectrum element for the last acquisition """
