@@ -20,18 +20,6 @@ from aioserial import SerialException
 from flowchem.constants import InvalidConfiguration
 
 
-class ML600Exception(Exception):
-    """ General pump exception """
-
-    pass
-
-
-class InvalidArgument(ML600Exception):
-    """ A valid command was followed by an invalid command_value, usually out of accepted range """
-
-    pass
-
-
 @dataclass
 class Protocol1CommandTemplate:
     """ Class representing a pump command and its expected reply, but without target pump number """
