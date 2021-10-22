@@ -14,6 +14,8 @@ from enum import Enum
 # from pint import UnitRegistry
 import getmac
 
+from flowchem.constants import DeviceError
+
 
 def autodiscover_knauer(source_ip: str = "") -> dict:
     """
@@ -66,22 +68,6 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
         mac = getmac.get_mac_address(ip=device_ip)
         mac_to_ip[mac] = device_ip
     return mac_to_ip
-
-
-class KnauerError(Exception):
-    pass
-
-
-class SwitchingException(KnauerError):
-    pass
-
-
-class ParameterError(KnauerError):
-    pass
-
-
-class CommandError(KnauerError):
-    pass
 
 
 class KnauerPumpHeads(Enum):
@@ -228,7 +214,7 @@ class KnauerValve(KnauerEthernetDevice):
             # retry once
             reply = super()._send_and_receive_handler(str(message) + "\r\n")
             if reply == "?":
-                CommandError(
+                DeviceError(
                     f"Command not supported, your valve is of type {self.valve_type}"
                 )
         try:
@@ -269,14 +255,14 @@ class KnauerValve(KnauerEthernetDevice):
         elif "E0" in reply:
 
             logging.error("valve was not switched because valve refused")
-            raise SwitchingException("valve was not switched because valve refused")
+            raise DeviceError("valve was not switched because valve refused")
 
         elif "E1" in reply:
             logging.error("Motor current to high. Check that")
-            raise SwitchingException("Motor current to high. Check that")
+            raise DeviceError("Motor current to high. Check that")
 
         else:
-            raise SwitchingException(f"Unknown reply received. Reply is {reply}")
+            raise DeviceError(f"Unknown reply received. Reply is {reply}")
 
     def get_valve_type(self):
         """aquires valve type, if not supported will throw error.
@@ -290,7 +276,7 @@ class KnauerValve(KnauerEthernetDevice):
         try:
             headtype = KnauerValveHeads(reply)
         except ValueError as e:
-            raise KnauerError(
+            raise DeviceError(
                 f"It seems you're trying instantiate a unknown device/unknown valve type {e} as Knauer Valve."
                 "Only Valves of type 16, 12, 10 and LI are supported"
             ) from e
@@ -363,12 +349,12 @@ class KnauerPump(KnauerEthernetDevice):
         message = str(message) + "\n\r"
         reply = super()._send_and_receive_handler(message).rstrip()
         if "ERROR:1" in reply:
-            CommandError(
+            DeviceError(
                 f"Invalid message sent to device. Message was: {message}. Reply is {reply}"
             )
 
         elif "ERROR:2" in reply:
-            ParameterError(
+            DeviceError(
                 f"Setpoint refused by device. Refer to manual for allowed values.  Message was: '{message}'. "
                 f"Reply is '{reply}'"
             )
@@ -380,7 +366,7 @@ class KnauerPump(KnauerEthernetDevice):
             logging.info(f"setpoint successfully acquired, is {reply}")
             return reply.split(":")[-1]
         elif not reply:
-            raise CommandError("No reply received")
+            raise DeviceError("No reply received")
         return reply
 
     # read and write. write: append ":value", read: append "?"
@@ -396,7 +382,7 @@ class KnauerPump(KnauerEthernetDevice):
                 return self.communicate(message + ":" + str(setpoint))
 
             else:
-                ParameterError(
+                DeviceError(
                     f"Internal check shows that setpoint provided ({setpoint}) is not in range ({setpoint_range})."
                     f"Refer to manual."
                 )
@@ -426,7 +412,7 @@ class KnauerPump(KnauerEthernetDevice):
         try:
             headtype = KnauerPumpHeads(reply)
         except ValueError as e:
-            raise KnauerError(
+            raise DeviceError(
                 "It seems you're trying instantiate an unknown device/unknown pump type as Knauer Pump."
                 "Only Knauer Azura Compact is supported"
             ) from e

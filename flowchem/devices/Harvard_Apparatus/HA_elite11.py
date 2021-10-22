@@ -15,37 +15,7 @@ from typing import Union, List, Optional, Tuple
 import serial
 from pint import UnitRegistry
 
-from flowchem.constants import InvalidConfiguration
-
-
-class Elite11Exception(Exception):
-    """ General pump exception """
-
-    pass
-
-
-class PumpStalled(Elite11Exception):
-    """ The pump has stalled (back pressure is too high or syringe empty) """
-
-    pass
-
-
-class InvalidCommand(Elite11Exception):
-    """ The provided command is invalid. This can be caused by the pump state e.g. if display is not in Quick Start! """
-
-    pass
-
-
-class InvalidArgument(Elite11Exception):
-    """ A valid command was followed by an invalid argument, usually out of accepted range """
-
-    pass
-
-
-class UnachievableMove(Elite11Exception):
-    """ Essentially for target volumes beyond the available volume """
-
-    pass
+from flowchem.constants import InvalidConfiguration, DeviceError
 
 
 @dataclass
@@ -59,11 +29,11 @@ class Protocol11CommandTemplate:
     def to_pump(self, address: int, argument: str = "") -> Protocol11Command:
         """ Returns a Protocol11Command by adding to the template pump address and command arguments """
         if self.requires_argument and not argument:
-            raise InvalidArgument(
+            raise DeviceError(
                 f"Cannot send command {self.command_string} without an argument!"
             )
         elif self.requires_argument is False and argument:
-            raise InvalidArgument(
+            raise DeviceError(
                 f"Cannot provide an argument to command {self.command_string}!"
             )
         return Protocol11Command(
@@ -201,23 +171,23 @@ class PumpIO:
     def check_for_errors(last_response_line, command_sent):
         """ Further response parsing, checks for error messages """
         if "Command error" in last_response_line:
-            raise InvalidCommand(
+            raise DeviceError(
                 f"The command {command_sent} is invalid for pump {command_sent.target_pump_address}!"
                 f"[Reply: {last_response_line}]"
             )
         elif "Unknown command" in last_response_line:
-            raise InvalidCommand(
+            raise DeviceError(
                 f"The command {command_sent} is unknown to pump {command_sent.target_pump_address}!"
                 f"[Maybe a withdraw command has been used with an infuse only pump?]"
                 f"[Reply: {last_response_line}]"
             )
         elif "Argument error" in last_response_line:
-            raise InvalidArgument(
+            raise DeviceError(
                 f"The command {command_sent} to pump {command_sent.target_pump_address} has an "
                 f"invalid argument [Reply: {last_response_line}]"
             )
         elif "Out of range" in last_response_line:
-            raise InvalidArgument(
+            raise DeviceError(
                 f"The command {command_sent} to pump {command_sent.target_pump_address} has an "
                 f"argument out of range! [Reply: {last_response_line}]"
             )
@@ -252,7 +222,7 @@ class PumpIO:
 
         # Ensure no stall is present (this might happen, so let's raise an Exception w/ diagnostic text)
         if PumpStatus.STALLED in return_status:
-            raise PumpStalled
+            raise DeviceError
 
         PumpIO.check_for_errors(last_response_line=response[-1], command_sent=command)
 
@@ -491,7 +461,7 @@ class Elite11:
     def ensure_withdraw_is_enabled(self):
         """ To be used on methods that need withdraw capabilities """
         if not self._withdraw_enabled:
-            raise InvalidCommand(
+            raise DeviceError(
                 "Cannot call this method with an infuse-only pump! Withdraw needed :("
             )
 
@@ -588,14 +558,14 @@ class Elite11:
         self.update_stored_volume()
         if self.is_moving():
             # should raise exception
-            raise UnachievableMove("Pump already is moving")
+            raise DeviceError("Pump already is moving")
 
         # if target volume is set, check if this is achievable
         elif (
             self._target_volume is not None
             and self._volume_stored < self._target_volume
         ):
-            raise UnachievableMove("Pump contains less volume than required")
+            raise DeviceError("Pump contains less volume than required")
         else:
             self.send_command_and_read_reply(Elite11Commands.RUN)
 
@@ -611,12 +581,12 @@ class Elite11:
         self.update_stored_volume()
 
         if self.is_moving():
-            raise UnachievableMove("Pump already is moving")
+            raise DeviceError("Pump already is moving")
 
         # if target volume is set, check if this is achievable
         elif self._target_volume:
             if self._volume_stored < self._target_volume:
-                raise UnachievableMove("Pump contains less volume than required")
+                raise DeviceError("Pump contains less volume than required")
         else:
             self.send_command_and_read_reply(Elite11Commands.INFUSE)
 
@@ -628,12 +598,12 @@ class Elite11:
         self.update_stored_volume()
 
         if self.is_moving():
-            raise UnachievableMove("Pump already is moving")
+            raise DeviceError("Pump already is moving")
 
         # if target volume is set, check if this is achievable
         elif self._target_volume:
             if self._volume_stored + self._target_volume > self.volume_syringe:
-                raise UnachievableMove("Pump would be overfilled")
+                raise DeviceError("Pump would be overfilled")
         else:
             self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
 
@@ -803,7 +773,7 @@ class Elite11:
     @syringe_diameter.setter
     def syringe_diameter(self, diameter_in_mm: float):
         if not 1 <= diameter_in_mm <= 33:
-            raise InvalidArgument(
+            raise DeviceError(
                 f"Diameter provided ({diameter_in_mm}) is not valid! [Accepted range: 1-33 mm]"
             )
 

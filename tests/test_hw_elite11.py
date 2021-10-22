@@ -10,9 +10,9 @@ import math
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import (
     PumpIO,
     Elite11,
-    PumpStatus,
-    InvalidArgument,
+    PumpStatus
 )
+from flowchem.constants import DeviceError
 import logging
 
 logging.basicConfig()
@@ -121,7 +121,7 @@ def test_force(pump: Elite11):
     assert pump.force == 10
     pump.force = 50.2
     assert pump.force == 50
-    with pytest.raises(InvalidArgument) as exception_info:
+    with pytest.raises(DeviceError) as exception_info:
         pump.force = 110
     assert "Out of range" in str(exception_info.value)
     assert pump.force == 50
@@ -132,11 +132,11 @@ def test_diameter(pump: Elite11):
     pump.diameter = 10
     assert pump.diameter == 10
 
-    with pytest.raises(InvalidArgument) as exception_info:
+    with pytest.raises(DeviceError) as exception_info:
         pump.diameter = 34
     assert "not valid" in str(exception_info.value)
 
-    with pytest.raises(InvalidArgument) as exception_info:
+    with pytest.raises(DeviceError) as exception_info:
         pump.diameter = 0.01
     assert "not valid" in str(exception_info.value)
 

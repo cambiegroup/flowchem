@@ -5,6 +5,7 @@ import warnings
 import logging
 from typing import List, Optional
 
+from flowchem.constants import DeviceError
 from flowchem.analysis.spectrum import IRSpectrum
 
 import asyncio
@@ -12,7 +13,7 @@ import asyncua.ua.uaerrors
 from asyncua import ua
 from asyncua.ua.uaerrors import BadOutOfService, Bad
 
-from flowchem.devices.MettlerToledo.iCIR_common import iCIR_spectrometer, FlowIRError, ProbeInfo
+from flowchem.devices.MettlerToledo.iCIR_common import iCIR_spectrometer, ProbeInfo
 
 
 class FlowIR_Async(iCIR_spectrometer):
@@ -54,7 +55,7 @@ class FlowIR_Async(iCIR_spectrometer):
                     f"Pleas use one of the supported versions: {self._supported_versions}"
                 )
         except ua.UaStatusCodeError as e:  # iCIR app closed
-            raise FlowIRError(
+            raise DeviceError(
                 "iCIR app not installed or closed or no instrument available!"
             ) from e
 
@@ -125,7 +126,7 @@ class FlowIR_Async(iCIR_spectrometer):
     ):
         template = FlowIR_Async._normalize_template_name(template)
         if self.is_local() and FlowIR_Async.is_template_name_valid(template) is False:
-            raise FlowIRError(
+            raise DeviceError(
                 f"Cannot start template {template}: name not valid! Check if is in: "
                 r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
             )
@@ -145,7 +146,7 @@ class FlowIR_Async(iCIR_spectrometer):
             collect_bg = False
             await method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
         except Bad as e:
-            raise FlowIRError(
+            raise DeviceError(
                 "The experiment could not be started!\n"
                 "Check iCIR status and close any open experiment."
             ) from e

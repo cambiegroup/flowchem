@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import TypedDict
 
@@ -14,16 +15,6 @@ class ProbeInfo(TypedDict):
     resolution: str
     scan_option: str
     gain: str
-
-
-class IRSpectrometerError(Exception):
-    """ General iCIR exceptions (applying both to ReactIR and FlowIR)"""
-    pass
-
-
-class FlowIRError(IRSpectrometerError):
-    """ FlowIR specific exceptions """
-    pass
 
 
 # noinspection PyPep8Naming
@@ -72,7 +63,8 @@ class iCIR_spectrometer:
             r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
         )
         if not template_directory.exists() or not template_directory.is_dir():
-            raise IRSpectrometerError("iCIR template folder not found!")
+            warnings.warn("iCIR template folder not found on the local PC!")
+            return False
 
         # Ensures the name has been provided with no extension (common mistake)
         template_name = iCIR_spectrometer._normalize_template_name(template_name)

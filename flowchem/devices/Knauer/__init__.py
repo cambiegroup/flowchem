@@ -1,1 +1,1 @@
-from .KnauerPumpValveAPI import KnauerPump, KnauerValve, KnauerError, autodiscover_knauer
+from .KnauerPumpValveAPI import KnauerPump, KnauerValve, autodiscover_knauer
