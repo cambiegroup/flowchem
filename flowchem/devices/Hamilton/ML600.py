@@ -634,7 +634,10 @@ if __name__ == "__main__":
         "port": "COM12",
         "address": 1,
         "name": "test1",
-        "syringe_volume": 5
+        "syringe_volume": 5,
+        "parity": aioserial.PARITY_EVEN,
+        "stopbits":aioserial.STOPBITS_ONE,
+        "bytesize":aioserial.SEVENBITS,
     }
     pump = ML600.from_config(conf)
     asyncio.run(pump.initialize_pump())
