@@ -1,16 +1,15 @@
 """
 Driver for Huber chillers.
 """
+import asyncio
 import logging
-from typing import List, Iterable, Dict
+from dataclasses import dataclass
+from typing import List, Dict
 
 import aioserial
-import asyncio
-from dataclasses import dataclass
-
 from serial import SerialException
 
-from devices.Hamilton.ML600 import InvalidConfiguration
+from flowchem.devices.Hamilton.ML600 import InvalidConfiguration
 
 
 @dataclass
