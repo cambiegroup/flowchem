@@ -6,7 +6,7 @@ import logging
 from typing import List, Optional
 
 from flowchem.constants import DeviceError
-from devices.MettlerToledo.iCIR_common import IRSpectrum
+from flowchem.devices.MettlerToledo.iCIR_common import IRSpectrum
 
 import asyncio
 import asyncua.ua.uaerrors
