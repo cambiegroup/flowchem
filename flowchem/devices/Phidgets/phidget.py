@@ -64,11 +64,21 @@ class PressureSensor:
     def __del__(self):
         self.phidget.close()
 
+    def get_router(self):
+        """ Creates an APIRouter for this object. """
+        from fastapi import APIRouter
+
+        router = APIRouter()
+        router.add_api_route("/attached", self.is_attached, methods=["GET"])
+        router.add_api_route("/pressure", self.read_pressure, methods=["GET"])
+
+        return router
+
     def is_attached(self) -> bool:
         """ Whether the device is connected """
         return bool(self.phidget.getAttached())
 
-    def current_to_pressure(self, current_in_ampere: float) -> float:
+    def _current_to_pressure(self, current_in_ampere: float) -> float:
         """ Converts current reading into pressure value """
         ma = current_in_ampere * 1000
         # minP..maxP is 4..20mA
@@ -76,7 +86,7 @@ class PressureSensor:
         self.log.debug(f"Read pressure {measured_P} barg")
         return measured_P
 
-    def read(self) -> Optional[float]:
+    def read_pressure(self) -> Optional[float]:
         """
         Read pressure from sensor, in bar.
 
@@ -92,11 +102,11 @@ class PressureSensor:
         """
         try:
             current = self.phidget.getCurrent()
-            self.log.debug(f"Current read: {current}")
+            self.log.debug(f"Current pressure: {current}")
         except PhidgetException:
             return None
         else:
-            return self.current_to_pressure(current)
+            return self._current_to_pressure(current)
 
 
 if __name__ == "__main__":
@@ -105,5 +115,5 @@ if __name__ == "__main__":
         sensor_min_bar=0, sensor_max_bar=25, vint_serial_number=627768, vint_channel=0
     )
     while True:
-        print(test.read())
+        print(test.read_pressure())
         time.sleep(1)
