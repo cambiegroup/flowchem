@@ -311,6 +311,7 @@ class ML600:
             name: 'cause naming stuff is important
         """
         self.pump_io = pump_io
+        ML600._io_instances.append(self.pump_io)
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address: int = address
         if syringe_volume not in ML600.VALID_SYRINGE_VOLUME:
