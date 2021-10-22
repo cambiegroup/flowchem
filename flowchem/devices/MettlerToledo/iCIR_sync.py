@@ -187,7 +187,7 @@ if __name__ == "__main__":
     ir_spectrometer.start_experiment(name="reaction_monitoring", template=template_name)
 
     spectrum = ir_spectrometer.last_spectrum_treated()
-    while spectrum.empty:
+    while len(spectrum.intensity) == 0:
         spectrum = ir_spectrometer.last_spectrum_treated()
 
     for x in range(3):
