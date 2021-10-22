@@ -8,9 +8,11 @@ Changes:
 """
 
 import re
-from typing import Union, Literal, Tuple, Optional, List
+from typing import Literal, Tuple, Optional, List
 
 import serial
+
+from flowchem.constants import InvalidConfiguration
 
 
 class MansonException(Exception):
@@ -30,31 +32,29 @@ class InvalidOrNoReply(MansonException):
 
 
 class PowerSupply:
+    """ Control module for Manson Power Supply (e.g. used to power LEDs in the photo-rector or as potentiostat) """
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
     def __init__(self, com_port, baud_rate=9600):
-        if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
-            raise MansonException(f"Invalid baud rate provided {baud_rate}!")
         try:
             self._sp = serial.Serial(
                 com_port,
                 baudrate=baud_rate,
-                bytesize=8,
-                parity="N",
-                stopbits=1,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
                 timeout=0.1,
             )
             self._sp.reset_input_buffer()
             self._sp.reset_output_buffer()
 
         except serial.SerialException as e:
-            print(f"Could not connect to power supply: {e}")
-            raise NotConnectedError from e
+            raise InvalidConfiguration(f"Could not connect to power supply on port <{com_port}>") from e
 
         # for the unlikely case
         if self.get_info() not in self.MODEL_ALT_RANGE:
-            raise InvalidOrNoReply(
-                f"Device on {com_port} is either not supported or no MansonLib Device"
+            raise InvalidConfiguration(
+                f"Device on {com_port} is either not supported! [Supported models: {self.MODEL_ALT_RANGE}]"
             )
 
     def close(self):
@@ -101,10 +101,12 @@ class PowerSupply:
         raise InvalidOrNoReply
 
     def output_on(self) -> bool:
+        """ Turn on electricity on output """
         response = self._send_command("SOUT0")
         return response == "OK"
 
     def output_off(self) -> bool:
+        """ Turn off electricity on output """
         response = self._send_command("SOUT1")
         return response == "OK"
 
@@ -173,7 +175,7 @@ class PowerSupply:
 
         return v_setting, c_setting / 10
 
-    def set_voltage(self, value_in_volt: Union[int, float]) -> bool:
+    def set_voltage(self, value_in_volt: float) -> bool:
         """ Set target voltage """
         # Zero fill by left pad with zeros, up to three digits
         cmd = "VOLT" + str(value_in_volt * 10).zfill(3)
@@ -182,6 +184,7 @@ class PowerSupply:
         return response == "OK"
 
     def set_current(self, current_in_ampere) -> bool:
+        """ Set target current """
         if not isinstance(current_in_ampere, (int, float)):
             raise InvalidArgument
 
@@ -265,16 +268,34 @@ class PowerSupply:
         return response == "OK"
 
     def remove_protection(self) -> bool:
-        """" I guess it removes over voltage protection """
+        """" I guess it removes over voltage protection? """
         response = self._send_command("SPRO0")
         return bool(response)
 
     def add_protection(self) -> bool:
-        """" I guess it adds over voltage protection """
+        """" I guess it adds over voltage protection? """
         response = self._send_command("SPRO1")
         return bool(response)
 
     def set_voltage_and_current(self, voltage_in_volt: float, current_in_ampere: float):
-        """ Convenience method to contemporary set voltage and current """
+        """ Convenience method to set both voltage and current """
         self.set_voltage(voltage_in_volt)
         self.set_current(current_in_ampere)
+
+    def get_router(self):
+        """ Creates an APIRouter for this PowerSupply instance. """
+        from fastapi import APIRouter
+
+        router = APIRouter()
+        router.add_api_route("/output/on", self. output_on, methods=["GET"])
+        router.add_api_route("/output/off", self.output_off, methods=["GET"])
+        router.add_api_route("/output/power", self.get_output_power, methods=["GET"])
+        router.add_api_route("/output/mode", self.get_output_mode, methods=["GET"])
+        router.add_api_route("/voltage/read", self.get_output_voltage, methods=["GET"])
+        router.add_api_route("/voltage/max", self.set_voltage, methods=["PUT"])
+        router.add_api_route("/current/read", self.get_output_current, methods=["GET"])
+        router.add_api_route("/current/max", self.set_current, methods=["PUT"])
+        router.add_api_route("/protection/add", self.add_protection, methods=["GET"])
+        router.add_api_route("/protection/remove", self.remove_protection, methods=["GET"])
+
+        return router

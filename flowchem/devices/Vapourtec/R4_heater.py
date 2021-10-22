@@ -25,6 +25,9 @@ class InvalidConfiguration(R4Exception):
 
 
 class R4Heater:
+    """
+    Virtual control of the Vapourtec R4 heating module.
+    """
     def __init__(self, port: Union[int, str]):
         if isinstance(port, int):
             port = f"COM{port}"
@@ -143,5 +146,3 @@ if __name__ == "__main__":
     print("not waiting")
     heat.set_temperature(0, 30, wait=True)
     print("actually I waited")
-
-    breakpoint()

@@ -1,16 +1,11 @@
+""" For each device node described in the configuration [graph] instantiated it and create endpoints """
 import inspect
 import logging
 
-from flowchem import Spinsolve, HuberChiller
-from flowchem.server.routers import *
+from fastapi import APIRouter
 
-"""
- NOTE:
- - parse config
- - create obj instance
- - inject into router creator
- - make zeroconf
-"""
+from flowchem import Spinsolve
+from flowchem.server.routers import *
 
 
 class DeviceNode:
@@ -44,6 +39,8 @@ class DeviceNode:
             self.router = self.device.get_router()
         else:
             self.router = DeviceNode.router_generator[obj_type](self.device)
+
+        assert isinstance(self.router, APIRouter)
         # Config router
         self.router.prefix = f"/{self.safe_title}"
         self.router.tags = self.safe_title
