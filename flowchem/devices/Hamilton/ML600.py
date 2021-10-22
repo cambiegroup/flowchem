@@ -535,6 +535,18 @@ class ML600:
     def transfer(self, volume, from_valve, to_valve, speed_in, speed_out, wait):
         pass
 
+    # convenience function
+    def refill_syringe(self, volume: float, flow_rate: float):
+        self.log.debug('refilling syringe')
+        self.valve_position=self.ValvePositionName.INPUT
+        self.to_volume(volume, self.flowrate_to_seconds_per_stroke(flow_rate))
+
+    # convenience function
+    def deliver_from_syringe(self, flow_rate: float, volume: float = 0):
+        self.log.debug('pumping from syringe')
+        self.valve_position=self.ValvePositionName.OUTPUT
+        self.to_volume(volume, self.flowrate_to_seconds_per_stroke(flow_rate))
+
 
 class TwoPumpAssembly(Thread):
     """
