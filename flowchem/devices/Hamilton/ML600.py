@@ -94,6 +94,13 @@ class HamiltonPumpIO:
 
     ACKNOWLEDGE = chr(6)
     NEGATIVE_ACKNOWLEDGE = chr(21)
+    DEFAULT_CONFIG = {
+        "timeout": 0.1,
+        "baudrate": 9600,
+        "parity": aioserial.PARITY_EVEN,
+        "stopbits": aioserial.STOPBITS_ONE,
+        "bytesize": aioserial.SEVENBITS,
+    }
 
     def __init__(self, aio_port: aioserial.Serial, hw_initialization: bool = True):
         """
@@ -117,12 +124,13 @@ class HamiltonPumpIO:
     @classmethod
     def from_config(cls, config):
         """ Create HamiltonPumpIO from config. """
-        if "timeout" not in config:
-            config["timeout"] = 0.2
+        # Merge default settings, including serial, with provided ones.
+        configuration = dict(HamiltonPumpIO.DEFAULT_CONFIG, **config)
+
         try:
-            serial_object = aioserial.AioSerial(**config)
+            serial_object = aioserial.AioSerial(**configuration)
         except SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the HuberChiller on the port <{config.get('port')}>") from e
+            raise InvalidConfiguration(f"Cannot connect to the pump on the port <{configuration.get('port')}>") from e
 
         return cls(serial_object, config.get("hw_initialization", True))
 
@@ -624,6 +632,9 @@ class TwoPumpAssembly(Thread):
         self.log.info("Pump flushing completed!")
 
 
+async def main(p1: ML600, p2: ML600):
+    await asyncio.gather(p1.initialize_pump(), p2.initialize_pump())
+
 if __name__ == "__main__":
     import asyncio
     logging.basicConfig()
@@ -636,12 +647,12 @@ if __name__ == "__main__":
         "address": 1,
         "name": "test1",
         "syringe_volume": 5,
-        "parity": aioserial.PARITY_EVEN,
-        "stopbits": aioserial.STOPBITS_ONE,
-        "bytesize": aioserial.SEVENBITS,
     }
-    pump = ML600.from_config(conf)
-    asyncio.run(pump.initialize_pump())
+    pump1 = ML600.from_config(conf)
+    conf2 = conf.copy()
+    conf2["address"] = 2
+    pump2 = ML600.from_config(conf2)
+    asyncio.run(main(pump1, pump2))
     # pump_connection = HamiltonPumpIO(41)
     # test1 = ML600(pump_connection, syringe_volume=5, address=1)
     # test2 = ML600(pump_connection, syringe_volume=5, address=2)
