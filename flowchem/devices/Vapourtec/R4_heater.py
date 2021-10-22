@@ -1,75 +1,60 @@
-import io
 import time
-from typing import Union, Tuple
+from typing import Tuple
 
-import serial
+import aioserial
 import logging
 import threading
 
-from serial import PARITY_NONE, STOPBITS_ONE, EIGHTBITS
+from flowchem.constants import DeviceError, InvalidConfiguration
 
 try:
     from flowchem.devices.Vapourtec.commands import R4Command, VapourtecCommand
 except ImportError as e:
     raise PermissionError(
-        "Cannot redistribute Vapourtec commands... Contact them to get it!"
+        "Cannot redistribute Vapourtec commands... Contact Vapourtec to get them!"
     ) from e
 
 
-class R4Exception(Exception):
-    pass
-
-
-class InvalidConfiguration(R4Exception):
-    pass
-
-
 class R4Heater:
-    """
-    Virtual control of the Vapourtec R4 heating module.
-    """
-    def __init__(self, port: Union[int, str]):
-        if isinstance(port, int):
-            port = f"COM{port}"
+    DEFAULT_CONFIG = {
+        "timeout": 0.1,
+        "baudrate": 19200,
+        "parity": aioserial.PARITY_NONE,
+        "stopbits": aioserial.STOPBITS_ONE,
+        "bytesize": aioserial.EIGHTBITS,
+    }
 
+    """ Virtual control of the Vapourtec R4 heating module. """
+    def __init__(self, aio: aioserial.AioSerial):
+
+        self._serial = aio
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self.lock = threading.Lock()
 
+    @classmethod
+    def from_config(cls, config):
+        """ Create instance from config dict. Used by server to initialize obj from config. """
+        # Merge default settings, including serial, with provided ones.
+        configuration = dict(R4Heater.DEFAULT_CONFIG, **config)
+
         try:
-            # noinspection PyPep8
-            self._serial = serial.Serial(
-                port=port,
-                baudrate=19200,
-                parity=PARITY_NONE,
-                stopbits=STOPBITS_ONE,
-                bytesize=EIGHTBITS,
-                timeout=0.1,
-            )  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
-        except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration(
-                f"Check serial port availability! [{port}]"
-            ) from e
+            serial_object = aioserial.AioSerial(**configuration)
+        except aioserial.SerialException as e:
+            raise InvalidConfiguration(f"Cannot connect to the HuberChiller on the port <{config.get('port')}>") from e
 
-        # noinspection PyTypeChecker
-        self.sio = io.TextIOWrapper(
-            buffer=io.BufferedRWPair(self._serial, self._serial),
-            line_buffering=True,
-            newline="\r\n",
-        )
+        return cls(serial_object)
 
-    def _write(self, command: str):
+    async def _write(self, command: str):
         """ Writes a command to the pump """
-        self.logger.debug(f"Sending {repr(command)}")
-        try:
-            self.sio.write(command + "\r\n")
-        except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration from e
+        cmd = command + "\r\n"
+        await self._serial.write_async(cmd.encode("ascii"))
+        self.logger.debug(f"Sent command: {repr(command)}")
 
-    def _read_reply(self) -> str:
+    async def _read_reply(self) -> str:
         """ Reads the pump reply from serial communication """
-        reply_string = self.sio.readline()
-        self.logger.debug(f"Reply received: {reply_string}")
-        return reply_string
+        reply_string = await self._serial.readline_async()
+        self.logger.debug(f"Reply received: {reply_string.decode('ascii')}")
+        return reply_string.decode("ascii")
 
     def parse_response(self, response: str) -> Tuple[bool, str]:
         """ Split a received line in its components: success, reply """
@@ -79,22 +64,15 @@ class R4Heater:
             else:
                 return False, response.rstrip()
         except KeyError:
-            raise R4Exception(f"Invalid reply {response}")
+            raise DeviceError(f"Invalid reply {response}")
 
-    def reset_buffer(self):
-        """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
-        try:
-            self._serial.reset_input_buffer()
-        except serial.PortNotOpenError as e:
-            raise InvalidConfiguration from e
-
-    def write_and_read_reply(self, command: R4Command) -> str:
+    async def write_and_read_reply(self, command: R4Command) -> str:
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
         with self.lock:
-            self.reset_buffer()
-            self._write(command.compile())
-            response = self._read_reply()
+            self._serial.reset_input_buffer()
+            await self._write(command.compile())
+            response = await self._read_reply()
 
         if not response:
             raise InvalidConfiguration("No response received from heating module!")
@@ -104,13 +82,13 @@ class R4Heater:
 
         return parsed_response
 
-    def wait_for_target_temp(self, channel: int):
+    async def wait_for_target_temp(self, channel: int):
         """ Waits until the target channel has reached the desired temperature and is stable """
         t_stable = False
         failure = 0
         while not t_stable:
             try:
-                ret_code = self.write_and_read_reply(
+                ret_code = await self.write_and_read_reply(
                     VapourtecCommand.TEMP.set_argument(channel)
                 )
             except InvalidConfiguration as e:
@@ -127,22 +105,35 @@ class R4Heater:
             else:
                 time.sleep(1)
 
-    def set_temperature(self, channel, target_temperature: int, wait: bool = False):
+    async def set_temperature(self, channel, target_temperature: int, wait: bool = False):
         """ Set temperature and optionally waits for S """
         set_command = getattr(VapourtecCommand, f"SET_CH{channel}_TEMP")
-        self.write_and_read_reply(
-            set_command.set_argument(int(target_temperature))
-        )  # int casting imp! np.float fails
-        self.write_and_read_reply(VapourtecCommand.CH_ON.set_argument(channel))
+        # Float not accepted, must cast to int
+        await self.write_and_read_reply(set_command.set_argument(int(target_temperature)))
+        # Set temperature implies channel on
+        await self.write_and_read_reply(VapourtecCommand.CH_ON.set_argument(channel))
 
         if wait:
-            self.wait_for_target_temp(channel)
+            await self.wait_for_target_temp(channel)
+
+    def get_router(self):
+        """ Creates an APIRouter for this object. """
+        from fastapi import APIRouter
+
+        router = APIRouter()
+        router.add_api_route("/temperature/set", self.set_temperature, methods=["PUT"])
+
+        return router
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    heat = R4Heater(11)
-    heat.set_temperature(0, 30, wait=False)
-    print("not waiting")
-    heat.set_temperature(0, 30, wait=True)
-    print("actually I waited")
+    import asyncio
+    heat = R4Heater.from_config(dict(port="COM11"))
+
+    async def main():
+        await heat.set_temperature(0, 30, wait=False)
+        print("not waiting")
+        await heat.set_temperature(0, 30, wait=True)
+        print("actually I waited")
+
+    asyncio.run(main())
