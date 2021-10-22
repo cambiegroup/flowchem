@@ -31,7 +31,7 @@ class ExperimentConditions:
     _quencher_eq_to_activator = 2
 
     # could always be initialised as starting condition and adjusted by optimizer/list. Or be initialised as the to use_condition
-    def __init__(self, residence_time_in_seconds=60, activator_equivalents=1.5, temperature_in_celsius=-80):
+    def __init__(self, residence_time_in_seconds=60, activator_equivalents=1.5, temperature_in_celsius=25):
         # mutable
         self.residence_time = residence_time_in_seconds * flowchem_ureg.second  # sec
         self.concentration_donor = self._stock_concentration_donor
@@ -88,7 +88,11 @@ class FlowConditions:
 
 
         self.activator_flow_rate, self.donor_flow_rate = self.get_individual_flow_rate(self._total_flow_rate,
-                                                                                       concentrations=(self._concentration_activator, self._concentration_donor), equivalents=(experiment_conditions.activator_equivalents, 1))
+                                                                                       concentrations=(self._concentration_activator.magnitude, self._concentration_donor.magnitude,), equivalents=(experiment_conditions.activator_equivalents, 1,))
+        #TODO seem very high, check this, probably due to wrong unit conversion
+        self.activator_flow_rate = self.activator_flow_rate.to(flowchem_ureg.milliliter / flowchem_ureg.minute)
+        self.donor_flow_rate = self.donor_flow_rate.to(flowchem_ureg.milliliter / flowchem_ureg.minute)
+
         # TODO watch out, now the quencher equivalents are based on donor, I think
         self.quencher_flow_rate = self.get_flowrate_added_stream(self._concentration_donor, self.donor_flow_rate, self._concentration_quencher, experiment_conditions._quencher_equivalents)
 
@@ -107,10 +111,12 @@ class FlowConditions:
     def get_flow_rate(self, relevant_volume: float, residence_time: int):
         return (relevant_volume / residence_time).to(flowchem_ureg.milliliter / flowchem_ureg.minute)
 
+    #TODO for now concentration needs to go in alway in the same dimension, and as float
     def get_individual_flow_rate(self, target_flow_rate: float, equivalents: tuple = (), concentrations: tuple = ()):
         """
         Give as many inputs as desired, output will be in same order as input and hold required flowrates
         """
+
         normalised_flow_rates = array(equivalents) / array(concentrations)
         sum_of_normalised_flowrates = sum(normalised_flow_rates)
         correction_factor = target_flow_rate / sum_of_normalised_flowrates
@@ -129,10 +135,11 @@ class FlowProcedure:
         self.chiller: Huber = platform_graph['chiller']
 
     def individual_procedure(self, flow_conditions: FlowConditions):
-        self.chiller.set_temperature(flow_conditions.temperature)
+        # TODO also here, for now this is a workaround for ureg.
+        self.chiller.set_temperature(flow_conditions.temperature.magnitude)
         self.chiller.start()
 
-        while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature)) > 2:
+        while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
             sleep(10)
             print('Chiller waiting for temperature')
 
@@ -147,8 +154,8 @@ class FlowProcedure:
         # start timer
         sleep(flow_conditions.steady_state_time)
 
-        self.hplc.set_sample_name(flow_conditions.experiment_id)
-        self.hplc.run()
+#        self.hplc.set_sample_name(flow_conditions.experiment_id)
+#        self.hplc.run()
 
         # timer is over, start
         self.pumps['donor']. stop()
@@ -162,29 +169,28 @@ class FlowProcedure:
         sending the hplc method"""
         # prepare HPLC
 
-        self.hplc.exit()
-        self.hplc.switch_lamp_on()  # address and port hardcoded
-        self.hplc.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ",
-                                     start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
-        self.hplc.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
-                                     method_list=("autostartup_005_Sugar-c18_shortened.MET",
-                                                  "autostartup_01_Sugar-c18_shortened.MET",
-                                                  "autostartup_015_Sugar-c18_shortened.MET",
-                                                  "autostartup_02_Sugar-c18_shortened.MET",
-                                                  "autostartup_025_Sugar-c18_shortened.MET",
-                                                  "autostartup_03_Sugar-c18_shortened.MET",
-                                                  "autostartup_035_Sugar-c18_shortened.MET",
-                                                  "autostartup_04_Sugar-c18_shortened.MET",
-                                                  "autostartup_045_Sugar-c18_shortened.MET",
-                                                  "autostartup_05_Sugar-c18_shortened.MET",))
-        self.hplc.load_file(r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET")
+#        self.hplc.exit()
+#        self.hplc.switch_lamp_on()  # address and port hardcoded
+#        self.hplc.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ",
+#                                     start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
+#        self.hplc.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
+#                                     method_list=("autostartup_005_Sugar-c18_shortened.MET",
+                                                  # "autostartup_01_Sugar-c18_shortened.MET",
+                                                  # "autostartup_015_Sugar-c18_shortened.MET",
+                                                  # "autostartup_02_Sugar-c18_shortened.MET",
+                                                  # "autostartup_025_Sugar-c18_shortened.MET",
+                                                  # "autostartup_03_Sugar-c18_shortened.MET",
+                                                  # "autostartup_035_Sugar-c18_shortened.MET",
+                                                  # "autostartup_04_Sugar-c18_shortened.MET",
+                                                  # "autostartup_045_Sugar-c18_shortened.MET",
+#                                                  "autostartup_05_Sugar-c18_shortened.MET",))
+#        self.hplc.load_file(r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET")
 
         # Todo fill
         # commander.load_file("opendedicatedproject") # open a project for measurements
 
         # fill the activator to the hamilton syringe
         self.pumps['activator'].refill_syringe(4, 8)
-        self.pumps['activator'].deliver_from_syringe(4, 16)
 
         self.pumps['quencher'].set_maximum_pressure(5)
 
@@ -276,10 +282,12 @@ if __name__ == "__main__":
 
             'activator': ML600(HamiltonPumpIO("COM12"), 5),
 
-            'quench': KnauerPump("192.168.10.113"),
+            'quencher': KnauerPump("192.168.10.113"),
         },
         'HPLC': ClarityInterface(remote=True, host='192.168.10.11', port=10014, instrument_number=2),
-        'chiller': Huber('COM7'),
+
+
+        'chiller': Huber('COM1'),
         # assume always the same volume from pump to inlet, before T-mixer can be neglected, times three for inlets since 3 equal inlets
         'internal_volumes': {'dead_volume_before_reactor': (56+3)* 3 * flowchem_ureg.microliter, # TODO misses volume from tmixer to steel capillaries
                              'volume_mixing': 9.5 * flowchem_ureg.microliter,
@@ -289,14 +297,14 @@ if __name__ == "__main__":
     }
 
     #
-    fr = FileReceiver('192.168.10.20', 10359, allowed_address='192.168.10.11')
+    fr = FileReceiver('192.168.10.20', 10339, allowed_address='192.168.10.11')
     scheduler = Scheduler(SugarPlatform)
 
     # This obviously could be included into the scheduler
     results_listener = ResultListener('D:\\transferred_chromatograms', '*.txt', scheduler.analysed_samples)
 
     scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=1))
-    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=2))
+    scheduler.create_experiment(ExperimentConditions(temperature_in_celsius=23))
     scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=5))
     scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=10))
     scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
