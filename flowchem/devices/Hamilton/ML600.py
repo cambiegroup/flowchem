@@ -633,15 +633,8 @@ class TwoPumpAssembly(Thread):
         self.log.info("Pump flushing completed!")
 
 
-async def main(p1: ML600, p2: ML600):
-    await asyncio.gather(p1.initialize_pump(), p2.initialize_pump())
-
 if __name__ == "__main__":
     import asyncio
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
-    # log = logging.getLogger(__name__ + ".ML600")
-    # log.setLevel(logging.DEBUG)
 
     conf = {
         "port": "COM12",
@@ -650,13 +643,4 @@ if __name__ == "__main__":
         "syringe_volume": 5,
     }
     pump1 = ML600.from_config(conf)
-    conf2 = conf.copy()
-    conf2["address"] = 2
-    pump2 = ML600.from_config(conf2)
-    asyncio.run(main(pump1, pump2))
-    # pump_connection = HamiltonPumpIO(41)
-    # test1 = ML600(pump_connection, syringe_volume=5, address=1)
-    # test2 = ML600(pump_connection, syringe_volume=5, address=2)
-    # metapump = TwoPumpAssembly(test1, test2, target_flowrate=15, init_seconds=20)
-    # metapump.start()
-    # input()
+    asyncio.run(pump1.initialize_pump())
