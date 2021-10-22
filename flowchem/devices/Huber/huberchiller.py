@@ -8,13 +8,9 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional
 
 import aioserial
-from serial import SerialException
+from aioserial import SerialException
 
 from flowchem.constants import InvalidConfiguration
-
-from serial import SerialException
-
-from devices.Hamilton.ML600 import InvalidConfiguration
 
 
 @dataclass

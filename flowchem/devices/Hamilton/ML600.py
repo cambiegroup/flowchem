@@ -4,7 +4,6 @@ This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO
 
 from __future__ import annotations
 
-import io
 import logging
 import string
 import threading
@@ -13,24 +12,12 @@ import warnings
 from dataclasses import dataclass
 from enum import IntEnum
 from threading import Thread
-from typing import Union, Tuple, Optional
+from typing import Tuple, Optional
 
-import serial
-from serial import PARITY_EVEN, SEVENBITS, STOPBITS_ONE
+import aioserial
+from aioserial import SerialException
 
 from flowchem.constants import InvalidConfiguration
-
-
-class ML600Exception(Exception):
-    """ General pump exception """
-
-    pass
-
-
-class InvalidArgument(ML600Exception):
-    """ A valid command was followed by an invalid command_value, usually out of accepted range """
-
-    pass
 
 
 @dataclass
@@ -59,22 +46,19 @@ class Protocol1CommandTemplate:
 class Protocol1Command(Protocol1CommandTemplate):
     """ Class representing a pump command and its expected reply """
 
-    # TODO move these two vars elsewhere!
-    # ':' is used for broadcast within the daisy chain.
     PUMP_ADDRESS = {
         pump_num: address
         for (pump_num, address) in enumerate(string.ascii_lowercase[:16], start=1)
     }
-    # # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
+    # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
+    # Note ':' is used for broadcast within the daisy chain.
 
     target_pump_num: Optional[int] = 1
     command_value: Optional[str] = None
     argument_value: Optional[str] = None
 
-    def compile(self) -> str:
-        """
-        Create actual command byte by prepending pump address to command and appending executing command.
-        """
+    def compile(self) -> bytes:
+        """ Create actual command byte by prepending pump address to command and appending executing command. """
         assert self.target_pump_num in range(1, 17)
         if not self.command_value:
             self.command_value = ""
@@ -90,7 +74,7 @@ class Protocol1Command(Protocol1CommandTemplate):
         if self.execute_command is True:
             compiled_command += "R"
 
-        return compiled_command + "\r"
+        return (compiled_command + "\r").encode("ascii")
 
 
 class HamiltonPumpIO:
@@ -98,98 +82,100 @@ class HamiltonPumpIO:
 
     ACKNOWLEDGE = chr(6)
     NEGATIVE_ACKNOWLEDGE = chr(21)
+    DEFAULT_CONFIG = {
+        "timeout": 0.1,
+        "baudrate": 9600,
+        "parity": aioserial.PARITY_EVEN,
+        "stopbits": aioserial.STOPBITS_ONE,
+        "bytesize": aioserial.SEVENBITS,
+    }
 
-    def __init__(
-        self,
-        port: Union[int, str],
-        baudrate: int = 9600,
-        hw_initialization: bool = True,
-    ):
+    def __init__(self, aio_port: aioserial.Serial, hw_initialization: bool = True):
         """
         Initialize communication on the serial port where the pumps are located and initialize them
         Args:
-            port: Serial port identifier
-            baudrate: Well, the baud rate :D
+            aio_port: aioserial.Serial() object
             hw_initialization: Whether each pumps has to be initialized. Note that this might be undesired!
         """
-        if baudrate not in serial.serialutil.SerialBase.BAUDRATES:
-            raise InvalidConfiguration(f"Invalid baud rate provided {baudrate}!")
-
-        if isinstance(port, int):
-            port = f"COM{port}"
 
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
+        self._serial = aio_port
+
+        # Lock for thread-safe serial communication when multiple pumps are on the same serial port
         self.lock = threading.Lock()
-
-        try:
-            # noinspection PyPep8
-            self._serial = serial.Serial(
-                port=port,
-                baudrate=baudrate,
-                parity=PARITY_EVEN,
-                stopbits=STOPBITS_ONE,
-                bytesize=SEVENBITS,
-                timeout=0.1,
-            )  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
-        except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration(
-                f"Check serial port availability! [{port}]"
-            ) from e
-
-        # noinspection PyTypeChecker
-        self.sio = io.TextIOWrapper(
-            buffer=io.BufferedRWPair(self._serial, self._serial),
-            line_buffering=True,
-            newline="\r",
-        )
 
         # This has to be run after each power cycle to assign addresses to pumps
         self.num_pump_connected = self._assign_pump_address()
         if hw_initialization:
             self._hw_init()
 
+    @classmethod
+    def from_config(cls, config):
+        """ Create HamiltonPumpIO from config. """
+        # Merge default settings, including serial, with provided ones.
+        configuration = dict(HamiltonPumpIO.DEFAULT_CONFIG, **config)
+
+        try:
+            serial_object = aioserial.AioSerial(**configuration)
+        except SerialException as e:
+            raise InvalidConfiguration(f"Cannot connect to the pump on the port <{configuration.get('port')}>") from e
+
+        return cls(serial_object, config.get("hw_initialization", True))
+
     def _assign_pump_address(self) -> int:
         """
         To be run on init, auto assign addresses to pumps based on their position on the daisy chain!
         A custom command syntax with no addresses is used here so read and write has been rewritten
         """
-        self._write("1a\r")
-        reply = self._read_reply()
+        try:
+            self._serial.write("1a\r".encode("ascii"))  # Do not use async here as it is called during init()
+        except aioserial.SerialException as e:
+            raise InvalidConfiguration from e
+
+        reply = self._serial.readline().decode("ascii")
         if reply and reply[:1] == "1":
             # reply[1:2] should be the address of the last pump. However, this does not work reliably.
             # So here we enumerate the pumps explicitly instead
             last_pump = 0
             for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
-                self._write(f"{address}UR\r")
-                if "NV01" in self._read_reply():
+                self._serial.write(f"{address}UR\r".encode("ascii"))
+                if b"NV01" in self._serial.readline():
                     last_pump = pump_num
                 else:
                     break
             self.logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
             return int(last_pump)
         else:
-            raise InvalidConfiguration(f"No pump available on {self._serial.port}")
+            raise InvalidConfiguration(f"No pump found on {self._serial.port}")
 
     def _hw_init(self):
         """ Send to all pumps the HW initialization command (i.e. homing) """
-        self._write(":XR\r")  # Broadcast: initialize + execute
+        self._serial.write(":XR\r".encode("ascii"))  # Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
 
-    def _write(self, command: str):
+    def _write(self, command: bytes):
         """ Writes a command to the pump """
-        self.logger.debug(f"Sending {repr(command)}")
-        try:
-            self.sio.write(command)
-        except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration from e
+        self._serial.write(command)
+        self.logger.debug(f"Command {repr(command)} sent!")
+
+    async def _write_async(self, command: bytes):
+        """ Writes a command to the pump """
+        await self._serial.write_async(command)
+        self.logger.debug(f"Command {repr(command)} sent!")
 
     def _read_reply(self) -> str:
         """ Reads the pump reply from serial communication """
-        reply_string = self.sio.readline()
+        reply_string = self._serial.readline()
         self.logger.debug(f"Reply received: {reply_string}")
-        return reply_string
+        return reply_string.decode("ascii")
 
-    def parse_response(self, response: str) -> Tuple[bool, str]:
+    async def _read_reply_async(self) -> str:
+        """ Reads the pump reply from serial communication """
+        reply_string = await self._serial.readline_async()
+        self.logger.debug(f"Reply received: {reply_string}")
+        return reply_string.decode("ascii")
+
+    def parse_response(self, response: str) -> Tuple[bool, bytes]:
         """ Split a received line in its components: success, reply """
         status = response[:1]
         assert status in (HamiltonPumpIO.ACKNOWLEDGE, HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE), "Invalid status reply"
@@ -207,7 +193,7 @@ class HamiltonPumpIO:
         """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
         try:
             self._serial.reset_input_buffer()
-        except serial.PortNotOpenError as e:
+        except aioserial.PortNotOpenError as e:
             raise InvalidConfiguration from e
 
     def write_and_read_reply(self, command: Protocol1Command) -> str:
@@ -230,6 +216,26 @@ class HamiltonPumpIO:
         assert success is True  # :)
         return parsed_response
 
+    async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
+        """ Main HamiltonPumpIO method.
+        Sends a command to the pump, read the replies and returns it, optionally parsed """
+        with self.lock:
+            self.reset_buffer()
+            await self._write_async(command.compile())
+            response = await self._read_reply_async()
+
+        if not response:
+            raise InvalidConfiguration(
+                f"No response received from pump, check pump address! "
+                f"(Currently set to {command.target_pump_num})"
+            )
+
+        # Parse reply
+        success, parsed_response = self.parse_response(response)
+
+        assert success is True  # :)
+        return parsed_response
+
     @property
     def name(self) -> Optional[str]:
         """ This is used to provide a nice-looking default name to pumps based on their serial connection. """
@@ -237,70 +243,6 @@ class HamiltonPumpIO:
             return self._serial.name
         except AttributeError:
             return None
-
-
-class ML600Commands:
-    """ Just a collection of commands. Grouped here to ease future, unlikely, changes. """
-
-    PAUSE = Protocol1CommandTemplate(command="K", execute_command=False)
-    RESUME = Protocol1CommandTemplate(command="$", execute_command=False)
-    CLEAR_BUFFER = Protocol1CommandTemplate(command="V", execute_command=False)
-
-    STATUS = Protocol1CommandTemplate(command="U")
-    INIT_ALL = Protocol1CommandTemplate(command="X", optional_parameter="S")
-    INIT_VALVE_ONLY = Protocol1CommandTemplate(command="LX")
-    INIT_SYRINGE_ONLY = Protocol1CommandTemplate(command="X1", optional_parameter="S")
-
-    # SYRINGE POSITION
-    PICKUP = Protocol1CommandTemplate(command="P", optional_parameter="S")
-    DELIVER = Protocol1CommandTemplate(command="D", optional_parameter="S")
-    ABSOLUTE_MOVE = Protocol1CommandTemplate(command="M", optional_parameter="S")
-
-    # VALVE POSITION
-    VALVE_TO_INLET = Protocol1CommandTemplate(command="I")
-    VALVE_TO_OUTLET = Protocol1CommandTemplate(command="O")
-    VALVE_TO_WASH = Protocol1CommandTemplate(command="W")
-    VALVE_BY_NAME_CW = Protocol1CommandTemplate(command="LP0")
-    VALVE_BY_NAME_CCW = Protocol1CommandTemplate(command="LP1")
-    VALVE_BY_ANGLE_CW = Protocol1CommandTemplate(command="LA0")
-    VALVE_BY_ANGLE_CCW = Protocol1CommandTemplate(command="LA1")
-
-    # STATUS REQUEST
-    # INFORMATION REQUEST -- these all returns Y/N/* where * means busy
-    REQUEST_DONE = Protocol1CommandTemplate(command="F")
-    SYRINGE_HAS_ERROR = Protocol1CommandTemplate(command="Z")
-    VALVE_HAS_ERROR = Protocol1CommandTemplate(command="G")
-    IS_SINGLE_SYRINGE = Protocol1CommandTemplate(command="H")
-    # STATUS REQUEST  - these have complex responses, see relevant methods for details.
-    STATUS_REQUEST = Protocol1CommandTemplate(command="E1")
-    ERROR_REQUEST = Protocol1CommandTemplate(command="E2")
-    TIMER_REQUEST = Protocol1CommandTemplate(command="E3")
-    BUSY_STATUS = Protocol1CommandTemplate(command="T1")
-    ERROR_STATUS = Protocol1CommandTemplate(command="T2")
-    # PARAMETER REQUEST
-    SYRINGE_DEFAULT_SPEED = Protocol1CommandTemplate(
-        command="YQS"
-    )  # 2-3692 seconds per stroke
-    CURRENT_SYRINGE_POSITION = Protocol1CommandTemplate(command="YQP")  # 0-52800 steps
-    SYRINGE_DEFAULT_BACKOFF = Protocol1CommandTemplate(command="YQP")  # 0-1000 steps
-    CURRENT_VALVE_POSITION = Protocol1CommandTemplate(
-        command="LQP"
-    )  # 1-8 (see docs, Table 3.2.2)
-    GET_RETURN_STEPS = Protocol1CommandTemplate(command="YQN")  # 0-1000 steps
-    # PARAMETER CHANGE
-    SET_RETURN_STEPS = Protocol1CommandTemplate(command="YSN")  # 0-1000
-    # VALVE REQUEST
-    VALVE_ANGLE = Protocol1CommandTemplate(command="LQA")  # 0-359 degrees
-    VALVE_CONFIGURATION = Protocol1CommandTemplate(
-        command="YQS"
-    )  # 11-20 (see docs, Table 3.2.2)
-    VALVE_SPEED = Protocol1CommandTemplate(command="LQF")  # 15-720 degrees per sec
-    # TIMER REQUEST
-    TIMER_DELAY = Protocol1CommandTemplate(command="<T")  # 0–99999999 ms
-    # FIRMWARE REQUEST
-    FIRMWARE_VERSION = Protocol1CommandTemplate(
-        command="U"
-    )  # xxii.jj.k (ii major, jj minor, k revision)
 
 
 class ML600:
@@ -357,6 +299,7 @@ class ML600:
             name: 'cause naming stuff is important
         """
         self.pump_io = pump_io
+        ML600._io_instances.append(self.pump_io)
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address: int = address
         if syringe_volume not in ML600.VALID_SYRINGE_VOLUME:
@@ -372,7 +315,7 @@ class ML600:
 
         # This command is used to test connection: failure handled by HamiltonPumpIO
         self.log.info(
-            f"Connected to Hamilton ML600 pump  - FW version: {self.firmware_version}!"
+            f"Connected to Hamilton ML600 pump  - FW version: {self.firmware_version()}!"
         )
 
     @classmethod
@@ -394,51 +337,62 @@ class ML600:
             print(f"Already found a serial connection on port {config.get('port')}! Re-using that!")
 
         if pumpio is None:
-            HamiltonPumpIO(port=config.get("port"), baudrate=config.get("baudrate"))
+            config_for_pumpio = config.copy()
+            ml600_specific_keys = ("syringe_volume", "address", "name")
+            for k in ml600_specific_keys:
+                config_for_pumpio.pop(k, None)
+            pumpio = HamiltonPumpIO.from_config(config_for_pumpio)
 
         return cls(pumpio, syringe_volume=config.get("syringe_volume"), address=config.get("address"),
                    name=config.get("name"))
 
-    def send_command_and_read_reply(
+    async def send_command_and_read_reply(
         self,
         command_template: Protocol1CommandTemplate,
         command_value="",
         argument_value="",
     ) -> str:
-        """ Sends a command based on its template and return the corresponding reply as str """
-        return self.pump_io.write_and_read_reply(
+        """ Sends a command based on its template by adding pump address and parameters, returns reply """
+        return await self.pump_io.write_and_read_reply_async(
             command_template.to_pump(self.address, command_value, argument_value)
         )
 
-    def initialize_pump(self, speed: int = None):
+    @staticmethod
+    def _validate_speed(speed: float = None) -> str:
+        """ Given a arbitrary speed (seconds/stroke) returns a valid command value for it. """
+        if speed is None:
+            return ""
+        # Cast to int
+        speed = int(round(speed))
+        if not 2 <= speed <= 3692:
+            warnings.warn("Invalid initialization speed provided: {speed}. Acceptable range is 2-3692! Ignoring value.")
+            return ""
+        return str(speed)
+
+    def firmware_version(self) -> str:
+        """ Return firmware version. Sync to be used in init() as connectivity check. """
+        fw_cmd = Protocol1CommandTemplate(command="U").to_pump(self.address)
+        return self.pump_io.write_and_read_reply(fw_cmd)
+
+    async def initialize_pump(self, speed: int = None):
         """
         Initialize both syringe and valve
         speed: 2-3692 is in seconds/stroke
         """
-        if speed:
-            assert 2 < speed < 3692
-            return self.send_command_and_read_reply(
-                ML600Commands.INIT_ALL, argument_value=str(speed)
-            )
-        else:
-            return self.send_command_and_read_reply(ML600Commands.INIT_ALL)
+        init_cmd = Protocol1CommandTemplate(command="X", optional_parameter="S")
+        return await self.send_command_and_read_reply(init_cmd, argument_value=self._validate_speed(speed))
 
-    def initialize_valve(self):
+    async def initialize_valve(self):
         """ Initialize valve only """
-        return self.send_command_and_read_reply(ML600Commands.INIT_VALVE_ONLY)
+        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="LX"))
 
-    def initialize_syringe(self, speed: int = None):
+    async def initialize_syringe(self, speed: int = None):
         """
         Initialize syringe only
         speed: 2-3692 is in seconds/stroke
         """
-        if speed:
-            assert 2 < speed < 3692
-            return self.send_command_and_read_reply(
-                ML600Commands.INIT_SYRINGE_ONLY, argument_value=str(speed)
-            )
-        else:
-            return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY)
+        init_syringe_cmd = Protocol1CommandTemplate(command="X1", optional_parameter="S")
+        return await self.send_command_and_read_reply(init_syringe_cmd, argument_value=self._validate_speed(speed))
 
     def flowrate_to_seconds_per_stroke(self, flowrate_in_ml_min: float):
         """
@@ -460,101 +414,87 @@ class ML600:
     def _volume_to_step(self, volume_in_ml: float) -> int:
         return round(volume_in_ml * self.steps_per_ml) + self.offset_steps
 
-    def _to_step_position(self, position: int, speed: int = ""):
+    async def _to_step_position(self, position: int, speed: int = ""):
         """ Absolute move to step position """
-        return self.send_command_and_read_reply(
-            ML600Commands.ABSOLUTE_MOVE, str(position), str(speed)
-        )
+        abs_move_cmd = Protocol1CommandTemplate(command="M", optional_parameter="S")
+        return await self.send_command_and_read_reply(abs_move_cmd, str(position), self._validate_speed(speed))
 
-    def to_volume(self, volume_in_ml: float, speed: int = ""):
+    async def to_volume(self, volume_in_ml: float, speed: int = ""):
         """ Absolute move to volume """
-        self._to_step_position(self._volume_to_step(volume_in_ml), speed)
+        await self._to_step_position(self._volume_to_step(volume_in_ml), speed)
         self.log.debug(
             f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}"
         )
 
-    def pause(self):
+    async def pause(self):
         """ Pause any running command """
-        return self.send_command_and_read_reply(ML600Commands.PAUSE)
+        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="K", execute_command=False))
 
-    def resume(self):
+    async def resume(self):
         """ Resume any paused command """
-        return self.send_command_and_read_reply(ML600Commands.RESUME)
+        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="$", execute_command=False))
 
-    def stop(self):
+    async def stop(self):
         """ Stops and abort any running command """
-        self.pause()
-        return self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
+        await self.pause()
+        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="V", execute_command=False))
 
-    def wait_until_idle(self):
+    async def wait_until_idle(self):
         """ Returns when no more commands are present in the pump buffer. """
         self.log.debug(f"ML600 pump {self.name} wait until idle...")
         while self.is_busy:
             time.sleep(0.1)
         self.log.debug(f"...ML600 pump {self.name} idle now!")
 
-    @property
-    def version(self) -> str:
+    async def version(self) -> str:
         """ Returns the current firmware version reported by the pump """
-        return self.send_command_and_read_reply(ML600Commands.STATUS)
+        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="U"))
 
-    @property
-    def is_idle(self) -> bool:
+    async def is_idle(self) -> bool:
         """ Checks if the pump is idle (not really, actually check if the last command has ended) """
-        return self.send_command_and_read_reply(ML600Commands.REQUEST_DONE) == "Y"
+        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="F")) == "Y"
 
-    @property
-    def is_busy(self) -> bool:
+    async def is_busy(self) -> bool:
         """ Not idle """
-        return not self.is_idle
+        return not await self.is_idle()
 
-    @property
-    def firmware_version(self) -> str:
-        """ Return firmware version """
-        return self.send_command_and_read_reply(ML600Commands.FIRMWARE_VERSION)
-
-    @property
-    def valve_position(self) -> ValvePositionName:
+    async def get_valve_position(self) -> ValvePositionName:
         """ Represent the position of the valve: getter returns Enum, setter needs Enum """
-        return ML600.ValvePositionName(
-            int(self.send_command_and_read_reply(ML600Commands.CURRENT_VALVE_POSITION))
-        )
+        valve_pos = await self.send_command_and_read_reply(Protocol1CommandTemplate(command="LQP"))
+        return ML600.ValvePositionName(int(valve_pos))
 
-    @valve_position.setter
-    def valve_position(self, target_position: ValvePositionName):
+    async def set_valve_position(self, target_position: ValvePositionName, wait_for_movement_end: bool = True):
+        """ Set valve position. wait_for_movement_end is defaulted to True as it is a common mistake not to wait...  """
+        valve_by_name_cw = Protocol1CommandTemplate(command="LP0")
+        await self.send_command_and_read_reply(valve_by_name_cw, command_value=str(int(target_position)))
         self.log.debug(f"{self.name} valve position set to {target_position.name}")
-        self.send_command_and_read_reply(
-            ML600Commands.VALVE_BY_NAME_CW, command_value=str(int(target_position))
-        )
-        self.wait_until_idle()
+        if wait_for_movement_end:
+            await self.wait_until_idle()
 
-    @property
-    def return_steps(self) -> int:
-        """ Represent the position of the valve: getter returns Enum, setter needs Enum """
-        return int(self.send_command_and_read_reply(ML600Commands.GET_RETURN_STEPS))
+    async def get_return_steps(self) -> int:
+        """ Return steps getter. Applied to the end of a downward syringe movement to removes mechanical slack. """
+        steps = await self.send_command_and_read_reply(Protocol1CommandTemplate(command="YQN"))
+        return int(steps)
 
-    @return_steps.setter
-    def return_steps(self, target_steps: int):
-        self.send_command_and_read_reply(
-            ML600Commands.SET_RETURN_STEPS, command_value=str(int(target_steps))
-        )
+    async def set_return_steps(self, target_steps: int):
+        """ Return steps setter. Applied to the end of a downward syringe movement to removes mechanical slack. """
+        set_return_steps_cmd = Protocol1CommandTemplate(command="YSN")
+        await self.send_command_and_read_reply(set_return_steps_cmd, command_value=str(int(target_steps)))
 
-    def syringe_position(self):
-        current_steps = (
-            int(
-                self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION)
-            ) - self.offset_steps
-        )
+    async def syringe_position(self) -> float:
+        """ Return current syringe position in ml. """
+        syringe_pos = await self.send_command_and_read_reply(Protocol1CommandTemplate(command="YQP"))
+        current_steps = int(syringe_pos) - self.offset_steps
         return current_steps / self.steps_per_ml
 
-    def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
-        self.valve_position = from_valve
+    async def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
+        await self.set_valve_position(from_valve)
         pass
 
-    def deliver(self, volume, from_valve, speed_out, wait):
+    async def deliver(self, volume, from_valve, speed_out, wait):
         pass
 
-    def transfer(self, volume, from_valve, to_valve, speed_in, speed_out, wait):
+    async def transfer(self, volume, from_valve, to_valve, speed_in, speed_out, wait):
         pass
 
 
@@ -682,14 +622,13 @@ class TwoPumpAssembly(Thread):
 
 
 if __name__ == "__main__":
-    logging.basicConfig()
-    log = logging.getLogger(__name__ + ".TwoPumpAssembly")
-    log.setLevel(logging.DEBUG)
-    log = logging.getLogger(__name__ + ".ML600")
-    log.setLevel(logging.DEBUG)
-    pump_connection = HamiltonPumpIO(41)
-    test1 = ML600(pump_connection, syringe_volume=5, address=1)
-    test2 = ML600(pump_connection, syringe_volume=5, address=2)
-    metapump = TwoPumpAssembly(test1, test2, target_flowrate=15, init_seconds=20)
-    metapump.start()
-    input()
+    import asyncio
+
+    conf = {
+        "port": "COM12",
+        "address": 1,
+        "name": "test1",
+        "syringe_volume": 5,
+    }
+    pump1 = ML600.from_config(conf)
+    asyncio.run(pump1.initialize_pump())
