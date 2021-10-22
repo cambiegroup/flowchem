@@ -4,6 +4,7 @@ import asyncio
 import aioserial
 import pytest
 
+from flowchem.constants import InvalidConfiguration
 from flowchem.devices.Huber.huberchiller import HuberChiller, PBCommand
 
 
@@ -29,7 +30,7 @@ def test_pbcommand_parse_bool():
 
 
 def test_invalid_serial_port():
-    with pytest.raises(Exception) as execinfo:
+    with pytest.raises(InvalidConfiguration) as execinfo:
         HuberChiller.from_config({"port": "COM99"})
     assert str(execinfo.value) == 'Cannot connect to the HuberChiller on the port <COM99>'
 
