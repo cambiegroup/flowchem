@@ -117,6 +117,8 @@ class HamiltonPumpIO:
     @classmethod
     def from_config(cls, config):
         """ Create HamiltonPumpIO from config. """
+        if "timeout" not in config:
+            config["timeout"] = 0.2
         try:
             serial_object = aioserial.AioSerial(**config)
         except SerialException as e:
@@ -130,17 +132,17 @@ class HamiltonPumpIO:
         A custom command syntax with no addresses is used here so read and write has been rewritten
         """
         try:
-            self._serial.write("1a\r")  # Do not use async here as it is called during init()
+            self._serial.write("1a\r".encode("ascii"))  # Do not use async here as it is called during init()
         except aioserial.SerialException as e:
             raise InvalidConfiguration from e
 
-        reply = self._serial.readline()
+        reply = self._serial.readline().decode("ascii")
         if reply and reply[:1] == "1":
             # reply[1:2] should be the address of the last pump. However, this does not work reliably.
             # So here we enumerate the pumps explicitly instead
             last_pump = 0
             for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
-                self._serial.write(f"{address}UR\r")
+                self._serial.write(f"{address}UR\r".encode("ascii"))
                 if b"NV01" in self._serial.readline():
                     last_pump = pump_num
                 else:
@@ -150,9 +152,9 @@ class HamiltonPumpIO:
         else:
             raise InvalidConfiguration(f"No pump found on {self._serial.port}")
 
-    async def _hw_init(self):
+    def _hw_init(self):
         """ Send to all pumps the HW initialization command (i.e. homing) """
-        self._serial.write(":XR\r")  # Broadcast: initialize + execute
+        self._serial.write(":XR\r".encode("ascii"))  # Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
 
     def _write(self, command: bytes):
@@ -177,7 +179,7 @@ class HamiltonPumpIO:
         self.logger.debug(f"Reply received: {reply_string}")
         return reply_string.decode("ascii")
 
-    def parse_response(self, response: str) -> Tuple[bool, str]:
+    def parse_response(self, response: str) -> Tuple[bool, bytes]:
         """ Split a received line in its components: success, reply """
         status = response[:1]
         assert status in (HamiltonPumpIO.ACKNOWLEDGE, HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE), "Invalid status reply"
@@ -316,7 +318,7 @@ class ML600:
 
         # This command is used to test connection: failure handled by HamiltonPumpIO
         self.log.info(
-            f"Connected to Hamilton ML600 pump  - FW version: {self.firmware_version}!"
+            f"Connected to Hamilton ML600 pump  - FW version: {self.firmware_version()}!"
         )
 
     @classmethod
@@ -342,7 +344,7 @@ class ML600:
             ml600_specific_keys = ("syringe_volume", "address", "name")
             for k in ml600_specific_keys:
                 config_for_pumpio.pop(k, None)
-            HamiltonPumpIO.from_config(config_for_pumpio)
+            pumpio = HamiltonPumpIO.from_config(config_for_pumpio)
 
         return cls(pumpio, syringe_volume=config.get("syringe_volume"), address=config.get("address"),
                    name=config.get("name"))
@@ -625,10 +627,9 @@ class TwoPumpAssembly(Thread):
 if __name__ == "__main__":
     import asyncio
     logging.basicConfig()
-    log = logging.getLogger(__name__ + ".TwoPumpAssembly")
-    log.setLevel(logging.DEBUG)
-    log = logging.getLogger(__name__ + ".ML600")
-    log.setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
+    # log = logging.getLogger(__name__ + ".ML600")
+    # log.setLevel(logging.DEBUG)
 
     conf = {
         "port": "COM12",
@@ -636,8 +637,8 @@ if __name__ == "__main__":
         "name": "test1",
         "syringe_volume": 5,
         "parity": aioserial.PARITY_EVEN,
-        "stopbits":aioserial.STOPBITS_ONE,
-        "bytesize":aioserial.SEVENBITS,
+        "stopbits": aioserial.STOPBITS_ONE,
+        "bytesize": aioserial.SEVENBITS,
     }
     pump = ML600.from_config(conf)
     asyncio.run(pump.initialize_pump())
