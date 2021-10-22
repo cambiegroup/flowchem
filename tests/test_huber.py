@@ -80,7 +80,8 @@ def chiller():
 
 @pytest.mark.asyncio
 async def test_no_reply(chiller):
-    reply = await chiller.send_command_and_read_reply("{MFFFFFF")
+    with pytest.warns(UserWarning):
+        reply = await chiller.send_command_and_read_reply("{MFFFFFF")
     assert reply == '{SFFFFFF'
 
 
