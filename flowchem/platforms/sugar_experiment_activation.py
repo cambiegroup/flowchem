@@ -38,6 +38,7 @@ class ExperimentConditions:
         self.activator_equivalents = activator_equivalents
         self._quencher_equivalents = self._quencher_eq_to_activator * self.activator_equivalents
         self.temperature = flowchem_ureg.Quantity(temperature_in_celsius, flowchem_ureg.celsius)
+
         self.experiment_finished = False
 
     @property
@@ -137,13 +138,12 @@ class FlowProcedure:
 
         # set all flow rates
         self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate
-        self.pumps['activator'].infusion_rate = flow_conditions.activator_flow_rate
-        self.pumps['quench'].infusion_rate = flow_conditions.quencher_flow_rate
+        self.pumps['quench'].set_flow = flow_conditions.quencher_flow_rate
 
-        # not working
-        for pump in self.pumps.values():
-            if pump.get_status().name != 'INFUSING':
-                pump.run()
+        self.pumps['donor'].run()
+        self.pumps['activator'].deliver_from_pump(flow_conditions.activator_flow_rate)
+        self.pumps['quench'].start_flow()
+
         # start timer
         sleep(flow_conditions.steady_state_time)
 
@@ -153,22 +153,22 @@ class FlowProcedure:
         # timer is over, start
         self.pumps['donor']. stop()
         self.pumps['activator'].stop()
-        self.pumps['activator'].refill()
+        self.pumps['activator'].refill_syringe(4, 1)
 
-        # Todo hä?
-        return 'done'
+
 
     def get_platform_ready(self):
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
         sending the hplc method"""
         # prepare HPLC
 
-        commander = ClarityInterface(remote=True, host='192.168.10.11', port=10014, instrument_number=2)
-        commander.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ",
+        self.hplc.exit()
+        self.hplc.switch_lamp_on()  # address and port hardcoded
+        self.hplc.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ",
                                      start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
-        commander.switch_lamp_on()  # address and port hardcoded
-        commander.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
-                                     method_list=("autostartup_01_Sugar-c18_shortened.MET",
+        self.hplc.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
+                                     method_list=("autostartup_005_Sugar-c18_shortened.MET",
+                                                  "autostartup_01_Sugar-c18_shortened.MET",
                                                   "autostartup_015_Sugar-c18_shortened.MET",
                                                   "autostartup_02_Sugar-c18_shortened.MET",
                                                   "autostartup_025_Sugar-c18_shortened.MET",
@@ -177,29 +177,16 @@ class FlowProcedure:
                                                   "autostartup_04_Sugar-c18_shortened.MET",
                                                   "autostartup_045_Sugar-c18_shortened.MET",
                                                   "autostartup_05_Sugar-c18_shortened.MET",))
-        commander.load_file(r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET")
+        self.hplc.load_file(r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET")
+
+        # Todo fill
         # commander.load_file("opendedicatedproject") # open a project for measurements
-        commander.set_sample_name("test123")
-        commander.run()
 
-        self.hplc.exit()
-        sleep(5)
-        print('preparing HPLC')
-        self.hplc.switch_lamp_on('192.168.10.107', 10001)
-        sleep(5)
-        self.hplc.open_clarity_chrom('admin')
-        # TODO insert appropriate file here
-        self.hplc.load_file('D:\\Data2q\\testopt\\test_opt_method_shortest.met')
-        print('HPLC ready')
-        for pump in self.pumps.values():
-            pump.force = 20
+        # fill the activator to the hamilton syringe
+        self.pumps['activator'].refill_syringe(4, 8)
+        self.pumps['activator'].deliver_from_syringe(4, 16)
 
-    # and could hold wrapper methods:
-    def general_method_1(self):
-        pass
-
-    def general_method_2(self):
-        pass
+        self.pumps['quencher'].set_maximum_pressure(5)
 
 
 class Scheduler:
@@ -280,28 +267,28 @@ class Scheduler:
 
 if __name__ == "__main__":
     # FlowGraph as dicitonary
-    pump_connection = PumpIO('COM5')
     log = logging.getLogger()
     # missing init parameters
     SugarPlatform = {
         # try to combine two pumps to one. flow rate with ratio gives individual flow rate
         'pumps': {
-            #TODO adjust
-            'donor': Elite11(pump_connection, address=2, diameter=4.608, volume_syringe=1),
-            'activator': Elite11(pump_connection, address=6, diameter=4.608, volume_syringe=1),
-            'activator_solvent': Elite11(pump_connection, address=3, diameter=10.3, volume_syringe=5),
-            'quench': Elite11(pump_connection, address=0, diameter=14.57, volume_syringe=10),
+            'donor': Elite11(PumpIO("COM11"), address=0, diameter=14.567, volume_syringe=10),
+
+            'activator': ML600(HamiltonPumpIO("COM12"), 5),
+
+            'quench': KnauerPump("192.168.10.113"),
         },
         'HPLC': ClarityInterface(remote=True, host='192.168.10.11', port=10014, instrument_number=2),
         'chiller': Huber('COM7'),
         # assume always the same volume from pump to inlet, before T-mixer can be neglected, times three for inlets since 3 equal inlets
-        'internal_volumes': {'dead_volume_before_reactor': (56+3)* 3 * flowchem_ureg.microliter, # TODO misses volume from tmixer to stell capillaries
+        'internal_volumes': {'dead_volume_before_reactor': (56+3)* 3 * flowchem_ureg.microliter, # TODO misses volume from tmixer to steel capillaries
                              'volume_mixing': 9.5 * flowchem_ureg.microliter,
                              'volume_reactor': 68.8 * flowchem_ureg.microliter,
                              'dead_volume_to_HPLC': (56+15) * flowchem_ureg.microliter,
                              }
     }
 
+    #
     fr = FileReceiver('192.168.10.20', 10359, allowed_address='192.168.10.11')
     scheduler = Scheduler(SugarPlatform)
 
