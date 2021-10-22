@@ -8,27 +8,12 @@ Changes:
 """
 
 import re
+import warnings
 from typing import Literal, Tuple, Optional, List
 
 import serial
 
 from flowchem.constants import InvalidConfiguration
-
-
-class MansonException(Exception):
-    pass
-
-
-class NotConnectedError(MansonException):
-    pass
-
-
-class InvalidArgument(MansonException):
-    pass
-
-
-class InvalidOrNoReply(MansonException):
-    pass
 
 
 class PowerSupply:
@@ -75,10 +60,10 @@ class PowerSupply:
             self._sp.write(f"{command}\r".encode("ascii"))
             response = self._sp.readline().decode("ascii").strip()
         except serial.serialutil.SerialException:
-            raise NotConnectedError("Connection seems closed")
+            raise InvalidConfiguration("Connection seems closed")
 
         if not response and not no_reply_expected:
-            raise InvalidOrNoReply("No reply received!")
+            warnings.warn("No reply received!")
 
         # Get multiple lines if needed
         if multiline_reply:
@@ -98,7 +83,7 @@ class PowerSupply:
             if response[0:4] == "HCS-":
                 return match.group().rstrip()
             return "HCS-" + match.group().rstrip()
-        raise InvalidOrNoReply
+        return ""
 
     def output_on(self) -> bool:
         """ Turn on electricity on output """
@@ -118,7 +103,8 @@ class PowerSupply:
             volt = float(response[0:4]) / 100
             curr = float(response[4:8]) / 100
         except ValueError:
-            raise InvalidOrNoReply
+            warnings.warn("Invalid values from device!")
+            return 0, 0, False
 
         if response[8:9] == "0":
             mode = "CV"
@@ -183,19 +169,18 @@ class PowerSupply:
         response = self._send_command(cmd)
         return response == "OK"
 
-    def set_current(self, current_in_ampere) -> bool:
+    def set_current(self, current_in_ampere: float) -> bool:
         """ Set target current """
-        if not isinstance(current_in_ampere, (int, float)):
-            raise InvalidArgument
-
         if self.get_info() in self.MODEL_ALT_RANGE:
             cmd = "CURR" + str(current_in_ampere * 100).zfill(3)
             if current_in_ampere > 10:
-                raise MansonException("Invalid current intensity for device!")
+                warnings.warn("Invalid current intensity for device! Command ignored.")
+                return False
         else:
             cmd = "CURR" + str(current_in_ampere * 10).zfill(3)
             if current_in_ampere > 100:
-                raise MansonException("Invalid current intensity for device!")
+                warnings.warn("Invalid current intensity for device! Command ignored.")
+                return False
 
         response = self._send_command(cmd)
         return response == "OK"
@@ -220,8 +205,9 @@ class PowerSupply:
         preset = self.get_all_preset()
         try:
             preset[index] = (voltage, current)
-        except KeyError as e:
-            raise InvalidArgument from e
+        except KeyError:
+            warnings.warn(f"Preset {index} not found! Command ignored")
+            return False
         return self.set_all_preset(preset)
 
     def get_all_preset(self) -> List[Tuple[float, float]]:
@@ -239,7 +225,7 @@ class PowerSupply:
                 voltage.append(float(preset[0:3]))
                 current.append(float(preset[3:6]))
             except (KeyError, ValueError) as e:
-                raise InvalidOrNoReply from e
+                warnings.warn("Error reading presets!")
 
         # Transform current in Ampere and voltage in Volt
         current = [x / 10 for x in current]
@@ -256,13 +242,15 @@ class PowerSupply:
         all_preset = self.get_all_preset()
         try:
             return all_preset[index]
-        except KeyError as e:
-            raise InvalidArgument from e
+        except KeyError:
+            warnings.warn(f"Preset {index} not found! Command ignored")
+            return 0, 0
 
     def run_preset(self, index: int) -> bool:
         """ Set Voltage and Current using values saved in one of the three memory locations: 0, 1 or 2 """
         if not 0 <= int(index) < 3:
-            raise InvalidArgument
+            warnings.warn(f"Invalid preset value: <{index}>!")
+            return False
         cmd = "RUNM" + str(int(index))
         response = self._send_command(cmd)
         return response == "OK"
