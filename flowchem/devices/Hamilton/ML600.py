@@ -623,14 +623,24 @@ class TwoPumpAssembly(Thread):
 
 
 if __name__ == "__main__":
+    import asyncio
     logging.basicConfig()
     log = logging.getLogger(__name__ + ".TwoPumpAssembly")
     log.setLevel(logging.DEBUG)
     log = logging.getLogger(__name__ + ".ML600")
     log.setLevel(logging.DEBUG)
-    pump_connection = HamiltonPumpIO(41)
-    test1 = ML600(pump_connection, syringe_volume=5, address=1)
-    test2 = ML600(pump_connection, syringe_volume=5, address=2)
-    metapump = TwoPumpAssembly(test1, test2, target_flowrate=15, init_seconds=20)
-    metapump.start()
-    input()
+
+    conf = {
+        "port": "COM12",
+        "address": 1,
+        "name": "test1",
+        "syringe_volume": 5
+    }
+    pump = ML600.from_config(conf)
+    asyncio.run(pump.initialize_pump())
+    # pump_connection = HamiltonPumpIO(41)
+    # test1 = ML600(pump_connection, syringe_volume=5, address=1)
+    # test2 = ML600(pump_connection, syringe_volume=5, address=2)
+    # metapump = TwoPumpAssembly(test1, test2, target_flowrate=15, init_seconds=20)
+    # metapump.start()
+    # input()

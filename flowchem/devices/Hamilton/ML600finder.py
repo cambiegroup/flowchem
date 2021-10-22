@@ -3,6 +3,7 @@ This module is used to discover the serial address of any ML600 connected to the
 """
 import logging
 from flowchem.devices.Hamilton.ML600 import InvalidConfiguration, HamiltonPumpIO
+import aioserial
 import serial.tools.list_ports
 
 log = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ def ml600_finder():
 
     for serial_port in port_available:
         try:
-            link = HamiltonPumpIO(serial_port, hw_initialization=False)
+            link = HamiltonPumpIO(aioserial.Serial(serial_port), hw_initialization=False)
             log.info(f"{link.num_pump_connected} pump(s) found on <{serial_port}>")
             valid_ports.add(serial_port)
         except InvalidConfiguration:
