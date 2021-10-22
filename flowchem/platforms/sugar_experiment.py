@@ -141,15 +141,15 @@ class FlowProcedure:
     def __init__(self, platform_graph: dict):
         self.pumps = platform_graph['pumps']
         self.hplc: ClarityInterface = platform_graph['HPLC']
-        # self.chiller: Huber = platform_graph['chiller']
+        self.chiller: Huber = platform_graph['chiller']
 
     def individual_procedure(self, flow_conditions: FlowConditions):
-        # self.chiller.set_temperature(flow_conditions.temperature)
-        # self.chiller.start()
+        self.chiller.set_temperature(flow_conditions.temperature)
+        self.chiller.start()
 
-        # while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature)) > 2:
-        #     sleep(10)
-        #    print('Chiller waiting for temperature')
+        while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature)) > 2:
+            sleep(10)
+            print('Chiller waiting for temperature')
 
         # set all flow rates
         self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate
@@ -298,12 +298,12 @@ if __name__ == "__main__":
         },
         'HPLC': ClarityInterface(remote=True, host='192.168.10.11', port=10349,
                                  path_to_executable='C:\\ClarityChrom\\bin\\', instrument_number=2),
-        # 'chiller': Huber('COM7'),
-        # assume always the same volume from pump to inlet, before T-mixer can be neglected
-        'internal_volumes': {'dead_volume_before_reactor': 84.5 * flowchem_ureg.microliter,
+        'chiller': Huber('COM7'),
+        # assume always the same volume from pump to inlet, before T-mixer can be neglected, times three for inlets since 3 equal inlets
+        'internal_volumes': {'dead_volume_before_reactor': (56+3)* 3 * flowchem_ureg.microliter, # TODO misses volume from tmixer to stell capillaries
                              'volume_mixing': 9.5 * flowchem_ureg.microliter,
                              'volume_reactor': 68.8 * flowchem_ureg.microliter,
-                             'dead_volume_to_HPLC': 11 * flowchem_ureg.microliter,
+                             'dead_volume_to_HPLC': (56+15) * flowchem_ureg.microliter,
                              }
     }
 
