@@ -34,7 +34,7 @@ def pump():
 
 @pytest.mark.HApump
 def test_version(pump: Elite11):
-    assert "11 ELITE" in pump.version
+    assert "11 ELITE" in pump.version()
 
 
 @pytest.mark.HApump
@@ -71,13 +71,13 @@ def test_is_moving(pump: Elite11):
 def test_syringe_volume(pump: Elite11):
     import math
 
-    assert isinstance(pump.syringe_volume, (float, int))
-    pump.syringe_volume = 10
-    assert pump.syringe_volume == 10
-    pump.syringe_volume = math.pi
-    assert math.isclose(pump.syringe_volume, math.pi, abs_tol=10e-4)
-    pump.syringe_volume = 3.2e-09
-    assert math.isclose(pump.syringe_volume, 3.2e-9)
+    assert isinstance(pump.get_syringe_volume(), (float, int))
+    pump.set_syringe_volume(10)
+    assert pump.get_syringe_volume() == 10
+    pump.set_syringe_volume(math.pi)
+    assert math.isclose(pump.get_syringe_volume(), math.pi, abs_tol=10e-4)
+    pump.set_syringe_volume(3.2e-09)
+    assert math.isclose(pump.get_syringe_volume(), 3.2e-9)
 
 
 @pytest.mark.HApump

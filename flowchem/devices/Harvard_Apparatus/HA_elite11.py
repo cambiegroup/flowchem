@@ -436,17 +436,17 @@ class Elite11:
         if diameter is not None:
             self.syringe_diameter = diameter
         if volume_syringe is not None:
-            self.syringe_volume = volume_syringe
+            self.set_syringe_volume(volume_syringe)
         self.volume_syringe = volume_syringe
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
         # This command is used to test connection: failure handled by PumpIO
         self.log.info(
-            f"Connected to pump '{self.name}' on port {self.pump_io.name}:{address} version: {self.version}!"
+            f"Connected to pump '{self.name}' on port {self.pump_io.name}:{address} version: {self.version()}!"
         )
         # Enable withdraw commands only on pumps that support them...
-        self._withdraw_enabled = True if "I/W" in self.version else False
+        self._withdraw_enabled = True if "I/W" in self.version() else False
 
         # makes sure that a 'clean' pump is initialized.
         self.clear_times()
@@ -497,14 +497,13 @@ class Elite11:
             )
         return set_rate
 
-    @property
     def version(self) -> str:
         """ Returns the current firmware version reported by the pump """
         return self.send_command_and_read_reply(
             Elite11Commands.GET_VERSION
         )  # '11 ELITE I/W Single 3.0.4
 
-    def get_status(self):
+    def get_status(self) -> PumpStatus:
         """ Empty message to trigger a new reply and evaluate connection and pump current status via reply prompt """
         return PumpStatus(
             self.send_command_and_read_reply(
@@ -517,8 +516,7 @@ class Elite11:
         prompt = self.get_status()
         return prompt in (PumpStatus.INFUSING, PumpStatus.WITHDRAWING)
 
-    @property
-    def syringe_volume(self) -> float:
+    def get_syringe_volume(self) -> float:
         """ Sets/returns the syringe volume in ml. """
         volume_w_units = self.send_command_and_read_reply(
             Elite11Commands.GET_SYRINGE_VOLUME
@@ -527,8 +525,7 @@ class Elite11:
             "ml"
         )  # Unit registry does the unit conversion and returns ml
 
-    @syringe_volume.setter
-    def syringe_volume(self, volume_in_ml: float = None):
+    def set_syringe_volume(self, volume_in_ml: float = None):
         self.send_command_and_read_reply(
             Elite11Commands.SET_SYRINGE_VOLUME, parameter=f"{volume_in_ml} m"
         )
@@ -825,6 +822,26 @@ class Elite11:
         )
         _, _, parsed_multiline_response = PumpIO.parse_response(non_parsed_reply)
         return parsed_multiline_response
+
+    def get_router(self):
+        """ Creates an APIRouter for this object. """
+        from fastapi import APIRouter
+
+        router = APIRouter()
+        router.add_api_route("/version", self.version, methods=["GET"])
+        router.add_api_route("/status", self.get_status, methods=["GET"], response_model=PumpStatus)  # CHECK THIS!
+        router.add_api_route("/is-moving", self.is_moving, methods=["GET"])
+        router.add_api_route("/syringe-volume", self.get_syringe_volume, methods=["GET"])
+        router.add_api_route("/syringe-volume", self.set_syringe_volume, methods=["PUT"])
+        router.add_api_route("/run", self.run, methods=["PUT"])
+        router.add_api_route("/inverse-run", self.inverse_run, methods=["PUT"])
+        router.add_api_route("/infuse-run", self.infuse_run, methods=["PUT"])
+        router.add_api_route("/withdraw-run", self.withdraw_run, methods=["PUT"])
+        router.add_api_route("/stop", self.stop, methods=["PUT"])
+
+        # TODO: ADD infusion_rate, WITHDRAW_RATE, SYRING DIAMETER AND FORCE [need to un-properties]
+
+        return router
 
 
 # TARGET VOLuME AND TIME ARE THE THINGS TO USE!!! Rate needs to be set, infuse or withdraw, then simply start!
