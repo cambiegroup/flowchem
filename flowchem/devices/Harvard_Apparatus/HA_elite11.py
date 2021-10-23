@@ -406,15 +406,18 @@ class Elite11Commands:
 
 class Elite11:
     """
-    Not ready for full usage.  Usable with: init with syringe diameter and volume. Set target volume and rate. run.
+    Controls Harvard Apparatus Elite11 syringe pumps.
+
+    The same protocol (Protocol11) can be used on other HA pumps, but is untested.
+    Several pumps can be daisy chained on the same serial connection, if so address 0 must be the first one.
+    Read the manufacturer manual for more details.
     """
 
-    # noinspection SpellCheckingInspection
+    # FIXME: move to shared location and use the same UR across different devices.
     ureg = (
         UnitRegistry()
     )  # Unit converter, defaults are fine, but it would be wise explicitly list the units needed
 
-    # first pump in chain/pump connected directly to computer, if pump chain connected MUST have address 0
     def __init__(
         self,
         pump_io: PumpIO,
@@ -425,10 +428,11 @@ class Elite11:
     ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
-        are XXY, where XX is the address and Y is pump status. :, > or <
-        when stopped, running forwards, or running backwards. Confirm
-        that the address is correct. This acts as a check to see that
-        the pump is connected and working."""
+        are the prompt XXY, where XX is the address and Y is pump status.
+        The status can be one of the three: [":", ">" "<"] respectively
+        when stopped, running forwards (pumping), or backwards (withdrawing).
+        The prompt is used to confirm that the address is correct.
+        This acts as a check to see that the pump is connected and working."""
 
         self.pump_io = pump_io
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
@@ -457,6 +461,10 @@ class Elite11:
 
         # Can we raise an exception as soon as self._volume_stored becomes negative?
         self._target_volume = None
+
+        # Code for Elite11 control is not ready for prime time yet ;)
+        warnings.warn("The module Elite11 is being used, which is not yet completely tested!\n"
+                      "Usable with: init with syringe diameter and volume. Set target volume and rate. run.")
 
     def ensure_withdraw_is_enabled(self):
         """ To be used on methods that need withdraw capabilities """
