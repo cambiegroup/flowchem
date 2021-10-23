@@ -175,7 +175,7 @@ class HamiltonPumpIO:
         self.logger.debug(f"Reply received: {reply_string}")
         return reply_string.decode("ascii")
 
-    def parse_response(self, response: str) -> Tuple[bool, bytes]:
+    def parse_response(self, response: str) -> Tuple[bool, str]:
         """ Split a received line in its components: success, reply """
         status = response[:1]
         assert status in (HamiltonPumpIO.ACKNOWLEDGE, HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE), "Invalid status reply"
@@ -313,10 +313,10 @@ class ML600:
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
-        # This command is used to test connection: failure handled by HamiltonPumpIO
-        self.log.info(
-            f"Connected to Hamilton ML600 pump  - FW version: {self.firmware_version()}!"
-        )
+        # Test connectivity by asking for pump's firmware version
+        fw_cmd = Protocol1CommandTemplate(command="U").to_pump(self.address)
+        firmware_version = self.pump_io.write_and_read_reply(fw_cmd)
+        self.log.info(f"Connected to Hamilton ML600 pump  - FW version: {firmware_version}!")
 
     @classmethod
     def from_config(cls, config):
@@ -369,11 +369,6 @@ class ML600:
             return ""
         return str(speed)
 
-    def firmware_version(self) -> str:
-        """ Return firmware version. Sync to be used in init() as connectivity check. """
-        fw_cmd = Protocol1CommandTemplate(command="U").to_pump(self.address)
-        return self.pump_io.write_and_read_reply(fw_cmd)
-
     async def initialize_pump(self, speed: int = None):
         """
         Initialize both syringe and valve
@@ -418,6 +413,12 @@ class ML600:
         """ Absolute move to step position """
         abs_move_cmd = Protocol1CommandTemplate(command="M", optional_parameter="S")
         return await self.send_command_and_read_reply(abs_move_cmd, str(position), self._validate_speed(speed))
+
+    async def get_current_volume(self) -> float:
+        """ Return current syringe position in ml. """
+        syringe_pos = await self.send_command_and_read_reply(Protocol1CommandTemplate(command="YQP"))
+        current_steps = int(syringe_pos) - self.offset_steps
+        return current_steps / self.steps_per_ml
 
     async def to_volume(self, volume_in_ml: float, speed: int = ""):
         """ Absolute move to volume """
@@ -481,12 +482,6 @@ class ML600:
         set_return_steps_cmd = Protocol1CommandTemplate(command="YSN")
         await self.send_command_and_read_reply(set_return_steps_cmd, command_value=str(int(target_steps)))
 
-    async def syringe_position(self) -> float:
-        """ Return current syringe position in ml. """
-        syringe_pos = await self.send_command_and_read_reply(Protocol1CommandTemplate(command="YQP"))
-        current_steps = int(syringe_pos) - self.offset_steps
-        return current_steps / self.steps_per_ml
-
     async def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
         await self.set_valve_position(from_valve)
         pass
@@ -496,6 +491,31 @@ class ML600:
 
     async def transfer(self, volume, from_valve, to_valve, speed_in, speed_out, wait):
         pass
+
+    def get_router(self):
+        """ Creates an APIRouter for this object. """
+        from fastapi import APIRouter
+
+        router = APIRouter()
+        router.add_api_route("/firmware-version", self.version, methods=["GET"])
+        router.add_api_route("/initialize/pump", self.initialize_pump, methods=["PUT"])
+        router.add_api_route("/initialize/valve", self.initialize_valve, methods=["PUT"])
+        router.add_api_route("/initialize/syringe", self.initialize_syringe, methods=["PUT"])
+        router.add_api_route("/pause", self.pause, methods=["PUT"])
+        router.add_api_route("/resume", self.resume, methods=["PUT"])
+        router.add_api_route("/resume", self.resume, methods=["PUT"])
+        router.add_api_route("/stop", self.stop, methods=["PUT"])
+        router.add_api_route("/version", self.stop, methods=["PUT"])
+        router.add_api_route("/is-idle", self.is_idle, methods=["GET"])
+        router.add_api_route("/is-busy", self.is_busy, methods=["GET"])
+        router.add_api_route("/valve/position", self.get_valve_position, methods=["GET"])
+        router.add_api_route("/valve/position", self.set_valve_position, methods=["PUT"])
+        router.add_api_route("/syringe/volume", self.get_current_volume, methods=["GET"])
+        router.add_api_route("/syringe/volume", self.to_volume, methods=["PUT"])
+        router.add_api_route("/syringe/return-steps", self.get_return_steps, methods=["GET"])
+        router.add_api_route("/syringe/return-steps", self.set_return_steps, methods=["PUT"])
+
+        return router
 
 
 class TwoPumpAssembly(Thread):
