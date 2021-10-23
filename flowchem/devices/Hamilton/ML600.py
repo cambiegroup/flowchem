@@ -500,15 +500,45 @@ class ML600:
         set_return_steps_cmd = Protocol1CommandTemplate(command="YSN")
         await self.send_command_and_read_reply(set_return_steps_cmd, command_value=str(int(target_steps)))
 
-    async def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
-        await self.set_valve_position(from_valve)
-        pass
+    async def pickup(self, volume_in_ml: float, from_valve: ValvePositionName,
+                     flowrate_in_ml_min: float = 1.0, wait: bool = False):
+        """ Get volume from valve specified at given flowrate. """
+        cur_vol = await self.get_current_volume()
+        if (cur_vol + volume_in_ml) > self._max_vol:
+            warnings.warn(f"Cannot withdraw {volume_in_ml} given the current syringe position {cur_vol} ml and a "
+                          f"syringe volume of {self.syringe_volume}")
+            return
 
-    async def deliver(self, volume, from_valve, speed_out, wait):
-        pass
+        # Valve to position specified
+        await self.set_valve_position(from_valve, wait_for_movement_end=True)
+        # Move up to target volume
+        await self.to_volume(cur_vol + volume_in_ml, speed=self.flowrate_to_seconds_per_stroke(flowrate_in_ml_min))
 
-    async def transfer(self, volume, from_valve, to_valve, speed_in, speed_out, wait):
-        pass
+        if wait:
+            await self.wait_until_idle()
+
+    async def deliver(self, volume_in_ml: float, to_valve: ValvePositionName,
+                      flowrate_in_ml_min: float = 1.0, wait: bool = False):
+        """ Delivers volume to valve specified at given flowrate. """
+        cur_vol = await self.get_current_volume()
+        if volume_in_ml > cur_vol:
+            warnings.warn(f"Cannot deliver {volume_in_ml} given the current syringe position {cur_vol} ml!")
+            return
+
+        # Valve to position specified
+        await self.set_valve_position(to_valve, wait_for_movement_end=True)
+        # Move up to target volume
+        await self.to_volume(cur_vol - volume_in_ml, speed=self.flowrate_to_seconds_per_stroke(flowrate_in_ml_min))
+
+        if wait:
+            await self.wait_until_idle()
+
+    async def transfer(self, volume_in_ml: float, from_valve: ValvePositionName,
+                       to_valve: ValvePositionName, flowrate_in: float = 1.0,
+                       flowrate_out: float = 1.0, wait: bool = False):
+        """ Move liquid from place to place. """
+        await self.pickup(volume_in_ml, from_valve, flowrate_in, wait=True)
+        await self.deliver(volume_in_ml, to_valve, flowrate_out, wait=False)
 
     def get_router(self):
         """ Creates an APIRouter for this object. """
@@ -532,6 +562,9 @@ class ML600:
         router.add_api_route("/syringe/volume", self.to_volume, methods=["PUT"])
         router.add_api_route("/syringe/return-steps", self.get_return_steps, methods=["GET"])
         router.add_api_route("/syringe/return-steps", self.set_return_steps, methods=["PUT"])
+        router.add_api_route("/pickup", self.pickup, methods=["PUT"])
+        router.add_api_route("/deliver", self.deliver, methods=["PUT"])
+        # router.add_api_route("/transfer", self.transfer, methods=["PUT"])  # Might go in timeout
 
         return router
 
