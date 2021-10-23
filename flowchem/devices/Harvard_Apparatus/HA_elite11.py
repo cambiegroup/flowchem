@@ -457,7 +457,7 @@ class Elite11:
         self.clear_volumes()
 
         # Assume full syringe upon start-up
-        self._volume_stored = self.syringe_volume
+        self._volume_stored = self.volume_syringe
 
         # Can we raise an exception as soon as self._volume_stored becomes negative?
         self._target_volume = None
@@ -525,7 +525,7 @@ class Elite11:
         return prompt in (PumpStatus.INFUSING, PumpStatus.WITHDRAWING)
 
     def get_syringe_volume(self) -> float:
-        """ Sets/returns the syringe volume in ml. """
+        """ Returns the syringe volume in ml. """
         volume_w_units = self.send_command_and_read_reply(
             Elite11Commands.GET_SYRINGE_VOLUME
         )  # e.g. '100 ml'
@@ -534,6 +534,11 @@ class Elite11:
         )  # Unit registry does the unit conversion and returns ml
 
     def set_syringe_volume(self, volume_in_ml: float = None):
+        """
+        Sets the syringe volume in ml.
+
+        :param volume_in_ml: the volume of the syringe.
+        """
         self.send_command_and_read_reply(
             Elite11Commands.SET_SYRINGE_VOLUME, parameter=f"{volume_in_ml} m"
         )
@@ -577,12 +582,12 @@ class Elite11:
         self.log.info("Pump started to run")
 
     def inverse_run(self):
-        """activates pump, runs opposite to previously set direction"""
+        """ Activates pump, runs opposite to previously set direction. """
         self.send_command_and_read_reply(Elite11Commands.REVERSE_RUN)
         self.log.info("Pump started to run in reverse direction")
 
     def infuse_run(self):
-        """activates pump, runs in infuse mode"""
+        """ Activates pump, runs in infuse mode. """
         self.update_stored_volume()
 
         if self.is_moving():
@@ -598,7 +603,7 @@ class Elite11:
         self.log.info("Pump started to infuse")
 
     def withdraw_run(self):
-        """activates pump, runs in withdraw mode"""
+        """ Activates pump, runs in withdraw mode. """
         self.ensure_withdraw_is_enabled()
         self.update_stored_volume()
 
