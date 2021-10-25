@@ -101,9 +101,6 @@ class HamiltonPumpIO:
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self._serial = aio_port
 
-        # Lock for thread-safe serial communication when multiple pumps are on the same serial port
-        self.lock = threading.Lock()
-
         # This has to be run after each power cycle to assign addresses to pumps
         self.num_pump_connected = self._assign_pump_address()
         if hw_initialization:
@@ -194,10 +191,9 @@ class HamiltonPumpIO:
 
     def write_and_read_reply(self, command: Protocol1Command) -> str:
         """ Sends a command to the pump, read the replies and returns it, optionally parsed """
-        with self.lock:
-            self.reset_buffer()
-            self._write(command.compile())
-            response = self._read_reply()
+        self.reset_buffer()
+        self._write(command.compile())
+        response = self._read_reply()
 
         if not response:
             raise InvalidConfiguration(
@@ -210,10 +206,9 @@ class HamiltonPumpIO:
     async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
-        with self.lock:
-            self.reset_buffer()
-            await self._write_async(command.compile())
-            response = await self._read_reply_async()
+        self.reset_buffer()
+        await self._write_async(command.compile())
+        response = await self._read_reply_async()
 
         if not response:
             raise InvalidConfiguration(
