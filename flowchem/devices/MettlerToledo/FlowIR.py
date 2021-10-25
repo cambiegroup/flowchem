@@ -16,7 +16,7 @@ from asyncua.ua.uaerrors import BadOutOfService, Bad
 from flowchem.devices.MettlerToledo.iCIR_common import iCIR_spectrometer, ProbeInfo
 
 
-class FlowIR_Async(iCIR_spectrometer):
+class FlowIR(iCIR_spectrometer):
     """
     Object to interact with the iCIR software controlling the FlowIR and ReactIR.
     """
@@ -98,7 +98,7 @@ class FlowIR_Async(iCIR_spectrometer):
         """ Given a Spectrum node returns it as IRSpectrum """
         try:
             intensity = await node.get_value()
-            wavenumber = await FlowIR_Async._wavenumber_from_spectrum_node(node)
+            wavenumber = await FlowIR._wavenumber_from_spectrum_node(node)
             return IRSpectrum(wavenumber=wavenumber, intensity=intensity)
 
         except BadOutOfService:
@@ -106,27 +106,27 @@ class FlowIR_Async(iCIR_spectrometer):
 
     async def last_spectrum_treated(self) -> IRSpectrum:
         """ Returns an IRSpectrum element for the last acquisition """
-        return await FlowIR_Async.spectrum_from_node(
+        return await FlowIR.spectrum_from_node(
             self.opcua.get_node(self.SPECTRA_TREATED)
         )
 
     async def last_spectrum_raw(self) -> IRSpectrum:
         """ RAW result latest scan """
-        return await FlowIR_Async.spectrum_from_node(
+        return await FlowIR.spectrum_from_node(
             self.opcua.get_node(self.SPECTRA_RAW)
         )
 
     async def last_spectrum_background(self) -> IRSpectrum:
         """ RAW result latest scan """
-        return await FlowIR_Async.spectrum_from_node(
+        return await FlowIR.spectrum_from_node(
             self.opcua.get_node(self.SPECTRA_BACKGROUND)
         )
 
     async def start_experiment(
         self, template: str, name: str = "Unnamed flowchem exp."
     ):
-        template = FlowIR_Async._normalize_template_name(template)
-        if self.is_local() and FlowIR_Async.is_template_name_valid(template) is False:
+        template = FlowIR._normalize_template_name(template)
+        if self.is_local() and FlowIR.is_template_name_valid(template) is False:
             raise DeviceError(
                 f"Cannot start template {template}: name not valid! Check if is in: "
                 r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"

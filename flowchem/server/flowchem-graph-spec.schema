@@ -37,6 +37,8 @@
         "$ref": "#/definitions/fakedevice"
       }, "PressureSensor": {
         "$ref": "#/definitions/pressure-sensor"
+      }, "FlowIR": {
+        "$ref": "#/definitions/flowir"
       }
     }, "oneOf": [
       {
@@ -58,6 +60,10 @@
       }, {
         "required": [
           "PressureSensor"
+        ]
+      }, {
+        "required": [
+          "FlowIR"
         ]
       }
     ], "additionalProperties": false
@@ -127,6 +133,13 @@
         "type": "boolean"
       }
     }, "required": []
+  }, "flowir": {
+    "id": "#/definitions/flowir", "type": "object", "properties": {
+      "url": {
+        "type": "string"
+      }
+    }, "required": [
+    ]
   }
 }
 }
