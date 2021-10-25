@@ -8,6 +8,9 @@ devices:
             host: BSMC-7WP43Y1
             port: 13000
             data_folder: W:\BS-FlowChemistry\Equipment\Magritek_NMR\data_exchange
+    p1:
+        PressureSensor:
+            vint_serial_number: 627768
 #    chiller:
 #        HuberChiller:
 #            port: COM1

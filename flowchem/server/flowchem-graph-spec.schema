@@ -1,152 +1,132 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://cambiegroup.github.io/flowchem/flowchem-graph-spec.json",
-  "type": "object",
-  "title": "Flowchem hardware description",
-  "description": "Defines a graph of devices.",
-  "properties": {
-    "version": {
-      "type": "string",
-      "description": "Version of the graph file; flowchem will reject versions it does not understand."
-    },
-    "devices": {
-      "id": "#/properties/devices",
-      "type": "object",
-      "description": "Devices, nodes of the graph",
-      "uniqueItems": true,
-      "properties": {
-        "builtin": {
-          "type": "boolean"
-        }
-      },
-      "patternProperties": {
-        "^[a-zA-Z0-9._-]+$": {
-          "$ref": "#/definitions/device"
-        }
-      },
-      "additionalProperties": false
-    },
-    "additionalProperties": false,
-  },
-  "definitions": {
-    "device": {
-      "id": "#/definitions/device",
-      "type": "object",
-      "properties": {
-        "parent": {
-          "oneOf": [
-            {"type": "string"},
-            {"type": "null"}
-          ]
-        },
-      "HuberChiller": {
-        "$ref": "#/definitions/huberchiller"
-      },
-      "ML600": {
-        "$ref": "#/definitions/ml600"
-      },
-      "Spinsolve": {
-        "$ref": "#/definitions/spinsolve"
-      },
-      "FakeDevice": {
-        "$ref": "#/definitions/fakedevice"
+  "$id": "https://cambiegroup.github.io/flowchem/flowchem-graph-spec.json", "type": "object",
+  "title": "Flowchem hardware description", "description": "Defines a graph of devices.", "properties": {
+  "version": {
+    "type": "string", "description": "Version of the graph file; flowchem will reject versions it does not understand."
+  }, "devices": {
+    "id": "#/properties/devices", "type": "object", "description": "Devices, nodes of the graph",
+    "uniqueItems": true, "properties": {
+      "builtin": {
+        "type": "boolean"
       }
-      },
-      "oneOf": [
-        {
-          "required": ["HuberChiller"]
-        },
-        {
-          "required": ["ML600"]
-        },
+    }, "patternProperties": {
+      "^[a-zA-Z0-9._-]+$": {
+        "$ref": "#/definitions/device"
+      }
+    }, "additionalProperties": false
+  }, "additionalProperties": false
+}, "definitions": {
+  "device": {
+    "id": "#/definitions/device", "type": "object", "properties": {
+      "parent": {
+        "oneOf": [
+          {
+            "type": "string"
+          }, {
+            "type": "null"
+          }
+        ]
+      }, "HuberChiller": {
+        "$ref": "#/definitions/huberchiller"
+      }, "ML600": {
+        "$ref": "#/definitions/ml600"
+      }, "Spinsolve": {
+        "$ref": "#/definitions/spinsolve"
+      }, "FakeDevice": {
+        "$ref": "#/definitions/fakedevice"
+      }, "PressureSensor": {
+        "$ref": "#/definitions/pressure-sensor"
+      }
+    }, "oneOf": [
       {
-          "required": ["Spinsolve"]
-        },
-      {
-          "required": ["FakeDevice"]
-        }
-      ],
-      "additionalProperties": false
-    },
-    "huberchiller": {
-      "id": "#/definitions/huberchiller",
-      "type": "object",
-      "properties": {
-        "port": {
-          "type": "string"
-        },
-        "baudrate": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "port"
-      ]
-    },
-    "ml600": {
-      "id": "#/definitions/ml600",
-      "type": "object",
-      "properties": {
-        "port":  {
-          "type": "string"
-        },
-        "syringe_volume": {
-          "type": "number"
-        },
-        "address": {
-          "type": "number"
-        },
-        "name": {
-          "type": "string"
-        },
-        "baudrate": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "port", "syringe_volume"
-      ]
-    },
-    "spinsolve": {
-      "id": "#/definitions/spinsolve",
-      "type": "object",
-      "properties": {
-        "host": {
-          "type": "string"
-        },
-        "port": {
-          "type": "number"
-        },
-        "data_folder": {
-          "type": "string"
-        },
-        "xml_schema": {
-          "type": "string"
-        },
-        "sample_name": {
-          "type": "string"
-        },
-        "solvent": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "host",
-        "data_folder"
-      ]
-    },
-    "fakedevice": {
-      "id": "#/definitions/fakedevice",
-      "type": "object",
-      "properties": {
-        "port": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "port"
-      ]
-
-    }
+        "required": [
+          "HuberChiller"
+        ]
+      }, {
+        "required": [
+          "ML600"
+        ]
+      }, {
+        "required": [
+          "Spinsolve"
+        ]
+      }, {
+        "required": [
+          "FakeDevice"
+        ]
+      }, {
+        "required": [
+          "PressureSensor"
+        ]
+      }
+    ], "additionalProperties": false
+  }, "huberchiller": {
+    "id": "#/definitions/huberchiller", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      }, "baudrate": {
+        "type": "number"
+      }
+    }, "required": [
+      "port"
+    ]
+  }, "ml600": {
+    "id": "#/definitions/ml600", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      }, "syringe_volume": {
+        "type": "number"
+      }, "address": {
+        "type": "number"
+      }, "name": {
+        "type": "string"
+      }, "baudrate": {
+        "type": "number"
+      }
+    }, "required": [
+      "port", "syringe_volume"
+    ]
+  }, "spinsolve": {
+    "id": "#/definitions/spinsolve", "type": "object", "properties": {
+      "host": {
+        "type": "string"
+      }, "port": {
+        "type": "number"
+      }, "data_folder": {
+        "type": "string"
+      }, "xml_schema": {
+        "type": "string"
+      }, "sample_name": {
+        "type": "string"
+      }, "solvent": {
+        "type": "string"
+      }
+    }, "required": [
+      "host", "data_folder"
+    ]
+  }, "fakedevice": {
+    "id": "#/definitions/fakedevice", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      }
+    }, "required": [
+      "port"
+    ]
+  }, "pressure-sensor": {
+    "id": "#/definitions/pressure-sensor", "type": "object", "properties": {
+      "sensor_min_bar": {
+        "type": "number"
+      }, "sensor_max_bar": {
+        "type": "number"
+      }, "vint_serial_number": {
+        "type": "number"
+      }, "vint_channel": {
+        "type": "number"
+      }, "phidget_is_remote": {
+        "type": "boolean"
+      }
+    }, "required": []
   }
+}
 }
