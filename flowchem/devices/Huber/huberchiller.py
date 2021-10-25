@@ -10,7 +10,7 @@ from typing import List, Dict, Optional
 import aioserial
 from aioserial import SerialException
 
-from flowchem.constants import InvalidConfiguration
+from flowchem.constants import InvalidConfiguration, DeviceError
 
 
 @dataclass
@@ -118,6 +118,13 @@ class HuberChiller:
             raise InvalidConfiguration(f"Cannot connect to the HuberChiller on the port <{config.get('port')}>") from e
 
         return cls(serial_object)
+
+    async def initialize(self):
+        """ Ensure the connection w/ device is working. """
+        sn = await self.serial_number()
+        if sn == 0:
+            raise DeviceError(f"No reply received from Huber Chiller!")
+        self.logger.debug(f"Connected with Huber Chiller S/N {sn}")
 
     async def send_command_and_read_reply(self, command: str) -> str:
         """ Sends a command to the chiller and reads the reply.
