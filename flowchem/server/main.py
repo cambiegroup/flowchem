@@ -60,7 +60,6 @@ def create_server_from_config(config: Union[Path, Dict]) -> Tuple[FastAPI, Serve
     logger.debug(f"The following device classes have been found: {device_mapper.keys()}")
 
     # Parse list of devices and generate endpoints
-
     for device_name, node_config in config["devices"].items():
         # Schema validation ensures only 1 hit here
         device_class = [name for name in device_mapper.keys() if name in node_config].pop()
