@@ -21,26 +21,25 @@ class FlowIR_Sync(iCIR_spectrometer):
     Object to interact with the iCIR software controlling the FlowIR and ReactIR.
     """
 
-    def __init__(self, client: opcua.Client):
+    def __init__(self, url: str = None):
         """
         Initiate connection with OPC UA server.
         check_version() is executed upon init to check status.
         """
-        self.log = logging.getLogger(__name__)
+        # Logger
+        self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
-        assert isinstance(client, opcua.Client)
+        # Default (local) url if none provided
+        if url is None:
+            url = "opc.tcp://localhost:62552/iCOpcUaServer"
 
-        self.opcua = client
-        self.probe = None
+        self.opcua = opcua.Client(url)
         self.version = None
 
-        # Initialize and check connection
+    def initialize(self):
+        """ Initialize and check connection """
         self.opcua.connect()
         self.check_version()
-
-    def __del__(self):
-        """ Terminate connection on exit """
-        self.opcua.disconnect()
 
     def check_version(self):
         """ Check if iCIR is installed and open and if the version is supported. """

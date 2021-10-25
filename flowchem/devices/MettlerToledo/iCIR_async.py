@@ -21,27 +21,28 @@ class FlowIR_Async(iCIR_spectrometer):
     Object to interact with the iCIR software controlling the FlowIR and ReactIR.
     """
 
-    def __init__(self, client: asyncua.Client):
+    def __init__(self, url: str = None):
         """
         Initiate connection with OPC UA server.
         Intended to be used as context-manager!
         """
-        self.log = logging.getLogger(__name__)
+        # Logger
+        self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
-        assert isinstance(client, asyncua.Client)
+        # Default (local) url if none provided
+        if url is None:
+            url = "opc.tcp://localhost:62552/iCOpcUaServer"
 
-        self.opcua = client
-        self.probe = None
+        self.opcua = asyncua.Client(url)
         self.version = None
 
-    async def __aenter__(self):
-        # Initialize and check connection
-        await self.opcua.connect()
+    async def initialize(self):
+        """ Initialize and check connection """
+        try:
+            await self.opcua.connect()
+        except asyncio.TimeoutError:
+            raise DeviceError(f"Could not connect to FlowIR on {self.opcua.server_url}!")
         await self.check_version()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.opcua.disconnect()
 
     async def check_version(self):
         """ Check if iCIR is installed and open and if the version is supported. """
