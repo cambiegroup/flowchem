@@ -7,7 +7,7 @@ import logging
 from typing import List, Optional
 
 from flowchem.constants import DeviceError
-from flowchem.analysis.spectrum import IRSpectrum
+from flowchem.devices.MettlerToledo.iCIR_common import IRSpectrum
 
 from asyncua import ua
 from asyncua.ua.uaerrors import BadOutOfService, Bad
@@ -96,9 +96,9 @@ class FlowIR_Sync(iCIR_spectrometer):
         try:
             intensity = node.get_value()
             wavenumber = FlowIR_Sync._wavenumber_from_spectrum_node(node)
-            return IRSpectrum(wavenumber, intensity)
+            return IRSpectrum(wavenumber=wavenumber, intensity=intensity)
         except BadOutOfService:
-            return IRSpectrum([], [])
+            return IRSpectrum(wavenumber=[], intensity=[])
 
     def last_spectrum_treated(self) -> IRSpectrum:
         """ Returns an IRSpectrum element for the last acquisition """
@@ -153,6 +153,24 @@ class FlowIR_Sync(iCIR_spectrometer):
         while self.is_running:
             time.sleep(0.2)
 
+    def get_router(self):
+        """ Creates an APIRouter for this HuberChiller instance. """
+        from fastapi import APIRouter
+
+        router = APIRouter()
+        router.add_api_route("/is-connected", self.is_iCIR_connected, methods=["GET"])
+        router.add_api_route("/is-running", self.is_running, methods=["GET"])
+        router.add_api_route("/probe/info", self.is_iCIR_connected, methods=["GET"])
+        router.add_api_route("/probe/status", self.is_iCIR_connected, methods=["GET"])
+        router.add_api_route("/sample/last-acquisition-time", self.last_sample_time, methods=["GET"])
+        router.add_api_route("/sample/spectrum/last-treated", self.last_spectrum_treated, methods=["GET"])
+        router.add_api_route("/sample/spectrum/last-raw", self.last_spectrum_raw, methods=["GET"])
+        router.add_api_route("/sample/spectrum/last-background", self.last_spectrum_background, methods=["GET"])
+        router.add_api_route("/experiment/start", self.start_experiment, methods=["PUT"])
+        router.add_api_route("/experiment/stop", self.stop_experiment, methods=["GET"])
+
+        return router
+
 
 if __name__ == "__main__":
     opcua_client = opcua.Client(
@@ -169,7 +187,7 @@ if __name__ == "__main__":
     ir_spectrometer.start_experiment(name="reaction_monitoring", template=template_name)
 
     spectrum = ir_spectrometer.last_spectrum_treated()
-    while spectrum.empty:
+    while len(spectrum.intensity) == 0:
         spectrum = ir_spectrometer.last_spectrum_treated()
 
     for x in range(3):
