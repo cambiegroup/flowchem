@@ -103,7 +103,7 @@ class HuberChiller:
     """
     def __init__(self, aio: aioserial.AioSerial):
         self._serial = aio
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
     @classmethod
     def from_config(cls, config: dict):

@@ -20,8 +20,8 @@ logging.getLogger("flowchem").setLevel(logging.DEBUG)
 
 
 def move_infuse(pump):
-    pump.diameter = 10
-    pump.infusion_rate = 1
+    pump.set_syringe_diameter(10)
+    pump.set_infusion_rate = 1
     pump.infuse_run()
 
 
@@ -52,8 +52,8 @@ def test_status_infusing(pump: Elite11):
 
 @pytest.mark.HApump
 def test_status_withdrawing(pump: Elite11):
-    pump.diameter = 10
-    pump.withdrawing_rate = 1
+    pump.set_syringe_diameter(10)
+    pump.set_withdrawing_rate(1)
     pump.withdraw_run()
     assert pump.get_status() is PumpStatus.WITHDRAWING
     pump.stop()
@@ -82,23 +82,23 @@ def test_syringe_volume(pump: Elite11):
 
 @pytest.mark.HApump
 def test_infusion_rate(pump: Elite11):
-    pump.diameter = 10
-    pump.infusion_rate = 5
-    assert pump.infusion_rate == 5
+    pump.set_syringe_diameter(10)
+    pump.set_infusion_rate(5)
+    assert pump.get_infusion_rate()
     with pytest.warns(UserWarning):
-        pump.infusion_rate = 121
-    assert pump.infusion_rate == 12.4882
+        pump.set_infusion_rate(121)
+    assert pump.get_infusion_rate() == 12.4882
     with pytest.warns(UserWarning):
-        pump.infusion_rate = 0
-    assert pump.infusion_rate == 1e-05
-    pump.infusion_rate = math.pi
-    assert math.isclose(pump.infusion_rate, math.pi, abs_tol=0.001)
+        pump.set_infusion_rate(0)
+    assert pump.get_infusion_rate() == 1e-05
+    pump.set_infusion_rate(math.pi)
+    assert math.isclose(pump.get_infusion_rate(), math.pi, abs_tol=0.001)
 
 
 @pytest.mark.HApump
 def test_get_infused_volume(pump: Elite11):
     pump.clear_volumes()
-    pump.infusion_rate = 10
+    pump.set_infusion_rate = 10
     pump.target_volume = 0.1
     pump.infuse_run()
     time.sleep(1)
@@ -108,7 +108,7 @@ def test_get_infused_volume(pump: Elite11):
 @pytest.mark.HApump
 def test_get_withdrawn_volume(pump: Elite11):
     pump.clear_volumes()
-    pump.withdrawing_rate = 10
+    pump.set_withdrawing_rate(10)
     pump.target_volume = 0.1
     pump.withdraw_run()
     time.sleep(1)
@@ -117,36 +117,36 @@ def test_get_withdrawn_volume(pump: Elite11):
 
 @pytest.mark.HApump
 def test_force(pump: Elite11):
-    pump.force = 10
-    assert pump.force == 10
-    pump.force = 50.2
-    assert pump.force == 50
+    pump.set_force(10)
+    assert pump.get_force() == 10
+    pump.set_force(50.2)
+    assert pump.get_force() == 50
     with pytest.raises(DeviceError) as exception_info:
-        pump.force = 110
+        pump.set_force(110)
     assert "Out of range" in str(exception_info.value)
-    assert pump.force == 50
+    assert pump.get_force() == 50
 
 
 @pytest.mark.HApump
 def test_diameter(pump: Elite11):
-    pump.diameter = 10
-    assert pump.diameter == 10
+    pump.set_syringe_diameter(10)
+    assert pump.get_syringe_diameter() == 10
 
     with pytest.raises(DeviceError) as exception_info:
-        pump.diameter = 34
+        pump.set_syringe_diameter(34)
     assert "not valid" in str(exception_info.value)
 
     with pytest.raises(DeviceError) as exception_info:
-        pump.diameter = 0.01
+        pump.set_syringe_diameter(0.01)
     assert "not valid" in str(exception_info.value)
 
-    pump.diameter = math.pi
-    math.isclose(pump.diameter, math.pi)
+    pump.set_syringe_diameter(math.pi)
+    math.isclose(pump.get_syringe_diameter(), math.pi)
 
 
 @pytest.mark.HApump
 def test_target_volume(pump: Elite11):
-    pump.target_volume = math.pi
-    assert math.isclose(pump.target_volume, math.pi, abs_tol=10e-4)
-    pump.target_volume = 1e-04
-    assert pump.target_volume == 1e-4
+    pump.set_target_volume(math.pi)
+    assert math.isclose(pump.get_target_volume(), math.pi, abs_tol=10e-4)
+    pump.set_target_volume(1e-04)
+    assert pump.get_target_volume() == 1e-4

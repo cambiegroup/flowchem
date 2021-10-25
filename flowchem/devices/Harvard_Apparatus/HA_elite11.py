@@ -12,7 +12,7 @@ from enum import Enum
 from time import sleep
 from typing import Union, List, Optional, Tuple
 
-import serial
+import aioserial
 from pint import UnitRegistry
 
 from flowchem.constants import InvalidConfiguration, DeviceError
@@ -91,10 +91,15 @@ class PumpStatus(Enum):
 class PumpIO:
     """ Setup with serial parameters, low level IO"""
 
+    DEFAULT_CONFIG = {
+        "timeout": 0.1,
+        "baudrate": 115200
+    }
+
     # noinspection PyPep8
-    def __init__(self, port: Union[int, str], baud_rate: int = 115200):
-        if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
-            raise InvalidConfiguration(f"Invalid baud rate provided {baud_rate}!")
+    def __init__(self, aio_serial: aioserial.Serial):
+        if baudrate not in serial.serialutil.SerialBase.BAUDRATES:
+            raise InvalidConfiguration(f"Invalid baud rate provided {baudrate}!")
 
         if isinstance(port, int):
             port = f"COM{port}"  # Because I am lazy
@@ -104,31 +109,40 @@ class PumpIO:
 
         try:
             # noinspection PyPep8
-            self._serial = serial.Serial(
-                port=port, baudrate=baud_rate, timeout=0.1
-            )  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
+            self._serial = aioserial.Serial(
+                port=port, baudrate=baudrate, timeout=0.1
+            )
         except serial.serialutil.SerialException as e:
             raise InvalidConfiguration from e
+
+    @classmethod
+    def from_config(cls, config):
+        """ Create HamiltonPumpIO from config. """
+        # Merge default settings, including serial, with provided ones.
+        configuration = dict(PumpIO.DEFAULT_CONFIG, **config)
+
+        try:
+            serial_object = aioserial.AioSerial(**configuration)
+        except SerialException as e:
+            raise InvalidConfiguration(f"Cannot connect to the pump on the port <{configuration.get('port')}>") from e
+
+        return cls(serial_object)
 
     def _write(self, command: Protocol11Command):
         """ Writes a command to the pump """
         command = command.compile()
-        self.logger.debug(f"Sending {repr(command)}")
         try:
             self._serial.write(command.encode("ascii"))
         except serial.serialutil.SerialException as e:
             raise InvalidConfiguration from e
+        self.logger.debug(f"Sent {repr(command)}!")
 
     def _read_reply(self, command) -> List[str]:
         """ Reads the pump reply from serial communication """
         reply_string = []
-        self.logger.debug(
-            f"I am going to read {command.reply_lines} line for this command (+prompt)"
-        )
 
-        for line_num in range(
-            command.reply_lines + 2
-        ):  # +1 for leading newline character in reply + 1 for prompt
+        # +1 for leading newline character in reply + 1 for prompt = +2
+        for line_num in range(command.reply_lines + 2):
             chunk = self._serial.readline().decode("ascii")
             self.logger.debug(f"Read line: {repr(chunk)} ")
 
@@ -418,13 +432,20 @@ class Elite11:
         UnitRegistry()
     )  # Unit converter, defaults are fine, but it would be wise explicitly list the units needed
 
+    # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
+    _io_instances = set()
+    # The mutable object (a set) as class variable creates a shared state across all the instances.
+    # When several pumps are daisy chained on the same serial port, they need to all access the same Serial object,
+    # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
+    # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
+
     def __init__(
         self,
         pump_io: PumpIO,
         address: int = 0,
         name: str = None,
         diameter: float = None,
-        volume_syringe: float = None,
+        syringe_volume: float = None,
     ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
@@ -438,10 +459,10 @@ class Elite11:
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address: int = address
         if diameter is not None:
-            self.syringe_diameter = diameter
-        if volume_syringe is not None:
-            self.set_syringe_volume(volume_syringe)
-        self.volume_syringe = volume_syringe
+            self.set_syringe_diameter(diameter)
+        if syringe_volume is not None:
+            self.set_syringe_volume(syringe_volume)
+        self.volume_syringe = syringe_volume
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
@@ -465,6 +486,28 @@ class Elite11:
         # Code for Elite11 control is not ready for prime time yet ;)
         warnings.warn("The module Elite11 is being used, which is not yet completely tested!\n"
                       "Usable with: init with syringe diameter and volume. Set target volume and rate. run.")
+
+    @classmethod
+    def from_config(cls, config):
+        # Many pump can be present on the same serial port with different addresses.
+        # This shared list of PumpIO objects allow shared state in a borg-inspired way, avoiding singletons
+        # This is only relevant to programmatic instantiation, i.e. when from_config() is called per each pump from a
+        # config file, as it is the case in the HTTP server.
+        # Pump_IO() manually instantiated are not accounted for.
+        pumpio = None
+        for obj in Elite11._io_instances:
+            if obj._serial.port == config.get("port"):
+                pumpio = obj
+                break
+
+        # If not existing serial object are available for the port provided, create a new one
+        if pumpio is None:
+            # Remove ML600-specific keys to only have HamiltonPumpIO's kwargs
+            config_for_pumpio = {k: v for k, v in config.items() if k not in ("diameter", "address", "name", "syringe_volume")}
+            pumpio = HamiltonPumpIO.from_config(config_for_pumpio)
+
+        return cls(pumpio, address=config.get("address"), name=config.get("name"), diameter=config.get("diameter"),
+                   syringe_volume=config.get("syringe_volume"))
 
     def ensure_withdraw_is_enabled(self):
         """ To be used on methods that need withdraw capabilities """
@@ -633,9 +676,8 @@ class Elite11:
             if not self.is_moving():
                 is_still = True
 
-    @property
-    def infusion_rate(self) -> float:
-        """ Returns/set the infusion rate in ml*min-1 """
+    def get_infusion_rate(self) -> float:
+        """ Returns the infusion rate in ml*min-1 """
         rate_w_units = self.send_command_and_read_reply(
             Elite11Commands.GET_INFUSE_RATE
         )  # e.g. '0.2 ml/min'
@@ -643,16 +685,15 @@ class Elite11:
             "ml/min"
         )  # Unit registry does the unit conversion and returns ml/min
 
-    @infusion_rate.setter
-    def infusion_rate(self, rate_in_ml_min: float):
+    def set_infusion_rate(self, rate_in_ml_min: float):
+        """ Sets the infusion rate in ml*min-1 """
         set_rate = self.bound_rate_to_pump_limits(rate_in_ml_min=rate_in_ml_min)
         self.send_command_and_read_reply(
             Elite11Commands.SET_INFUSE_RATE, parameter=f"{set_rate:.10f} m/m"
         )
 
-    @property
-    def withdrawing_rate(self) -> float:
-        """ Returns/set the infusion rate in ml*min-1 """
+    def get_withdrawing_rate(self) -> float:
+        """ Returns the infusion rate in ml*min-1 """
         self.ensure_withdraw_is_enabled()
         rate_w_units = self.send_command_and_read_reply(
             Elite11Commands.GET_WITHDRAW_RATE
@@ -661,8 +702,8 @@ class Elite11:
             "ml/min"
         )  # Unit registry does the unit conversion and returns ml/min
 
-    @withdrawing_rate.setter
-    def withdrawing_rate(self, rate_in_ml_min: float):
+    def set_withdrawing_rate(self, rate_in_ml_min: float):
+        """ Sets the infusion rate in ml*min-1 """
         self.ensure_withdraw_is_enabled()
         set_rate = self.bound_rate_to_pump_limits(rate_in_ml_min=rate_in_ml_min)
         self.send_command_and_read_reply(
@@ -706,36 +747,7 @@ class Elite11:
         else:
             self.clear_infused_volume()
 
-    @property
-    def infuse_ramp(self):
-        """ Represent a ramp in infusing rate over a time interval """
-        raw_ramp = self.send_command_and_read_reply(Elite11Commands.GET_INFUSE_RAMP)
-        if raw_ramp == "Ramp not set up.":
-            return None
-        else:
-            raise NotImplementedError
-
-    @infuse_ramp.setter
-    def infuse_ramp(self, rate):
-        raise NotImplementedError
-
-    @property
-    def withdraw_ramp(self):
-        """ Represent a ramp in withdrawing rate over a time interval """
-        self.ensure_withdraw_is_enabled()
-        raw_ramp = self.send_command_and_read_reply(Elite11Commands.GET_WITHDRAW_RAMP)
-        if raw_ramp == "Ramp not set up.":
-            return None
-        else:
-            raise NotImplementedError
-
-    @withdraw_ramp.setter
-    def withdraw_ramp(self, rate):
-        self.ensure_withdraw_is_enabled()
-        raise NotImplementedError
-
-    @property
-    def force(self):
+    def get_force(self):
         """
         Pump force, in percentage.
         Manufacturer suggested values are:
@@ -746,60 +758,36 @@ class Elite11:
         """
         return int(self.send_command_and_read_reply(Elite11Commands.GET_FORCE)[:-1])
 
-    @force.setter
-    def force(self, force_percent: int):
+    def set_force(self, force_percent: int):
         self.send_command_and_read_reply(
             Elite11Commands.SET_FORCE, parameter=str(int(force_percent))
         )
 
-    @property
-    def diameter(self) -> float:
+    def get_syringe_diameter(self) -> float:
         """
         Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
         """
-        warnings.warn(
-            "Deprecated property, use more explicit syringe_diameter instead!",
-            FutureWarning,
-        )
         return self.syringe_diameter
 
-    @diameter.setter
-    def diameter(self, diameter_in_mm: float):
+    def set_syringe_diameter(self, diameter_in_mm: float):
         warnings.warn(
             "Deprecated property, use more explicit syringe_diameter instead!",
             FutureWarning,
         )
         self.syringe_diameter = diameter_in_mm
 
-    @property
-    def syringe_diameter(self) -> float:
+    def get_current_flowrate(self):
         """
-        Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
-        """
-        return float(
-            self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)[:-3]
-        )  # "31.1232 mm" removes unit
-
-    @syringe_diameter.setter
-    def syringe_diameter(self, diameter_in_mm: float):
-        if not 1 <= diameter_in_mm <= 33:
-            raise DeviceError(
-                f"Diameter provided ({diameter_in_mm}) is not valid! [Accepted range: 1-33 mm]"
-            )
-
-        self.send_command_and_read_reply(
-            Elite11Commands.SET_DIAMETER, parameter=f"{diameter_in_mm:.4f}"
-        )
-
-    def display_current_rate(self):
-        """
-        If pump moves, this returns the current moving rate. Else return is not sensible
+        If pump moves, this returns the current moving rate. If not running None.
         :return: current moving rate
         """
-        return self.send_command_and_read_reply(Elite11Commands.CURRENT_MOVING_RATE)
+        if self.is_moving():
+            return self.send_command_and_read_reply(Elite11Commands.CURRENT_MOVING_RATE)
+        else:
+            warnings.warn("Pump is not moving, cannot provide moving rate!")
+            return None
 
-    @property
-    def target_volume(self) -> float:
+    def get_target_volume(self) -> float:
         """
         Set/returns target volume in ml. If the volume is set to 0, the target is cleared.
         """
@@ -808,8 +796,7 @@ class Elite11:
         )
         return target_volume.m_as("ml")
 
-    @target_volume.setter
-    def target_volume(self, target_volume_in_ml: float):
+    def set_target_volume(self, target_volume_in_ml: float):
         if target_volume_in_ml == 0:
             self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME)
         else:
@@ -841,18 +828,28 @@ class Elite11:
         from fastapi import APIRouter
 
         router = APIRouter()
-        router.add_api_route("/version", self.version, methods=["GET"])
-        router.add_api_route("/status", self.get_status, methods=["GET"], response_model=PumpStatus)  # CHECK THIS!
-        router.add_api_route("/is-moving", self.is_moving, methods=["GET"])
-        router.add_api_route("/syringe-volume", self.get_syringe_volume, methods=["GET"])
-        router.add_api_route("/syringe-volume", self.set_syringe_volume, methods=["PUT"])
+        router.add_api_route("/parameters/syringe-volume", self.get_syringe_volume, methods=["GET"])
+        router.add_api_route("/parameters/syringe-volume", self.set_syringe_volume, methods=["PUT"])
+        router.add_api_route("/parameters/force", self.get_force, methods=["PUT"])
+        router.add_api_route("/parameters/force", self.set_force, methods=["PUT"])
         router.add_api_route("/run", self.run, methods=["PUT"])
-        router.add_api_route("/inverse-run", self.inverse_run, methods=["PUT"])
-        router.add_api_route("/infuse-run", self.infuse_run, methods=["PUT"])
-        router.add_api_route("/withdraw-run", self.withdraw_run, methods=["PUT"])
+        router.add_api_route("/run/inverse", self.inverse_run, methods=["PUT"])
+        router.add_api_route("/run/infuse", self.infuse_run, methods=["PUT"])
+        router.add_api_route("/run/withdraw", self.withdraw_run, methods=["PUT"])
         router.add_api_route("/stop", self.stop, methods=["PUT"])
-
-        # TODO: ADD infusion_rate, WITHDRAW_RATE, SYRING DIAMETER AND FORCE [need to un-properties]
+        router.add_api_route("/infusion-rate", self.get_infusion_rate, methods=["GET"])
+        router.add_api_route("/infusion-rate", self.set_infusion_rate, methods=["PUT"])
+        router.add_api_route("/withdraw-rate", self.get_withdrawing_rate, methods=["GET"])
+        router.add_api_route("/withdraw-rate", self.set_withdrawing_rate, methods=["PUT"])
+        router.add_api_route("/info/version", self.version, methods=["GET"])
+        router.add_api_route("/info/status", self.get_status, methods=["GET"], response_model=PumpStatus)  # CHECK THIS!
+        router.add_api_route("/info/is-moving", self.is_moving, methods=["GET"])
+        router.add_api_route("/info/current-flowrate", self.get_current_flowrate, methods=["GET"])
+        router.add_api_route("/info/infused-volume", self.get_infused_volume, methods=["GET"])
+        router.add_api_route("/info/reset-infused-volume", self.clear_infused_volume, methods=["PUT"])
+        router.add_api_route("/info/withdrawn-volume", self.get_withdrawn_volume, methods=["GET"])
+        router.add_api_route("/info/reset-withdrawn", self.clear_withdrawn_volume, methods=["PUT"])
+        router.add_api_route("/info/reset-all", self.clear_volumes, methods=["GET"])
 
         return router
 
