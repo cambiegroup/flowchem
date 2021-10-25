@@ -441,8 +441,11 @@ class Elite11:
         This acts as a check to see that the pump is connected and working."""
 
         self.pump_io = pump_io
+        Elite11._io_instances.add(self.pump_io)  # See above for details.
+
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address: int = address
+
         if diameter is not None:
             self.set_syringe_diameter(diameter)
         if syringe_volume is not None:
