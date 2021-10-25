@@ -28,10 +28,13 @@ class PressureSensor:
         vint_channel: int = None,
         phidget_is_remote: bool = False,
     ):
+
+        # Logger
+        self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
+
         # Sensor range
         self._minP = sensor_min_bar
         self._maxP = sensor_max_bar
-        self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
         # current meter
         self.phidget = CurrentInput()
 
@@ -82,9 +85,9 @@ class PressureSensor:
         """ Converts current reading into pressure value """
         ma = current_in_ampere * 1000
         # minP..maxP is 4..20mA
-        measured_P = self._minP + ((ma - 4) / 16) * (self._maxP - self._minP)
-        self.log.debug(f"Read pressure {measured_P} barg")
-        return measured_P
+        pressure_reading = self._minP + ((ma - 4) / 16) * (self._maxP - self._minP)
+        self.log.debug(f"Read pressure {pressure_reading} barg!")
+        return pressure_reading
 
     def read_pressure(self) -> Optional[float]:
         """
@@ -104,6 +107,7 @@ class PressureSensor:
             current = self.phidget.getCurrent()
             self.log.debug(f"Current pressure: {current}")
         except PhidgetException:
+            warnings.warn("Cannot read pressure!")
             return None
         else:
             return self._current_to_pressure(current)
