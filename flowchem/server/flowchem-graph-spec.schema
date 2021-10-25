@@ -41,6 +41,8 @@
         "$ref": "#/definitions/flowir"
       }, "MansonPowerSupply": {
         "$ref": "#/definitions/manson"
+      }, "R4Heater": {
+        "$ref": "#/definitions/r4heater"
       }
     }, "oneOf": [
       {
@@ -66,6 +68,14 @@
       }, {
         "required": [
           "FlowIR"
+        ]
+      }, {
+        "required": [
+          "MansonPowerSupply"
+        ]
+      }, {
+        "required": [
+          "R4Heater"
         ]
       }
     ], "additionalProperties": false
@@ -149,6 +159,14 @@
       },
       "baudrate": {
         "type": "number"
+      }
+    }, "required": [
+      "port"
+    ]
+  }, "r4heater": {
+    "id": "#/definitions/r4heater", "type": "object", "properties": {
+      "port": {
+        "type": "string"
       }
     }, "required": [
       "port"
