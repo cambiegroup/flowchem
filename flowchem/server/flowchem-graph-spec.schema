@@ -39,6 +39,8 @@
         "$ref": "#/definitions/pressure-sensor"
       }, "FlowIR": {
         "$ref": "#/definitions/flowir"
+      }, "MansonPowerSupply": {
+        "$ref": "#/definitions/manson"
       }
     }, "oneOf": [
       {
@@ -139,6 +141,17 @@
         "type": "string"
       }
     }, "required": [
+    ]
+  }, "manson": {
+    "id": "#/definitions/manson", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      },
+      "baudrate": {
+        "type": "number"
+      }
+    }, "required": [
+      "port"
     ]
   }
 }
