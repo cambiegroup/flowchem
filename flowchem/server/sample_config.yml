@@ -49,4 +49,8 @@ devices:
 
     pump3:
         Elite11:
+            port: COM6
+            address: 1
+            syringe_volume: 5
+            diameter: 12.23
 

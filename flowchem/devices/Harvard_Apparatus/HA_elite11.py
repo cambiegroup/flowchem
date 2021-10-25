@@ -97,22 +97,16 @@ class PumpIO:
     }
 
     # noinspection PyPep8
-    def __init__(self, aio_serial: aioserial.Serial):
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
-        self._serial = aio_serial
-
-    @classmethod
-    def from_config(cls, config):
-        """ Create HamiltonPumpIO from config. """
+    def __init__(self, **config):
         # Merge default settings, including serial, with provided ones.
-        configuration = dict(PumpIO.DEFAULT_CONFIG, **config)
+        configuration = dict(R4Heater.DEFAULT_CONFIG, **config)
 
         try:
-            serial_object = aioserial.AioSerial(**configuration)
+            self._serial = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the pump on the port <{configuration.get('port')}>") from e
+            raise InvalidConfiguration(f"Cannot connect to the R4Heater on the port <{config.get('port')}>") from e
 
-        return cls(serial_object)
+        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
     def _write(self, command: Protocol11Command):
         """ Writes a command to the pump """
@@ -492,7 +486,7 @@ class Elite11:
         if pumpio is None:
             # Remove ML600-specific keys to only have HamiltonPumpIO's kwargs
             config_for_pumpio = {k: v for k, v in config.items() if k not in ("diameter", "address", "name", "syringe_volume")}
-            pumpio = PumpIO.from_config(config_for_pumpio)
+            pumpio = PumpIO(**config_for_pumpio)
 
         return cls(pumpio, address=config.get("address"), name=config.get("name"), diameter=config.get("diameter"),
                    syringe_volume=config.get("syringe_volume"))

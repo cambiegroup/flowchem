@@ -43,6 +43,8 @@
         "$ref": "#/definitions/manson"
       }, "R4Heater": {
         "$ref": "#/definitions/r4heater"
+      }, "Elite11": {
+        "$ref": "#/definitions/elite11"
       }
     }, "oneOf": [
       {
@@ -76,6 +78,10 @@
       }, {
         "required": [
           "R4Heater"
+        ]
+      }, {
+        "required": [
+          "Elite11"
         ]
       }
     ], "additionalProperties": false
@@ -167,6 +173,23 @@
     "id": "#/definitions/r4heater", "type": "object", "properties": {
       "port": {
         "type": "string"
+      }
+    }, "required": [
+      "port"
+    ]
+  }, "elite11": {
+    "id": "#/definitions/elite11", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      },
+      "address": {
+        "type": "number"
+      },
+      "diameter": {
+        "type": "number"
+      },
+      "syringe_volume": {
+        "type": "number"
       }
     }, "required": [
       "port"
