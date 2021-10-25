@@ -113,6 +113,7 @@ class HamiltonPumpIO:
         configuration = dict(HamiltonPumpIO.DEFAULT_CONFIG, **config)
 
         try:
+            configuration.pop("hw_initialization")
             serial_object = aioserial.AioSerial(**configuration)
         except SerialException as e:
             raise InvalidConfiguration(f"Cannot connect to the pump on the port <{configuration.get('port')}>") from e
