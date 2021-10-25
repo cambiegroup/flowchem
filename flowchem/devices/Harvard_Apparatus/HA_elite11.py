@@ -98,22 +98,8 @@ class PumpIO:
 
     # noinspection PyPep8
     def __init__(self, aio_serial: aioserial.Serial):
-        if baudrate not in serial.serialutil.SerialBase.BAUDRATES:
-            raise InvalidConfiguration(f"Invalid baud rate provided {baudrate}!")
-
-        if isinstance(port, int):
-            port = f"COM{port}"  # Because I am lazy
-
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
-        self.lock = threading.Lock()
-
-        try:
-            # noinspection PyPep8
-            self._serial = aioserial.Serial(
-                port=port, baudrate=baudrate, timeout=0.1
-            )
-        except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration from e
+        self._serial = aio_serial
 
     @classmethod
     def from_config(cls, config):
@@ -123,7 +109,7 @@ class PumpIO:
 
         try:
             serial_object = aioserial.AioSerial(**configuration)
-        except SerialException as e:
+        except aioserial.SerialException as e:
             raise InvalidConfiguration(f"Cannot connect to the pump on the port <{configuration.get('port')}>") from e
 
         return cls(serial_object)
@@ -133,7 +119,7 @@ class PumpIO:
         command = command.compile()
         try:
             self._serial.write(command.encode("ascii"))
-        except serial.serialutil.SerialException as e:
+        except aioserial.SerialException as e:
             raise InvalidConfiguration from e
         self.logger.debug(f"Sent {repr(command)}!")
 
@@ -210,17 +196,16 @@ class PumpIO:
         """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
         try:
             self._serial.reset_input_buffer()
-        except serial.PortNotOpenError as e:
+        except aioserial.PortNotOpenError as e:
             raise InvalidConfiguration from e
 
     def write_and_read_reply(
         self, command: Protocol11Command, return_parsed: bool = True
     ) -> Union[List[str], str]:
         """ Main PumpIO method. Sends a command to the pump, read the replies and returns it, optionally parsed """
-        with self.lock:
-            self.reset_buffer()
-            self._write(command)
-            response = self._read_reply(command)
+        self.reset_buffer()
+        self._write(command)
+        response = self._read_reply(command)
 
         if not response:
             raise InvalidConfiguration(
@@ -504,7 +489,7 @@ class Elite11:
         if pumpio is None:
             # Remove ML600-specific keys to only have HamiltonPumpIO's kwargs
             config_for_pumpio = {k: v for k, v in config.items() if k not in ("diameter", "address", "name", "syringe_volume")}
-            pumpio = HamiltonPumpIO.from_config(config_for_pumpio)
+            pumpio = PumpIO.from_config(config_for_pumpio)
 
         return cls(pumpio, address=config.get("address"), name=config.get("name"), diameter=config.get("diameter"),
                    syringe_volume=config.get("syringe_volume"))
