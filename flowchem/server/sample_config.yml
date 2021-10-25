@@ -2,7 +2,7 @@
 
 devices:
 
-# Test device
+    # Test device
 
     fakedevice1:
         FakeDevice:
@@ -54,3 +54,8 @@ devices:
             syringe_volume: 5
             diameter: 12.23
 
+    # Other
+
+    power-supply:
+        MansonPowerSupply:
+            port: COM7
