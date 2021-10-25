@@ -117,7 +117,7 @@ class R4Heater:
 
 if __name__ == "__main__":
     import asyncio
-    heat = R4Heater.from_config(dict(port="COM11"))
+    heat = R4Heater(port="COM11")
 
     async def main():
         await heat.set_temperature(0, 30, wait=False)
