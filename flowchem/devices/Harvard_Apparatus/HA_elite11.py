@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import threading
 import warnings
-from flowchem.constants.constants import flowchem_ureg
+from flowchem.constants import flowchem_ureg
 from enum import Enum
 from typing import Union, List, Optional, Tuple
 from dataclasses import dataclass
@@ -688,7 +688,7 @@ class Elite11:
         rate_w_units = self.send_command_and_read_reply(
             Elite11Commands.GET_WITHDRAW_RATE
         )
-        return Elite11.ureg(rate_w_units).m_as(
+        return flowchem_ureg(rate_w_units).m_as(
             "ml/min"
         )  # Unit registry does the unit conversion and returns ml/min
 
@@ -709,7 +709,7 @@ class Elite11:
     def get_withdrawn_volume(self):
         """ Returns the withdrawn volume from the last clear_*_volume() command, according to the pump """
         self.ensure_withdraw_is_enabled()
-        return Elite11.ureg(
+        return flowchem_ureg(
             self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)
         ).m_as("ml")
 
