@@ -3,17 +3,23 @@ import time
 import warnings
 from typing import Optional
 
-from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
-from Phidget22.Devices.Log import Log, LogLevel
-from Phidget22.PhidgetException import PhidgetException
-
-from flowchem.constants import DeviceError
-
 try:
-    Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
-except FileNotFoundError as e:
-    warnings.warn("Phidget library not installed, disabling component?\n"
-                  "Get it from https://www.phidgets.com/docs/Operating_System_Support")
+    from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
+    from Phidget22.Devices.Log import Log, LogLevel
+    from Phidget22.PhidgetException import PhidgetException
+except ImportError:
+    HAS_PHIDGET = False
+else:
+    try:
+        Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
+    except (OSError, FileNotFoundError) as e:
+        warnings.warn("Phidget22 pacakge installed but Phidget library not found!\n"
+                      "Get it from https://www.phidgets.com/docs/Operating_System_Support")
+        HAS_PHIDGET = False
+    else:
+        HAS_PHIDGET = True
+
+from flowchem.constants import DeviceError, InvalidConfiguration
 
 
 class PressureSensor:
@@ -27,6 +33,8 @@ class PressureSensor:
         vint_channel: int = None,
         phidget_is_remote: bool = False,
     ):
+        if not HAS_PHIDGET:
+            raise InvalidConfiguration("Phidget unusable: library or package not installed.")
 
         # Logger
         self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
