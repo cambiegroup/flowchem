@@ -11,7 +11,7 @@ from flowchem.constants import DeviceError
 
 try:
     Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
-except FileNotFoundError as e:
+except (OSError, FileNotFoundError) as e:
     warnings.warn("Phidget library not installed, disabling component?\n"
                   "Get it from https://www.phidgets.com/docs/Operating_System_Support")
 
