@@ -459,30 +459,12 @@ class Elite11:
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address: int = address
 
-        if diameter is not None:
-            self.set_syringe_diameter(diameter)
-        if syringe_volume is not None:
-            self.set_syringe_volume(syringe_volume)
+        # These will be set in initialize()
+        self._diameter = diameter
+        self._syringe_volume = syringe_volume
+        self._withdraw_enabled = False
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
-
-        # This command is used to test connection: failure handled by PumpIO
-        self.log.info(
-            f"Connected to pump '{self.name}' on port {self.pump_io.name}:{address} version: {self.version()}!"
-        )
-        # Enable withdraw commands only on pumps that support them...
-        self._withdraw_enabled = True if "I/W" in self.version() else False
-
-        # makes sure that a 'clean' pump is initialized.
-        self.clear_times()
-        self.clear_volumes()
-
-        # Assume full syringe upon start-up
-        self._volume_stored = self.get_syringe_volume()
-
-        # Code for Elite11 control is not ready for prime time yet ;)
-        warnings.warn("The module Elite11 is being used, which is not yet completely tested!\n"
-                      "Usable with: init with syringe diameter and volume. Set target volume and rate. run.")
 
     @classmethod
     def from_config(cls, **config):
@@ -505,6 +487,20 @@ class Elite11:
 
         return cls(pumpio, address=config.get("address"), name=config.get("name"), diameter=config.get("diameter"),
                    syringe_volume=config.get("syringe_volume"))
+
+    async def initialize(self):
+        """ Ensure a valid connection with the pump has been established and sets parameters. """
+        await self.set_syringe_diameter(self._diameter)
+        await self.set_syringe_volume(self._syringe_volume)
+
+        self.log.info(f"Connected to pump '{self.name}' on port {self.pump_io.name}:{self.address}!")
+
+        # Enable withdraw commands only on pumps that support them...
+        pump_info = await self.pump_info()
+        self._withdraw_enabled = not pump_info.infuse_only
+
+        # makes sure that a 'clean' pump is initialized.
+        await self.clear_volumes()
 
     def ensure_withdraw_is_enabled(self):
         """ To be used on methods that need withdraw capabilities """
@@ -774,7 +770,7 @@ class Elite11:
                 warnings.warn(f"Cannot set target volume of {target_volume_in_ml} ml with a "
                               f"{self.get_syringe_volume()} ml syringe!")
 
-    async def metrics(self) -> PumpInfo:
+    async def pump_info(self) -> PumpInfo:
         """ Returns many info
 
         e.g.
@@ -849,8 +845,15 @@ TODO:
 
 
 if __name__ == "__main__":
-    # logging.basicConfig()
-    # logging.getLogger().setLevel(logging.DEBUG)
+    import asyncio
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
 
     pump = Elite11.from_config(port="COM4", address=6, syringe_volume=10, diameter=10)
+    asyncio.run(pump.set_syringe_diameter(10))
+    asyncio.run(pump.set_infusion_rate(1))
+    asyncio.run(pump.infuse_run())
+    asyncio.run(pump.stop())
+
+
 
