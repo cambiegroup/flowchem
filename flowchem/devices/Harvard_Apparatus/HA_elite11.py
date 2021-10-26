@@ -442,8 +442,8 @@ class Elite11:
         pump_io: PumpIO,
         diameter: float,
         syringe_volume: float,
-        address: int = 0,
-        name: str = None,
+        address: Optional[int] = None,
+        name: Optional[str] = None,
     ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
@@ -457,7 +457,7 @@ class Elite11:
         Elite11._io_instances.add(self.pump_io)  # See above for details.
 
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
-        self.address: int = address
+        self.address = address
 
         # These will be set in initialize()
         self._diameter = diameter
@@ -481,7 +481,7 @@ class Elite11:
 
         # If not existing serial object are available for the port provided, create a new one
         if pumpio is None:
-            # Remove ML600-specific keys to only have HamiltonPumpIO's kwargs
+            # Remove Elite11-specific keys to only have HamiltonPumpIO's kwargs
             config_for_pumpio = {k: v for k, v in config.items() if k not in ("diameter", "address", "name", "syringe_volume")}
             pumpio = PumpIO(**config_for_pumpio)
 
@@ -490,6 +490,13 @@ class Elite11:
 
     async def initialize(self):
         """ Ensure a valid connection with the pump has been established and sets parameters. """
+        # Autodetect address if none provided
+        if self.address is None:
+            self.pump_io._serial.write("\r\n".encode("ascii"))
+            self.pump_io._serial.readline()
+            prompt = self.pump_io._serial.readline()
+            self.address = int(prompt[0:2])
+            self.log.debug(f"Address autodetected as {self.address}")
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
 
@@ -834,9 +841,10 @@ class Elite11:
 
 if __name__ == "__main__":
     # logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger(__name__).setLevel(logging.DEBUG)
 
-    pump = Elite11.from_config(port="COM4", address=6, syringe_volume=10, diameter=10)
+    pump = Elite11.from_config(port="COM4", syringe_volume=10, diameter=10)
+    asyncio.run(pump.initialize())
     asyncio.run(pump.set_syringe_diameter(10))
     asyncio.run(pump.set_infusion_rate(1))
     asyncio.run(pump.infuse_run())
