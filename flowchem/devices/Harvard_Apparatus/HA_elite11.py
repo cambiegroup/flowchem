@@ -778,7 +778,7 @@ class Elite11:
 
     def get_target_volume(self) -> Optional[float]:
         """
-        Set/returns target volume in ml. If the volume is set to 0, the target is cleared.
+        Rreturns target volume in ml. If the volume is set to 0, the target is cleared.
         """
         vol = self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME)
         if "Target volume not set" in vol:
@@ -788,6 +788,9 @@ class Elite11:
         return target_volume.m_as("ml")
 
     def set_target_volume(self, target_volume_in_ml: float):
+        """
+        Sets target volume in ml. If the volume is set to 0, the target is cleared.
+        """
         if target_volume_in_ml == 0:
             self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME)
         else:
@@ -861,26 +864,8 @@ TODO:
 
 
 if __name__ == "__main__":
-    # from flowchem.devices.Harvard_Apparatus.HA_elite11 import *
-    import logging
-    import math
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
+    # logging.basicConfig()
+    # logging.getLogger().setLevel(logging.DEBUG)
 
-    a = PumpIO(port="COM4")
-    pump = Elite11(a, 6)
-    pump.set_syringe_volume(10)
-    pump.set_target_volume(5.0)
-    print(pump.get_target_volume())
+    pump = Elite11.from_config(port="COM4", address=6, syringe_volume=10, diameter=10)
 
-    # pump.clear_volumes()
-    # pump.set_syringe_diameter(10)
-    # pump.set_infusion_rate(10)
-    # pump.set_target_volume(0.05)
-    #
-    # pump.infuse_run()
-    #
-    # pump.infuse_run()
-    # import time
-    # time.sleep(2)
-    # assert pump.get_infused_volume() == 0.05
