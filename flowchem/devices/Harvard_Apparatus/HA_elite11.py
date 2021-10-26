@@ -12,9 +12,8 @@ from time import sleep
 from typing import Union, List, Optional, Tuple
 
 import aioserial
-from pint import UnitRegistry
 
-from flowchem.constants import InvalidConfiguration, DeviceError
+from flowchem.constants import flowchem_ureg, InvalidConfiguration, DeviceError
 
 
 @dataclass
@@ -405,11 +404,6 @@ class Elite11:
     Read the manufacturer manual for more details.
     """
 
-    # FIXME: move to shared location and use the same UR across different devices.
-    ureg = (
-        UnitRegistry()
-    )  # Unit converter, defaults are fine, but it would be wise explicitly list the units needed
-
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
     _io_instances = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
@@ -512,10 +506,10 @@ class Elite11:
         )
 
         # Lower limit usually expressed in nl/min so unit-aware quantities are needed
-        lower_limit, upper_limit = map(Elite11.ureg, limits_raw.split(" to "))
+        lower_limit, upper_limit = map(flowchem_ureg, limits_raw.split(" to "))
 
         # Also add units to the provided rate
-        value_w_units = Elite11.ureg.Quantity(rate_in_ml_min, "ml/min")
+        value_w_units = flowchem_ureg.Quantity(rate_in_ml_min, "ml/min")
 
         # Bound rate to acceptance range
         set_rate = max(lower_limit, min(upper_limit, value_w_units)).m_as("ml/min")
@@ -552,7 +546,7 @@ class Elite11:
         volume_w_units = self.send_command_and_read_reply(
             Elite11Commands.GET_SYRINGE_VOLUME
         )  # e.g. '100 ml'
-        return Elite11.ureg(volume_w_units).m_as(
+        return flowchem_ureg(volume_w_units).m_as(
             "ml"
         )  # Unit registry does the unit conversion and returns ml
 
@@ -661,7 +655,7 @@ class Elite11:
         rate_w_units = self.send_command_and_read_reply(
             Elite11Commands.GET_INFUSE_RATE
         )  # e.g. '0.2 ml/min'
-        return Elite11.ureg(rate_w_units).m_as(
+        return flowchem_ureg(rate_w_units).m_as(
             "ml/min"
         )  # Unit registry does the unit conversion and returns ml/min
 
@@ -678,7 +672,7 @@ class Elite11:
         rate_w_units = self.send_command_and_read_reply(
             Elite11Commands.GET_WITHDRAW_RATE
         )
-        return Elite11.ureg(rate_w_units).m_as(
+        return flowchem_ureg(rate_w_units).m_as(
             "ml/min"
         )  # Unit registry does the unit conversion and returns ml/min
 
@@ -692,14 +686,14 @@ class Elite11:
 
     def get_infused_volume(self) -> float:
         """ Return infused volume in ml """
-        return Elite11.ureg(
+        return flowchem_ureg(
             self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)
         ).m_as("ml")
 
     def get_withdrawn_volume(self):
         """ Returns the withdrawn volume from the last clear_*_volume() command, according to the pump """
         self.ensure_withdraw_is_enabled()
-        return Elite11.ureg(
+        return flowchem_ureg(
             self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)
         ).m_as("ml")
 
@@ -784,7 +778,7 @@ class Elite11:
         if "Target volume not set" in vol:
             return None
 
-        target_volume = Elite11.ureg(vol)
+        target_volume = flowchem_ureg(vol)
         return target_volume.m_as("ml")
 
     def set_target_volume(self, target_volume_in_ml: float):

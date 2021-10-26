@@ -1,6 +1,6 @@
 from pint import UnitRegistry
 
-flowchem_ureg = UnitRegistry()
+flowchem_ureg = UnitRegistry()  # Unit converter, defaults are fine, but it would be wise explicitly list the units needed
 
 
 class DeviceError(BaseException):
