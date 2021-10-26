@@ -80,6 +80,7 @@ def test_syringe_volume(pump: Elite11):
     assert math.isclose(pump.get_syringe_volume(), math.pi, abs_tol=10e-4)
     pump.set_syringe_volume(3.2e-05)
     assert math.isclose(pump.get_syringe_volume(), 3.2e-5)
+    pump.set_syringe_volume(50)  # Leave a sensible value otherwise other tests will fail!
 
 
 @pytest.mark.HApump
