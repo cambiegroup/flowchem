@@ -40,6 +40,9 @@ class ExperimentConditions:
         self.temperature = flowchem_ureg.Quantity(temperature_in_celsius, flowchem_ureg.celsius)
 
         self.experiment_finished = False
+        self.analysis_finished = False
+
+        # potentially, here also spectrum AND evaluated result can go, that would make the whole thing rather neat
 
     @property
     def stock_concentration_donor(self):
@@ -74,6 +77,8 @@ class FlowConditions:
                  flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and abstraction still low
 
         self.experiment_id = round(datetime.timestamp(datetime.now()))
+
+
 
         # better readability
         self.platform_volumes = flow_platform['internal_volumes']
@@ -162,7 +167,8 @@ class FlowProcedure:
         self.pumps['activator'].stop()
         self.pumps['activator'].refill_syringe(4, 8)
 
-
+        # I think that's not nice
+        scheduler.started_experiments[str(flow_conditions.experiment_id)].experiment_finished = True
 
     def get_platform_ready(self):
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
@@ -211,7 +217,8 @@ class Scheduler:
         # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
         # and drop it to the sql. in future, also hand it to the optimizer
         self.started_experiments = {}
-        # later transfer to dict to hold analysis results, for now it only holds analysed sample
+
+        # for now it only holds analysed samples, but later it should be used to add the analysis results and spectrum to experiment conditions
         self.analysed_samples = []
 
         self.data_worker = Thread(target=self.data_handler)
@@ -237,13 +244,15 @@ class Scheduler:
         while True:
             if self.started_experiments:
                 # return volatile copy so no size change during iteration
-                for experiment_id in list(self.started_experiments.keys()):
-                    if not self.started_experiments[experiment_id].experiment_finished:
+               for experiment_id in list(self.started_experiments.keys()):
+                    if self.started_experiments[experiment_id].experiment_finished and not self.started_experiments[experiment_id].analysis_finished:
                         # needs to
                         for analysed_samples_files in self.analysed_samples:
                             if str(experiment_id) in analysed_samples_files:
-                                self.started_experiments[experiment_id].experiment_finished = True
-                                self.experiment_running = False
+                                self.started_experiments[experiment_id].analysis_finished = True
+
+                                self.experiment_running = False # potentially redundant
+
                                 # TODO this can be expanded to trigger the analysis of the sample
 
 # check if experiments can be stopped by only chromatogram available, but actually not having been ran -> this happens. Here not important, but in general, streamlining could mean that experiments are started before previous analysis is over
@@ -261,7 +270,7 @@ class Scheduler:
                 experiment: ExperimentConditions = self.experiment_queue.get()
                 # append the experiment  to the dictionary
                 individual_conditions = FlowConditions(experiment, self.graph)
-                self.started_experiments[str(individual_conditions.experiment_id)] = experiment
+                self.started_experiments[str(individual_conditions.experiment_id)] = experiment # the actual  Experiment conditions instance sits in the self.started experiments under its id, so attributes can be changed here (analysed and running mainly)
                 new_thread = Thread(target=FlowProcedure.individual_procedure,
                                     args=(self.procedure, individual_conditions,))
                 new_thread.start()
