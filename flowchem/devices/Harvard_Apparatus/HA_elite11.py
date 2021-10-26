@@ -749,14 +749,23 @@ class Elite11:
         """
         Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
         """
-        return self.syringe_diameter
+        return float(
+            self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)[:-3]
+        )
 
     def set_syringe_diameter(self, diameter_in_mm: float):
-        warnings.warn(
-            "Deprecated property, use more explicit syringe_diameter instead!",
-            FutureWarning,
+        """
+        Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
+        """
+        if not 1 <= diameter_in_mm <= 33:
+            warnings.warn(
+                f"Diameter provided ({diameter_in_mm}) is not valid, ignored! [Accepted range: 1-33 mm]"
+            )
+            return
+
+        self.send_command_and_read_reply(
+            Elite11Commands.SET_DIAMETER, parameter=f"{diameter_in_mm:.4f}"
         )
-        self.syringe_diameter = diameter_in_mm
 
     def get_current_flowrate(self):
         """
