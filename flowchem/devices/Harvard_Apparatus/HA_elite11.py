@@ -5,7 +5,6 @@ This module is used to control Harvard Apparatus Elite 11 syringe pump via the 1
 from __future__ import annotations
 
 import logging
-import threading
 import warnings
 from dataclasses import dataclass
 from enum import Enum
