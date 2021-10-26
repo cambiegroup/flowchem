@@ -99,7 +99,7 @@ class PumpIO:
     # noinspection PyPep8
     def __init__(self, **config):
         # Merge default settings, including serial, with provided ones.
-        configuration = dict(R4Heater.DEFAULT_CONFIG, **config)
+        configuration = dict(PumpIO.DEFAULT_CONFIG, **config)
 
         try:
             self._serial = aioserial.AioSerial(**configuration)
