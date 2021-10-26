@@ -772,7 +772,7 @@ class Elite11:
 
     def get_target_volume(self) -> Optional[float]:
         """
-        Rreturns target volume in ml. If the volume is set to 0, the target is cleared.
+        Returns target volume in ml. If the volume is set to 0, the target is cleared.
         """
         vol = self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME)
         if "Target volume not set" in vol:
