@@ -104,7 +104,7 @@ class PumpIO:
         try:
             self._serial = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the R4Heater on the port <{config.get('port')}>") from e
+            raise InvalidConfiguration(f"Cannot connect to the Pump on the port <{config.get('port')}>") from e
 
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
@@ -470,7 +470,7 @@ class Elite11:
                       "Usable with: init with syringe diameter and volume. Set target volume and rate. run.")
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, **config):
         # Many pump can be present on the same serial port with different addresses.
         # This shared list of PumpIO objects allow shared state in a borg-inspired way, avoiding singletons
         # This is only relevant to programmatic instantiation, i.e. when from_config() is called per each pump from a
@@ -850,9 +850,9 @@ TODO:
 
 if __name__ == "__main__":
     # from flowchem.devices.Harvard_Apparatus.HA_elite11 import *
-    # import logging
+    import logging
     logging.basicConfig()
-    logging.getLogger("flowchem").setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
 
-    a = PumpIO(6)
-    p = Elite11(a, 9)
+    a = PumpIO(port="COM5")
+    p = Elite11(a, 6)

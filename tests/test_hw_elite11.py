@@ -21,15 +21,15 @@ logging.getLogger("flowchem").setLevel(logging.DEBUG)
 
 def move_infuse(pump):
     pump.set_syringe_diameter(10)
-    pump.set_infusion_rate = 1
+    pump.set_infusion_rate(1)
+    pump.set_target_volume(1)
     pump.infuse_run()
 
 
 @pytest.fixture(scope="session")
 def pump():
-    """ Pump with address 9 on COM 5. Change to match your hardware ;) """
-    serial_pump_chain = PumpIO("COM10")
-    return Elite11(serial_pump_chain, 9)
+    """ Pump with address 0 on COM 10. Change to match your hardware ;) """
+    return Elite11.from_config(port="COM5", address=6, syringe_volume=5)
 
 
 @pytest.mark.HApump
@@ -46,7 +46,8 @@ def test_status_idle(pump: Elite11):
 @pytest.mark.HApump
 def test_status_infusing(pump: Elite11):
     move_infuse(pump)
-    assert pump.get_status() is PumpStatus.INFUSING
+    status = pump.get_status()
+    assert status is PumpStatus.INFUSING
     pump.stop()
 
 
@@ -55,7 +56,8 @@ def test_status_withdrawing(pump: Elite11):
     pump.set_syringe_diameter(10)
     pump.set_withdrawing_rate(1)
     pump.withdraw_run()
-    assert pump.get_status() is PumpStatus.WITHDRAWING
+    status = pump.get_status()
+    assert status is PumpStatus.WITHDRAWING
     pump.stop()
 
 
@@ -75,9 +77,11 @@ def test_syringe_volume(pump: Elite11):
     pump.set_syringe_volume(10)
     assert pump.get_syringe_volume() == 10
     pump.set_syringe_volume(math.pi)
-    assert math.isclose(pump.get_syringe_volume(), math.pi, abs_tol=10e-4)
-    pump.set_syringe_volume(3.2e-09)
-    assert math.isclose(pump.get_syringe_volume(), 3.2e-9)
+    vol = pump.get_syringe_volume()
+    assert math.isclose(vol, math.pi, abs_tol=10e-4)
+    pump.set_syringe_volume(3.2e-05)
+    vol2 = pump.get_syringe_volume()
+    assert math.isclose(vol2, 3.2e-5)
 
 
 @pytest.mark.HApump
