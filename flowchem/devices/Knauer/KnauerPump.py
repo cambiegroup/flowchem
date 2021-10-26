@@ -5,11 +5,11 @@ Knauer pump control.
 import logging
 from enum import Enum
 
-from constants import DeviceError
-from devices.Knauer.KnauerValve import FLOW, PMIN10, PMIN50, PMAX10, PMAX50, IMIN10, IMIN50, HEADTYPE, STARTLEVEL, \
+from flowchem.constants import DeviceError
+from flowchem.devices.Knauer.KnauerValve import FLOW, PMIN10, PMIN50, PMAX10, PMAX50, IMIN10, IMIN50, HEADTYPE, STARTLEVEL, \
     ERRIO, STARTMODE, ADJ10, ADJ50, CORR10, CORR50, EXTFLOW, IMOTOR, PRESSURE, ERRORS, EXTCONTR, LOCAL, REMOTE, PUMP_ON, \
     PUMP_OFF
-from devices.Knauer.Knauer_common import KnauerEthernetDevice
+from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
 
 
 class KnauerPumpHeads(Enum):

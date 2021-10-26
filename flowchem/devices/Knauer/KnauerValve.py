@@ -5,8 +5,8 @@ Knauer valve control.
 import logging
 from enum import Enum
 
-from constants import DeviceError
-from devices.Knauer.Knauer_common import KnauerEthernetDevice
+from flowchem.constants import DeviceError
+from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
 
 
 class KnauerValveHeads(Enum):
