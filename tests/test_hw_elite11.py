@@ -28,7 +28,7 @@ def move_infuse(pump):
 @pytest.fixture(scope="session")
 def pump():
     """ Pump with address 9 on COM 5. Change to match your hardware ;) """
-    serial_pump_chain = PumpIO("COM5")
+    serial_pump_chain = PumpIO("COM10")
     return Elite11(serial_pump_chain, 9)
 
 
