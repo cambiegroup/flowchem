@@ -139,20 +139,20 @@ class FlowProcedure:
         self.chiller.set_temperature(flow_conditions.temperature.magnitude)
         self.chiller.start()
 
-        while (abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
+        while abs(abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
             sleep(10)
-            print('Chiller waiting for temperature')
+            print(f'Chiller waiting for temperature, at {self.chiller.get_temperature()} set {flow_conditions.temperature.magnitude}')
 
         # set all flow rates
-        self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate
-        self.pumps['quench'].set_flow = flow_conditions.quencher_flow_rate
+        self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate.m_as('mL/min') # dimensionless, in ml/min
+        self.pumps['quencher'].set_flow = flow_conditions.quencher_flow_rate.m_as('mL/min')
 
         self.pumps['donor'].run()
-        self.pumps['activator'].deliver_from_pump(flow_conditions.activator_flow_rate)
-        self.pumps['quench'].start_flow()
+        self.pumps['activator'].deliver_from_syringe(flow_conditions.activator_flow_rate.m_as('mL/min'))
+        self.pumps['quencher'].start_flow()
 
         # start timer
-        sleep(flow_conditions.steady_state_time)
+        sleep(flow_conditions.steady_state_time.magnitude)
 
 #        self.hplc.set_sample_name(flow_conditions.experiment_id)
 #        self.hplc.run()
@@ -160,7 +160,7 @@ class FlowProcedure:
         # timer is over, start
         self.pumps['donor']. stop()
         self.pumps['activator'].stop()
-        self.pumps['activator'].refill_syringe(4, 1)
+        self.pumps['activator'].refill_syringe(4, 8)
 
 
 
@@ -192,7 +192,7 @@ class FlowProcedure:
         # fill the activator to the hamilton syringe
         self.pumps['activator'].refill_syringe(4, 8)
 
-        self.pumps['quencher'].set_maximum_pressure(5)
+        self.pumps['quencher'].set_maximum_pressure(12)
 
 
 class Scheduler:
@@ -235,15 +235,18 @@ class Scheduler:
         """Checks if there is new analysis results. Since there may be multiple result files, these need to be pruned to individual ID and put into the set"""
 
         while True:
-            for experiment_id, experiment_conditions in self.started_experiments:
-                if not experiment_conditions.experiment_finished:
-                    # needs to
-                    for analysed_samples_files in self.analysed_samples:
-                        if str(experiment_id) in analysed_samples_files:
-                            experiment_conditions.experiment_finished = True
-                            self.experiment_running = False
-                            # TODO this can be expanded to trigger the analysis of the sample
+            if self.started_experiments:
+                # return volatile copy so no size change during iteration
+                for experiment_id in list(self.started_experiments.keys()):
+                    if not self.started_experiments[experiment_id].experiment_finished:
+                        # needs to
+                        for analysed_samples_files in self.analysed_samples:
+                            if str(experiment_id) in analysed_samples_files:
+                                self.started_experiments[experiment_id].experiment_finished = True
+                                self.experiment_running = False
+                                # TODO this can be expanded to trigger the analysis of the sample
 
+# check if experiments can be stopped by only chromatogram available, but actually not having been ran -> this happens. Here not important, but in general, streamlining could mean that experiments are started before previous analysis is over
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
     def create_experiment(self, conditions: ExperimentConditions) -> None:
@@ -258,7 +261,7 @@ class Scheduler:
                 experiment: ExperimentConditions = self.experiment_queue.get()
                 # append the experiment  to the dictionary
                 individual_conditions = FlowConditions(experiment, self.graph)
-                self.started_experiments[individual_conditions.experiment_id] = experiment
+                self.started_experiments[str(individual_conditions.experiment_id)] = experiment
                 new_thread = Thread(target=FlowProcedure.individual_procedure,
                                     args=(self.procedure, individual_conditions,))
                 new_thread.start()
@@ -310,3 +313,6 @@ if __name__ == "__main__":
     scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
 
     # TODO when queue empty, after some while everything should be switched off
+    # chiller should have threshold for T tolerance
+
+    #Todo experiments shopuld have experiment finished AND analysis finished
