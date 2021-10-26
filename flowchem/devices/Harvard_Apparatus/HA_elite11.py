@@ -215,7 +215,7 @@ class PumpIO:
 
         # Ensure no stall is present (this might happen, so let's raise an Exception w/ diagnostic text)
         if PumpStatus.STALLED in return_status:
-            raise DeviceError
+            raise DeviceError("Pump stalled! Press display to clear error and restart :(")
 
         PumpIO.check_for_errors(last_response_line=response[-1], command_sent=command)
 
@@ -564,7 +564,7 @@ class Elite11:
         :param volume_in_ml: the volume of the syringe.
         """
         self.send_command_and_read_reply(
-            Elite11Commands.SET_SYRINGE_VOLUME, parameter=f"{volume_in_ml} m"
+            Elite11Commands.SET_SYRINGE_VOLUME, parameter=f"{volume_in_ml:.15f} m"
         )
 
     def update_stored_volume(self):
@@ -721,7 +721,7 @@ class Elite11:
 
     def clear_volumes(self):
         """ Set all pump volumes to 0 """
-        self.target_volume = 0
+        self.set_target_volume(0)
         self._target_volume = None
         if self._withdraw_enabled:
             self.clear_infused_withdrawn_volume()
@@ -777,22 +777,27 @@ class Elite11:
             warnings.warn("Pump is not moving, cannot provide moving rate!")
             return None
 
-    def get_target_volume(self) -> float:
+    def get_target_volume(self) -> Optional[float]:
         """
         Set/returns target volume in ml. If the volume is set to 0, the target is cleared.
         """
-        target_volume = Elite11.ureg(
-            self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME)
-        )
+        vol = self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME)
+        if "Target volume not set" in vol:
+            return None
+
+        target_volume = Elite11.ureg(vol)
         return target_volume.m_as("ml")
 
     def set_target_volume(self, target_volume_in_ml: float):
         if target_volume_in_ml == 0:
             self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME)
         else:
-            self.send_command_and_read_reply(
+            set_vol = self.send_command_and_read_reply(
                 Elite11Commands.SET_TARGET_VOLUME, parameter=f"{target_volume_in_ml} m"
             )
+            if "Argument error" in set_vol:
+                warnings.warn(f"Cannot set target volume of {target_volume_in_ml} ml with a "
+                              f"{self.get_syringe_volume()} ml syringe!")
 
     def clear_times(self):
         """ Clear all pump measured times (i.e. infused and withdrawn) """
@@ -859,16 +864,24 @@ TODO:
 if __name__ == "__main__":
     # from flowchem.devices.Harvard_Apparatus.HA_elite11 import *
     import logging
+    import math
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
 
-    a = PumpIO(port="COM5")
+    a = PumpIO(port="COM4")
     pump = Elite11(a, 6)
-    pump.clear_volumes()
-    pump.set_infusion_rate = 10
-    pump.target_volume = 0.05
-    pump.inverse_run()
-    #pump.infuse_run()
-    import time
-    time.sleep(2)
-    assert pump.get_infused_volume() == 0.05
+    pump.set_syringe_volume(10)
+    pump.set_target_volume(5.0)
+    print(pump.get_target_volume())
+
+    # pump.clear_volumes()
+    # pump.set_syringe_diameter(10)
+    # pump.set_infusion_rate(10)
+    # pump.set_target_volume(0.05)
+    #
+    # pump.infuse_run()
+    #
+    # pump.infuse_run()
+    # import time
+    # time.sleep(2)
+    # assert pump.get_infused_volume() == 0.05

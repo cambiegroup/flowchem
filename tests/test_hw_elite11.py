@@ -28,8 +28,8 @@ def move_infuse(pump):
 
 @pytest.fixture(scope="session")
 def pump():
-    """ Pump with address 0 on COM 10. Change to match your hardware ;) """
-    return Elite11.from_config(port="COM5", address=6, syringe_volume=5)
+    """ Change to match your hardware ;) """
+    return Elite11.from_config(port="COM4", address=6, syringe_volume=5)
 
 
 @pytest.mark.HApump
@@ -100,18 +100,20 @@ def test_infusion_rate(pump: Elite11):
 @pytest.mark.HApump
 def test_get_infused_volume(pump: Elite11):
     pump.clear_volumes()
-    pump.set_infusion_rate = 10
-    pump.target_volume = 0.05
+    assert pump.get_infused_volume() == 0
+    pump.set_syringe_diameter(30)
+    pump.set_infusion_rate(5)
+    pump.set_target_volume(0.05)
     pump.infuse_run()
     time.sleep(2)
-    assert pump.get_infused_volume() == 0.05
+    assert math.isclose(pump.get_infused_volume(), 0.05, abs_tol=1e-4)
 
 
 @pytest.mark.HApump
 def test_get_withdrawn_volume(pump: Elite11):
     pump.clear_volumes()
     pump.set_withdrawing_rate(10)
-    pump.target_volume = 0.1
+    pump.set_target_volume(0.1)
     pump.withdraw_run()
     time.sleep(1)
     assert pump.get_withdrawn_volume() == 0.1
@@ -146,7 +148,8 @@ def test_diameter(pump: Elite11):
 
 @pytest.mark.HApump
 def test_target_volume(pump: Elite11):
+    pump.set_syringe_volume(10)
     pump.set_target_volume(math.pi)
     assert math.isclose(pump.get_target_volume(), math.pi, abs_tol=10e-4)
     pump.set_target_volume(1e-04)
-    assert pump.get_target_volume() == 1e-4
+    assert math.isclose(pump.get_target_volume(), 1e-4, abs_tol=10e-4)
