@@ -77,11 +77,9 @@ def test_syringe_volume(pump: Elite11):
     pump.set_syringe_volume(10)
     assert pump.get_syringe_volume() == 10
     pump.set_syringe_volume(math.pi)
-    vol = pump.get_syringe_volume()
-    assert math.isclose(vol, math.pi, abs_tol=10e-4)
+    assert math.isclose(pump.get_syringe_volume(), math.pi, abs_tol=10e-4)
     pump.set_syringe_volume(3.2e-05)
-    vol2 = pump.get_syringe_volume()
-    assert math.isclose(vol2, 3.2e-5)
+    assert math.isclose(pump.get_syringe_volume(), 3.2e-5)
 
 
 @pytest.mark.HApump
@@ -91,10 +89,10 @@ def test_infusion_rate(pump: Elite11):
     assert pump.get_infusion_rate()
     with pytest.warns(UserWarning):
         pump.set_infusion_rate(121)
-    assert pump.get_infusion_rate() == 12.4882
+    assert math.isclose(pump.get_infusion_rate(), 12.49, rel_tol=0.01)
     with pytest.warns(UserWarning):
         pump.set_infusion_rate(0)
-    assert pump.get_infusion_rate() == 1e-05
+    assert math.isclose(pump.get_infusion_rate(), 1e-05, abs_tol=1e-5)
     pump.set_infusion_rate(math.pi)
     assert math.isclose(pump.get_infusion_rate(), math.pi, abs_tol=0.001)
 
@@ -103,10 +101,10 @@ def test_infusion_rate(pump: Elite11):
 def test_get_infused_volume(pump: Elite11):
     pump.clear_volumes()
     pump.set_infusion_rate = 10
-    pump.target_volume = 0.1
+    pump.target_volume = 0.05
     pump.infuse_run()
-    time.sleep(1)
-    assert pump.get_infused_volume() == 0.1
+    time.sleep(2)
+    assert pump.get_infused_volume() == 0.05
 
 
 @pytest.mark.HApump
@@ -136,13 +134,11 @@ def test_diameter(pump: Elite11):
     pump.set_syringe_diameter(10)
     assert pump.get_syringe_diameter() == 10
 
-    with pytest.raises(DeviceError) as exception_info:
+    with pytest.warns(UserWarning):
         pump.set_syringe_diameter(34)
-    assert "not valid" in str(exception_info.value)
 
-    with pytest.raises(DeviceError) as exception_info:
+    with pytest.warns(UserWarning):
         pump.set_syringe_diameter(0.01)
-    assert "not valid" in str(exception_info.value)
 
     pump.set_syringe_diameter(math.pi)
     math.isclose(pump.get_syringe_diameter(), math.pi)

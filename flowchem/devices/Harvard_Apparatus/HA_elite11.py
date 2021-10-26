@@ -444,7 +444,6 @@ class Elite11:
             self.set_syringe_diameter(diameter)
         if syringe_volume is not None:
             self.set_syringe_volume(syringe_volume)
-        self.volume_syringe = syringe_volume
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
@@ -460,7 +459,7 @@ class Elite11:
         self.clear_volumes()
 
         # Assume full syringe upon start-up
-        self._volume_stored = self.volume_syringe
+        self._volume_stored = self.get_syringe_volume()
 
         # Can we raise an exception as soon as self._volume_stored becomes negative?
         self._target_volume = None
@@ -637,7 +636,7 @@ class Elite11:
 
         # if target volume is set, check if this is achievable
         elif self._target_volume:
-            if self._volume_stored + self._target_volume > self.volume_syringe:
+            if self._volume_stored + self._target_volume > self.get_syringe_volume():
                 raise DeviceError("Pump would be overfilled")
         else:
             self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
