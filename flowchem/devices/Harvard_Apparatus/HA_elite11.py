@@ -863,4 +863,12 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
 
     a = PumpIO(port="COM5")
-    p = Elite11(a, 6)
+    pump = Elite11(a, 6)
+    pump.clear_volumes()
+    pump.set_infusion_rate = 10
+    pump.target_volume = 0.05
+    pump.inverse_run()
+    #pump.infuse_run()
+    import time
+    time.sleep(2)
+    assert pump.get_infused_volume() == 0.05
