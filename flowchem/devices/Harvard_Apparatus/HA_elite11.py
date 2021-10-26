@@ -440,10 +440,10 @@ class Elite11:
     def __init__(
         self,
         pump_io: PumpIO,
+        diameter: float,
+        syringe_volume: float,
         address: int = 0,
         name: str = None,
-        diameter: float = None,
-        syringe_volume: float = None,
     ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
