@@ -845,7 +845,6 @@ TODO:
 
 
 if __name__ == "__main__":
-    import asyncio
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
 
