@@ -1,6 +1,7 @@
 git+https://github.com/jjhelmus/nmrglue.git@master
 pint~=0.16.1
 pytest~=6.2.1
+pytest-asyncio
 getmac~=0.8.2
 pyserial~=3.5
 lxml~=4.6.3
