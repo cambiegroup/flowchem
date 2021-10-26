@@ -832,20 +832,8 @@ class Elite11:
         return router
 
 
-# TARGET VOLuME AND TIME ARE THE THINGS TO USE!!! Rate needs to be set, infuse or withdraw, then simply start!
-
-
-"""
-TODO:
-    - T* should be included, and ensure that an object can be initialized from graph-provided info
-    - if pump in isn't in quick start mode: reply is command error Non system commands bla bla so this is caught,
-    maybe get more explanatory logging message
-    - tests?
-"""
-
-
 if __name__ == "__main__":
-    logging.basicConfig()
+    # logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
 
     pump = Elite11.from_config(port="COM4", address=6, syringe_volume=10, diameter=10)
@@ -853,6 +841,3 @@ if __name__ == "__main__":
     asyncio.run(pump.set_infusion_rate(1))
     asyncio.run(pump.infuse_run())
     asyncio.run(pump.stop())
-
-
-
