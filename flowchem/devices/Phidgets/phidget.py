@@ -12,9 +12,8 @@ from flowchem.constants import DeviceError
 try:
     Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
 except FileNotFoundError as e:
-    warnings.warn("Have you installed the phidget library?"
+    warnings.warn("Phidget library not installed, disabling component?\n"
                   "Get it from https://www.phidgets.com/docs/Operating_System_Support")
-    raise e
 
 
 class PressureSensor:
@@ -114,7 +113,6 @@ class PressureSensor:
 
 
 if __name__ == "__main__":
-
     test = PressureSensor(
         sensor_min_bar=0, sensor_max_bar=25, vint_serial_number=627768, vint_channel=0
     )
