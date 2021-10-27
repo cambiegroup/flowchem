@@ -9,50 +9,52 @@ import tenacity
 
 class FolderListener:
     # create the listener and create list of files present already
-    def __init__(self, folder_path: str,  file_pattern: str):
+    def __init__(self, folder_path: Path,  file_pattern: str):
         self.files = []
         self.new_files = Queue()
-        for filepath in Path(folder_path).glob(file_pattern):
+        self.folder_path = folder_path
+        for filepath in self.folder_path.glob(file_pattern):
             if filepath not in self.files:
                 self.files.append(filepath)
-        self._watcher = Thread(target=self._watch_forever, args=(folder_path,file_pattern))
+        self._watcher = Thread(target=self._watch_forever, args=(self.folder_path, file_pattern))
         self._watcher.start()
 
-    def get_all_objects(self, folder_path: str,  file_pattern: str) -> iter:
-        for filepath in Path(folder_path).glob(file_pattern):
+    def get_all_objects(self,  file_pattern: str) -> iter:
+        for filepath in self.folder_path.glob(file_pattern):
             if filepath not in self.files:
                 self.files.append(filepath)
                 sleep(1)  # Let´s make sure that ClarityChrome has finished writing the file
                 self.new_files.put(filepath)
 
-    def _watch_forever(self, folder_path: str, file_pattern: str) -> None:
+    def _watch_forever(self, file_pattern: str) -> None:
         while True:  # This could be replaced by some experiment_running flag
-            self.get_all_objects(folder_path, file_pattern)
+            self.get_all_objects(self.folder_path, file_pattern)
             sleep(1)
 
 
 class ResultListener:
     # create the listener and create list of files present already
-    def __init__(self, folder_path: str, file_pattern: str, output: list):
+    def __init__(self, folder_path: Path, file_pattern: str, output: list):
+        self.folder_path = folder_path
         self.files = []
         self.new_files = output
-        for filepath in Path(folder_path).glob(file_pattern):
+        for filepath in folder_path.glob(file_pattern):
             if filepath not in self.files:
                 self.files.append(filepath)
-        self._watcher = Thread(target=self._watch_forever, args=(folder_path, file_pattern))
+        self._watcher = Thread(target=self._watch_forever, args=(self.folder_path, file_pattern))
         self._watcher.start()
 
-    def get_all_objects(self, folder_path: str, file_pattern: str) -> iter:
-        for filepath in Path(folder_path).glob(file_pattern):
+    def get_all_objects(self, file_pattern: str) -> iter:
+        for filepath in self.folder_path.glob(file_pattern):
             if filepath not in self.files:
                 self.files.append(filepath)
                 sleep(1)  # Let´s make sure that ClarityChrome has finished writing the file
                 # specific for this file
                 self.new_files.append(filepath.name)
 
-    def _watch_forever(self, folder_path: str, file_pattern: str) -> None:
+    def _watch_forever(self, file_pattern: str) -> None:
         while True:  # This could be replaced by some experiment_running flag
-            self.get_all_objects(folder_path, file_pattern)
+            self.get_all_objects(self.folder_path, file_pattern)
             sleep(1)
 
 
@@ -95,13 +97,13 @@ class FileSender:
 
 
 class FileReceiver:
-    def __init__(self, server_host, server_port, directory_to_safe_to='D:\\transferred_chromatograms', buffer_size=4096, separator='<SEPARATOR>', allowed_address='192.168.1.12'):
+    def __init__(self, server_host, server_port, directory_to_safe_to: Path =Path('D:\\transferred_chromatograms'), buffer_size=4096, separator='<SEPARATOR>', allowed_address='192.168.1.12'):
         self.buffer_size = buffer_size
         self.allowed_address = allowed_address
         self.separator = separator
         self.s = socket.socket()
         self.s.bind((server_host, server_port))
-        self.directory_to_safe_to = Path(directory_to_safe_to)
+        self.directory_to_safe_to = directory_to_safe_to
         self.s.listen(2)
         self.receiver = Thread(target=self.accept_new_connection)
         self.receiver.start()
