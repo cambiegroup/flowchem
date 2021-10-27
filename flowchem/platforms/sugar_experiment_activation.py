@@ -112,7 +112,6 @@ class FlowConditions:
 
         # Todo in theory not that simple anymore if different flowrates
         self._time_start_till_end = ((self.platform_volumes['dead_volume_before_reactor'] +
-                                     self.platform_volumes['volume_mixing'] +
                                      self.platform_volumes['volume_reactor']) / self._total_flow_rate +
                                      (self.platform_volumes['dead_volume_to_HPLC'] / (self._total_flow_rate +
                                                                                       self.quencher_flow_rate))).to(flowchem_ureg.second)
@@ -162,7 +161,6 @@ class FlowProcedure:
         # set all flow rates
         self.log.info(f'Setting donor flow rate to  {flow_conditions.donor_flow_rate}')
         self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate.m_as('mL/min') # dimensionless, in ml/min
-        self.pumps['quencher'].set_flow = flow_conditions.quencher_flow_rate.m_as('mL/min')
 
         self.log.info(f'Setting quencher flow rate to  {flow_conditions.quencher_flow_rate}')
         self.pumps['quencher'].set_flow = flow_conditions.quencher_flow_rate.m_as('mL/min') # in principal, this works, if wrong flowrate set, check from here what is problen
