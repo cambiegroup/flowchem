@@ -11,6 +11,9 @@ from flowchem.devices.Hamilton.ML600 import HamiltonPumpIO, ML600
 import logging
 from flowchem.constants import flowchem_ureg
 from numpy import array, sum
+from pandas import read_csv
+from pathlib import Path
+import pickle
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
 
@@ -62,6 +65,15 @@ class ExperimentConditions:
     @property
     def quencher_equivalents(self):
         return self._quencher_equivalents
+
+    @property
+    def chromatogram(self):
+        return self._chromatogram
+
+    @property.setter
+    def chromatogram(self, path: str):
+        return read_csv(Path(path), header=16, sep = '\t')
+
 
 
 class FlowConditions:
@@ -225,7 +237,7 @@ class FlowProcedure:
 class Scheduler:
     """put together procedures and conditions, assign ID, put this to experiment Queue"""
 
-    def __init__(self, graph: dict):
+    def __init__(self, graph: dict, analysis_results: Path = Path('D:\\transferred_chromatograms'), experiments_results: Path = Path(f'D:/transferred_chromatograms/{round(datetime.timestamp(datetime.now()))}')):
 
         self.graph = graph
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
@@ -235,6 +247,7 @@ class Scheduler:
         self.log.debug('Starting the experiment worker')
         self.experiment_worker = Thread(target=self.experiment_handler)
         self.experiment_worker.start()
+        self.analysis_results = analysis_results
 
         # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
         # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
@@ -253,6 +266,7 @@ class Scheduler:
         self.log.debug('Initialising the platform')
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
+        self.experiments_results = experiments_results
 
     @property
     def experiment_running(self) -> bool:
@@ -284,6 +298,9 @@ class Scheduler:
                                 self.log.debug('Experiment running was set false')
                                 self.experiment_running = False # potentially redundant
 
+                                # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
+                                with open(self.results_file, 'wb') as f:
+                                    pickle.dump(self.started_experiments, f)
                                 # TODO this can be expanded to trigger the analysis of the sample
 
 # check if experiments can be stopped by only chromatogram available, but actually not having been ran -> this happens. Here not important, but in general, streamlining could mean that experiments are started before previous analysis is over
@@ -344,10 +361,12 @@ if __name__ == "__main__":
 
     #
     fr = FileReceiver('192.168.10.20', 10339, allowed_address='192.168.10.11')
-    scheduler = Scheduler(SugarPlatform)
+    analysed_samples_folder = Path(r'D:/transferred_chromatograms')
+    scheduler = Scheduler(SugarPlatform,  analysis_results = analysed_samples_folder, experiments_results=analysed_samples_folder / Path('experiments_test'))
+
 
     # This obviously could be included into the scheduler
-    results_listener = ResultListener('D:\\transferred_chromatograms', '*.txt', scheduler.analysed_samples)
+    results_listener = ResultListener(analysed_samples_folder, '*.txt', scheduler.analysed_samples)
 
     scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=1))
     scheduler.create_experiment(ExperimentConditions(temperature_in_celsius=23))
