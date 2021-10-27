@@ -863,7 +863,6 @@ if __name__ == "__main__":
         await pump.set_target_volume(0.05)
         await pump.infuse_run()
         await asyncio.sleep(2)
-        assert math.isclose(await pump.get_infused_volume(), 0.05, abs_tol=1e-4)
-
+        await pump.infuse_run()
 
     asyncio.run(main())
