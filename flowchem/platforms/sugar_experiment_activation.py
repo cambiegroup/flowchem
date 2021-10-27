@@ -133,42 +133,65 @@ class FlowProcedure:
         self.pumps = platform_graph['pumps']
         self.hplc: ClarityInterface = platform_graph['HPLC']
         self.chiller: Huber = platform_graph['chiller']
+        self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
     def individual_procedure(self, flow_conditions: FlowConditions):
         # TODO also here, for now this is a workaround for ureg.
+        self.log.info(f'Setting Ciller to  {flow_conditions.temperature}')
         self.chiller.set_temperature(flow_conditions.temperature.magnitude)
+        self.log.info(f'Chiller successfully set to  {flow_conditions.temperature}')
         self.chiller.start()
+        self.log.info('Ciller started')
 
         while abs(abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
             sleep(10)
-            print(f'Chiller waiting for temperature, at {self.chiller.get_temperature()} set {flow_conditions.temperature.magnitude}')
+            self.log.info(f'Chiller waiting for temperature, at {self.chiller.get_temperature()} set {flow_conditions.temperature}')
 
         # set all flow rates
+        self.log.info(f'Setting donor flow rate to  {flow_conditions.donor_flow_rate}')
         self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate.m_as('mL/min') # dimensionless, in ml/min
         self.pumps['quencher'].set_flow = flow_conditions.quencher_flow_rate.m_as('mL/min')
 
+        self.log.info(f'Setting quencher flow rate to  {flow_conditions.quencher_flow_rate}')
+        self.pumps['quencher'].set_flow = flow_conditions.quencher_flow_rate.m_as('mL/min') # in principal, this works, if wrong flowrate set, check from here what is problen
+
+        self.log.info('Starting donor pump')
         self.pumps['donor'].run()
+
+        self.log.info('Starting aactivator pump')
         self.pumps['activator'].deliver_from_syringe(flow_conditions.activator_flow_rate.m_as('mL/min'))
+
+        self.log.info('Starting quencher pump')
         self.pumps['quencher'].start_flow()
 
         # start timer
+        self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}')
         sleep(flow_conditions.steady_state_time.magnitude)
+        self.log.info('Timer over, now take measurement}')
 
 #        self.hplc.set_sample_name(flow_conditions.experiment_id)
 #        self.hplc.run()
 
         # timer is over, start
+        self.log.info('Stop pump Donor')
         self.pumps['donor']. stop()
+
+        self.log.info('Stop pump Activator')
         self.pumps['activator'].stop()
+
+        self.log.info('refill activator')
         self.pumps['activator'].refill_syringe(4, 8)
 
         # I think that's not nice
+        self.log.info(f'setting experiment {flow_conditions.experiment_id} as finished')
         scheduler.started_experiments[str(flow_conditions.experiment_id)].experiment_finished = True
 
     def get_platform_ready(self):
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
         sending the hplc method"""
         # prepare HPLC
+
+        self.log.info('getting the platform ready: HPLC')
 
 #        self.hplc.exit()
 #        self.hplc.switch_lamp_on()  # address and port hardcoded
@@ -191,9 +214,12 @@ class FlowProcedure:
         # commander.load_file("opendedicatedproject") # open a project for measurements
 
         # fill the activator to the hamilton syringe
+
+        self.log.info('getting the platform ready: filling activator')
         self.pumps['activator'].refill_syringe(4, 8)
 
-        self.pumps['quencher'].set_maximum_pressure(12)
+        self.log.info('getting the platform ready: setting HPLC max pressure')
+        self.pumps['quencher'].set_maximum_pressure(13)
 
 
 class Scheduler:
@@ -202,9 +228,11 @@ class Scheduler:
     def __init__(self, graph: dict):
 
         self.graph = graph
+        self.log = logging.getLogger(__name__).getChild(__class__.__name__)
         self.procedure = FlowProcedure(self.graph)
         self.experiment_queue = queue.Queue()
         # start worker
+        self.log.debug('Starting the experiment worker')
         self.experiment_worker = Thread(target=self.experiment_handler)
         self.experiment_worker.start()
 
@@ -216,11 +244,13 @@ class Scheduler:
         # for now it only holds analysed samples, but later it should be used to add the analysis results and spectrum to experiment conditions
         self.analysed_samples = []
 
+        self.log.debug('Starting the data worker')
         self.data_worker = Thread(target=self.data_handler)
         self.data_worker.start()
 
         self._experiment_running = False
 
+        self.log.debug('Initialising the platform')
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
 
@@ -231,6 +261,7 @@ class Scheduler:
 
     @experiment_running.setter
     def experiment_running(self, experiment_running: bool):
+        self.log.debug('experiment set running')
         self._experiment_running = experiment_running
 
     def data_handler(self):
@@ -246,6 +277,11 @@ class Scheduler:
                             if str(experiment_id) in analysed_samples_files:
                                 self.started_experiments[experiment_id].analysis_finished = True
 
+                                self.log.info(f'New analysis result found for experiment {experiment_id}, analysis set True accordingly')
+
+                                self.started_experiments[experiment_id].chromatogram = self.analysis_results / Path((str(experiment_id)+'.txt'))
+
+                                self.log.debug('Experiment running was set false')
                                 self.experiment_running = False # potentially redundant
 
                                 # TODO this can be expanded to trigger the analysis of the sample
@@ -254,6 +290,7 @@ class Scheduler:
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
     def create_experiment(self, conditions: ExperimentConditions) -> None:
+        self.log.debug('New conditions put to queue')
         self.experiment_queue.put(conditions)
 
     def experiment_handler(self):
@@ -265,22 +302,24 @@ class Scheduler:
                 experiment: ExperimentConditions = self.experiment_queue.get()
                 # append the experiment  to the dictionary
                 individual_conditions = FlowConditions(experiment, self.graph)
+                self.log.info(f'New experiment {individual_conditions.experiment_id} about to be started')
                 self.started_experiments[str(individual_conditions.experiment_id)] = experiment # the actual  Experiment conditions instance sits in the self.started experiments under its id, so attributes can be changed here (analysed and running mainly)
                 new_thread = Thread(target=FlowProcedure.individual_procedure,
                                     args=(self.procedure, individual_conditions,))
                 new_thread.start()
+                self.log.info('experiment running set True')
                 self.experiment_running = True
-                print(f'Experiment Running was set to {self.experiment_running} by experiment handler')
                 # this should be called when experiment is over
                 self.experiment_queue.task_done()
             elif self.experiment_queue.empty and not self.experiment_running:
                 # start timer in separate thread. this timer should be killed by having sth in the queue again. When exceeding some time, platform shuts down
-                pass
+                self.log.info('Queue empty and nothing running, switch me off')
 
 
 if __name__ == "__main__":
     # FlowGraph as dicitonary
-    log = logging.getLogger()
+    logging.basicConfig()
+    logging.getLogger("sugar_experiment_activation").setLevel(logging.DEBUG)
     # missing init parameters
     SugarPlatform = {
         # try to combine two pumps to one. flow rate with ratio gives individual flow rate
