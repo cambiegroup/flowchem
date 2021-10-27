@@ -390,35 +390,35 @@ class Elite11Commands:
         command_string="ctvolume", reply_lines=0, requires_argument=False
     )
 
-    # GET TIME
-    WITHDRAWN_TIME = Protocol11CommandTemplate(
-        command_string="wtime", reply_lines=1, requires_argument=False
-    )
-    INFUSED_TIME = Protocol11CommandTemplate(
-        command_string="itime", reply_lines=1, requires_argument=False
-    )
-
-    # TARGET TIME
-    GET_TARGET_TIME = Protocol11CommandTemplate(
-        command_string="ttime", reply_lines=1, requires_argument=False
-    )
-    SET_TARGET_TIME = Protocol11CommandTemplate(
-        command_string="ttime", reply_lines=1, requires_argument=True
-    )
-
-    # CLEAR TIME
-    CLEAR_INFUSED_TIME = Protocol11CommandTemplate(
-        command_string="citime", reply_lines=0, requires_argument=False
-    )
-    CLEAR_INFUSED_WITHDRAW_TIME = Protocol11CommandTemplate(
-        command_string="ctime", reply_lines=0, requires_argument=False
-    )
-    CLEAR_TARGET_TIME = Protocol11CommandTemplate(
-        command_string="cttime", reply_lines=0, requires_argument=False
-    )
-    CLEAR_WITHDRAW_TIME = Protocol11CommandTemplate(
-        command_string="cwtime", reply_lines=0, requires_argument=False
-    )
+    # # GET TIME
+    # WITHDRAWN_TIME = Protocol11CommandTemplate(
+    #     command_string="wtime", reply_lines=1, requires_argument=False
+    # )
+    # INFUSED_TIME = Protocol11CommandTemplate(
+    #     command_string="itime", reply_lines=1, requires_argument=False
+    # )
+    #
+    # # TARGET TIME
+    # GET_TARGET_TIME = Protocol11CommandTemplate(
+    #     command_string="ttime", reply_lines=1, requires_argument=False
+    # )
+    # SET_TARGET_TIME = Protocol11CommandTemplate(
+    #     command_string="ttime", reply_lines=1, requires_argument=True
+    # )
+    #
+    # # CLEAR TIME
+    # CLEAR_INFUSED_TIME = Protocol11CommandTemplate(
+    #     command_string="citime", reply_lines=0, requires_argument=False
+    # )
+    # CLEAR_INFUSED_WITHDRAW_TIME = Protocol11CommandTemplate(
+    #     command_string="ctime", reply_lines=0, requires_argument=False
+    # )
+    # CLEAR_TARGET_TIME = Protocol11CommandTemplate(
+    #     command_string="cttime", reply_lines=0, requires_argument=False
+    # )
+    # CLEAR_WITHDRAW_TIME = Protocol11CommandTemplate(
+    #     command_string="cwtime", reply_lines=0, requires_argument=False
+    # )
 
 
 class Elite11:
@@ -459,9 +459,18 @@ class Elite11:
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address = address
 
-        # These will be set in initialize()
-        self._diameter = diameter
-        self._syringe_volume = syringe_volume
+        # diameter and syringe volume - these will be set in initialize() - check values here though.
+        if diameter is None:
+            raise InvalidConfiguration("Please provide the syringe diameter explicitly!\nThis prevents errors :)")
+        else:
+            self._diameter = diameter
+
+        if syringe_volume is None:
+            raise InvalidConfiguration("Please provide the syringe volume explicitly!\nThis prevents errors :)")
+        else:
+            self._syringe_volume = syringe_volume
+
+        # This will also be inspected in initialize.
         self._withdraw_enabled = False
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
@@ -592,7 +601,7 @@ class Elite11:
     async def run(self):
         """ Activates pump, runs in the previously set direction. """
 
-        if self.is_moving():
+        if await self.is_moving():
             warnings.warn("Cannot start pump: already moving!")
             return
 
@@ -601,7 +610,7 @@ class Elite11:
 
     async def inverse_run(self):
         """ Activates pump, runs opposite to previously set direction. """
-        if self.is_moving():
+        if await self.is_moving():
             warnings.warn("Cannot start pump: already moving!")
             return
 
@@ -610,7 +619,7 @@ class Elite11:
 
     async def infuse_run(self):
         """ Activates pump, runs in infuse mode. """
-        if self.is_moving():
+        if await self.is_moving():
             warnings.warn("Cannot start pump: already moving!")
             return
 
@@ -620,7 +629,7 @@ class Elite11:
     async def withdraw_run(self):
         """ Activates pump, runs in withdraw mode. """
         self.ensure_withdraw_is_enabled()
-        if self.is_moving():
+        if await self.is_moving():
             warnings.warn("Cannot start pump: already moving!")
             return
 
@@ -635,7 +644,7 @@ class Elite11:
 
     async def wait_until_idle(self):
         """ Wait until the pump is no more moving """
-        while self.is_moving():
+        while await self.is_moving():
             await asyncio.sleep(0.05)
 
     async def get_infusion_rate(self) -> float:
@@ -698,7 +707,7 @@ class Elite11:
 
     async def clear_volumes(self):
         """ Set all pump volumes to 0 """
-        self.set_target_volume(0)
+        await self.set_target_volume(0)
         if self._withdraw_enabled:
             await self.clear_infused_withdrawn_volume()
         else:
@@ -713,8 +722,8 @@ class Elite11:
             glass/glass:        30% if volume <= 20 ml else 50%
             glass/plastic:      30% if volume <= 250 ul, 50% if volume <= 5ml else 100%
         """
-        percent = await self.send_command_and_read_reply(Elite11Commands.GET_FORCE)[:-1]
-        return int(percent)
+        percent = await self.send_command_and_read_reply(Elite11Commands.GET_FORCE)
+        return int(percent[:-1])
 
     async def set_force(self, force_percent: int):
         await self.send_command_and_read_reply(
@@ -725,8 +734,8 @@ class Elite11:
         """
         Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
         """
-        diameter = await self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)[:-3]
-        return float(diameter)
+        diameter = await self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)
+        return float(diameter[:-3])
 
     async def set_syringe_diameter(self, diameter_in_mm: float):
         """
@@ -844,8 +853,17 @@ if __name__ == "__main__":
     logging.getLogger(__name__).setLevel(logging.DEBUG)
 
     pump = Elite11.from_config(port="COM4", syringe_volume=10, diameter=10)
-    asyncio.run(pump.initialize())
-    asyncio.run(pump.set_syringe_diameter(10))
-    asyncio.run(pump.set_infusion_rate(1))
-    asyncio.run(pump.infuse_run())
-    asyncio.run(pump.stop())
+
+    async def main():
+        await pump.initialize()
+        await pump.clear_volumes()
+        assert await pump.get_infused_volume() == 0
+        await pump.set_syringe_diameter(30)
+        await pump.set_infusion_rate(5)
+        await pump.set_target_volume(0.05)
+        await pump.infuse_run()
+        await asyncio.sleep(2)
+        assert math.isclose(await pump.get_infused_volume(), 0.05, abs_tol=1e-4)
+
+
+    asyncio.run(main())
