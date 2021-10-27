@@ -14,9 +14,6 @@ from numpy import array, sum
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
 
-# this experiment hold
-
-
 class ExperimentConditions:
     """This is actively changed, either by human or by optimizer. Goes into the queue.
     When the conditions are taken from the queue, a FlowConditions object is derived from ExperimentCondition.
@@ -30,7 +27,7 @@ class ExperimentConditions:
     _reactor_volumes = 3
     _quencher_eq_to_activator = 2
 
-    # could always be initialised as starting condition and adjusted by optimizer/list. Or be initialised as the to use_condition
+    # this are the experiment base conditions, if changing conditions, adjust the parameters when creating a new condition object
     def __init__(self, residence_time_in_seconds=60, activator_equivalents=1.5, temperature_in_celsius=25):
         # mutable
         self.residence_time = residence_time_in_seconds * flowchem_ureg.second  # sec
@@ -42,7 +39,9 @@ class ExperimentConditions:
         self.experiment_finished = False
         self.analysis_finished = False
 
-        # potentially, here also spectrum AND evaluated result can go, that would make the whole thing rather neat
+        # when fully analysed, hold a dataframe of the chromatogram. Once automatic analysis/assignment works, this should also go in
+        self._chromatogram = None
+
 
     @property
     def stock_concentration_donor(self):
@@ -72,13 +71,10 @@ class FlowConditions:
     All private parameters are only internally needed for calculation (and maybe as checkpoints for simpler testing).
     """
 
-    # these can be calculated, from each pump 'package', the flow rate should be the same I suppose
     def __init__(self, experiment_conditions: ExperimentConditions,
                  flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and abstraction still low
 
         self.experiment_id = round(datetime.timestamp(datetime.now()))
-
-
 
         # better readability
         self.platform_volumes = flow_platform['internal_volumes']
@@ -87,14 +83,13 @@ class FlowConditions:
         self._concentration_activator = experiment_conditions.stock_concentration_activator
         self._concentration_quencher = experiment_conditions.stock_concentration_quencher
 
-        # This is actually not needed -> the activator will always be neat / at some specific concentration
         self._total_flow_rate = self.get_flow_rate(self.platform_volumes['volume_reactor'],
                                                    experiment_conditions.residence_time)
 
 
         self.activator_flow_rate, self.donor_flow_rate = self.get_individual_flow_rate(self._total_flow_rate,
                                                                                        concentrations=(self._concentration_activator.magnitude, self._concentration_donor.magnitude,), equivalents=(experiment_conditions.activator_equivalents, 1,))
-        #TODO seem very high, check this, probably due to wrong unit conversion
+
         self.activator_flow_rate = self.activator_flow_rate.to(flowchem_ureg.milliliter / flowchem_ureg.minute)
         self.donor_flow_rate = self.donor_flow_rate.to(flowchem_ureg.milliliter / flowchem_ureg.minute)
 
@@ -116,7 +111,7 @@ class FlowConditions:
     def get_flow_rate(self, relevant_volume: float, residence_time: int):
         return (relevant_volume / residence_time).to(flowchem_ureg.milliliter / flowchem_ureg.minute)
 
-    #TODO for now concentration needs to go in alway in the same dimension, and as float
+    #TODO for now concentration needs to go in always in the same dimension, and as float, for future, iterate over tuple, bring to same unit and use a copy of that for array
     def get_individual_flow_rate(self, target_flow_rate: float, equivalents: tuple = (), concentrations: tuple = ()):
         """
         Give as many inputs as desired, output will be in same order as input and hold required flowrates
@@ -322,6 +317,3 @@ if __name__ == "__main__":
     scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
 
     # TODO when queue empty, after some while everything should be switched off
-    # chiller should have threshold for T tolerance
-
-    #Todo experiments shopuld have experiment finished AND analysis finished
