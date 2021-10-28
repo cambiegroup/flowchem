@@ -45,7 +45,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
     sock.bind((source_ip, 28688))
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    sock.settimeout(5)
+    sock.settimeout(2)
 
     server_address = ("255.255.255.255", 30718)
     message = b"\x00\x01\x00\xf6"
@@ -69,6 +69,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
     finally:
         sock.close()
 
+    print(device)
     device_info = []
 
     for device_ip in device:
@@ -76,8 +77,6 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
         device_type = asyncio.run(get_device_type(device_ip))
         device_info.append((mac, device_ip, device_type))
         return device_info
-
-
 
 
 if __name__ == '__main__':
