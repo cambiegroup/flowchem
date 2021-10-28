@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import logging
-import string
-import warnings
+
 from dataclasses import dataclass
-from enum import IntEnum
 from typing import Optional
 
 import aioserial
@@ -62,7 +60,7 @@ class ViciValcoValveIO:
     """ Setup with serial parameters, low level IO"""
 
     DEFAULT_CONFIG = {
-        "timeout": 0.1,
+        "timeout": 0.5,
         "baudrate": 9600,
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
@@ -134,17 +132,24 @@ class ViciValcoValveIO:
         await self._serial.write_async(command)
         self.logger.debug(f"Command {repr(command)} sent!")
 
-    def _read_reply(self) -> str:
+    def _read_reply(self, lines) -> str:
         """ Reads the valve reply from serial communication """
-        reply_string = self._serial.readline()
+        reply_string = ''
+        for line in range(lines):
+            reply_string += self._serial.readline().decode("ascii")
         self.logger.debug(f"Reply received: {reply_string}")
-        return reply_string.decode("ascii")
+        return reply_string
 
-    async def _read_reply_async(self) -> str:
+    async def _read_reply_async(self, lines) -> str:
         """ Reads the valve reply from serial communication """
-        reply_string = await self._serial.readline_async()
+        reply_string = ''
+        for line in range(lines):
+            a = ''
+            a = await self._serial.readline_async()
+            reply_string += a.decode("ascii")
+
         self.logger.debug(f"Reply received: {reply_string}")
-        return reply_string.decode("ascii")
+        return reply_string
 
     def parse_response(self, response: str) -> str:
         """ Split a received line in its components: success, reply """
@@ -155,11 +160,11 @@ class ViciValcoValveIO:
         """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
         self._serial.reset_input_buffer()
 
-    def write_and_read_reply(self, command: ViciProtocolCommand) -> str:
+    def write_and_read_reply(self, command: ViciProtocolCommand, lines) -> str:
         """ Sends a command to the pump, read the replies and returns it, optionally parsed """
         self.reset_buffer()
         self._write(command.compile())
-        response = self._read_reply()
+        response = self._read_reply(lines)
 
         if not response:
             raise InvalidConfiguration(
@@ -169,12 +174,12 @@ class ViciValcoValveIO:
 
         return self.parse_response(response)
 
-    async def write_and_read_reply_async(self, command: ViciProtocolCommand) -> str:
+    async def write_and_read_reply_async(self, command: ViciProtocolCommand, lines) -> str:
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
         self.reset_buffer()
         await self._write_async(command.compile())
-        response = await self._read_reply_async()
+        response = await self._read_reply_async(lines)
 
         if not response:
             raise InvalidConfiguration(
@@ -247,7 +252,7 @@ class ViciValco:
 
         # Test connectivity by querying the pump's firmware version
         fw_cmd = ViciProtocolCommandTemplate(command="VR").to_valve(self.address)
-        firmware_version = self.valve_io.write_and_read_reply(fw_cmd)
+        firmware_version = self.valve_io.write_and_read_reply(fw_cmd, lines=5)
         self.log.info(f"Connected to Vici Valve {self.name} - FW version: {firmware_version}!")
 
     @classmethod
@@ -277,10 +282,11 @@ class ViciValco:
         command_template: ViciProtocolCommandTemplate,
         command_value="",
         argument_value="",
+        lines=1
     ) -> str:
         """ Sends a command based on its template by adding pump address and parameters, returns reply """
         return await self.valve_io.write_and_read_reply_async(
-            command_template.to_valve(self.address, command_value, argument_value)
+            command_template.to_valve(self.address, command_value, argument_value), lines
         )
 
 
@@ -309,12 +315,8 @@ class ViciValco:
     async def version(self) -> str:
         """ Returns the current firmware version reported by the pump. """
 
-        first_line = await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="VR"))
-        empty = self.valve_io._read_reply_async()
-        second_line = self.valve_io._read_reply_async()
-        empty = self.valve_io._read_reply_async()
-        third_line = await self.valve_io._read_reply_async()
-        return ''.join((first_line, second_line, third_line))
+        return await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="VR"), lines=5)
+
 
     async def get_valve_position(self) -> int:
         """ Represent the position of the valve: getter returns Enum, setter needs Enum. """
@@ -355,7 +357,9 @@ if __name__ == "__main__":
     valve1 = ViciValco.from_config(conf)
 
     asyncio.run(valve1.initialize_valve())
+
     asyncio.run(valve1.set_valve_position(2))
+
     asyncio.run(valve1.set_valve_position(1))
 
 
