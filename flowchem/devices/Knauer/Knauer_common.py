@@ -2,6 +2,7 @@
 Module for communication with Knauer pumps and valves.
 """
 import asyncio
+import logging
 
 from flowchem.devices.Knauer.Knauer_autodiscover import autodiscover_knauer
 from flowchem.constants import InvalidConfiguration
@@ -15,12 +16,29 @@ class KnauerEthernetDevice:
     TCP_PORT = 10001
     BUFFER_SIZE = 1024
 
-    def __init__(self, ip_address):
+    def __init__(self, ip_address, name: str = None):
+        # Pump's IP
         self.ip_address = str(ip_address)
+
+        # Set name if provided
+        self._name = name
+
+        # Logger
+        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__).getChild(self.name)
+
+        # These will be set in initialize()
         self._reader, self._writer = None, None
 
         # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by sublcasses
         self.eol = b""
+
+    @property
+    def name(self) -> str:
+        """ Unique pump representation (to identify pump in logs) """
+        if self._name:
+            return self._name
+        else:
+            return self.ip_address
 
     @classmethod
     def from_mac(cls, mac_address):
@@ -54,5 +72,7 @@ class KnauerEthernetDevice:
 
     async def _send_and_receive(self, message):
         self._writer.write(message.encode("ascii")+self.eol)
+        self.logger.debug(f"WRITE >>> '{message}' ")
         reply = await self._reader.readuntil(separator=b"\r")
+        self.logger.debug(f"READ <<< '{reply.decode().strip()}' ")
         return reply.decode("ascii").strip()
