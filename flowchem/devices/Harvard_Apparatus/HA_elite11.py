@@ -15,7 +15,8 @@ from typing import Union, List, Optional, Tuple
 import aioserial
 from pydantic import BaseModel
 
-from flowchem.constants import flowchem_ureg, InvalidConfiguration, DeviceError
+from flowchem.exceptions import InvalidConfiguration, DeviceError
+from flowchem.units import flowchem_ureg
 
 
 class PumpInfo(BaseModel):
