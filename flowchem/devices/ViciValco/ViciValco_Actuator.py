@@ -165,30 +165,31 @@ class ViciValcoValveIO:
         """ Sends a command to the valve, read the replies and returns it, optionally parsed """
         self.reset_buffer()
         self._write(command.compile())
-        response = self._read_reply(lines)
+        if lines:
+            response = self._read_reply(lines)
 
-        if not response:
-            raise InvalidConfiguration(
-                f"No response received from valve, check valve address! "
-                f"(Currently set to {command.target_valve_num})"
-            )
+            if not response:
+                raise InvalidConfiguration(
+                    f"No response received from valve, check valve address! "
+                    f"(Currently set to {command.target_valve_num})"
+                )
 
-        return self.parse_response(response)
+            return self.parse_response(response)
 
     async def write_and_read_reply_async(self, command: ViciProtocolCommand, lines) -> str:
         """ Main ViciValcoValveIO method.
         Sends a command to the valve, read the replies and returns it, optionally parsed """
         self.reset_buffer()
         await self._write_async(command.compile())
-        response = await self._read_reply_async(lines)
+        if lines:
+            response = await self._read_reply_async(lines)
 
-        if not response:
-            raise InvalidConfiguration(
-                f"No response received from valve, check valve address! "
-                f"(Currently set to {command.target_valve_num})"
-            )
-
-        return self.parse_response(response)
+            if not response:
+                raise InvalidConfiguration(
+                    f"No response received from valve, check valve address! "
+                    f"(Currently set to {command.target_valve_num})"
+                )
+            return self.parse_response(response)
 
 
 
