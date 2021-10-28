@@ -34,7 +34,7 @@ class KnauerValve(KnauerEthernetDevice):
 
     def __init__(self, ip_address):
         super().__init__(ip_address)
-        self.eol = "\r\n"
+        self.eol = b"\r\n"
 
     async def initialize(self):
         """ Initialize connection """
@@ -116,7 +116,9 @@ class KnauerValve(KnauerEthernetDevice):
         with the general philosophy of the module to 'fail early' upon init and avoiding
         raising exception after that.
         """
-        reply = await self._transmit_and_parse_reply("T")[6:]
+        reply = await self._transmit_and_parse_reply("T")
+        print(reply)
+        reply =reply[6:]
         # could be more pretty by passing expected answer to _transmit_and_parse_reply
         try:
             reply = int(reply)
@@ -165,5 +167,10 @@ if __name__ == "__main__":
 
     async def main(valve: KnauerValve):
         await valve.initialize()
+        await valve.switch_to_position("I")
+        print(await valve.get_current_position())
+        await valve.switch_to_position("L")
+        print(await valve.get_current_position())
+
 
     asyncio.run(main(v))
