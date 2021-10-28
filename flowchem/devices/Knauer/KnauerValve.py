@@ -1,8 +1,7 @@
-"""
-Knauer valve control.
-"""
+""" Knauer valve control. """
 
 import logging
+import warnings
 from enum import Enum
 
 from flowchem.constants import DeviceError
@@ -11,7 +10,7 @@ from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
 
 class KnauerValveHeads(Enum):
     """
-    Four different valve types can be used. 6port2position valve, and 6 12 16 multiposition valves
+    Four different valve types can be used. 6port2position valve, and 6, 12, 16 multi-position valves
     """
 
     SIX_PORT_TWO_POSITION = "LI"
@@ -22,53 +21,59 @@ class KnauerValveHeads(Enum):
 
 class KnauerValve(KnauerEthernetDevice):
     """
-    Class to control Knauer multi position valves.
+    Control Knauer multi position valves.
 
     Valve type can be 6, 12, 16
     or it can be 6 ports, two positions, which will be simply 2 (two states)
-    in this case,response for T is LI. load and inject can be switched by sending log or i
+    in this case, the response for T is LI. Load and inject can be switched by sending L or I
     maybe valves should have an initial state which is set during init and updated, if no  change don't schedule command
-    https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_benutzerhandbuch_de.pdf
-    dip switch for valve selection
+    EN: https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_user-manual_en.pdf
+    DE: https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_benutzerhandbuch_de.pdf
+    DIP switch for valve selection
     """
 
     def __init__(self, ip_address):
-
         super().__init__(ip_address)
         self.eol = "\r\n"
 
-        self._valve_state = self.get_current_position()
-        # this gets the valve type as valve [type] and strips away valve_
-        self.valve_type = self.get_valve_type()  # checks against allowed valve types
+    async def initialize(self):
+        """ Initialize connection """
+        # Here the magic happens...
+        await super().initialize()
 
-    def communicate(self, message: str or int):
+        # Detect valve type and state
+        self.valve_type = await self.get_valve_type()
+        self._valve_state = await self.get_current_position()
+
+    async def _transmit_and_parse_reply(self, message: str) -> str:
         """
-        Sends command and receives reply, deals with all communication based stuff and checks that the valve is
-        of expected type
-        :param message:
-        :return: reply: str
+        Sends command, receives reply and parse it.
+
+        :param message: str with command to be sent
+        :return: reply: str with reply
         """
-        reply = super()._send_and_receive_handler(str(message) + "\r\n")
+        reply = await self._send_and_receive(message)
+
         if reply == "?":
-            # retry once
-            reply = super()._send_and_receive_handler(str(message) + "\r\n")
+            # retry once before failing
+            reply = await self._send_and_receive(message)
             if reply == "?":
-                DeviceError(
-                    f"Command not supported, your valve is of type {self.valve_type}"
-                )
+                warnings.warn(f"Command failed: {message}")
+                self.logger.warn(f"Command failed: {message}")
+                return ""
+
         try:
             reply = int(reply)
         except ValueError:
             pass
         return reply
 
-    def get_current_position(self):
-        curr_pos = self.communicate("P")
-        logging.debug(f"Current position is {curr_pos}")
-
+    async def get_current_position(self):
+        curr_pos = await self._transmit_and_parse_reply("P")
+        self.logger.debug(f"Current position is {curr_pos}")
         return curr_pos
 
-    def switch_to_position(self, position: int or str):
+    async def switch_to_position(self, position: int or str):
         try:
             position = int(position)
         except ValueError:
@@ -84,7 +89,7 @@ class KnauerValve(KnauerEthernetDevice):
             return
 
         # change to selected position
-        reply = self.communicate(position)
+        reply = await self._transmit_and_parse_reply(position)
 
         # check if this was done
         if reply == "OK":
@@ -103,11 +108,16 @@ class KnauerValve(KnauerEthernetDevice):
         else:
             raise DeviceError(f"Unknown reply received. Reply is {reply}")
 
-    def get_valve_type(self):
-        """aquires valve type, if not supported will throw error.
-        This also prevents to initialize some device as a KnauerValve"""
-        reply = self.communicate("T")[6:]
-        # could be more pretty by passing expected answer to communicate
+    async def get_valve_type(self):
+        """
+        Gets valve type, if returned value is not supported throws an error.
+
+        Note that this method is called during initialize(), therefore it is in line
+        with the general philosophy of the module to 'fail early' upon init and avoiding
+        raising exception after that.
+        """
+        reply = await self._transmit_and_parse_reply("T")[6:]
+        # could be more pretty by passing expected answer to _transmit_and_parse_reply
         try:
             reply = int(reply)
         except ValueError:
@@ -124,8 +134,36 @@ class KnauerValve(KnauerEthernetDevice):
         )
         return headtype
 
-    def close_connection(self):
-        logging.info(f"Valve at address closed connection {self.ip_address}")
-        self.sock.close()
+
+class KnauerAutodetectValve():
+    ...
+
+class Knauer6Port2PositionValve():
+    ...
+
+class Knauer6Port6PositionValve():
+    ...
+
+class Knauer12PortValve():
+    ...
+
+class Knauer16PortValve():
+    ...
 
 
+if __name__ == "__main__":
+    # This is a bug of asyncio on Windows :|
+    import sys
+    import asyncio
+
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
+    v = KnauerValve(ip_address="192.168.1.176")
+
+    async def main(valve: KnauerValve):
+        await valve.initialize()
+
+    asyncio.run(main(v))

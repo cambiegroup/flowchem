@@ -10,13 +10,13 @@ from flowchem.constants import DeviceError
 from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
+HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
 PMIN10 = "PMIN10"  # 0-400 in 0.1 MPa, use to avoid dryrunning
 PMIN50 = "PMIN50"  # 0-150 in 0.1 MPa, use to avoid dryrunning
 PMAX10 = "PMAX10"  # 0-400 in 0.1 MPa, chosen automatically by selecting pump head
 PMAX50 = "PMAX50"  # 0-150 in 0.1 MPa, chosen automatically by selecting pumphead
 IMIN10 = "IMIN10"  # 0-100 minimum motor current
 IMIN50 = "IMIN50"  # 0-100 minimum motor current
-HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
 STARTLEVEL = "STARTLEVEL"  # 0, 1 configures start. 0 -> only start pump when shorted to GND, 1 -> always allow start
 ERRIO = "ERRIO"  # 0, 1 write/read error in/output ??? sets errio either 1 or 0, reports errio:ok
 STARTMODE = "STARTMODE"  # 0, 1; 0=pause pump after switchon, 1=start immediatley with previous set flow rate
@@ -35,16 +35,15 @@ PUMP_ON = "ON"  # starts flow
 PUMP_OFF = "OFF"  # stops flow
 
 
-class KnauerPumpHeads(Enum):
-    """
-    Two Pumpheads exist, 50 mL/min and 10 mL/min
-    """
+class AzuraPumpHeads(Enum):
+    """ Two Pump heads are available for the Azura: 50 mL/min and 10 mL/min. """
 
     FLOWRATE_FIFTY_ML = 50
     FLOWRATE_TEN_ML = 10
 
 
-class KnauerPump(KnauerEthernetDevice):
+class AzuraCompactPump(KnauerEthernetDevice):
+    """ Control module for Knauer Azura Compact pumps. """
     def __init__(self, ip_address):
         super().__init__(ip_address)
         self.eol = b"\n\r"
@@ -153,15 +152,15 @@ class KnauerPump(KnauerEthernetDevice):
     def _headtype(self, htype):
         self.__headtype = htype
 
-        if htype == KnauerPumpHeads.FLOWRATE_TEN_ML:
+        if htype == AzuraPumpHeads.FLOWRATE_TEN_ML:
             self.max_pressure, self.max_flow = 400, 10000
-        elif htype == KnauerPumpHeads.FLOWRATE_FIFTY_ML:
+        elif htype == AzuraPumpHeads.FLOWRATE_FIFTY_ML:
             self.max_pressure, self.max_flow = 150, 50000
 
     async def get_headtype(self):
         head_type_id = await self.create_and_send_command(HEADTYPE)
         try:
-            headtype = KnauerPumpHeads(int(head_type_id))
+            headtype = AzuraPumpHeads(int(head_type_id))
             # Sets internal property (changes max flowrate etc)
             self._headtype = headtype
         except ValueError as e:
@@ -173,7 +172,7 @@ class KnauerPump(KnauerEthernetDevice):
 
         return headtype
 
-    async def set_headtype(self, head_type: KnauerPumpHeads):
+    async def set_headtype(self, head_type: AzuraPumpHeads):
         await self.create_and_send_command(HEADTYPE, setpoint=head_type.value)
         # Update internal property (changes max flowrate etc)
         self._headtype = head_type
@@ -202,13 +201,13 @@ class KnauerPump(KnauerEthernetDevice):
     async def get_minimum_pressure(self, pressure_in_bar=None):
         """ Gets minimum pressure. The pumps stops if the measured P is lower than this. """
 
-        command = PMIN10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMIN50
+        command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
         return await self.create_and_send_command(command)
 
     async def set_minimum_pressure(self, pressure_in_bar=None):
         """ Sets minimum pressure. The pumps stops if the measured P is lower than this. """
 
-        command = PMIN10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMIN50
+        command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
         await self.create_and_send_command(command,
             setpoint=pressure_in_bar,
             setpoint_range=(0, self.max_pressure + 1),
@@ -218,13 +217,13 @@ class KnauerPump(KnauerEthernetDevice):
     async def get_maximum_pressure(self):
         """ Gets maximum pressure. The pumps stops if the measured P is higher than this. """
 
-        command = PMAX10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMAX50
+        command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         return await self.create_and_send_command(command)
 
     async def set_maximum_pressure(self, pressure_in_bar=None):
         """ Sets maximum pressure. The pumps stops if the measured P is higher than this. """
 
-        command = PMAX10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMAX50
+        command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         await self.create_and_send_command(
             command,
             setpoint=pressure_in_bar,
@@ -234,7 +233,7 @@ class KnauerPump(KnauerEthernetDevice):
 
     async def set_minimum_motor_current(self, setpoint=None):
         """ Sets minimum motor current. """
-        command = IMIN10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else IMIN50
+        command = IMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else IMIN50
 
         reply = await self.create_and_send_command(
             command, setpoint=setpoint, setpoint_range=(0, 101)
@@ -276,13 +275,13 @@ class KnauerPump(KnauerEthernetDevice):
 
     async def get_adjusting_factor(self):
         """ Gets the adjust parameter. Not clear what it is. """
-        command = ADJ10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else ADJ50
+        command = ADJ10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else ADJ50
         reply = await self.create_and_send_command(command)
         return int(reply)
 
     async def set_adjusting_factor(self, setpoint: int = None):
         """ Sets the adjust parameter. Not clear what it is. """
-        command = ADJ10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else ADJ50
+        command = ADJ10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else ADJ50
         reply = await self.create_and_send_command(
             command, setpoint=setpoint, setpoint_range=(0, 2001)
         )
@@ -290,12 +289,12 @@ class KnauerPump(KnauerEthernetDevice):
 
     async def get_correction_factor(self):
         """ Gets the correction factor. Not clear what it is. """
-        command = CORR10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else CORR50
+        command = CORR10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else CORR50
         return int(await self.create_and_send_command(command))
 
     async def set_correction_factor(self, setpoint=None):
         """ Sets the correction factor. Not clear what it is. """
-        command = CORR10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else CORR50
+        command = CORR10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else CORR50
         reply = await self.create_and_send_command(command, setpoint=setpoint, setpoint_range=(0, 301))
         self.logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
@@ -375,9 +374,9 @@ if __name__ == '__main__':
 
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
-    p = KnauerPump(ip_address="192.168.1.126")
+    p = AzuraCompactPump(ip_address="192.168.1.126")
 
-    async def main(pump: KnauerPump):
+    async def main(pump: AzuraCompactPump):
         await pump.initialize()
         init_val = await pump.get_adjusting_factor()
         await pump.set_adjusting_factor(0)
