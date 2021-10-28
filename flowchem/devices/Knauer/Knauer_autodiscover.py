@@ -32,7 +32,26 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
         # self.loop.call_later(5, self.broadcast)  # Keep sending every 5 secs
 
 
-def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
+async def get_device_type(ip_address: str) -> str:
+    """ Returns either 'Pump', 'Valve' or 'Unknown' """
+    reader, writer = await asyncio.open_connection(host=ip_address, port=10001)
+
+    # Test Pump
+    writer.write("HEADTYPE:?\n\r".encode())
+    reply = await reader.readuntil(separator=b"\r")
+    if reply.startswith(b"HEADTYPE"):
+        return "Pump"
+
+    # Test Valve
+    writer.write("T:?\n\r".encode())
+    reply = await reader.readuntil(separator=b"\r")
+    if reply.startswith(b"VALVE"):
+        return "Valve"
+
+    return "Unknown"
+
+
+def autodiscover_knauer(source_ip: str = "") -> List[Tuple[str, str, None]]:
     """
     Automatically find Knauer ethernet device on the network and returns their data.
 
@@ -40,7 +59,7 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
         source_ip: source IP for autodiscover (only relevant if multiple network interfaces are available!)
 
     Returns:
-        Dictionary of tuples (IP, MAC), one per device replying to autodiscover
+        List of tuples (IP, MAC, device_type), one per device replying to autodiscover
 
     """
 
@@ -56,12 +75,16 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
     loop.run_until_complete(coro)
     loop.run_until_complete(asyncio.sleep(3))
 
-    mac_to_ip = {}
+    device_info = []
     for device_ip in device_list:
         mac = getmac.get_mac_address(ip=device_ip)
-        mac_to_ip[mac] = device_ip
-    return mac_to_ip
+
+        device_type = asyncio.run(get_device_type(device_ip))
+
+        device_info.append((mac, device_ip, device_type))
+    return device_info
 
 
 if __name__ == '__main__':
-    print(autodiscover_knauer("192.168.1.1"))
+    ip = 192.168.
+
