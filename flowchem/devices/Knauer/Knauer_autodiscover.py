@@ -1,7 +1,10 @@
 """ Autodiscover Knauer devices on network """
 import asyncio
 import socket
-from typing import Tuple, Union, Text, List, Dict
+import time
+from queue import Queue, Empty
+from threading import Thread
+from typing import Tuple, Union, Text, List
 
 from getmac import getmac
 
@@ -13,23 +16,22 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
     From https://gist.github.com/yluthu/4f785d4546057b49b56c
     """
 
-    def __init__(self, target: Address, devices: List, *, loop: asyncio.AbstractEventLoop = None):
+    def __init__(self, target: Address, response_queue: Queue):
         self.target = target
-        self.loop = asyncio.get_event_loop() if loop is None else loop
-        self._devices_ip = devices
+        self.loop = asyncio.get_event_loop()
+        self._queue = response_queue
 
     def connection_made(self, transport: asyncio.transports.DatagramTransport):
         self.transport = transport
         sock = transport.get_extra_info("socket")  # type: socket.socket
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        self.broadcast_once()
+        self.broadcast()
 
     def datagram_received(self, data: Union[bytes, Text], addr: Address):
-        self._devices_ip.append(addr[0])
+        self._queue.put(addr[0])
 
-    def broadcast_once(self):
+    def broadcast(self):
         self.transport.sendto(b"\x00\x01\x00\xf6", self.target)
-        # self.loop.call_later(5, self.broadcast)  # Keep sending every 5 secs
 
 
 async def get_device_type(ip_address: str) -> str:
@@ -69,11 +71,24 @@ def autodiscover_knauer(source_ip: str = "") -> List[Tuple[str, str, None]]:
         source_ip = socket.gethostbyname(hostname)
 
     loop = asyncio.get_event_loop()
-    device_list = []
+    device_q = Queue()
     coro = loop.create_datagram_endpoint(
-        lambda: BroadcastProtocol(("255.255.255.255", 30718), devices=device_list), local_addr=(source_ip, 28688), )
+        lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q), local_addr=(source_ip, 28688), )
     loop.run_until_complete(coro)
-    loop.run_until_complete(asyncio.sleep(3))
+    thread = Thread(target=loop.run_forever)
+    thread.start()
+    time.sleep(2)
+    loop.call_soon_threadsafe(loop.stop)  # here
+    thread.join()
+
+    device_list = []
+    for _ in range(40):
+        try:
+            device_list.append(device_q.get_nowait())
+        except Empty:
+            break
+
+    print(f"The following devices IP have been found: {device_list}")
 
     device_info = []
     for device_ip in device_list:
@@ -86,5 +101,5 @@ def autodiscover_knauer(source_ip: str = "") -> List[Tuple[str, str, None]]:
 
 
 if __name__ == '__main__':
-    ip = 192.168.
+    autodiscover_knauer()
 
