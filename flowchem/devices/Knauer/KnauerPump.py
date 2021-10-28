@@ -9,7 +9,6 @@ from enum import Enum
 from flowchem.constants import DeviceError
 from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
 
-
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 PMIN10 = "PMIN10"  # 0-400 in 0.1 MPa, use to avoid dryrunning
 PMIN50 = "PMIN50"  # 0-150 in 0.1 MPa, use to avoid dryrunning
@@ -186,15 +185,13 @@ class KnauerPump(KnauerEthernetDevice):
     async def get_flow(self):
         """Gets flow rate."""
         flow = await self.create_and_send_command(FLOW)
-        print(flow)
-
+        self.logger.debug(f"Flow rate set to {flow} ml/min")
 
     async def set_flow(self, setpoint_in_ml_min: float = None):
         """
         Sets flow rate.
 
         :param setpoint_in_ml_min: in mL/min
-        :return: nothing
         """
         set_flowrate_ul_min = int(setpoint_in_ml_min * 1000)
         flow = await self.create_and_send_command(
@@ -204,32 +201,41 @@ class KnauerPump(KnauerEthernetDevice):
         )
         self.logger.info(f"Flow set to {setpoint_in_ml_min}, returns {flow}")
 
-    async def set_minimum_pressure(self, pressure_in_bar=None):
+    async def get_minimum_pressure(self, pressure_in_bar=None):
+        """ Gets minimum pressure. The pumps stops if the measured P is lower than this. """
 
         command = PMIN10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMIN50
+        return await self.create_and_send_command(command)
 
-        reply = await self.create_and_send_command(
-            command,
+    async def set_minimum_pressure(self, pressure_in_bar=None):
+        """ Sets minimum pressure. The pumps stops if the measured P is lower than this. """
+
+        command = PMIN10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMIN50
+        await self.create_and_send_command(command,
             setpoint=pressure_in_bar,
             setpoint_range=(0, self.max_pressure + 1),
         )
+        logging.info(f"Minimum pressure set to {pressure_in_bar}")
 
-        logging.info(f"Minimum pressure set to {pressure_in_bar}, returns {reply}")
+    async def get_maximum_pressure(self):
+        """ Gets maximum pressure. The pumps stops if the measured P is higher than this. """
+
+        command = PMAX10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMAX50
+        return await self.create_and_send_command(command)
 
     async def set_maximum_pressure(self, pressure_in_bar=None):
-        command = PMAX10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMAX50
+        """ Sets maximum pressure. The pumps stops if the measured P is higher than this. """
 
-        reply = await self.create_and_send_command(
+        command = PMAX10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMAX50
+        await self.create_and_send_command(
             command,
             setpoint=pressure_in_bar,
             setpoint_range=(0, self.max_pressure + 1),
         )
-
-        logging.info(
-            f"Maximum pressure of pump {self.ip_address} is set to {pressure_in_bar}, returns {reply}"
-        )
+        logging.info(f"Maximum pressure set to {pressure_in_bar}")
 
     async def set_minimum_motor_current(self, setpoint=None):
+        """ Sets minimum motor current. """
         command = IMIN10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else IMIN50
 
         reply = await self.create_and_send_command(
@@ -237,13 +243,30 @@ class KnauerPump(KnauerEthernetDevice):
         )
         self.logger.debug(f"Minimum motor current set to {setpoint}, returns {reply}")
 
-    async def set_start_level(self, setpoint=None):
-        reply = await self.create_and_send_command(
-            STARTLEVEL, setpoint=setpoint, setpoint_range=(0, 2)
-        )
-        self.logger.debug(f"Start level set to {setpoint}, returns {reply}")
+    async def is_start_in_required(self):
+        """
+        Check state of START IN. See require_start_in() for details.
+        """
+        runlevel = await self.create_and_send_command(STARTLEVEL)
+        return not bool(int(runlevel))
 
-    async def autostart(self, value: bool = True):
+    async def require_start_in(self, value: bool = True):
+        """
+        Configures START IN. If required, the pump starts only if the STARTIN pin is shortened to GND.
+
+        True = Pump starts the flow at short circuit contact only. (Start In <> Ground). [0]
+        False = Pump starts the flow without a short circuit contact. (Start In <> Ground). [1]
+        """
+        setpoint = int(not value)
+        await self.create_and_send_command(STARTLEVEL, setpoint=setpoint)
+        self.logger.debug(f"Start in required set to {value}")
+
+    async def is_autostart_enabled(self):
+        """ Returns the default behaviour of the pump upon power on. """
+        reply = await self.create_and_send_command(STARTMODE)
+        return bool(int(reply))
+
+    async def enable_autostart(self, value: bool = True):
         """
         Sets the default behaviour of the pump upon power on.
 
@@ -253,14 +276,27 @@ class KnauerPump(KnauerEthernetDevice):
         await self.create_and_send_command(STARTMODE, setpoint=int(value))
         self.logger.debug(f"Autostart set to {value}")
 
+    async def get_adjusting_factor(self):
+        """ Gets the adjust parameter. Not clear what it is. """
+        command = ADJ10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else ADJ50
+        reply = await self.create_and_send_command(command)
+        return int(reply)
+
     async def set_adjusting_factor(self, setpoint: int = None):
+        """ Sets the adjust parameter. Not clear what it is. """
         command = ADJ10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else ADJ50
         reply = await self.create_and_send_command(
             command, setpoint=setpoint, setpoint_range=(0, 2001)
         )
         self.logger.debug(f"Adjusting factor of set to {setpoint}, returns {reply}")
 
+    async def get_correction_factor(self):
+        """ Gets the correction factor. Not clear what it is. """
+        command = CORR10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else CORR50
+        return int(await self.create_and_send_command(command))
+
     async def set_correction_factor(self, setpoint=None):
+        """ Sets the correction factor. Not clear what it is. """
         command = CORR10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else CORR50
         reply = await self.create_and_send_command(command, setpoint=setpoint, setpoint_range=(0, 301))
         self.logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
@@ -282,6 +318,7 @@ class KnauerPump(KnauerEthernetDevice):
         return last_5_errors
 
     async def read_motor_current(self):
+        """ Returns motor current, relative in percent 0-100. """
         current_percent = int(await self.create_and_send_command(IMOTOR))
         self.logger.debug(f"Motor current reading returns {current_percent} %")
         return current_percent
@@ -317,11 +354,19 @@ class KnauerPump(KnauerEthernetDevice):
         await self.create_and_send_command(ERRIO, setpoint=int(param))
         self.logger.debug(f"Set errio {param}")
 
-    async def set_extcontrol(self, param: int):
-        """ External control likely refers to the pump analog input. """
-        await self.create_and_send_command(EXTCONTR, setpoint=int(param))
-        self.logger.debug(f"Set external control to {param}")
+    async def is_analog_control_enabled(self):
+        """ Returns the status of the external flow control via analog input. """
+        reply = await self.create_and_send_command(EXTCONTR)
+        return bool(int(reply))
 
+    async def enable_analog_control(self, value: bool):
+        """ External flow control via analog input.
+
+        False = prevents external flow control. [0]
+        True = allows the flow rate control via analog input 0 - 10V (10ml: 1 V = 1 ml/min, 50ml: 1 V = 5 ml/min). [1]
+        """
+        await self.create_and_send_command(EXTCONTR, setpoint=int(value))
+        self.logger.debug(f"External control set to {value}")
 
 if __name__ == '__main__':
     # This is a bug of asyncio on Windows :|
