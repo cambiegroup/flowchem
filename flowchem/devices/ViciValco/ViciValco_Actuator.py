@@ -12,7 +12,7 @@ from flowchem.constants import InvalidConfiguration, ActuationError
 
 @dataclass
 class ViciProtocolCommandTemplate:
-    """ Class representing a pump command and its expected reply, but without target pump number """
+    """ Class representing a valve command and its expected reply, but without target valve number """
 
     command: str
     optional_parameter: str = ""
@@ -20,7 +20,7 @@ class ViciProtocolCommandTemplate:
     def to_valve(
         self, address: int, command_value: str = "", argument_value: str = ""
     ) -> ViciProtocolCommand:
-        """ Returns a Protocol11Command by adding to the template pump address and command arguments """
+        """ Returns a Protocol11Command by adding to the template valve address and command arguments """
         return ViciProtocolCommand(
             target_valve_num=address,
             command=self.command,
@@ -32,7 +32,7 @@ class ViciProtocolCommandTemplate:
 
 @dataclass
 class ViciProtocolCommand(ViciProtocolCommandTemplate):
-    """ Class representing a pump command and its expected reply """
+    """ Class representing a valve command and its expected reply """
 
     target_valve_num: Optional[int] = 1
     command_value: Optional[str] = None
@@ -69,16 +69,16 @@ class ViciValcoValveIO:
 
     def __init__(self, aio_port: aioserial.Serial, hw_initialization: bool = True):
         """
-        Initialize communication on the serial port where the pumps are located and initialize them
+        Initialize communication on the serial port where the valves are located and initialize them
         Args:
             aio_port: aioserial.Serial() object
-            hw_initialization: Whether each pumps has to be initialized. Note that this might be undesired!
+            hw_initialization: Whether each valves has to be initialized. Note that this might be undesired!
         """
 
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self._serial = aio_port
 
-        # This has to be run after each power cycle to assign addresses to pumps
+        # This has to be run after each power cycle to assign addresses to valves
 
         self.num_valve_connected = self.detect_valve_address()
 
@@ -101,6 +101,7 @@ class ViciValcoValveIO:
 
     def detect_valve_address(self) -> int:
         """
+        detects number of valves connected
         """
         try:
             self._serial.write("*ID\r".encode("ascii"))  # Do not use async here as it is called during init()
@@ -111,11 +112,11 @@ class ViciValcoValveIO:
 
             reply = self._serial.readlines()
             1/len(reply)
-            self.logger.debug(f"Found {len(reply)} pumps on {self._serial.port}!")
+            self.logger.debug(f"Found {len(reply)} valves on {self._serial.port}!")
             return len(reply)
 
         except ZeroDivisionError:
-            raise InvalidConfiguration(f"No pump found on {self._serial.port}")
+            raise InvalidConfiguration(f"No valve found on {self._serial.port}")
 
     def _hw_init(self):
         """ Send to all valves the HW initialization command (i.e. homing) """
@@ -161,49 +162,39 @@ class ViciValcoValveIO:
         self._serial.reset_input_buffer()
 
     def write_and_read_reply(self, command: ViciProtocolCommand, lines) -> str:
-        """ Sends a command to the pump, read the replies and returns it, optionally parsed """
+        """ Sends a command to the valve, read the replies and returns it, optionally parsed """
         self.reset_buffer()
         self._write(command.compile())
         response = self._read_reply(lines)
 
         if not response:
             raise InvalidConfiguration(
-                f"No response received from pump, check pump address! "
+                f"No response received from valve, check valve address! "
                 f"(Currently set to {command.target_valve_num})"
             )
 
         return self.parse_response(response)
 
     async def write_and_read_reply_async(self, command: ViciProtocolCommand, lines) -> str:
-        """ Main HamiltonPumpIO method.
-        Sends a command to the pump, read the replies and returns it, optionally parsed """
+        """ Main ViciValcoValveIO method.
+        Sends a command to the valve, read the replies and returns it, optionally parsed """
         self.reset_buffer()
         await self._write_async(command.compile())
         response = await self._read_reply_async(lines)
 
         if not response:
             raise InvalidConfiguration(
-                f"No response received from pump, check pump address! "
+                f"No response received from valve, check valve address! "
                 f"(Currently set to {command.target_valve_num})"
             )
 
         return self.parse_response(response)
 
-    def write_wo_reply(self, command: ViciProtocolCommand) -> None:
-        """ Sends a command to the valve and doesn't read reply (a lot of commands don't yield replies)"""
-        self.reset_buffer()
-        self._write(command.compile())
-
-    async def write_wo_reply_async(self, command: ViciProtocolCommand) -> None:
-        """ Main HamiltonPumpIO method.
-        Sends a command to the pump, read the replies and returns it, optionally parsed """
-        self.reset_buffer()
-        await self._write_async(command.compile())
 
 
     @property
     def name(self) -> str:
-        """ This is used to provide a nice-looking default name to pumps based on their serial connection. """
+        """ This is used to provide a nice-looking default name to valves based on their serial connection. """
         try:
             return self._serial.name
         except AttributeError:
@@ -213,10 +204,10 @@ class ViciValco:
     """"
     """
 
-    # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
+    # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
     _io_instances = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
-    # When several pumps are daisy chained on the same serial port, they need to all access the same Serial object,
+    # When several valves are daisy chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
 
@@ -233,24 +224,24 @@ class ViciValco:
         Default constructor, needs an ViciValcoValveIO object. See from_config() class method for config-based init.
         Args:
             valve_io: An ViciValcoValveIO w/ serial connection to the daisy chain w/ target valve.
-            address: number of pump in array, 1 for first one, auto-assigned on init based on position.
+            address: number of valve in array, 1 for first one, auto-assigned on init based on position.
             name: 'cause naming stuff is important.
         """
         # ViciValcoValveIO
         self.valve_io = valve_io
         ViciValco._io_instances.add(self.valve_io)  # See above for details.
 
-        # Pump address is the pump sequence number if in chain. Count starts at 1, default.
+        # valve address is the valve sequence number if in chain. Count starts at 1, default.
         self.address = int(address)
 
-        # The pump name is used for logs and error messages.
+        # The valve name is used for logs and error messages.
         self.name = f"Valve {self.valve_io.name}:{address}" if name is None else name
 
-        # Syringe pumps only perform linear movement, and the volume displaced is function of the syringe loaded.
+        # Syringe valves only perform linear movement, and the volume displaced is function of the syringe loaded.
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
-        # Test connectivity by querying the pump's firmware version
+        # Test connectivity by querying the valve's firmware version
         fw_cmd = ViciProtocolCommandTemplate(command="VR").to_valve(self.address)
         firmware_version = self.valve_io.write_and_read_reply(fw_cmd, lines=5)
         self.log.info(f"Connected to Vici Valve {self.name} - FW version: {firmware_version}!")
@@ -258,11 +249,11 @@ class ViciValco:
     @classmethod
     def from_config(cls, config):
         """ This class method is used to create instances via config file by the server for HTTP interface. """
-        # Many pump can be present on the same serial port with different addresses.
-        # This shared list of HamiltonPumpIO objects allow shared state in a borg-inspired way, avoiding singletons
-        # This is only relevant to programmatic instantiation, i.e. when from_config() is called per each pump from a
+        # Many valve can be present on the same serial port with different addresses.
+        # This shared list of ViciValcoValveIO objects allow shared state in a borg-inspired way, avoiding singletons
+        # This is only relevant to programmatic instantiation, i.e. when from_config() is called per each valve from a
         # config file, as it is the case in the HTTP server.
-        # HamiltonPump_IO() manually instantiated are not accounted for.
+        # ViciValcoValve_IO() manually instantiated are not accounted for.
         valveio = None
         for obj in ViciValco._io_instances:
             if obj._serial.port == config.get("port"):
@@ -284,36 +275,26 @@ class ViciValco:
         argument_value="",
         lines=1
     ) -> str:
-        """ Sends a command based on its template by adding pump address and parameters, returns reply """
+        """ Sends a command based on its template by adding valve address and parameters, returns reply """
         return await self.valve_io.write_and_read_reply_async(
             command_template.to_valve(self.address, command_value, argument_value), lines
         )
 
 
-    async def send_command_wo_reply(
-        self,
-        command_template: ViciProtocolCommandTemplate,
-        command_value="",
-        argument_value="",
-    ) -> None:
-        """ Sends a command based on its template by adding pump address and parameters"""
-        await self.valve_io.write_wo_reply_async(
-            command_template.to_valve(self.address, command_value, argument_value)
-        )
 
     async def learn_valve_positions(self) -> None:
-        """ Initialize valve only """
-        await self.send_command_wo_reply(ViciProtocolCommandTemplate(command="LRN"))
+        """ Initialize valve only, there is no reply -> lines = 0 """
+        await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="LRN"), lines=0)
 
     async def initialize_valve(self) -> None:
         """ Initialize valve only: Move to Home position """
-        await self.send_command_wo_reply(ViciProtocolCommandTemplate(command="HM"))
+        await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="HM"), lines=0)
         # seems necessary to make sure move is finished
         await self.get_valve_position()
 
 
     async def version(self) -> str:
-        """ Returns the current firmware version reported by the pump. """
+        """ Returns the current firmware version reported by the valve. """
 
         return await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="VR"), lines=5)
 
@@ -328,7 +309,7 @@ class ViciValco:
 
         """
         valve_by_name_cw = ViciProtocolCommandTemplate(command="GO")
-        await self.send_command_wo_reply(valve_by_name_cw, command_value=str((target_position)))
+        await self.send_command_and_read_reply(valve_by_name_cw, command_value=str(target_position), lines=0)
         self.log.debug(f"{self.name} valve position set to {target_position}")
         new_position = await self.get_valve_position()
         if not new_position == target_position:
