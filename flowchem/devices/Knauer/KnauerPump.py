@@ -61,24 +61,6 @@ class KnauerPump(KnauerEthernetDevice):
         # Here it is checked that the device is a pump and not a valve
         await self.get_headtype()
 
-    async def get_headtype(self):
-        head_type_id = await self.message_constructor_dispatcher(HEADTYPE)
-        try:
-            headtype = KnauerPumpHeads(int(head_type_id))
-        except ValueError as e:
-            raise DeviceError(
-                "It seems you're trying instantiate an unknown device/unknown pump type as Knauer Pump."
-                "Only Knauer Azura Compact is supported"
-            ) from e
-        logging.info(f"Head type of pump {self.ip_address} is {headtype}")
-
-        if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML:
-            self.max_pressure, self.max_flow = 400, 10000
-        elif headtype == KnauerPumpHeads.FLOWRATE_FIFTY_ML:
-            self.max_pressure, self.max_flow = 150, 50000
-
-        return headtype
-
     @staticmethod
     def error_present(reply: str) -> bool:
         """ True if there are errors, False otherwise. Warns for errors. """
@@ -96,7 +78,7 @@ class KnauerPump(KnauerEthernetDevice):
             warnings.warn("Unspecified error detected!")
         return True
 
-    async def communicate(self, message: str) -> str:
+    async def _communicate(self, message: str) -> str:
         """
         sends command and receives reply, deals with all communication based stuff and checks
         that the valve is of expected type
@@ -127,25 +109,65 @@ class KnauerPump(KnauerEthernetDevice):
         return reply
 
     # read and write. write: append ":value", read: append "?"
-    def message_constructor_dispatcher(
+    async def message_constructor_dispatcher(
         self, message, setpoint: int = None, setpoint_range: tuple = None
     ):
+        """
+        Create and sends a message from the command.
 
+        If setpoint is given, then the command is appended with :value
+        If not setpoint is given, a "?" is added for getter syntax
+
+        e.g. message = "HEADTYPE"
+        no setpoint -> sends "HEADTYPE?"
+        w/ setpoint -> sends "HEADTYPE:<setpoint_value>"
+        """
+
+        # GETTER
         if not setpoint:
-            return self.communicate(message + "?")
+            return await self._communicate(message + "?")
 
-        elif setpoint_range:
+        # SETTER with range
+        if setpoint_range:
             if setpoint in range(*setpoint_range):
-                return self.communicate(message + ":" + str(setpoint))
+                return await self._communicate(message + ":" + str(setpoint))
 
-            else:
-                DeviceError(
-                    f"Internal check shows that setpoint provided ({setpoint}) is not in range ({setpoint_range})."
-                    f"Refer to manual."
-                )
+            warnings.warn(f"The setpoint provided {setpoint} is not valid for the command "
+                          f"{message}!\n Accepted range is: {setpoint_range}.\n"
+                          f"Command ignored")
+            return ""
 
+        # SETTER w/o range
         else:
-            return self.communicate(message + ":" + str(setpoint))
+            return await self._communicate(message + ":" + str(setpoint))
+
+    async def get_headtype(self):
+        head_type_id = await self.message_constructor_dispatcher(HEADTYPE)
+        try:
+            headtype = KnauerPumpHeads(int(head_type_id))
+        except ValueError as e:
+            raise DeviceError(
+                "It seems you're trying instantiate an unknown device/unknown pump type as Knauer Pump."
+                "Only Knauer Azura Compact is supported"
+            ) from e
+        logging.info(f"Head type of pump {self.ip_address} is {headtype}")
+
+        if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML:
+            self.max_pressure, self.max_flow = 400, 10000
+        elif headtype == KnauerPumpHeads.FLOWRATE_FIFTY_ML:
+            self.max_pressure, self.max_flow = 150, 50000
+
+        return headtype
+
+    async def set_headtype(self, head_type: KnauerPumpHeads):
+        await self.message_constructor_dispatcher(HEADTYPE, setpoint=head_type.value)
+
+        self.max_pressure, self.max_flow = (
+            (400, 10000)
+            if head_type == KnauerPumpHeads.FLOWRATE_TEN_ML
+            else (150, 50000)
+        )
+        logging.info(f"Head type set to {head_type}")
 
     def set_flow(self, setpoint_in_ml_min: float = None):
         """
@@ -161,37 +183,6 @@ class KnauerPump(KnauerEthernetDevice):
         )
         logging.info(
             f"Flow of pump {self.ip_address} is set to {setpoint_in_ml_min}, returns {flow}"
-        )
-
-    @property
-    def headtype(self):
-        reply = int(self.message_constructor_dispatcher(HEADTYPE)[-2:])
-        try:
-            headtype = KnauerPumpHeads(reply)
-        except ValueError as e:
-            raise DeviceError(
-                "It seems you're trying instantiate an unknown device/unknown pump type as Knauer Pump."
-                "Only Knauer Azura Compact is supported"
-            ) from e
-
-        logging.info(f"Head type of pump {self.ip_address} is {headtype}")
-        self.max_pressure, self.max_flow = (
-            (400, 10000)
-            if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML
-            else (150, 50000)
-        )
-        return headtype
-
-    @headtype.setter
-    def headtype(self, setpoint: KnauerPumpHeads):
-        reply = self.message_constructor_dispatcher(HEADTYPE, setpoint=setpoint.value)
-        self.max_pressure, self.max_flow = (
-            (400, 10000)
-            if setpoint == KnauerPumpHeads.FLOWRATE_TEN_ML
-            else (150, 50000)
-        )
-        logging.info(
-            f"Head type of pump {self.ip_address} is set to {setpoint}, returns {reply}"
         )
 
     def set_minimum_pressure(self, pressure_in_bar=None):
@@ -273,46 +264,46 @@ class KnauerPump(KnauerEthernetDevice):
 
     # read only
     def read_pressure(self):
-        reply = int(self.communicate(PRESSURE))
+        reply = int(self._communicate(PRESSURE))
         logging.info(f"Pressure reading of pump {self.ip_address} returns {reply} bar")
         return reply
 
     def read_extflow(self):
-        reply = int(self.communicate(EXTFLOW))
+        reply = int(self._communicate(EXTFLOW))
         logging.info(f"Extflow reading of pump {self.ip_address} returns {reply}")
         return reply
 
     def read_errors(self):
-        reply = self.communicate(ERRORS)
+        reply = self._communicate(ERRORS)
         logging.info(f"Error reading of pump {self.ip_address} returns {reply}")
         return reply
 
     def read_motor_current(self):
-        reply = int(self.communicate(IMOTOR))
+        reply = int(self._communicate(IMOTOR))
         logging.info(f"Motor current reading of pump {self.ip_address} returns {reply} A")
         return reply
 
     # TODO run flag
     # write only
     def start_flow(self):
-        self.communicate(PUMP_ON)
+        self._communicate(PUMP_ON)
         logging.info("Pump switched on")
 
     def stop_flow(self):
-        self.communicate(PUMP_OFF)
+        self._communicate(PUMP_OFF)
         logging.info("Pump switched off")
 
     def set_local(self, param: int):
         if param in (0, 1):
             logging.info(f"Pump {self.ip_address} set local {param}")
-            self.communicate(LOCAL + ":" + str(param))
+            self._communicate(LOCAL + ":" + str(param))
         else:
             logging.warning("Supply binary value")
 
     def set_remote(self, param: int):
         if param in (0, 1):
             logging.info(f"Pump {self.ip_address} set remote {param}")
-            self.communicate(REMOTE + ":" + str(param))
+            self._communicate(REMOTE + ":" + str(param))
         else:
             logging.warning("Supply binary value")
 
@@ -320,14 +311,14 @@ class KnauerPump(KnauerEthernetDevice):
     def set_errio(self, param: int):
         if param in (0, 1):
             logging.info(f"Pump {self.ip_address} set errio {param}")
-            self.communicate(ERRIO + ":" + str(param))
+            self._communicate(ERRIO + ":" + str(param))
         else:
             logging.warning("Supply binary value")
 
     def set_extcontrol(self, param: int):
         if param in (0, 1):
             logging.info(f"Pump {self.ip_address} set extcontrol {param}")
-            self.communicate(EXTCONTR + ":" + str(param))
+            self._communicate(EXTCONTR + ":" + str(param))
         else:
             logging.warning("Supply binary value")
 
@@ -345,4 +336,13 @@ if __name__ == '__main__':
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
     p = KnauerPump(ip_address="192.168.1.126")
-    asyncio.run(p.initialize())
+
+    async def main(pump: KnauerPump):
+        await pump.initialize()
+        await pump.set_headtype(head_type=KnauerPumpHeads.FLOWRATE_FIFTY_ML)
+        X =await pump.get_headtype()
+        print(X)
+        await pump.set_headtype(head_type=KnauerPumpHeads.FLOWRATE_TEN_ML)
+        Y= await pump.get_headtype()
+        print(Y)
+    asyncio.run(main(p))
