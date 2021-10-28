@@ -11,7 +11,10 @@ Address = Tuple[str, int]
 
 async def get_device_type(ip_address: str) -> str:
     """ Returns either 'Pump', 'Valve' or 'Unknown' """
-    reader, writer = await asyncio.open_connection(host=ip_address, port=10001)
+    try:
+        reader, writer = await asyncio.open_connection(host=ip_address, port=10001)
+    except ConnectionError:
+        return "ConnectionError"
 
     # Test Pump
     writer.write("HEADTYPE:?\n\r".encode())
