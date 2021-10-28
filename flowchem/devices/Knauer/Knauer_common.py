@@ -26,6 +26,15 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
         hostname = socket.gethostname()
         source_ip = socket.gethostbyname(hostname)
 
+    async def se():
+        reader, writer = await asyncio.open_connection(host="192.168.1.176", port=10001)
+        writer.write("REMOTE:1\n\r".encode())
+        print("wrote")
+        s = await reader.read(100)
+        print(s)
+        writer.close()
+
+
     # Create a UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((source_ip, 28688))
@@ -159,7 +168,7 @@ class KnauerEthernetDevice:
 
 
 if __name__ == "__main__":
-    # print(autodiscover_knauer("192.168.1.1"))
+    print(autodiscover_knauer("192.168.1.1"))
     import asyncio
     async def main():
         reader, writer = await asyncio.open_connection(host="192.168.1.176", port=10001)
