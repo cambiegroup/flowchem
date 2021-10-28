@@ -49,6 +49,8 @@ def create_server_from_config(config: Union[Path, Dict]) -> Tuple[FastAPI, Serve
         with config.open() as stream:
             config = yaml.safe_load(stream)
 
+    # FIXME add schema validation
+
     # FastAPI server
     app = FastAPI(title="flowchem", version=flowchem.__version__)
 

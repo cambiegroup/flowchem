@@ -1,7 +1,6 @@
-""" Sync implementation of FlowIR """
+""" Async implementation of FlowIR """
 
 import datetime
-import time
 import warnings
 import logging
 from typing import List, Optional
@@ -9,43 +8,46 @@ from typing import List, Optional
 from flowchem.constants import DeviceError
 from flowchem.devices.MettlerToledo.iCIR_common import IRSpectrum
 
+import asyncio
+import asyncua.ua.uaerrors
 from asyncua import ua
 from asyncua.ua.uaerrors import BadOutOfService, Bad
-import asyncua.sync as opcua
 
 from flowchem.devices.MettlerToledo.iCIR_common import iCIR_spectrometer, ProbeInfo
 
 
-class FlowIR_Sync(iCIR_spectrometer):
+class FlowIR(iCIR_spectrometer):
     """
     Object to interact with the iCIR software controlling the FlowIR and ReactIR.
     """
 
-    def __init__(self, client: opcua.Client):
+    def __init__(self, url: str = None):
         """
         Initiate connection with OPC UA server.
-        check_version() is executed upon init to check status.
+        Intended to be used as context-manager!
         """
-        self.log = logging.getLogger(__name__)
+        # Logger
+        self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
-        assert isinstance(client, opcua.Client)
+        # Default (local) url if none provided
+        if url is None:
+            url = "opc.tcp://localhost:62552/iCOpcUaServer"
 
-        self.opcua = client
-        self.probe = None
+        self.opcua = asyncua.Client(url)
         self.version = None
 
-        # Initialize and check connection
-        self.opcua.connect()
-        self.check_version()
+    async def initialize(self):
+        """ Initialize and check connection """
+        try:
+            await self.opcua.connect()
+        except asyncio.TimeoutError:
+            raise DeviceError(f"Could not connect to FlowIR on {self.opcua.server_url}!")
+        await self.check_version()
 
-    def __del__(self):
-        """ Terminate connection on exit """
-        self.opcua.disconnect()
-
-    def check_version(self):
+    async def check_version(self):
         """ Check if iCIR is installed and open and if the version is supported. """
         try:
-            self.version = self.opcua.get_node(
+            self.version = await self.opcua.get_node(
                 self.SOFTWARE_VERSION
             ).get_value()  # "7.1.91.0"
             if self.version not in self._supported_versions:
@@ -59,99 +61,107 @@ class FlowIR_Sync(iCIR_spectrometer):
             ) from e
 
     # noinspection PyPep8Naming
-    def is_iCIR_connected(self) -> bool:
+    async def is_iCIR_connected(self) -> bool:
         """ Check connection with instrument """
-        return self.opcua.get_node(self.CONNECTION_STATUS).get_value()
+        return await self.opcua.get_node(self.CONNECTION_STATUS).get_value()
 
-    def probe_info(self) -> ProbeInfo:
+    async def probe_info(self) -> ProbeInfo:
         """ Return FlowIR probe information """
-        probe_info = self.opcua.get_node(self.PROBE_DESCRIPTION).get_value()
+        probe_info = await self.opcua.get_node(self.PROBE_DESCRIPTION).get_value()
         return self.parse_probe_info(probe_info)
 
-    def probe_status(self) -> str:
+    async def probe_status(self):
         """ Returns current probe status """
-        return self.opcua.get_node(self.PROBE_STATUS).get_value()
+        return await self.opcua.get_node(self.PROBE_STATUS).get_value()
 
-    def is_running(self) -> bool:
+    async def is_running(self) -> bool:
         """ Is the probe currently measuring? """
-        return self.probe_status() == "Running"
+        return await self.probe_status() == "Running"
 
-    def last_sample_time(self) -> datetime.datetime:
+    async def last_sample_time(self) -> datetime.datetime:
         """ Returns date/time of latest scan """
-        return self.opcua.get_node(self.LAST_SAMPLE_TIME).get_value()
+        return await self.opcua.get_node(self.LAST_SAMPLE_TIME).get_value()
 
-    def sample_count(self) -> Optional[int]:
+    async def sample_count(self) -> Optional[int]:
         """ Sample count (integer autoincrement) watch for changes to ensure latest spectrum is recent """
-        return self.opcua.get_node(self.SAMPLE_COUNT).get_value()
+        return await self.opcua.get_node(self.SAMPLE_COUNT).get_value()
 
     @staticmethod
-    def _wavenumber_from_spectrum_node(node) -> List[float]:
+    async def _wavenumber_from_spectrum_node(node) -> List[float]:
         """ Gets the X-axis value of a spectrum. This is necessary as they change e.g. with resolution. """
-        x_axis = node.get_properties()[0].get_value()
+        node_property = await node.get_properties()
+        x_axis = await node_property[0].get_value()
         return x_axis.AxisSteps
 
     @staticmethod
-    def spectrum_from_node(node) -> IRSpectrum:
+    async def spectrum_from_node(node) -> IRSpectrum:
         """ Given a Spectrum node returns it as IRSpectrum """
         try:
-            intensity = node.get_value()
-            wavenumber = FlowIR_Sync._wavenumber_from_spectrum_node(node)
+            intensity = await node.get_value()
+            wavenumber = await FlowIR._wavenumber_from_spectrum_node(node)
             return IRSpectrum(wavenumber=wavenumber, intensity=intensity)
+
         except BadOutOfService:
             return IRSpectrum(wavenumber=[], intensity=[])
 
-    def last_spectrum_treated(self) -> IRSpectrum:
+    async def last_spectrum_treated(self) -> IRSpectrum:
         """ Returns an IRSpectrum element for the last acquisition """
-        return FlowIR_Sync.spectrum_from_node(self.opcua.get_node(self.SPECTRA_TREATED))
+        return await FlowIR.spectrum_from_node(
+            self.opcua.get_node(self.SPECTRA_TREATED)
+        )
 
-    def last_spectrum_raw(self) -> IRSpectrum:
+    async def last_spectrum_raw(self) -> IRSpectrum:
         """ RAW result latest scan """
-        return FlowIR_Sync.spectrum_from_node(self.opcua.get_node(self.SPECTRA_RAW))
+        return await FlowIR.spectrum_from_node(
+            self.opcua.get_node(self.SPECTRA_RAW)
+        )
 
-    def last_spectrum_background(self) -> IRSpectrum:
+    async def last_spectrum_background(self) -> IRSpectrum:
         """ RAW result latest scan """
-        return FlowIR_Sync.spectrum_from_node(
+        return await FlowIR.spectrum_from_node(
             self.opcua.get_node(self.SPECTRA_BACKGROUND)
         )
 
-    def start_experiment(self, template: str, name: str = "Unnamed flowchem exp."):
-        template = FlowIR_Sync._normalize_template_name(template)
-        if self.is_local() and FlowIR_Sync.is_template_name_valid(template) is False:
+    async def start_experiment(
+        self, template: str, name: str = "Unnamed flowchem exp."
+    ):
+        template = FlowIR._normalize_template_name(template)
+        if self.is_local() and FlowIR.is_template_name_valid(template) is False:
             raise DeviceError(
                 f"Cannot start template {template}: name not valid! Check if is in: "
                 r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
             )
-        if self.is_running():
+        if await self.is_running():
             warnings.warn(
                 "I was asked to start an experiment while a current experiment is already running!"
                 "I will have to stop that first! Sorry for that :)"
             )
             # Stop running experiment and wait for the spectrometer to be ready
-            self.stop_experiment()
-            self.wait_until_idle()
+            await self.stop_experiment()
+            await self.wait_until_idle()
 
         start_xp_nodeid = self.opcua.get_node(self.START_EXPERIMENT).nodeid
         method_parent = self.opcua.get_node(self.METHODS)
         try:
             # Collect_bg does not seem to work in automation, set to false and do not expose in start_experiment()!
             collect_bg = False
-            method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
+            await method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
         except Bad as e:
             raise DeviceError(
-                "The experiment could not be started!"
+                "The experiment could not be started!\n"
                 "Check iCIR status and close any open experiment."
             ) from e
 
-    def stop_experiment(self):
+    async def stop_experiment(self):
         """ Stops the experiment currently running (it does not imply instrument is then idle, wait for scan end) """
         method_parent = self.opcua.get_node(self.METHODS)
         stop_nodeid = self.opcua.get_node(self.STOP_EXPERIMENT).nodeid
-        method_parent.call_method(stop_nodeid)
+        await method_parent.call_method(stop_nodeid)
 
-    def wait_until_idle(self):
+    async def wait_until_idle(self):
         """ Waits until no experiment is running. """
-        while self.is_running:
-            time.sleep(0.2)
+        while await self.is_running():
+            await asyncio.sleep(0.2)
 
     def get_router(self):
         """ Creates an APIRouter for this HuberChiller instance. """
@@ -173,31 +183,39 @@ class FlowIR_Sync(iCIR_spectrometer):
 
 
 if __name__ == "__main__":
-    opcua_client = opcua.Client(
-        url=FlowIR_Sync.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121"),
-        timeout=10
-    )
-    ir_spectrometer = FlowIR_Sync(opcua_client)
-    if ir_spectrometer.is_iCIR_connected():
-        print("FlowIR connected!")
-    else:
-        raise ConnectionError("FlowIR not connected :(")
-
-    template_name = "15_sec_integration.iCIRTemplate"
-    ir_spectrometer.start_experiment(name="reaction_monitoring", template=template_name)
-
-    spectrum = ir_spectrometer.last_spectrum_treated()
-    while len(spectrum.intensity) == 0:
-        spectrum = ir_spectrometer.last_spectrum_treated()
-
-    for x in range(3):
-        spectra_count = ir_spectrometer.sample_count()
-
-        while ir_spectrometer.sample_count() == spectra_count:
-            time.sleep(1)
-
-        print("New spectrum!")
-        spectrum = ir_spectrometer.last_spectrum_treated()
-        print(spectrum)
-
-    ir_spectrometer.stop_experiment()
+    ...
+    # async def main():
+    #     opcua_client = asyncua.Client(
+    #         url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
+    #     )
+    #
+    #     async with FlowIR(opcua_client) as ir_spectrometer:
+    #         await ir_spectrometer.check_version()
+    #
+    #         if await ir_spectrometer.is_iCIR_connected():
+    #             print("FlowIR connected!")
+    #         else:
+    #             raise ConnectionError("FlowIR not connected :(")
+    #
+    #         template_name = "15_sec_integration.iCIRTemplate"
+    #         await ir_spectrometer.start_experiment(
+    #             name="reaction_monitoring", template=template_name
+    #         )
+    #
+    #         spectrum = await ir_spectrometer.last_spectrum_treated()
+    #         while len(spectrum.intensity) == 0:
+    #             spectrum = await ir_spectrometer.last_spectrum_treated()
+    #
+    #         for x in range(3):
+    #             spectra_count = await ir_spectrometer.sample_count()
+    #
+    #             while await ir_spectrometer.sample_count() == spectra_count:
+    #                 await asyncio.sleep(1)
+    #
+    #             print("New spectrum!")
+    #             spectrum = await ir_spectrometer.last_spectrum_treated()
+    #             print(spectrum)
+    #
+    #         await ir_spectrometer.stop_experiment()
+    #
+    # asyncio.run(main())
