@@ -86,7 +86,7 @@ class KnauerPump(KnauerEthernetDevice):
             warnings.warn("Unspecified error detected!")
         return True
 
-    async def _communicate(self, message: str) -> str:
+    async def _transmit_and_parse_reply(self, message: str) -> str:
         """
         sends command and receives reply, deals with all communication based stuff and checks
         that the valve is of expected type
@@ -116,8 +116,7 @@ class KnauerPump(KnauerEthernetDevice):
         warnings.warn(f"Unrecognized reply: {reply}")
         return reply
 
-    # read and write. write: append ":value", read: append "?"
-    async def message_constructor_dispatcher(
+    async def create_and_send_command(
         self, message, setpoint: int = None, setpoint_range: tuple = None
     ):
         """
@@ -133,12 +132,12 @@ class KnauerPump(KnauerEthernetDevice):
 
         # GETTER
         if not setpoint:
-            return await self._communicate(message + "?")
+            return await self._transmit_and_parse_reply(message + "?")
 
         # SETTER with range
         if setpoint_range:
             if setpoint in range(*setpoint_range):
-                return await self._communicate(message + ":" + str(setpoint))
+                return await self._transmit_and_parse_reply(message + ":" + str(setpoint))
 
             warnings.warn(f"The setpoint provided {setpoint} is not valid for the command "
                           f"{message}!\n Accepted range is: {setpoint_range}.\n"
@@ -147,7 +146,7 @@ class KnauerPump(KnauerEthernetDevice):
 
         # SETTER w/o range
         else:
-            return await self._communicate(message + ":" + str(setpoint))
+            return await self._transmit_and_parse_reply(message + ":" + str(setpoint))
 
     @property
     def _headtype(self):
@@ -164,7 +163,7 @@ class KnauerPump(KnauerEthernetDevice):
             self.max_pressure, self.max_flow = 150, 50000
 
     async def get_headtype(self):
-        head_type_id = await self.message_constructor_dispatcher(HEADTYPE)
+        head_type_id = await self.create_and_send_command(HEADTYPE)
         try:
             headtype = KnauerPumpHeads(int(head_type_id))
             # Sets internal property (changes max flowrate etc)
@@ -179,7 +178,7 @@ class KnauerPump(KnauerEthernetDevice):
         return headtype
 
     async def set_headtype(self, head_type: KnauerPumpHeads):
-        await self.message_constructor_dispatcher(HEADTYPE, setpoint=head_type.value)
+        await self.create_and_send_command(HEADTYPE, setpoint=head_type.value)
         # Update internal property (changes max flowrate etc)
         self._headtype = head_type
         self.logger.debug(f"Head type set to {head_type}")
@@ -192,7 +191,7 @@ class KnauerPump(KnauerEthernetDevice):
         :return: nothing
         """
         set_flowrate_ul_min = int(setpoint_in_ml_min * 1000)
-        flow = await self.message_constructor_dispatcher(
+        flow = await self.create_and_send_command(
             FLOW,
             setpoint=set_flowrate_ul_min,
             setpoint_range=(0, self.max_flow + 1),
@@ -203,7 +202,7 @@ class KnauerPump(KnauerEthernetDevice):
 
         command = PMIN10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMIN50
 
-        reply = await self.message_constructor_dispatcher(
+        reply = await self.create_and_send_command(
             command,
             setpoint=pressure_in_bar,
             setpoint_range=(0, self.max_pressure + 1),
@@ -214,7 +213,7 @@ class KnauerPump(KnauerEthernetDevice):
     async def set_maximum_pressure(self, pressure_in_bar=None):
         command = PMAX10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else PMAX50
 
-        reply = await self.message_constructor_dispatcher(
+        reply = await self.create_and_send_command(
             command,
             setpoint=pressure_in_bar,
             setpoint_range=(0, self.max_pressure + 1),
@@ -227,13 +226,13 @@ class KnauerPump(KnauerEthernetDevice):
     async def set_minimum_motor_current(self, setpoint=None):
         command = IMIN10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else IMIN50
 
-        reply = await self.message_constructor_dispatcher(
+        reply = await self.create_and_send_command(
             command, setpoint=setpoint, setpoint_range=(0, 101)
         )
         self.logger.debug(f"Minimum motor current set to {setpoint}, returns {reply}")
 
     async def set_start_level(self, setpoint=None):
-        reply = await self.message_constructor_dispatcher(
+        reply = await self.create_and_send_command(
             STARTLEVEL, setpoint=setpoint, setpoint_range=(0, 2)
         )
         self.logger.debug(f"Start level set to {setpoint}, returns {reply}")
@@ -245,51 +244,51 @@ class KnauerPump(KnauerEthernetDevice):
         :param value: False: pause pump after switch on. True: start pumping with previous flow rate at startup
         :return: device message
         """
-        await self.message_constructor_dispatcher(STARTMODE, setpoint=int(value))
+        await self.create_and_send_command(STARTMODE, setpoint=int(value))
         self.logger.debug(f"Autostart set to {value}")
 
     async def set_adjusting_factor(self, setpoint: int = None):
         command = ADJ10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else ADJ50
-        reply = await self.message_constructor_dispatcher(
+        reply = await self.create_and_send_command(
             command, setpoint=setpoint, setpoint_range=(0, 2001)
         )
         self.logger.debug(f"Adjusting factor of set to {setpoint}, returns {reply}")
 
     async def set_correction_factor(self, setpoint=None):
         command = CORR10 if self._headtype == KnauerPumpHeads.FLOWRATE_TEN_ML else CORR50
-        reply = await self.message_constructor_dispatcher(command, setpoint=setpoint, setpoint_range=(0, 301))
+        reply = await self.create_and_send_command(command, setpoint=setpoint, setpoint_range=(0, 301))
         self.logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
     async def read_pressure(self) -> int:
         """ If the pump has a pressure sensor, returns pressure. Read-only property of course. """
-        p_in_bar = await self._communicate(PRESSURE)
+        p_in_bar = await self._transmit_and_parse_reply(PRESSURE)
         self.logger.debug(f"Pressure measured = {p_in_bar} bar")
         return int(p_in_bar)
 
     async def read_extflow(self) -> float:
-        ext_flow = await self._communicate(EXTFLOW)
+        ext_flow = await self._transmit_and_parse_reply(EXTFLOW)
         self.logger.debug(f"Extflow reading returns {ext_flow}")
         return float(ext_flow)
 
     async def read_errors(self):
-        last_5_errors = await self.message_constructor_dispatcher(ERRORS)
+        last_5_errors = await self.create_and_send_command(ERRORS)
         self.logger.debug(f"Error reading returns {last_5_errors}")
         return last_5_errors
 
     async def read_motor_current(self):
-        current_percent = int(await self.message_constructor_dispatcher(IMOTOR))
+        current_percent = int(await self.create_and_send_command(IMOTOR))
         self.logger.debug(f"Motor current reading returns {current_percent} %")
         return current_percent
 
     async def start_flow(self):
         """ Starts flow """
-        await self._communicate(PUMP_ON)
+        await self._transmit_and_parse_reply(PUMP_ON)
         self._running = True
         logging.info("Pump switched on")
 
     async def stop_flow(self):
         """ Stops flow """
-        await self._communicate(PUMP_OFF)
+        await self._transmit_and_parse_reply(PUMP_OFF)
         self._running = False
         logging.info("Pump switched off")
 
@@ -299,22 +298,22 @@ class KnauerPump(KnauerEthernetDevice):
 
     async def set_local(self, state: bool = True):
         """ Relinquish remote control """
-        await self.message_constructor_dispatcher(LOCAL, setpoint=int(state))
+        await self.create_and_send_command(LOCAL, setpoint=int(state))
         self.logger.debug(f"Local control set to {state}")
 
     async def set_remote(self, state: bool = True):
         """ Set remote control on or off. """
-        await self.message_constructor_dispatcher(REMOTE, setpoint=int(state))
+        await self.create_and_send_command(REMOTE, setpoint=int(state))
         self.logger.debug(f"Remote control set to {state}")
 
     async def set_errio(self, param: bool):
         """ no idea what this exactly does... """
-        await self.message_constructor_dispatcher(ERRIO, setpoint=int(param))
+        await self.create_and_send_command(ERRIO, setpoint=int(param))
         self.logger.debug(f"Set errio {param}")
 
     async def set_extcontrol(self, param: int):
         """ External control likely refers to the pump analog input. """
-        await self.message_constructor_dispatcher(EXTCONTR, setpoint=int(param))
+        await self.create_and_send_command(EXTCONTR, setpoint=int(param))
         self.logger.debug(f"Set external control to {param}")
 
 
@@ -330,6 +329,5 @@ if __name__ == '__main__':
 
     async def main(pump: KnauerPump):
         await pump.initialize()
-        await pump.set_remote(False)
-        print(await pump.is_remote())
+
     asyncio.run(main(p))
