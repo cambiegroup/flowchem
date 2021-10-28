@@ -3,13 +3,39 @@ Knauer pump control.
 """
 
 import logging
+import warnings
 from enum import Enum
 
 from flowchem.constants import DeviceError
-from flowchem.devices.Knauer.KnauerValve import FLOW, PMIN10, PMIN50, PMAX10, PMAX50, IMIN10, IMIN50, HEADTYPE, STARTLEVEL, \
-    ERRIO, STARTMODE, ADJ10, ADJ50, CORR10, CORR50, EXTFLOW, IMOTOR, PRESSURE, ERRORS, EXTCONTR, LOCAL, REMOTE, PUMP_ON, \
-    PUMP_OFF
 from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
+
+
+FLOW = "FLOW"  # 0-50000 µL/min, int only!
+PMIN10 = "PMIN10"  # 0-400 in 0.1 MPa, use to avoid dryrunning
+PMIN50 = "PMIN50"  # 0-150 in 0.1 MPa, use to avoid dryrunning
+PMAX10 = "PMAX10"  # 0-400 in 0.1 MPa, chosen automatically by selecting pump head
+PMAX50 = "PMAX50"  # 0-150 in 0.1 MPa, chosen automatically by selecting pumphead
+IMIN10 = "IMIN10"  # 0-100 minimum motor current
+IMIN50 = "IMIN50"  # 0-100 minimum motor current
+HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
+STARTLEVEL = "STARTLEVEL"  # 0, 1 configures start. 0 -> only start pump when shorted to GND, 1 -> always allow start
+ERRIO = "ERRIO"  # 0, 1 write/read error in/output ??? sets errio either 1 or 0, reports errio:ok
+STARTMODE = "STARTMODE"  # 0, 1; 0=pause pump after switchon, 1=start immediatley with previous set flow rate
+ADJ10 = "ADJ10"  # 100-2000
+ADJ50 = "ADJ50"  # 100-2000
+CORR10 = "CORR10"  # 0-300
+CORR50 = "CORR50"  # 0-300
+EXTFLOW = "EXTFLOW?"
+IMOTOR = "IMOTOR?"  # motor current in relative units 0-100
+PRESSURE = "PRESSURE?"  # reads the pressure in 0.1 MPa
+ERRORS = "ERRORS?"  # displays last 5 error codes
+EXTCONTR = (
+    "EXTCONTR:"  # 0, 1; 1= allows flow control via external analog input, 0 dont allow
+)
+LOCAL = "LOCAL"  # no parameter, releases pump to manual control
+REMOTE = "REMOTE"  # manual param input prevented
+PUMP_ON = "ON"  # starts flow
+PUMP_OFF = "OFF"  # stops flow
 
 
 class KnauerPumpHeads(Enum):
@@ -22,18 +48,56 @@ class KnauerPumpHeads(Enum):
 
 
 class KnauerPump(KnauerEthernetDevice):
-    def __init__(
-        self,
-        ip_address,
-        port=None,
-        buffersize=None,
-    ):
-        super().__init__(ip_address, port, buffersize)
+    def __init__(self, ip_address):
+        super().__init__(ip_address)
+        self.eol = "\n\r"
         self.max_pressure, self.max_flow = None, None
-        # Check connection by reading pump head type
-        _ = self.headtype
 
-    def communicate(self, message: str):
+    async def initialize(self):
+        """ Initialize connection """
+        # Here the magic happens...
+        await super().initialize()
+
+        # Here it is checked that the device is a pump and not a valve
+        await self.get_headtype()
+
+    async def get_headtype(self):
+        head_type_id = await self.communicate(HEADTYPE)
+        try:
+            headtype = KnauerPumpHeads(int(head_type_id))
+        except ValueError as e:
+            raise DeviceError(
+                "It seems you're trying instantiate an unknown device/unknown pump type as Knauer Pump."
+                "Only Knauer Azura Compact is supported"
+            ) from e
+
+        logging.info(f"Head type of pump {self.ip_address} is {headtype}")
+
+        if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML:
+            self.max_pressure, self.max_flow = 400, 10000
+        elif headtype == KnauerPumpHeads.FLOWRATE_FIFTY_ML:
+            self.max_pressure, self.max_flow = 150, 50000
+
+        return headtype
+
+    @staticmethod
+    def error_present(reply: str) -> bool:
+        """ True if there are errors, False otherwise. Warns for errors. """
+
+        if not reply.startswith("ERROR"):
+            return False
+
+        if "ERROR:1" in reply:
+            warnings.warn(f"Invalid message sent to device.\n")
+
+        elif "ERROR:2" in reply:
+            warnings.warn(f"Setpoint refused by device.\n"
+                          f"Refer to manual for allowed values.\n")
+        else:
+            warnings.warn("Unspecified error detected!")
+        return True
+
+    async def communicate(self, message: str) -> str:
         """
         sends command and receives reply, deals with all communication based stuff and checks
         that the valve is of expected type
@@ -41,28 +105,27 @@ class KnauerPump(KnauerEthernetDevice):
         :return: reply: str
         """
 
-        # beware: I think the pumps want \n\r as end of message, the valves \r\n
-        message = str(message) + "\n\r"
-        reply = super()._send_and_receive_handler(message).rstrip()
-        if "ERROR:1" in reply:
-            DeviceError(
-                f"Invalid message sent to device. Message was: {message}. Reply is {reply}"
-            )
+        reply = await self._send_and_receive(message)
+        if self.error_present(reply):
+            return ""
 
-        elif "ERROR:2" in reply:
-            DeviceError(
-                f"Setpoint refused by device. Refer to manual for allowed values.  Message was: '{message}'. "
-                f"Reply is '{reply}'"
-            )
-
+        # Setpoint ok
         elif ":OK" in reply:
-            logging.info("setpoint successfully set")
+            logging.info("setpoint successfully set!")
+            return "OK"
 
-        elif message.rstrip()[:-1] + ":" in reply:
-            logging.info(f"setpoint successfully acquired, is {reply}")
+        # Replies to 'VALUE?' are in the format 'VALUE:'
+        elif message[:-1] + ":" in reply:
+            logging.info(f"setpoint successfully acquired, value={reply}")
+            # Last value after colon
             return reply.split(":")[-1]
+
+        # No reply
         elif not reply:
-            raise DeviceError("No reply received")
+            warnings.warn("No reply received")
+            return ""
+
+        warnings.warn(f"Unrecognized reply: {reply}")
         return reply
 
     # read and write. write: append ":value", read: append "?"

@@ -32,9 +32,10 @@ class KnauerValve(KnauerEthernetDevice):
     dip switch for valve selection
     """
 
-    def __init__(self, ip_address, port=KnauerEthernetDevice.TCP_PORT, buffersize=KnauerEthernetDevice.BUFFER_SIZE):
+    def __init__(self, ip_address):
 
-        super().__init__(ip_address, port, buffersize)
+        super().__init__(ip_address)
+        self.eol = "\r\n"
 
         self._valve_state = self.get_current_position()
         # this gets the valve type as valve [type] and strips away valve_
@@ -128,29 +129,3 @@ class KnauerValve(KnauerEthernetDevice):
         self.sock.close()
 
 
-FLOW = "FLOW"  # 0-50000 µL/min, int only!
-PMIN10 = "PMIN10"  # 0-400 in 0.1 MPa, use to avoid dryrunning
-PMIN50 = "PMIN50"  # 0-150 in 0.1 MPa, use to avoid dryrunning
-PMAX10 = "PMAX10"  # 0-400 in 0.1 MPa, chosen automatically by selecting pump head
-PMAX50 = "PMAX50"  # 0-150 in 0.1 MPa, chosen automatically by selecting pumphead
-IMIN10 = "IMIN10"  # 0-100 minimum motor current
-IMIN50 = "IMIN50"  # 0-100 minimum motor current
-HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
-STARTLEVEL = "STARTLEVEL"  # 0, 1 configures start. 0 -> only start pump when shorted to GND, 1 -> always allow start
-ERRIO = "ERRIO"  # 0, 1 write/read error in/output ??? sets errio either 1 or 0, reports errio:ok
-STARTMODE = "STARTMODE"  # 0, 1; 0=pause pump after switchon, 1=start immediatley with previous set flow rate
-ADJ10 = "ADJ10"  # 100-2000
-ADJ50 = "ADJ50"  # 100-2000
-CORR10 = "CORR10"  # 0-300
-CORR50 = "CORR50"  # 0-300
-EXTFLOW = "EXTFLOW?"
-IMOTOR = "IMOTOR?"  # motor current in relative units 0-100
-PRESSURE = "PRESSURE?"  # reads the pressure in 0.1 MPa
-ERRORS = "ERRORS?"  # displays last 5 error codes
-EXTCONTR = (
-    "EXTCONTR:"  # 0, 1; 1= allows flow control via external analog input, 0 dont allow
-)
-LOCAL = "LOCAL"  # no parameter, releases pump to manual control
-REMOTE = "REMOTE"  # manual param input prevented
-PUMP_ON = "ON"  # starts flow
-PUMP_OFF = "OFF"  # stops flow
