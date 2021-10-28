@@ -183,6 +183,12 @@ class KnauerPump(KnauerEthernetDevice):
         self._headtype = head_type
         self.logger.debug(f"Head type set to {head_type}")
 
+    async def get_flow(self):
+        """Gets flow rate."""
+        flow = await self.create_and_send_command(FLOW)
+        print(flow)
+
+
     async def set_flow(self, setpoint_in_ml_min: float = None):
         """
         Sets flow rate.
