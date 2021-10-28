@@ -20,7 +20,7 @@ class KnauerEthernetDevice:
         self._reader, self._writer = None, None
 
         # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by sublcasses
-        self.eol = ""
+        self.eol = b""
 
     @classmethod
     def from_mac(cls, mac_address):
@@ -52,7 +52,7 @@ class KnauerEthernetDevice:
         except ConnectionError as e:
             raise InvalidConfiguration(f"Cannot open connection with Knauer Device IP={self.ip_address}") from e
 
-    def _send_and_receive(self, message):
-        await self._writer.write(message+self.eol.encode("ascii"))
+    async def _send_and_receive(self, message):
+        self._writer.write(message.encode("ascii")+self.eol)
         reply = await self._reader.readuntil(separator=b"\r")
         return reply.decode("ascii").strip()

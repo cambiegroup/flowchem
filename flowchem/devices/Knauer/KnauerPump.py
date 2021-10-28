@@ -1,7 +1,7 @@
 """
 Knauer pump control.
 """
-
+import asyncio
 import logging
 import warnings
 from enum import Enum
@@ -50,7 +50,7 @@ class KnauerPumpHeads(Enum):
 class KnauerPump(KnauerEthernetDevice):
     def __init__(self, ip_address):
         super().__init__(ip_address)
-        self.eol = "\n\r"
+        self.eol = b"\n\r"
         self.max_pressure, self.max_flow = None, None
 
     async def initialize(self):
@@ -62,7 +62,7 @@ class KnauerPump(KnauerEthernetDevice):
         await self.get_headtype()
 
     async def get_headtype(self):
-        head_type_id = await self.communicate(HEADTYPE)
+        head_type_id = await self.message_constructor_dispatcher(HEADTYPE)
         try:
             headtype = KnauerPumpHeads(int(head_type_id))
         except ValueError as e:
@@ -70,7 +70,6 @@ class KnauerPump(KnauerEthernetDevice):
                 "It seems you're trying instantiate an unknown device/unknown pump type as Knauer Pump."
                 "Only Knauer Azura Compact is supported"
             ) from e
-
         logging.info(f"Head type of pump {self.ip_address} is {headtype}")
 
         if headtype == KnauerPumpHeads.FLOWRATE_TEN_ML:
@@ -104,7 +103,6 @@ class KnauerPump(KnauerEthernetDevice):
         :param message:
         :return: reply: str
         """
-
         reply = await self._send_and_receive(message)
         if self.error_present(reply):
             return ""
@@ -336,3 +334,15 @@ class KnauerPump(KnauerEthernetDevice):
     def close_connection(self):
         self.sock.close()
         logging.info(f"Connection with {self.ip_address} closed")
+
+
+if __name__ == '__main__':
+    # This is a bug of asyncio on Windows :|
+    import sys
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
+    p = KnauerPump(ip_address="192.168.1.126")
+    asyncio.run(p.initialize())
