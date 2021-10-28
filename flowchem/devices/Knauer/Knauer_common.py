@@ -4,8 +4,8 @@ Module for communication with Knauer pumps and valves.
 import asyncio
 import logging
 
-from flowchem.devices.Knauer.Knauer_autodiscover import autodiscover_knauer
 from flowchem.constants import InvalidConfiguration
+from flowchem.devices.Knauer.Knauer_autodiscover import autodiscover_knauer
 
 
 class KnauerEthernetDevice:
@@ -41,7 +41,7 @@ class KnauerEthernetDevice:
             return self.ip_address
 
     @classmethod
-    def from_mac(cls, mac_address):
+    def from_config(cls, mac_address):
         """
         Instantiate object from mac address.
 
