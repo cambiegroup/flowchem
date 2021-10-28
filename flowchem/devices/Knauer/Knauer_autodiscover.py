@@ -1,6 +1,7 @@
 """ Autodiscover Knauer devices on network """
 import asyncio
 import socket
+import sys
 from typing import Tuple
 
 from getmac import getmac
@@ -69,7 +70,6 @@ async def autodiscover_knauer(source_ip: str = "") -> dict:
     finally:
         sock.close()
 
-    print(device)
     device_info = []
 
     for device_ip in device:
@@ -80,6 +80,9 @@ async def autodiscover_knauer(source_ip: str = "") -> dict:
 
 
 if __name__ == '__main__':
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    asyncio.run(autodiscover_knauer())
+    # This is a bug of asyncio on Windows :|
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    devices = asyncio.run(autodiscover_knauer())
+    print(devices)
 
