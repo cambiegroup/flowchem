@@ -27,7 +27,7 @@ async def get_device_type(ip_address: str) -> str:
     return "Unknown"
 
 
-def autodiscover_knauer(source_ip: str = "") -> dict:
+async def autodiscover_knauer(source_ip: str = "") -> dict:
     """
     Args:
         source_ip: source IP for autodiscover (only relevant if multiple network interfaces are available!)
@@ -73,13 +73,11 @@ def autodiscover_knauer(source_ip: str = "") -> dict:
 
     for device_ip in device:
         mac = getmac.get_mac_address(ip=device_ip)
-        device_type = asyncio.run(get_device_type(device_ip))
+        device_type = await get_device_type(device_ip)
         device_info.append((mac, device_ip, device_type))
-        return device_info
-
-
+    return device_info
 
 
 if __name__ == '__main__':
-    autodiscover_knauer()
+    asyncio.run(autodiscover_knauer())
 
