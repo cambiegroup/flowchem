@@ -130,7 +130,7 @@ class KnauerPump(KnauerEthernetDevice):
         """
 
         # GETTER
-        if not setpoint:
+        if setpoint is None:
             return await self._transmit_and_parse_reply(message + "?")
 
         # SETTER with range
