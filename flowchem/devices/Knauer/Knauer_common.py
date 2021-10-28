@@ -171,10 +171,10 @@ if __name__ == "__main__":
     print(autodiscover_knauer("192.168.1.1"))
     import asyncio
     async def main():
-        reader, writer = await asyncio.open_connection(host="192.168.1.176", port=10001)
-        writer.write("REMOTE:1\n\r".encode())
+        reader, writer = await asyncio.open_connection(host="192.168.1.126", port=10001)
+        writer.write("HEADTYPE:?\n\r".encode())
         print("wrote")
-        s = await reader.read(100)
+        s = await reader.readuntil(separator=b"\r")
         print(s)
         writer.close()
 
