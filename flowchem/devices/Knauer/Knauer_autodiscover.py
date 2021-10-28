@@ -2,11 +2,37 @@
 import asyncio
 import socket
 import sys
-from typing import Tuple
+import time
+from queue import Queue, Empty
+from threading import Thread
+from typing import Tuple, Union, Text, List, Dict
 
 from getmac import getmac
 
 Address = Tuple[str, int]
+
+
+class BroadcastProtocol(asyncio.DatagramProtocol):
+    """
+    From https://gist.github.com/yluthu/4f785d4546057b49b56c
+    """
+
+    def __init__(self, target: Address, response_queue: Queue):
+        self.target = target
+        self.loop = asyncio.get_event_loop()
+        self._queue = response_queue
+
+    def connection_made(self, transport: asyncio.transports.DatagramTransport):
+        self.transport = transport
+        sock = transport.get_extra_info("socket")  # type: socket.socket
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        self.broadcast()
+
+    def datagram_received(self, data: Union[bytes, Text], addr: Address):
+        self._queue.put(addr[0])
+
+    def broadcast(self):
+        self.transport.sendto(b"\x00\x01\x00\xf6", self.target)
 
 
 async def get_device_type(ip_address: str) -> str:
@@ -31,12 +57,17 @@ async def get_device_type(ip_address: str) -> str:
     return "Unknown"
 
 
-async def autodiscover_knauer(source_ip: str = "") -> dict:
+def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
     """
+    Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
+    Note that the MAC is the key here as it is the parameter used in configuration files.
+    Knauer devices only support DHCP so static IPs are not an option.
+
+
     Args:
         source_ip: source IP for autodiscover (only relevant if multiple network interfaces are available!)
     Returns:
-        Dictionary of tuples (IP, MAC), one per device replying to autodiscover
+        List of tuples (IP, MAC, device_type), one per device replying to autodiscover
     """
 
     # Define source IP resolving local hostname.
@@ -44,41 +75,29 @@ async def autodiscover_knauer(source_ip: str = "") -> dict:
         hostname = socket.gethostname()
         source_ip = socket.gethostbyname(hostname)
 
-    # Create a UDP socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((source_ip, 28688))
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    sock.settimeout(2)
+    loop = asyncio.get_event_loop()
+    device_q = Queue()
+    coro = loop.create_datagram_endpoint(
+        lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q), local_addr=(source_ip, 28688), )
+    loop.run_until_complete(coro)
+    thread = Thread(target=loop.run_forever)
+    thread.start()
+    time.sleep(2)
+    loop.call_soon_threadsafe(loop.stop)  # here
+    thread.join()
 
-    server_address = ("255.255.255.255", 30718)
-    message = b"\x00\x01\x00\xf6"
-    device = []
+    device_list = []
+    for _ in range(40):
+        try:
+            device_list.append(device_q.get_nowait())
+        except Empty:
+            break
 
-    try:
-        # Send magic autodiscovery UDP packet
-        sock.sendto(message, server_address)
-
-        # Receive response
-        data = True
-        while data:
-            try:
-                data, server = sock.recvfrom(4096)
-            except socket.timeout:
-                data = False
-            else:
-                # Save IP addresses that replied
-                device.append(server[0])
-
-    finally:
-        sock.close()
-
-    device_info = []
-
-    for device_ip in device:
+    device_info = dict()
+    for device_ip in device_list:
+        # MAC address
         mac = getmac.get_mac_address(ip=device_ip)
-        device_type = await get_device_type(device_ip)
-        device_info.append((mac, device_ip, device_type))
+        device_info[mac] = device_ip
     return device_info
 
 
@@ -86,6 +105,11 @@ if __name__ == '__main__':
     # This is a bug of asyncio on Windows :|
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    devices = asyncio.run(autodiscover_knauer())
-    print(devices)
 
+    # Autodiscover devices (dict mac as index, IP as value)
+    devices = autodiscover_knauer()
+
+    for mac, ip in devices.items():
+        # Device Type
+        device_type = asyncio.run(get_device_type(ip))
+        print(f"MAC: {mac} IP: {ip} DEVICE_TYPE: {device_type}")
