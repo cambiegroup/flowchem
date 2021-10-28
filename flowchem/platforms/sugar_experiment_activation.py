@@ -11,7 +11,7 @@ from flowchem.devices.Hamilton.ML600 import HamiltonPumpIO, ML600
 import logging
 from flowchem.constants import flowchem_ureg
 from numpy import array, sum
-from pandas import read_csv
+from pandas import read_csv, errors
 from pathlib import Path
 import pickle
 
@@ -72,8 +72,11 @@ class ExperimentConditions:
 
     @property.setter
     def chromatogram(self, path: str):
-        return read_csv(Path(path), header=16, sep = '\t')
-
+        #Damn, if several detectors are exported, this creates several header lines
+        try:
+            return read_csv(Path(path), header=16, sep = '\t').to_json()
+        except errors.ParserError:
+            raise errors.ParserError('Please make sure your Analytical data is compliant with pandas.read_csv')
 
 
 class FlowConditions:
