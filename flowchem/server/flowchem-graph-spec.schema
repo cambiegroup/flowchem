@@ -45,6 +45,16 @@
         "$ref": "#/definitions/r4heater"
       }, "Elite11": {
         "$ref": "#/definitions/elite11"
+      }, "AzuraCompactPump": {
+        "$ref": "#/definitions/azura-compact"
+      }, "Knauer12PortValve": {
+        "$ref": "#/definitions/knauer-valve-12"
+      }, "Knauer16PortValve": {
+        "$ref": "#/definitions/knauer-valve-16"
+      }, "Knauer6Port6PositionValve": {
+        "$ref": "#/definitions/knauer-valve-6-6"
+      }, "Knauer6Port2PositionValve": {
+        "$ref": "#/definitions/knauer-valve-6-2"
       }
     }, "oneOf": [
       {
@@ -82,6 +92,26 @@
       }, {
         "required": [
           "Elite11"
+        ]
+      }, {
+        "required": [
+          "AzuraCompactPump"
+        ]
+      }, {
+        "required": [
+          "Knauer12PortValve"
+        ]
+      }, {
+        "required": [
+          "Knauer16PortValve"
+        ]
+      }, {
+        "required": [
+          "Knauer6Port6PositionValve"
+        ]
+      }, {
+        "required": [
+          "Knauer6Port2PositionValve"
         ]
       }
     ], "additionalProperties": false
@@ -193,6 +223,46 @@
       }
     }, "required": [
       "port", "syringe_volume", "diameter"
+    ]
+  }, "azura-compact": {
+    "id": "#/definitions/azura-compact", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }
+    }, "required": [
+      "mac_address"
+    ]
+  }, "knauer-valve-12": {
+    "id": "#/definitions/knauer-valve-12", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }
+    }, "required": [
+      "mac_address"
+    ]
+  }, "knauer-valve-16": {
+    "id": "#/definitions/knauer-valve-16", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }
+    }, "required": [
+      "mac_address"
+    ]
+  }, "knauer-valve-6-6": {
+    "id": "#/definitions/knauer-valve-6-6", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }
+    }, "required": [
+      "mac_address"
+    ]
+  }, "knauer-valve-6-2": {
+    "id": "#/definitions/knauer-valve-6-2", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }
+    }, "required": [
+      "mac_address"
     ]
   }
 }
