@@ -5,7 +5,7 @@ import sys
 import time
 from queue import Queue, Empty
 from threading import Thread
-from typing import Tuple, Union, Text, List, Dict
+from typing import Tuple, Union, Text, Dict
 
 from getmac import getmac
 
