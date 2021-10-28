@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import logging
 import string
-import threading
-import time
 import warnings
 from dataclasses import dataclass
 from enum import IntEnum
-from threading import Thread
 from typing import Optional
 
 import aioserial
@@ -21,14 +18,13 @@ class ViciProtocolCommandTemplate:
 
     command: str
     optional_parameter: str = ""
-    execute_command: bool = True
 
     def to_valve(
         self, address: int, command_value: str = "", argument_value: str = ""
     ) -> ViciProtocolCommand:
         """ Returns a Protocol11Command by adding to the template pump address and command arguments """
         return ViciProtocolCommand(
-            target_pump_num=address,
+            target_valve_num=address,
             command=self.command,
             optional_parameter=self.optional_parameter,
             command_value=command_value,
@@ -40,26 +36,19 @@ class ViciProtocolCommandTemplate:
 class ViciProtocolCommand(ViciProtocolCommandTemplate):
     """ Class representing a pump command and its expected reply """
 
-    VALVE_ADDRESS = {
-        valve_num: address
-        for (valve_num, address) in enumerate(string.ascii_lowercase[:10], start=1)
-    }
-    # i.e. Valve_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
-    # Note ':' is used for broadcast within the daisy chain.
-
     target_valve_num: Optional[int] = 1
     command_value: Optional[str] = None
     argument_value: Optional[str] = None
 
     def compile(self) -> bytes:
         """ Create actual command byte by prepending valve address to command and appending executing command. """
-        # TODO check
+
         assert self.target_valve_num in range(0, 11)
         if not self.command_value:
             self.command_value = ""
 
         compiled_command = (
-            f"{self.VALVE_ADDRESS[self.target_valve_num]}"
+            f"{self.target_valve_num}"
             f"{self.command}{self.command_value}"
         )
 
@@ -72,13 +61,10 @@ class ViciProtocolCommand(ViciProtocolCommandTemplate):
 class ViciValcoValveIO:
     """ Setup with serial parameters, low level IO"""
 
-    #TODO Vici does not give answers that easily. Cheat by asking for position after setting
-    ACKNOWLEDGE = chr(6)
-    NEGATIVE_ACKNOWLEDGE = chr(21)
     DEFAULT_CONFIG = {
         "timeout": 0.1,
         "baudrate": 9600,
-        "parity": aioserial.PARITY_EVEN,
+        "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
         "bytesize": aioserial.EIGHTBITS,
     }
@@ -108,7 +94,7 @@ class ViciValcoValveIO:
         configuration = dict(ViciValcoValveIO.DEFAULT_CONFIG, **config)
 
         try:
-            configuration.pop("hw_initialization")
+            #configuration.pop("hw_initialization")
             serial_object = aioserial.AioSerial(**configuration)
         except SerialException as e:
             raise InvalidConfiguration(f"Cannot connect to the valve on the port <{configuration.get('port')}>") from e
@@ -162,16 +148,8 @@ class ViciValcoValveIO:
 
     def parse_response(self, response: str) -> str:
         """ Split a received line in its components: success, reply """
-        status = response[:1]
-        assert status in (ViciValcoValveIO.ACKNOWLEDGE, ViciValcoValveIO.NEGATIVE_ACKNOWLEDGE), "Invalid status reply!"
-
-        if status == ViciValcoValveIO.ACKNOWLEDGE:
-            self.logger.debug("Positive acknowledge received")
-        else:
-            self.logger.warning("Negative acknowledge received")
-            warnings.warn("Negative acknowledge reply received from pump: check command validity!")
-
-        return response[1:].rstrip()
+        # response is only expected for some commands implement that
+        return response.rstrip()
 
     def reset_buffer(self):
         """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
@@ -186,7 +164,7 @@ class ViciValcoValveIO:
         if not response:
             raise InvalidConfiguration(
                 f"No response received from pump, check pump address! "
-                f"(Currently set to {command.target_pump_num})"
+                f"(Currently set to {command.target_valve_num})"
             )
 
         return self.parse_response(response)
@@ -201,10 +179,22 @@ class ViciValcoValveIO:
         if not response:
             raise InvalidConfiguration(
                 f"No response received from pump, check pump address! "
-                f"(Currently set to {command.target_pump_num})"
+                f"(Currently set to {command.target_valve_num})"
             )
 
         return self.parse_response(response)
+
+    def write_wo_reply(self, command: ViciProtocolCommand) -> None:
+        """ Sends a command to the valve and doesn't read reply (a lot of commands don't yield replies)"""
+        self.reset_buffer()
+        self._write(command.compile())
+
+    async def write_wo_reply_async(self, command: ViciProtocolCommand) -> None:
+        """ Main HamiltonPumpIO method.
+        Sends a command to the pump, read the replies and returns it, optionally parsed """
+        self.reset_buffer()
+        await self._write_async(command.compile())
+
 
     @property
     def name(self) -> str:
@@ -225,16 +215,13 @@ class ViciValco:
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
 
-    class ValvePositionName(IntEnum):
-        """ Maps valve position to the corresponding number """
-        LOAD = 1
-        INJECT = 2
+    valve_position_name = {'A': 1, 'B': 2}
 
 
     def __init__(
         self,
         valve_io: ViciValcoValveIO,
-        address: int = 1,
+        address: int = 0,
         name: str = None,
     ):
         """
@@ -279,8 +266,7 @@ class ViciValco:
 
         # If not existing serial object are available for the port provided, create a new one
         if valveio is None:
-            # Remove ML600-specific keys to only have HamiltonPumpIO's kwargs
-            #TODO check
+        # TODO check
             config_for_valveio = {k: v for k, v in config.items() if k not in ("address", "name")}
             valveio = ViciValcoValveIO.from_config(config_for_valveio)
 
@@ -297,24 +283,51 @@ class ViciValco:
             command_template.to_valve(self.address, command_value, argument_value)
         )
 
-    async def initialize_valve(self):
+
+    async def send_command_wo_reply(
+        self,
+        command_template: ViciProtocolCommandTemplate,
+        command_value="",
+        argument_value="",
+    ) -> None:
+        """ Sends a command based on its template by adding pump address and parameters"""
+        await self.valve_io.write_wo_reply_async(
+            command_template.to_valve(self.address, command_value, argument_value)
+        )
+
+    async def learn_valve_positions(self) -> None:
         """ Initialize valve only """
-        return await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="LRN"))
+        await self.send_command_wo_reply(ViciProtocolCommandTemplate(command="LRN"))
+
+    async def initialize_valve(self) -> None:
+        """ Initialize valve only: Move to Home position """
+        await self.send_command_wo_reply(ViciProtocolCommandTemplate(command="HM"))
+        # seems necessary to make sure move is finished
+        await self.get_valve_position()
+
 
     async def version(self) -> str:
         """ Returns the current firmware version reported by the pump. """
-        return await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="VR"))
 
-    async def get_valve_position(self) -> ValvePositionName:
+        first_line = await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="VR"))
+        empty = self.valve_io._read_reply_async()
+        second_line = self.valve_io._read_reply_async()
+        empty = self.valve_io._read_reply_async()
+        third_line = await self.valve_io._read_reply_async()
+        return ''.join((first_line, second_line, third_line))
+
+    async def get_valve_position(self) -> int:
         """ Represent the position of the valve: getter returns Enum, setter needs Enum. """
         valve_pos = await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="CP"))
-        return ViciValco.ValvePositionName(int(valve_pos))
+        return ViciValco.valve_position_name[valve_pos[-1]]
 
-    async def set_valve_position(self, target_position: ValvePositionName, wait_for_movement_end: bool = True):
-        """ Set valve position. wait_for_movement_end is defaulted to True as it is a common mistake not to wait... """
+    async def set_valve_position(self, target_position: int):
+        """ Set valve position. Switches really quick and doesn't reply, so waiting does not make sense
+
+        """
         valve_by_name_cw = ViciProtocolCommandTemplate(command="GO")
-        await self.send_command_and_read_reply(valve_by_name_cw, command_value=str(int(target_position)))
-        self.log.debug(f"{self.name} valve position set to {target_position.name}")
+        await self.send_command_wo_reply(valve_by_name_cw, command_value=str((target_position)))
+        self.log.debug(f"{self.name} valve position set to {target_position}")
         new_position = await self.get_valve_position()
         if not new_position == target_position:
             raise ActuationError
@@ -335,9 +348,59 @@ if __name__ == "__main__":
     import asyncio
 
     conf = {
-        "port": "COM12",
-        "address": 1,
+        "port": "COM13",
+        "address": 0,
         "name": "test1",
     }
     valve1 = ViciValco.from_config(conf)
+
     asyncio.run(valve1.initialize_valve())
+    asyncio.run(valve1.set_valve_position(2))
+    asyncio.run(valve1.set_valve_position(1))
+
+
+# Control Command List for reference, don't see much of a point to implement all these, especially since most don't return anything
+#
+# GO[nn]     - Move to nn position -> None
+#
+# HM         - Move to the first Position -> None
+#
+# CW[nn]     - Move Clockwise to nn Position ->
+#
+# CC[nn]     - Move Counter Clockwise to nn Position ->
+#
+# TO         - Toggle Position to Oposite ->
+#
+# TT         - Timed Toggle
+#
+# DT[nnnnn]  - Set Delay time for TT Command
+#
+# CP         - Returns Current Position -> [ADDRESS]CP[A|B]
+#
+# AM[n]      - Sets the Actuator Mode [1] Two Position With Stops, -> [ADDRESS]AM[1|2|3]
+#
+#              [2] Two Position Without Stops, [3] Multi Position
+#
+# SB[nnnnn]  - Set the Baud Rate to nnnnn -> [ADDRESS]SB[BAUDRATE:int]
+#
+# NP[nn]     - Set the Number of Positions to nn -> 0E2 NP Invalid
+#
+# SM[n]      - Set the Direction [F]orward, [R]everse, [A]uto 0E2 SM Invalid
+#
+# LRN        - Learn Stops Location -> None
+#
+# CNT[nnnnn] - Set Cycle Counter -> 0CNT10254
+#
+# VR[n]      - Firmware Version [] Main [1] Display [2] Interface -> 0Dec 15 2011 \n 015:02:20 \n 0UA_MAIN_CT
+#
+# ID[nn]     - Set Device ID nn=(0-9, A-Z) -> 0ID0
+#
+# [n]ID*     - Reset ID to none n=Current ID
+#
+# IFM[n]     - Interface Mode [0] No Response [1] limited response -> 0IFM0
+#
+#              [2] Extended Response
+#
+# LG[n]      - Legacy Response Mode [0] Off [1] On -> 0LG0
+#
+# /?         - Displays This List
