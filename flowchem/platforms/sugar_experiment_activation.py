@@ -13,7 +13,7 @@ from flowchem.constants import flowchem_ureg
 from numpy import array, sum
 from pandas import read_csv, errors
 from pathlib import Path
-import pickle
+import json
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
 
@@ -238,7 +238,7 @@ class FlowProcedure:
 class Scheduler:
     """put together procedures and conditions, assign ID, put this to experiment Queue"""
 
-    def __init__(self, graph: dict, analysis_results: Path = Path('D:\\transferred_chromatograms'), experiments_results: Path = Path(f'D:/transferred_chromatograms/{round(datetime.timestamp(datetime.now()))}')):
+    def __init__(self, graph: dict, analysis_results: Path = Path('D:\\transferred_chromatograms'), experiments_results: Path = Path(f'D:/transferred_chromatograms/')):
 
         self.graph = graph
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
@@ -267,7 +267,7 @@ class Scheduler:
         self.log.debug('Initialising the platform')
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
-        self.experiments_results = experiments_results
+        self.experiments_results = experiments_results / str(round(datetime.timestamp(datetime.now())))
 
     @property
     def experiment_running(self) -> bool:
@@ -300,8 +300,8 @@ class Scheduler:
                                 self.experiment_running = False # potentially redundant
 
                                 # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
-                                with open(self.results_file, 'wb') as f:
-                                    pickle.dump(self.started_experiments, f)
+                                with open(self.experiments_results, 'w') as f:
+                                    json.dump(self.started_experiments)
                                 # TODO this can be expanded to trigger the analysis of the sample
 
 # check if experiments can be stopped by only chromatogram available, but actually not having been ran -> this happens. Here not important, but in general, streamlining could mean that experiments are started before previous analysis is over
