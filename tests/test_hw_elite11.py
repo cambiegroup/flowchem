@@ -3,21 +3,14 @@ HA Elite11 tests
 Run with python -m pytest ./tests -m HApump and updates pump com port and address in pump below
 """
 import asyncio
-
 import pytest
-import time
 import math
 
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import (
-    PumpIO,
     Elite11,
     PumpStatus
 )
 from flowchem.constants import DeviceError
-import logging
-
-logging.basicConfig()
-logging.getLogger("flowchem").setLevel(logging.DEBUG)
 
 
 async def move_infuse(pump):
@@ -36,7 +29,7 @@ def event_loop(request):
 @pytest.fixture(scope="session")
 async def pump():
     """ Change to match your hardware ;) """
-    pump =  Elite11.from_config(port="COM4", address=6, syringe_volume=5, diameter=20)
+    pump = Elite11.from_config(port="COM4", address=6, syringe_volume=5, diameter=20)
     await pump.initialize()
     return pump
 
