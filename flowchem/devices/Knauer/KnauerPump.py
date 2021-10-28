@@ -28,9 +28,7 @@ EXTFLOW = "EXTFLOW?"
 IMOTOR = "IMOTOR"  # motor current in relative units 0-100
 PRESSURE = "PRESSURE?"  # reads the pressure in 0.1 MPa
 ERRORS = "ERRORS"  # displays last 5 error codes
-EXTCONTR = (
-    "EXTCONTR:"  # 0, 1; 1= allows flow control via external analog input, 0 dont allow
-)
+EXTCONTR = "EXTCONTR"  # allows flow control via analog input
 LOCAL = "LOCAL"  # no parameter, releases pump to manual control
 REMOTE = "REMOTE"  # manual param input prevented
 PUMP_ON = "ON"  # starts flow
@@ -102,7 +100,7 @@ class KnauerPump(KnauerEthernetDevice):
             return "OK"
 
         # Replies to 'VALUE?' are in the format 'VALUE:'
-        elif message[:-1] + ":" in reply:
+        elif message[:-1] in reply:
             self.logger.debug(f"setpoint successfully acquired, value={reply}")
             # Last value after colon
             return reply.split(":")[-1]
@@ -128,7 +126,6 @@ class KnauerPump(KnauerEthernetDevice):
         no setpoint -> sends "HEADTYPE?"
         w/ setpoint -> sends "HEADTYPE:<setpoint_value>"
         """
-
         # GETTER
         if setpoint is None:
             return await self._transmit_and_parse_reply(message + "?")
@@ -186,6 +183,7 @@ class KnauerPump(KnauerEthernetDevice):
         """Gets flow rate."""
         flow = await self.create_and_send_command(FLOW)
         self.logger.debug(f"Flow rate set to {flow} ml/min")
+        return int(flow) / 1000
 
     async def set_flow(self, setpoint_in_ml_min: float = None):
         """
@@ -368,6 +366,7 @@ class KnauerPump(KnauerEthernetDevice):
         await self.create_and_send_command(EXTCONTR, setpoint=int(value))
         self.logger.debug(f"External control set to {value}")
 
+
 if __name__ == '__main__':
     # This is a bug of asyncio on Windows :|
     import sys
@@ -380,5 +379,9 @@ if __name__ == '__main__':
 
     async def main(pump: KnauerPump):
         await pump.initialize()
+        init_val = await pump.get_adjusting_factor()
+        await pump.set_adjusting_factor(0)
+        assert await pump.get_adjusting_factor() == 0
+        await pump.set_adjusting_factor(init_val)
 
     asyncio.run(main(p))

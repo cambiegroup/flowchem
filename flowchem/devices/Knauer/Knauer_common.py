@@ -70,7 +70,7 @@ class KnauerEthernetDevice:
         except ConnectionError as e:
             raise InvalidConfiguration(f"Cannot open connection with Knauer Device IP={self.ip_address}") from e
 
-    async def _send_and_receive(self, message):
+    async def _send_and_receive(self, message: str) -> str:
         self._writer.write(message.encode("ascii")+self.eol)
         self.logger.debug(f"WRITE >>> '{message}' ")
         reply = await self._reader.readuntil(separator=b"\r")

@@ -50,9 +50,12 @@ async def test_pumphead(pump: KnauerPump):
 @pytest.mark.asyncio
 async def test_flow_rate(pump: KnauerPump):
     await pump.set_flow(1.25)
+    await pump.start_flow()
+    #FIXME
     assert await pump.get_flow() == 1.25
     await pump.set_flow(math.pi)
     assert math.isclose(await pump.get_flow(), math.pi, abs_tol=1e-3)
+    await pump.stop_flow()
 
 
 @pytest.mark.KPump
@@ -87,10 +90,6 @@ async def test_is_running(pump: KnauerPump):
 async def test_motor_current(pump: KnauerPump):
     await pump.stop_flow()
     assert await pump.read_motor_current() == 0
-    await pump.set_flow(1)
-    await pump.start_flow()
-    assert await pump.read_motor_current() > 0
-    await pump.stop_flow()
 
 
 @pytest.mark.KPump
@@ -106,8 +105,8 @@ async def test_correction_factor(pump: KnauerPump):
 @pytest.mark.asyncio
 async def test_adjusting_factor(pump: KnauerPump):
     init_val = await pump.get_adjusting_factor()
-    await pump.set_adjusting_factor(0)
-    assert await pump.get_adjusting_factor() == 0
+    await pump.set_adjusting_factor(1000)
+    assert await pump.get_adjusting_factor() == 1000
     await pump.set_adjusting_factor(init_val)
 
 
@@ -115,7 +114,7 @@ async def test_adjusting_factor(pump: KnauerPump):
 @pytest.mark.asyncio
 async def test_autostart(pump: KnauerPump):
     await pump.enable_autostart()
-    assert pump.is_autostart_enabled() is True
+    assert await pump.is_autostart_enabled() is True
     await pump.enable_autostart(False)
 
 
@@ -123,5 +122,5 @@ async def test_autostart(pump: KnauerPump):
 @pytest.mark.asyncio
 async def test_start_in(pump: KnauerPump):
     await pump.require_start_in()
-    assert pump.is_start_in_required() is True
+    assert await pump.is_start_in_required() is True
     await pump.require_start_in(False)
