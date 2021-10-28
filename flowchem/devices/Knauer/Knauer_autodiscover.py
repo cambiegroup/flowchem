@@ -80,5 +80,6 @@ async def autodiscover_knauer(source_ip: str = "") -> dict:
 
 
 if __name__ == '__main__':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(autodiscover_knauer())
 
