@@ -83,30 +83,19 @@ class Protocol11Command(Protocol11CommandTemplate):
     target_pump_address: int
     command_argument: str
 
-    def compile(self, fast: bool = False) -> str:
+    def compile(self) -> str:
         """
         Create actual command byte by prepending pump address to command.
         Fast saves some ms but do not update the display.
         """
         assert 0 <= self.target_pump_address < 99
-        # end character needs to be '\r\n'. Since this command building is specific for elite 11, that should be fine
-        if fast:
-            return (
-                str(self.target_pump_address)
-                + "@"
-                + self.command_string
-                + " "
-                + self.command_argument
-                + "\r\n"
-            )
-        else:
-            return (
-                str(self.target_pump_address)
-                + self.command_string
-                + " "
-                + self.command_argument
-                + "\r\n"
-            )
+        return (
+            str(self.target_pump_address)
+            + self.command_string
+            + " "
+            + self.command_argument
+            + "\r\n"
+        )
 
 
 class PumpStatus(Enum):
