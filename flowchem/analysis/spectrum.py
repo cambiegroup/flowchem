@@ -13,7 +13,7 @@ class Spectrum:
         self._y = np.array(y)
 
     @property
-    def empty(self) -> True:
+    def empty(self) -> bool:
         """ True if there are no data """
         return self._y.size == 0
 

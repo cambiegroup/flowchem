@@ -1,0 +1,2 @@
+step = []
+stroke = 48000 * step

@@ -2,7 +2,7 @@ import asyncio
 import warnings
 from pathlib import Path
 import ctypes.wintypes
-from typing import Union
+from typing import Union, Callable
 
 
 def get_my_docs_path():
@@ -21,7 +21,7 @@ def get_my_docs_path():
     return Path(buf.value)
 
 
-def create_folder_mapper(remote_root: Path, local_root: Path) -> callable:
+def create_folder_mapper(remote_root: Path, local_root: Path) -> Callable[[Union[Path, str]], Path]:
     """
     Returns a function that converts path relative to remote_root to their corresponding on local_root
     Used when using spinsolve on a remote PC to share the result data via a remotely mounted network drive

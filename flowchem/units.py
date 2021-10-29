@@ -1,37 +1,48 @@
 """ Unit-conversion related functions """
-from typing import Union
+import warnings
+from typing import Union, TypeVar, Optional
 
+import os
 import pint
 
 # Unit converter, see pint docs for info
+from pint import DimensionalityError
+
+# Custom type
+AnyQuantity = TypeVar('AnyQuantity', pint.Quantity, str, float, int)
+
 flowchem_ureg = pint.UnitRegistry()
 
+UNIT_REGISTER = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "units.txt"
+)
+flowchem_ureg.load_definitions(UNIT_REGISTER)
 
-def value_to_ul_min(value: Union[pint.Quantity, str, float]) -> pint.Quantity:
-    """ Convert almost any unit into ul/min """
+
+def ensure_quantity(value: AnyQuantity, target: str = "ml", assumed_unit: Optional[str] = None) -> pint.Quantity:
+    """ Convert almost any unit into the target unit
+
+    If dimensionless values are provided, units=target are assumed if no assumed_unit is provided.
+    """
+
+    if assumed_unit is None:
+        assumed_unit = target
+
     # If it is a string, likely with units...
     if isinstance(value, str):
-        value = pint.Quantity(value)
+        parsed_value = pint.Quantity(value)
+
         # If not unit cast it back to number and it will be treated as such
-        if value.dimensionless:
-            value *= flowchem_ureg.ul / flowchem_ureg.min
-    # If it is a number assume the right units
-    if not isinstance(value, pint.Quantity):
-        value *= flowchem_ureg.ul / flowchem_ureg.min
+        if parsed_value.dimensionless:
+            parsed_value *= flowchem_ureg.Quantity(assumed_unit)
+    elif isinstance(value, pint.Quantity):
+        parsed_value = value
+    else:
+        parsed_value = value * flowchem_ureg.Quantity(assumed_unit)
 
-    return value.to("ul/min")
-
-
-def value_to_bar(value: Union[pint.Quantity, str, float]) -> pint.Quantity:
-    """ Convert almost any unit into bar """
-    # If it is a string, likely with units...
-    if isinstance(value, str):
-        value = pint.Quantity(value)
-        # If not unit cast it back to number and it will be treated as such
-        if value.dimensionless:
-            value *= flowchem_ureg.bar
-    # If it is a number assume the right units
-    if not isinstance(value, pint.Quantity):
-        value *= flowchem_ureg.bar
-
-    return value.to("bar")
+    try:
+        return parsed_value.to(target)
+    except DimensionalityError:
+        warnings.warn(f"Dimensionality error in the conversion of {value} to {target}! Incompatible units?\n"
+                      f"Assuming {parsed_value.magnitude}{target} was intended...")
+        return parsed_value.magnitude * flowchem_ureg.Quantity(target)

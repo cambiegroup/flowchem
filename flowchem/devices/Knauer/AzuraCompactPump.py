@@ -11,7 +11,7 @@ import pint
 
 from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
-from flowchem.units import flowchem_ureg, value_to_ul_min, value_to_bar
+from flowchem.units import flowchem_ureg, ensure_quantity
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
@@ -194,7 +194,7 @@ class AzuraCompactPump(KnauerEthernetDevice):
     async def get_flow(self) -> str:
         """ Gets flow rate. """
         flow = await self.create_and_send_command(FLOW)
-        flow_ul_min = value_to_ul_min(flow + "ul/min")
+        flow_ul_min = ensure_quantity(flow, "ul/min")
         self.logger.debug(f"Flow rate set to {flow_ul_min}")
         return str(flow_ul_min.to("ml/min"))
 
@@ -205,7 +205,7 @@ class AzuraCompactPump(KnauerEthernetDevice):
         """
         await self.create_and_send_command(
             FLOW,
-            setpoint=round(value_to_ul_min(setpoint).magnitude),
+            setpoint=round(ensure_quantity(setpoint, "ul/min").magnitude),
             setpoint_range=(0, self.max_flow + 1),
         )
         self.logger.info(f"Flow set to {setpoint}")
@@ -220,7 +220,7 @@ class AzuraCompactPump(KnauerEthernetDevice):
     async def set_minimum_pressure(self, pressure=None):
         """ Sets minimum pressure. The pumps stops if the measured P is lower than this. """
 
-        pressure_in_bar = value_to_bar(pressure)
+        pressure_in_bar = ensure_quantity(pressure, "bar")
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
         await self.create_and_send_command(
             command,
@@ -239,7 +239,7 @@ class AzuraCompactPump(KnauerEthernetDevice):
     async def set_maximum_pressure(self, pressure):
         """ Sets maximum pressure. The pumps stops if the measured P is higher than this. """
 
-        pressure_in_bar = value_to_bar(pressure)
+        pressure_in_bar = ensure_quantity(pressure, "bar")
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         await self.create_and_send_command(
             command,

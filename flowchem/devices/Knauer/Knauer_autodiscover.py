@@ -1,5 +1,6 @@
 """ Autodiscover Knauer devices on network """
 import asyncio
+import queue
 import socket
 import sys
 import time
@@ -74,7 +75,7 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
         source_ip = socket.gethostbyname(hostname)
 
     loop = asyncio.get_event_loop()
-    device_q = Queue()
+    device_q: queue.Queue = Queue()
     coro = loop.create_datagram_endpoint(
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
         local_addr=(source_ip, 28688),

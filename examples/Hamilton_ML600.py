@@ -45,7 +45,7 @@ async def example(p1: ML600, p2: ML600):
     await p1.set_valve_position(ML600.ValvePositionName.INPUT)
 
     # Note that all the speed parameters are intended in seconds for full stroke, i.e. seconds for syringe_volume
-    await p1.to_volume(volume_in_ml=0, speed=10)
+    await p1.to_volume(target_volume=0, speed=10)
     # We suggest to call the class methods with the full keywords and not positionally.
     # For example this line is a lot less readable:
     await p2.to_volume(0, 10)
@@ -63,8 +63,8 @@ async def example(p1: ML600, p2: ML600):
     # can be used to translate flow rate in seconds per stroke.
     speed1 = p1.flowrate_to_seconds_per_stroke(flowrate_in_ml_min=0.5)
     speed2 = p1.flowrate_to_seconds_per_stroke(flowrate_in_ml_min=0.75)
-    await p1.to_volume(volume_in_ml=0, speed=speed1)
-    await p2.to_volume(volume_in_ml=0, speed=speed2)
+    await p1.to_volume(target_volume=0, speed=speed1)
+    await p2.to_volume(target_volume=0, speed=speed2)
 
 
 pump1 = ML600.from_config(conf_pump1)

@@ -83,15 +83,15 @@ class iCIR_spectrometer:
         return False
 
     @staticmethod
-    def parse_probe_info(probe_info: str) -> ProbeInfo:
+    def parse_probe_info(probe_info_reply: str) -> ProbeInfo:
         """ Convert the device reply into a ProbeInfo dictionary
 
-        Example probe_info reply is:
+        Example probe_info_reply reply is:
         'FlowIR; SN: 2989; Detector: DTGS; Apodization: HappGenzel; IP Address: 192.168.1.2;
         Probe: DiComp (Diamond); SN: 14570173; Interface: FlowIR™ Sensor; Sampling: 4000 to 650 cm-1;
         Resolution: 8; Scan option: AutoSelect; Gain: 232;'
         """
-        fields = probe_info.split(";")
+        fields = probe_info_reply.split(";")
         probe_info = {
             "spectrometer": fields[0],
             "spectrometer_SN": fields[1].split(": ")[1],
