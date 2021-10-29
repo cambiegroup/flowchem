@@ -3,18 +3,23 @@ import time
 import warnings
 from typing import Optional
 
-from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
-from Phidget22.Devices.Log import Log, LogLevel
-from Phidget22.PhidgetException import PhidgetException
-
-from flowchem.constants import DeviceError
-
 try:
-    Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
-except FileNotFoundError as e:
-    warnings.warn("Have you installed the phidget library?"
-                  "Get it from https://www.phidgets.com/docs/Operating_System_Support")
-    raise e
+    from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
+    from Phidget22.Devices.Log import Log, LogLevel
+    from Phidget22.PhidgetException import PhidgetException
+except ImportError:
+    HAS_PHIDGET = False
+else:
+    try:
+        Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
+    except (OSError, FileNotFoundError) as e:
+        warnings.warn("Phidget22 pacakge installed but Phidget library not found!\n"
+                      "Get it from https://www.phidgets.com/docs/Operating_System_Support")
+        HAS_PHIDGET = False
+    else:
+        HAS_PHIDGET = True
+
+from flowchem.constants import DeviceError, InvalidConfiguration
 
 
 class PressureSensor:
@@ -28,10 +33,15 @@ class PressureSensor:
         vint_channel: int = None,
         phidget_is_remote: bool = False,
     ):
+        if not HAS_PHIDGET:
+            raise InvalidConfiguration("Phidget unusable: library or package not installed.")
+
+        # Logger
+        self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
+
         # Sensor range
         self._minP = sensor_min_bar
         self._maxP = sensor_max_bar
-        self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
         # current meter
         self.phidget = CurrentInput()
 
@@ -82,9 +92,9 @@ class PressureSensor:
         """ Converts current reading into pressure value """
         ma = current_in_ampere * 1000
         # minP..maxP is 4..20mA
-        measured_P = self._minP + ((ma - 4) / 16) * (self._maxP - self._minP)
-        self.log.debug(f"Read pressure {measured_P} barg")
-        return measured_P
+        pressure_reading = self._minP + ((ma - 4) / 16) * (self._maxP - self._minP)
+        self.log.debug(f"Read pressure {pressure_reading} barg!")
+        return pressure_reading
 
     def read_pressure(self) -> Optional[float]:
         """
@@ -104,13 +114,13 @@ class PressureSensor:
             current = self.phidget.getCurrent()
             self.log.debug(f"Current pressure: {current}")
         except PhidgetException:
+            warnings.warn("Cannot read pressure!")
             return None
         else:
             return self._current_to_pressure(current)
 
 
 if __name__ == "__main__":
-
     test = PressureSensor(
         sensor_min_bar=0, sensor_max_bar=25, vint_serial_number=627768, vint_channel=0
     )

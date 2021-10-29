@@ -3,7 +3,6 @@ from typing import Tuple
 
 import aioserial
 import logging
-import threading
 
 from flowchem.constants import DeviceError, InvalidConfiguration
 
@@ -25,24 +24,15 @@ class R4Heater:
     }
 
     """ Virtual control of the Vapourtec R4 heating module. """
-    def __init__(self, aio: aioserial.AioSerial):
-
-        self._serial = aio
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
-        self.lock = threading.Lock()
-
-    @classmethod
-    def from_config(cls, config):
-        """ Create instance from config dict. Used by server to initialize obj from config. """
+    def __init__(self, **config):
         # Merge default settings, including serial, with provided ones.
         configuration = dict(R4Heater.DEFAULT_CONFIG, **config)
-
         try:
-            serial_object = aioserial.AioSerial(**configuration)
+            self._serial = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the HuberChiller on the port <{config.get('port')}>") from e
+            raise InvalidConfiguration(f"Cannot connect to the R4Heater on the port <{config.get('port')}>") from e
 
-        return cls(serial_object)
+        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
     async def _write(self, command: str):
         """ Writes a command to the pump """
@@ -69,10 +59,9 @@ class R4Heater:
     async def write_and_read_reply(self, command: R4Command) -> str:
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
-        with self.lock:
-            self._serial.reset_input_buffer()
-            await self._write(command.compile())
-            response = await self._read_reply()
+        self._serial.reset_input_buffer()
+        await self._write(command.compile())
+        response = await self._read_reply()
 
         if not response:
             raise InvalidConfiguration("No response received from heating module!")
@@ -128,7 +117,7 @@ class R4Heater:
 
 if __name__ == "__main__":
     import asyncio
-    heat = R4Heater.from_config(dict(port="COM11"))
+    heat = R4Heater(port="COM11")
 
     async def main():
         await heat.set_temperature(0, 30, wait=False)

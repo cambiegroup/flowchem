@@ -90,21 +90,19 @@ class HamiltonPumpIO:
         "bytesize": aioserial.SEVENBITS,
     }
 
-    def __init__(self, aio_port: aioserial.Serial, hw_initialization: bool = True):
+    def __init__(self, aio_port: aioserial.Serial):
         """
         Initialize communication on the serial port where the pumps are located and initialize them
         Args:
             aio_port: aioserial.Serial() object
-            hw_initialization: Whether each pumps has to be initialized. Note that this might be undesired!
         """
 
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self._serial = aio_port
 
-        # This has to be run after each power cycle to assign addresses to pumps
-        self.num_pump_connected = self._assign_pump_address()
-        if hw_initialization:
-            self._hw_init()
+        # These will be set by `HamiltonPumpIO.initialize()`
+        self._initialized = False
+        self.num_pump_connected = False
 
     @classmethod
     def from_config(cls, config):
@@ -113,31 +111,42 @@ class HamiltonPumpIO:
         configuration = dict(HamiltonPumpIO.DEFAULT_CONFIG, **config)
 
         try:
-            configuration.pop("hw_initialization")
             serial_object = aioserial.AioSerial(**configuration)
         except SerialException as e:
             raise InvalidConfiguration(f"Cannot connect to the pump on the port <{configuration.get('port')}>") from e
 
-        return cls(serial_object, config.get("hw_initialization", True))
+        return cls(serial_object)
 
-    def _assign_pump_address(self) -> int:
+    async def initialize(self, hw_initialization: bool = True):
+        """
+        Ensure connection with pump + initialize
+
+        Args:
+            hw_initialization: Whether each pumps has to be initialized. Note that this might be undesired!
+        """
+        # This has to be run after each power cycle to assign addresses to pumps
+        self.num_pump_connected = self._assign_pump_address()
+        if hw_initialization:
+            await self._hw_init()
+
+    async def _assign_pump_address(self) -> int:
         """
         To be run on init, auto assign addresses to pumps based on their position on the daisy chain!
         A custom command syntax with no addresses is used here so read and write has been rewritten
         """
         try:
-            self._serial.write("1a\r".encode("ascii"))  # Do not use async here as it is called during init()
+            await self._write_async("1a\r".encode("ascii"))
         except aioserial.SerialException as e:
             raise InvalidConfiguration from e
 
-        reply = self._serial.readline().decode("ascii")
+        reply = await self._read_reply_async()
         if reply and reply[:1] == "1":
             # reply[1:2] should be the address of the last pump. However, this does not work reliably.
             # So here we enumerate the pumps explicitly instead
             last_pump = 0
             for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
-                self._serial.write(f"{address}UR\r".encode("ascii"))
-                if b"NV01" in self._serial.readline():
+                await self._write_async(f"{address}UR\r".encode("ascii"))
+                if "NV01" in await self._read_reply_async():
                     last_pump = pump_num
                 else:
                     break
@@ -146,26 +155,15 @@ class HamiltonPumpIO:
         else:
             raise InvalidConfiguration(f"No pump found on {self._serial.port}")
 
-    def _hw_init(self):
+    async def _hw_init(self):
         """ Send to all pumps the HW initialization command (i.e. homing) """
-        self._serial.write(":XR\r".encode("ascii"))  # Broadcast: initialize + execute
+        await self._write_async(b":XR\r")  # Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
-
-    def _write(self, command: bytes):
-        """ Writes a command to the pump """
-        self._serial.write(command)
-        self.logger.debug(f"Command {repr(command)} sent!")
 
     async def _write_async(self, command: bytes):
         """ Writes a command to the pump """
         await self._serial.write_async(command)
         self.logger.debug(f"Command {repr(command)} sent!")
-
-    def _read_reply(self) -> str:
-        """ Reads the pump reply from serial communication """
-        reply_string = self._serial.readline()
-        self.logger.debug(f"Reply received: {reply_string}")
-        return reply_string.decode("ascii")
 
     async def _read_reply_async(self) -> str:
         """ Reads the pump reply from serial communication """
@@ -189,20 +187,6 @@ class HamiltonPumpIO:
     def reset_buffer(self):
         """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
         self._serial.reset_input_buffer()
-
-    def write_and_read_reply(self, command: Protocol1Command) -> str:
-        """ Sends a command to the pump, read the replies and returns it, optionally parsed """
-        self.reset_buffer()
-        self._write(command.compile())
-        response = self._read_reply()
-
-        if not response:
-            raise InvalidConfiguration(
-                f"No response received from pump, check pump address! "
-                f"(Currently set to {command.target_pump_num})"
-            )
-
-        return self.parse_response(response)
 
     async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
         """ Main HamiltonPumpIO method.
@@ -310,11 +294,6 @@ class ML600:
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
-        # Test connectivity by querying the pump's firmware version
-        fw_cmd = Protocol1CommandTemplate(command="U").to_pump(self.address)
-        firmware_version = self.pump_io.write_and_read_reply(fw_cmd)
-        self.log.info(f"Connected to Hamilton ML600 {self.name} - FW version: {firmware_version}!")
-
     @classmethod
     def from_config(cls, config):
         """ This class method is used to create instances via config file by the server for HTTP interface. """
@@ -337,6 +316,13 @@ class ML600:
 
         return cls(pumpio, syringe_volume=config.get("syringe_volume"), address=config.get("address"),
                    name=config.get("name"))
+
+    async def initialize(self):
+        """ Needs to be called after init before anything else. """
+        # Test connectivity by querying the pump's firmware version
+        fw_cmd = Protocol1CommandTemplate(command="U").to_pump(self.address)
+        firmware_version = await self.pump_io.write_and_read_reply_async(fw_cmd)
+        self.log.info(f"Connected to Hamilton ML600 {self.name} - FW version: {firmware_version}!")
 
     async def send_command_and_read_reply(
         self,

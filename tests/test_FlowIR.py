@@ -6,7 +6,7 @@ import asyncua
 import pytest
 
 from flowchem.devices.MettlerToledo.iCIR_common import IRSpectrum
-from flowchem import FlowIR_Async
+from flowchem import FlowIR
 
 
 def check_pytest_asyncio_installed():
@@ -21,9 +21,9 @@ def check_pytest_asyncio_installed():
 @pytest.fixture()
 async def flowIR():
     opcua_client = asyncua.Client(
-        url=FlowIR_Async.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
+        url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
     )
-    return FlowIR_Async(opcua_client)
+    return FlowIR(opcua_client)
 
 
 @pytest.mark.asyncio
