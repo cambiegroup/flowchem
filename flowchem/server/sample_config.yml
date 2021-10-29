@@ -73,6 +73,11 @@ devices:
     valve4:
         Knauer6Port2PositionValve:
             mac_address: 00:00:00:00:1a:fb
+
+    valve5:
+        ViciValco:
+            port: COM5
+            address: 0
     # Other
 
     power-supply:
