@@ -55,6 +55,8 @@
         "$ref": "#/definitions/knauer-valve-6-6"
       }, "Knauer6Port2PositionValve": {
         "$ref": "#/definitions/knauer-valve-6-2"
+      }, "ViciValco": {
+        "$ref": "#/definitions/vici-valco"
       }
     }, "oneOf": [
       {
@@ -112,6 +114,10 @@
       }, {
         "required": [
           "Knauer6Port2PositionValve"
+        ]
+      }, {
+        "required": [
+          "ViciValco"
         ]
       }
     ], "additionalProperties": false
@@ -263,6 +269,20 @@
       }
     }, "required": [
       "mac_address"
+    ]
+  }, "vici-valco": {
+    "id": "#/definitions/vici-valco", "type": "object", "properties": {
+      "address": {
+        "type": "number"
+      },
+      "name": {
+        "type": "string"
+      },
+      "port": {
+        "type": "string"
+      }
+    }, "required": [
+      "port"
     ]
   }
 }
