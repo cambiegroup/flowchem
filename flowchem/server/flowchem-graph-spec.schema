@@ -275,9 +275,6 @@
       "address": {
         "type": "number"
       },
-      "name": {
-        "type": "string"
-      },
       "port": {
         "type": "string"
       }
