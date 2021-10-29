@@ -17,7 +17,7 @@ from typing import Optional
 import aioserial
 from aioserial import SerialException
 
-from flowchem.constants import InvalidConfiguration
+from flowchem.constants import InvalidConfiguration, DeviceError
 
 
 @dataclass
@@ -102,7 +102,7 @@ class HamiltonPumpIO:
 
         # These will be set by `HamiltonPumpIO.initialize()`
         self._initialized = False
-        self.num_pump_connected = False
+        self.num_pump_connected = None
 
     @classmethod
     def from_config(cls, config):
@@ -128,6 +128,7 @@ class HamiltonPumpIO:
         self.num_pump_connected = self._assign_pump_address()
         if hw_initialization:
             await self._hw_init()
+        self._initialized = True
 
     async def _assign_pump_address(self) -> int:
         """
@@ -162,6 +163,9 @@ class HamiltonPumpIO:
 
     async def _write_async(self, command: bytes):
         """ Writes a command to the pump """
+        if not self._initialized:
+            raise DeviceError("Pump not initialized!\n"
+                              "Have you called `initialize()` after object creation?")
         await self._serial.write_async(command)
         self.logger.debug(f"Command {repr(command)} sent!")
 
@@ -318,7 +322,7 @@ class ML600:
                    name=config.get("name"))
 
     async def initialize(self):
-        """ Needs to be called after init before anything else. """
+        """ Must be called after init before anything else. """
         # Test connectivity by querying the pump's firmware version
         fw_cmd = Protocol1CommandTemplate(command="U").to_pump(self.address)
         firmware_version = await self.pump_io.write_and_read_reply_async(fw_cmd)
