@@ -14,11 +14,12 @@ from typing import Literal, Tuple, Optional, List
 import logging
 import aioserial
 
-from flowchem.constants import InvalidConfiguration, DeviceError
+from flowchem.exceptions import InvalidConfiguration, DeviceError
 
 
 class MansonPowerSupply:
     """ Control module for Manson Power Supply (e.g. used to power LEDs in the photo-rector or as potentiostat) """
+
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
     def __init__(self, port, baudrate=9600, **kwargs):
@@ -26,9 +27,13 @@ class MansonPowerSupply:
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
         try:
-            self._serial = aioserial.Serial(port, baudrate=baudrate, timeout=0.1, **kwargs)
+            self._serial = aioserial.Serial(
+                port, baudrate=baudrate, timeout=0.1, **kwargs
+            )  # type: aioserial.Serial
         except aioserial.SerialException as e:
-            raise InvalidConfiguration(f"Could not connect to power supply on port <{port}>") from e
+            raise InvalidConfiguration(
+                f"Could not connect to power supply on port <{port}>"
+            ) from e
 
     def initialize(self):
         """ Ensure the connection w/ device is working. """
@@ -227,7 +232,7 @@ class MansonPowerSupply:
                 # Three digits for voltage and three digits for current
                 voltage.append(float(preset[0:3]))
                 current.append(float(preset[3:6]))
-            except (KeyError, ValueError) as e:
+            except (KeyError, ValueError):
                 warnings.warn("Error reading presets!")
 
         # Transform current in Ampere and voltage in Volt
@@ -268,7 +273,9 @@ class MansonPowerSupply:
         response = await self._send_command("SPRO1")
         return bool(response)
 
-    async def set_voltage_and_current(self, voltage_in_volt: float, current_in_ampere: float):
+    async def set_voltage_and_current(
+        self, voltage_in_volt: float, current_in_ampere: float
+    ):
         """ Convenience method to set both voltage and current """
         await self.set_voltage(voltage_in_volt)
         await self.set_current(current_in_ampere)
@@ -278,7 +285,7 @@ class MansonPowerSupply:
         from fastapi import APIRouter
 
         router = APIRouter()
-        router.add_api_route("/output/on", self. output_on, methods=["GET"])
+        router.add_api_route("/output/on", self.output_on, methods=["GET"])
         router.add_api_route("/output/off", self.output_off, methods=["GET"])
         router.add_api_route("/output/power", self.get_output_power, methods=["GET"])
         router.add_api_route("/output/mode", self.get_output_mode, methods=["GET"])
@@ -287,6 +294,8 @@ class MansonPowerSupply:
         router.add_api_route("/current/read", self.get_output_current, methods=["GET"])
         router.add_api_route("/current/max", self.set_current, methods=["PUT"])
         router.add_api_route("/protection/add", self.add_protection, methods=["GET"])
-        router.add_api_route("/protection/remove", self.remove_protection, methods=["GET"])
+        router.add_api_route(
+            "/protection/remove", self.remove_protection, methods=["GET"]
+        )
 
         return router

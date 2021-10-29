@@ -31,7 +31,7 @@ class StatusNotification(Enum):
 #     return error.get("error") if error is not None else ""
 
 
-def parse_status_notification(xml_message: etree._Element):
+def parse_status_notification(xml_message: etree.Element):
     """
     Parse a status notification reply.
     """
@@ -63,7 +63,7 @@ def parse_status_notification(xml_message: etree._Element):
     return StatusNotification.UNKNOWN, None
 
 
-def parse_state(xml_message: etree._Element):
+def parse_state(xml_message: etree.Element):
     """ Parse state message """
     status_type = StatusNotification.UNKNOWN
 

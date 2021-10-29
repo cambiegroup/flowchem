@@ -1,3 +1,4 @@
+""" Use Phidgets to control lab devices. So far, only 4..20mA interface for Swagelock Pressure-sensor """
 import logging
 import time
 import warnings
@@ -13,13 +14,15 @@ else:
     try:
         Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
     except (OSError, FileNotFoundError) as e:
-        warnings.warn("Phidget22 pacakge installed but Phidget library not found!\n"
-                      "Get it from https://www.phidgets.com/docs/Operating_System_Support")
+        warnings.warn(
+            "Phidget22 pacakge installed but Phidget library not found!\n"
+            "Get it from https://www.phidgets.com/docs/Operating_System_Support"
+        )
         HAS_PHIDGET = False
     else:
         HAS_PHIDGET = True
 
-from flowchem.constants import DeviceError, InvalidConfiguration
+from flowchem.exceptions import DeviceError, InvalidConfiguration
 
 
 class PressureSensor:
@@ -34,7 +37,9 @@ class PressureSensor:
         phidget_is_remote: bool = False,
     ):
         if not HAS_PHIDGET:
-            raise InvalidConfiguration("Phidget unusable: library or package not installed.")
+            raise InvalidConfiguration(
+                "Phidget unusable: library or package not installed."
+            )
 
         # Logger
         self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
@@ -63,9 +68,7 @@ class PressureSensor:
             self.phidget.openWaitForAttachment(1000)
             self.log.debug("Pressure sensor connected!")
         except PhidgetException as e:
-            raise DeviceError(
-                "Cannot connect to sensor! Check settings..."
-            ) from e
+            raise DeviceError("Cannot connect to sensor! Check settings...") from e
 
         # Set power supply to 24V
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)

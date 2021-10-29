@@ -1,3 +1,4 @@
+""" Util function to install dependencies on PC with no internet access. """
 import argparse
 from pathlib import Path
 import subprocess
@@ -7,11 +8,25 @@ EXCHANGE_FOLDER = Path(r"W:\BS-FlowChemistry\Resources\python_packages_local")
 
 
 def install_from_folder(package: str, folder: Path):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-index", f"--find-links={folder.as_posix()}", package])
+    """ pip-install packages locally available in a folder. """
+    subprocess.check_call(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--no-index",
+            f"--find-links={folder.as_posix()}",
+            package,
+        ]
+    )
 
 
 def download_to_folder(package: str, folder: Path):
-    subprocess.check_call([sys.executable, "-m", "pip", "download", package, "-d", folder.as_posix()])
+    """ pip-download packages to a local folder. """
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "download", package, "-d", folder.as_posix()]
+    )
 
 
 def get_package_list():
@@ -20,7 +35,7 @@ def get_package_list():
 
     package = []
 
-    with req_file.open("r") as fh:
+    with req_file.open() as fh:
         lines = fh.readlines()
         for line in lines:
             # Ignore nmrglue
@@ -33,18 +48,20 @@ def get_package_list():
 
 
 def download_all():
+    """ Downloads all packages in requirements. """
     for package in get_package_list():
         download_to_folder(package, EXCHANGE_FOLDER)
         print(f"Downloaded {package} to {EXCHANGE_FOLDER.as_posix()}")
 
 
 def install_all():
+    """ Installs all packages in requirements. """
     for package in get_package_list():
         install_from_folder(package, EXCHANGE_FOLDER)
         print(f"Installed {package} from {EXCHANGE_FOLDER.as_posix()}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--download", help="Download packages", action="store_true")
     parser.add_argument("--install", help="Install packages", action="store_true")

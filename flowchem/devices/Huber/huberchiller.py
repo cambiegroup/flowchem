@@ -10,7 +10,7 @@ from typing import List, Dict, Optional
 import aioserial
 from aioserial import SerialException
 
-from flowchem.constants import InvalidConfiguration, DeviceError
+from flowchem.exceptions import InvalidConfiguration, DeviceError
 
 
 @dataclass
@@ -48,7 +48,11 @@ class PBCommand:
 
     def parse_temperature(self):
         """ Parse a device temp from hex string to celsius float [two's complement 16 bit signed hex, see manual] """
-        temp = (int(self.data, 16) - 65536) / 100 if int(self.data, 16) > 32767 else (int(self.data, 16)) / 100
+        temp = (
+            (int(self.data, 16) - 65536) / 100
+            if int(self.data, 16) > 32767
+            else (int(self.data, 16)) / 100
+        )
         return temp
 
     def parse_integer(self):
@@ -101,6 +105,7 @@ class HuberChiller:
     """
     Control class for Huber chillers.
     """
+
     def __init__(self, aio: aioserial.AioSerial):
         self._serial = aio
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
@@ -115,7 +120,9 @@ class HuberChiller:
         try:
             serial_object = aioserial.AioSerial(**config)
         except SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the HuberChiller on the port <{config.get('port')}>") from e
+            raise InvalidConfiguration(
+                f"Cannot connect to the HuberChiller on the port <{config.get('port')}>"
+            ) from e
 
         return cls(serial_object)
 
@@ -141,9 +148,13 @@ class HuberChiller:
         try:
             reply = await asyncio.wait_for(self._serial.readline_async(), 1)
         except asyncio.TimeoutError:
-            warnings.warn("No reply received. Likely the command is not supported by the hardware!")
+            warnings.warn(
+                "No reply received. Likely the command is not supported by the hardware!"
+            )
             self.logger.error(f"No reply received")
-            return command.replace("M", "S").replace("****", "0000")  # Fake reply to keep going
+            return command.replace("M", "S").replace(
+                "****", "0000"
+            )  # Fake reply to keep going
 
         self.logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
         return reply.decode("ascii")
@@ -160,14 +171,18 @@ class HuberChiller:
 
         if temp > max_t:
             temp = max_t
-            warnings.warn(f"Temperature requested {temp} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
-                          f"Setting to {max_t} instead.")
+            warnings.warn(
+                f"Temperature requested {temp} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
+                f"Setting to {max_t} instead."
+            )
         if temp < min_t:
             temp = min_t
-            warnings.warn(f"Temperature requested {temp} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
-                          f"Setting to {min_t} instead.")
+            warnings.warn(
+                f"Temperature requested {temp} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
+                f"Setting to {min_t} instead."
+            )
 
-        await self.send_command_and_read_reply("{M00"+self.temp_to_string(temp))
+        await self.send_command_and_read_reply("{M00" + self.temp_to_string(temp))
 
     async def internal_temperature(self) -> float:
         """ Returns internal temp (bath temperature). """
@@ -245,7 +260,7 @@ class HuberChiller:
 
     async def set_pump_speed(self, rpm: int):
         """ Set the pump speed, in rpm. See device display for range. """
-        await self.send_command_and_read_reply("{M48"+self.int_to_string(rpm))
+        await self.send_command_and_read_reply("{M48" + self.int_to_string(rpm))
 
     async def cooling_water_temp(self) -> Optional[float]:
         """ Returns the cooling water inlet temperature (in Celsius). """
@@ -323,7 +338,9 @@ class HuberChiller:
 
     async def ramp_to_temperature(self, temperature: float):
         """ Sets the duration (in seconds) of a ramp to the temperature set by a later call to start_ramp(). """
-        await self.send_command_and_read_reply("{M5A" + self.temp_to_string(temperature))
+        await self.send_command_and_read_reply(
+            "{M5A" + self.temp_to_string(temperature)
+        )
 
     async def is_venting(self) -> bool:
         """ Whether the chiller is venting or not. """
@@ -356,7 +373,7 @@ class HuberChiller:
         s1 = await self.send_command_and_read_reply("{M1B****")
         s2 = await self.send_command_and_read_reply("{M1C****")
         pb1, pb2 = PBCommand(s1), PBCommand(s2)
-        return int(pb1.data+pb2.data, 16)
+        return int(pb1.data + pb2.data, 16)
 
     async def wait_for_temperature_simple(self) -> None:
         """ Returns as soon as the target temperature range has been reached, or timeout. """
@@ -384,38 +401,98 @@ class HuberChiller:
         from fastapi import APIRouter
 
         router = APIRouter()
-        router.add_api_route("/temperature/set-point", self.get_temperature_setpoint, methods=["GET"])
-        router.add_api_route("/temperature/set-point", self.set_temperature_setpoint, methods=["PUT"])
-        router.add_api_route("/temperature/set-point/min", self.min_setpoint, methods=["GET"])
-        router.add_api_route("/temperature/set-point/max", self.max_setpoint, methods=["GET"])
-        router.add_api_route("/temperature/process", self.process_temperature, methods=["GET"])
-        router.add_api_route("/temperature/internal", self.internal_temperature, methods=["GET"])
-        router.add_api_route("/temperature/return", self.return_temperature, methods=["GET"])
+        router.add_api_route(
+            "/temperature/set-point", self.get_temperature_setpoint, methods=["GET"]
+        )
+        router.add_api_route(
+            "/temperature/set-point", self.set_temperature_setpoint, methods=["PUT"]
+        )
+        router.add_api_route(
+            "/temperature/set-point/min", self.min_setpoint, methods=["GET"]
+        )
+        router.add_api_route(
+            "/temperature/set-point/max", self.max_setpoint, methods=["GET"]
+        )
+        router.add_api_route(
+            "/temperature/process", self.process_temperature, methods=["GET"]
+        )
+        router.add_api_route(
+            "/temperature/internal", self.internal_temperature, methods=["GET"]
+        )
+        router.add_api_route(
+            "/temperature/return", self.return_temperature, methods=["GET"]
+        )
         router.add_api_route("/power-exchanged", self.current_power, methods=["GET"])
         router.add_api_route("/status", self.status, methods=["GET"])
         router.add_api_route("/status2", self.status2, methods=["GET"])
         router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
-        router.add_api_route("/temperature-control", self.is_temperature_control_active, methods=["GET"])
-        router.add_api_route("/temperature-control/start", self.start_temperature_control, methods=["GET"])
-        router.add_api_route("/temperature-control/stop", self.stop_temperature_control, methods=["GET"])
-        router.add_api_route("/pump/circulation", self.is_circulation_active, methods=["GET"])
-        router.add_api_route("/pump/circulation/start", self.start_circulation, methods=["GET"])
-        router.add_api_route("/pump/circulation/stop", self.stop_circulation, methods=["GET"])
+        router.add_api_route(
+            "/temperature-control", self.is_temperature_control_active, methods=["GET"]
+        )
+        router.add_api_route(
+            "/temperature-control/start",
+            self.start_temperature_control,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            "/temperature-control/stop", self.stop_temperature_control, methods=["GET"]
+        )
+        router.add_api_route(
+            "/pump/circulation", self.is_circulation_active, methods=["GET"]
+        )
+        router.add_api_route(
+            "/pump/circulation/start", self.start_circulation, methods=["GET"]
+        )
+        router.add_api_route(
+            "/pump/circulation/stop", self.stop_circulation, methods=["GET"]
+        )
         router.add_api_route("/pump/pressure", self.pump_pressure, methods=["GET"])
         router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
-        router.add_api_route("/pump/speed/set-point", self.pump_speed_setpoint, methods=["GET"])
-        router.add_api_route("/pump/speed/set-point", self.set_pump_speed, methods=["PUT"])
-        router.add_api_route("/cooling-water/temperature-inlet", self.cooling_water_temp, methods=["GET"])
-        router.add_api_route("/cooling-water/temperature-outlet", self.cooling_water_temp_outflow, methods=["GET"])
-        router.add_api_route("/cooling-water/pressure", self.cooling_water_pressure, methods=["GET"])
-        router.add_api_route("/alarm/process/min-temp", self.alarm_min_process_temp, methods=["GET"])
-        router.add_api_route("/alarm/process/max-temp", self.alarm_max_process_temp, methods=["GET"])
-        router.add_api_route("/alarm/process/min-temp", self.set_alarm_min_process_temp, methods=["PUT"])
-        router.add_api_route("/alarm/process/max-temp", self.set_alarm_min_process_temp, methods=["PUT"])
-        router.add_api_route("/alarm/internal/min-temp", self.alarm_min_internal_temp, methods=["GET"])
-        router.add_api_route("/alarm/internal/max-temp", self.alarm_max_internal_temp, methods=["GET"])
-        router.add_api_route("/alarm/internal/min-temp", self.set_alarm_min_internal_temp, methods=["PUT"])
-        router.add_api_route("/alarm/internal/max-temp", self.set_alarm_min_internal_temp, methods=["PUT"])
+        router.add_api_route(
+            "/pump/speed/set-point", self.pump_speed_setpoint, methods=["GET"]
+        )
+        router.add_api_route(
+            "/pump/speed/set-point", self.set_pump_speed, methods=["PUT"]
+        )
+        router.add_api_route(
+            "/cooling-water/temperature-inlet", self.cooling_water_temp, methods=["GET"]
+        )
+        router.add_api_route(
+            "/cooling-water/temperature-outlet",
+            self.cooling_water_temp_outflow,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            "/cooling-water/pressure", self.cooling_water_pressure, methods=["GET"]
+        )
+        router.add_api_route(
+            "/alarm/process/min-temp", self.alarm_min_process_temp, methods=["GET"]
+        )
+        router.add_api_route(
+            "/alarm/process/max-temp", self.alarm_max_process_temp, methods=["GET"]
+        )
+        router.add_api_route(
+            "/alarm/process/min-temp", self.set_alarm_min_process_temp, methods=["PUT"]
+        )
+        router.add_api_route(
+            "/alarm/process/max-temp", self.set_alarm_min_process_temp, methods=["PUT"]
+        )
+        router.add_api_route(
+            "/alarm/internal/min-temp", self.alarm_min_internal_temp, methods=["GET"]
+        )
+        router.add_api_route(
+            "/alarm/internal/max-temp", self.alarm_max_internal_temp, methods=["GET"]
+        )
+        router.add_api_route(
+            "/alarm/internal/min-temp",
+            self.set_alarm_min_internal_temp,
+            methods=["PUT"],
+        )
+        router.add_api_route(
+            "/alarm/internal/max-temp",
+            self.set_alarm_min_internal_temp,
+            methods=["PUT"],
+        )
         router.add_api_route("/venting/is_venting", self.is_venting, methods=["GET"])
         router.add_api_route("/venting/start", self.start_venting, methods=["GET"])
         router.add_api_route("/venting/stop", self.stop_venting, methods=["GET"])
@@ -427,9 +504,9 @@ class HuberChiller:
         return router
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
-    chiller = HuberChiller(aioserial.AioSerial(port='COM8'))
+    chiller = HuberChiller(aioserial.AioSerial(port="COM8"))
     status = asyncio.run(chiller.status())
     print(status)

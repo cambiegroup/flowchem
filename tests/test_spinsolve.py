@@ -1,3 +1,4 @@
+""" Test Spinsolve, needs actual connection with the device """
 import pytest
 import asyncio
 import time

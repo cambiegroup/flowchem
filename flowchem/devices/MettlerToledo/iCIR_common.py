@@ -1,3 +1,4 @@
+""" Common iCIR code. """
 import warnings
 from pathlib import Path
 from typing import TypedDict, List
@@ -5,6 +6,8 @@ from pydantic import BaseModel
 
 
 class ProbeInfo(TypedDict):
+    """ Dictionary returned from iCIR with probe info. """
+
     spectrometer: str
     spectrometer_SN: str
     probe_SN: str
@@ -21,6 +24,7 @@ class ProbeInfo(TypedDict):
 # noinspection PyPep8Naming
 class iCIR_spectrometer:
     """ Common code between sync and async implementations """
+
     iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
     _supported_versions = {"7.1.91.0"}
     SOFTWARE_VERSION = "ns=2;s=Local.iCIR.SoftwareVersion"
@@ -38,7 +42,11 @@ class iCIR_spectrometer:
 
     def is_local(self):
         """ Returns true if the server is on the same machine running the python code. """
-        return any(x in self.opcua.aio_obj.server_url.netloc for x in ("localhost", "127.0.0.1"))
+        # noinspection PyUnresolvedReferences
+        return any(
+            x in self.opcua.aio_obj.server_url.netloc
+            for x in ("localhost", "127.0.0.1")
+        )
 
     @staticmethod
     def _normalize_template_name(template_name) -> str:
@@ -76,9 +84,13 @@ class iCIR_spectrometer:
 
     @staticmethod
     def parse_probe_info(probe_info: str) -> ProbeInfo:
-        # 'FlowIR; SN: 2989; Detector: DTGS; Apodization: HappGenzel; IP Address: 192.168.1.2;
-        # Probe: DiComp (Diamond); SN: 14570173; Interface: FlowIR™ Sensor; Sampling: 4000 to 650 cm-1;
-        # Resolution: 8; Scan option: AutoSelect; Gain: 232;'
+        """ Convert the device reply into a ProbeInfo dictionary
+
+        Example probe_info reply is:
+        'FlowIR; SN: 2989; Detector: DTGS; Apodization: HappGenzel; IP Address: 192.168.1.2;
+        Probe: DiComp (Diamond); SN: 14570173; Interface: FlowIR™ Sensor; Sampling: 4000 to 650 cm-1;
+        Resolution: 8; Scan option: AutoSelect; Gain: 232;'
+        """
         fields = probe_info.split(";")
         probe_info = {
             "spectrometer": fields[0],

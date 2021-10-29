@@ -258,7 +258,9 @@ class Spinsolve:
 
         return protocols
 
-    async def run_protocol(self, protocol_name, protocol_options=None) -> Optional[Union[str, Path]]:
+    async def run_protocol(
+        self, protocol_name, protocol_options=None
+    ) -> Optional[Union[str, Path]]:
         """
         Runs a protocol
 
@@ -274,7 +276,9 @@ class Spinsolve:
             return None
 
         # Validate protocol options (check values and remove invalid ones, with warning)
-        valid_protocol_options = self._validate_protocol_request(protocol_name, protocol_options)
+        valid_protocol_options = self._validate_protocol_request(
+            protocol_name, protocol_options
+        )
 
         # Start protocol
         self._reader.clear_replies()
@@ -369,7 +373,7 @@ class Spinsolve:
     #     """ Perform one of the standard shimming routine {CheckShim | QuickShim | PowerShim} """
     #     # Check shim type
     #     if shim_type not in self.STD_SHIM_REQUEST:
-    #         warnings.warn(f"Invalid shimming protocol: {shim_type} not in {self.STD_SHIM_REQUEST}. Assuming CheckShim")
+    #         warnings.warn(f"Invalid shimming protocol: {shim_type} not in {self.STD_SHIM_REQUEST}. Assumed CheckShim")
     #         shim_type = "CheckShim"
     #
     #     # Submit request

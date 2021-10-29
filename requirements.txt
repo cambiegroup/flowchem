@@ -20,3 +20,4 @@ pyyaml~=5.4.1
 uvicorn~=0.13.4
 aioserial~=1.3.0
 pydantic
+jsonschema

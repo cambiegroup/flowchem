@@ -11,11 +11,12 @@ def get_my_docs_path():
     XSD and XML schema are installed in my documents, whose location, if custom, can be obtained as follows.
     """
     # From https://stackoverflow.com/questions/6227590
-    CSIDL_PERSONAL = 5  # My Documents
-    SHGFP_TYPE_CURRENT = 0  # Get current, not default value
+
+    csidl_personal = 5  # My Documents
+    shgfp_type_current = 0  # Get current, not default value
     buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
     ctypes.windll.shell32.SHGetFolderPathW(
-        None, CSIDL_PERSONAL, None, SHGFP_TYPE_CURRENT, buf
+        None, csidl_personal, None, shgfp_type_current, buf
     )
     return Path(buf.value)
 
@@ -62,5 +63,10 @@ async def get_streams_for_connection(
 
 
 def run_loop(loop):
+    """
+
+    Args:
+        loop:
+    """
     asyncio.set_event_loop(loop)
     loop.run_forever()

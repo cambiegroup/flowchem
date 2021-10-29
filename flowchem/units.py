@@ -3,7 +3,8 @@ from typing import Union
 
 import pint
 
-flowchem_ureg = pint.UnitRegistry()  # Unit converter, defaults are fine, but it would be wise explicitly list the units needed
+# Unit converter, see pint docs for info
+flowchem_ureg = pint.UnitRegistry()
 
 
 def value_to_ul_min(value: Union[pint.Quantity, str, float]) -> pint.Quantity:

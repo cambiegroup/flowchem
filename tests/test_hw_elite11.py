@@ -10,7 +10,7 @@ from flowchem.devices.Harvard_Apparatus.HA_elite11 import (
     Elite11,
     PumpStatus
 )
-from flowchem.constants import DeviceError
+from flowchem.exceptions import DeviceError
 
 
 async def move_infuse(pump):
@@ -25,6 +25,7 @@ def event_loop(request):
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
 
 @pytest.fixture(scope="session")
 async def pump():

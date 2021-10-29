@@ -17,7 +17,7 @@ def create_message(sub_element_name, attributes=None):
     return root
 
 
-def set_attribute(name, value="") -> etree._Element:
+def set_attribute(name, value="") -> etree.Element:
     """
     Creates a Set message.
     Used for name = {Solvent | Sample} + indirectly by UserData and DataFolder
@@ -28,7 +28,7 @@ def set_attribute(name, value="") -> etree._Element:
     return base
 
 
-def get_request(name) -> etree._Element:
+def get_request(name) -> etree.Element:
     """
     Creates a Get message.
     Used for name = {Solvent | Sample | UserData} + indirectly by UserData and DataFolder
@@ -38,7 +38,7 @@ def get_request(name) -> etree._Element:
     return base
 
 
-def set_data_folder(location) -> etree._Element:
+def set_data_folder(location) -> etree.Element:
     """
     Create a Set DataFolder message
     """
@@ -54,7 +54,7 @@ def set_data_folder(location) -> etree._Element:
     return data_folder
 
 
-def set_user_data(data: dict) -> etree._Element:
+def set_user_data(data: dict) -> etree.Element:
     """
     Given a dict with custom data, it creates a Set/UserData message.
     Those data are saved in acq.par
@@ -69,7 +69,7 @@ def set_user_data(data: dict) -> etree._Element:
 
 def create_protocol_message(
     protocol_name: str, protocol_options: dict
-) -> etree._Element:
+) -> etree.Element:
     """
     Create an XML request to run a protocol
     """

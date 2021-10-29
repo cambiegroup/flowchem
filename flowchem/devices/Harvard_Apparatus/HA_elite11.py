@@ -23,10 +23,12 @@ class PumpInfo(BaseModel):
     """
     Detailed pump info.
     """
+
     pump_type: str
     pump_description: str
     infuse_only: bool
 
+    # noinspection PyUnboundLocalVariable
     @classmethod
     def parse_pumpstring(cls, metrics_text: List[str]):
         """ Parse pump response string into model. """
@@ -40,7 +42,11 @@ class PumpInfo(BaseModel):
                     infuse_only = False
                 else:
                     infuse_only = True
-        return cls(pump_type=pump_type, pump_description=pump_description, infuse_only=infuse_only)
+        return cls(
+            pump_type=pump_type,
+            pump_description=pump_description,
+            infuse_only=infuse_only,
+        )
 
 
 @dataclass
@@ -116,10 +122,7 @@ class PumpStatus(Enum):
 class PumpIO:
     """ Setup with serial parameters, low level IO"""
 
-    DEFAULT_CONFIG = {
-        "timeout": 0.1,
-        "baudrate": 115200
-    }
+    DEFAULT_CONFIG = {"timeout": 0.1, "baudrate": 115200}
 
     # noinspection PyPep8
     def __init__(self, **config):
@@ -129,7 +132,9 @@ class PumpIO:
         try:
             self._serial = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the Pump on the port <{config.get('port')}>") from e
+            raise InvalidConfiguration(
+                f"Cannot connect to the Pump on the port <{config.get('port')}>"
+            ) from e
 
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
@@ -240,7 +245,9 @@ class PumpIO:
 
         # Ensure no stall is present (this might happen, so let's raise an Exception w/ diagnostic text)
         if PumpStatus.STALLED in return_status:
-            raise DeviceError("Pump stalled! Press display to clear error and restart :(")
+            raise DeviceError(
+                "Pump stalled! Press display to clear error and restart :("
+            )
 
         PumpIO.check_for_errors(last_response_line=response[-1], command_sent=command)
 
@@ -422,6 +429,7 @@ class Elite11Commands:
     # )
 
 
+# noinspection PyProtectedMember
 class Elite11:
     """
     Controls Harvard Apparatus Elite11 syringe pumps.
@@ -462,12 +470,16 @@ class Elite11:
 
         # diameter and syringe volume - these will be set in initialize() - check values here though.
         if diameter is None:
-            raise InvalidConfiguration("Please provide the syringe diameter explicitly!\nThis prevents errors :)")
+            raise InvalidConfiguration(
+                "Please provide the syringe diameter explicitly!\nThis prevents errors :)"
+            )
         else:
             self._diameter = diameter
 
         if syringe_volume is None:
-            raise InvalidConfiguration("Please provide the syringe volume explicitly!\nThis prevents errors :)")
+            raise InvalidConfiguration(
+                "Please provide the syringe volume explicitly!\nThis prevents errors :)"
+            )
         else:
             self._syringe_volume = syringe_volume
 
@@ -478,11 +490,14 @@ class Elite11:
 
     @classmethod
     def from_config(cls, **config):
-        # Many pump can be present on the same serial port with different addresses.
-        # This shared list of PumpIO objects allow shared state in a borg-inspired way, avoiding singletons
-        # This is only relevant to programmatic instantiation, i.e. when from_config() is called per each pump from a
-        # config file, as it is the case in the HTTP server.
-        # Pump_IO() manually instantiated are not accounted for.
+        """ Programmatic instantiation from configuration
+
+        Many pump can be present on the same serial port with different addresses.
+        This shared list of PumpIO objects allow shared state in a borg-inspired way, avoiding singletons
+        This is only relevant to programmatic instantiation, i.e. when from_config() is called per each pump from a
+        config file, as it is the case in the HTTP server.
+        Pump_IO() manually instantiated are not accounted for.
+        """
         pumpio = None
         for obj in Elite11._io_instances:
             if obj._serial.port == config.get("port"):
@@ -492,11 +507,20 @@ class Elite11:
         # If not existing serial object are available for the port provided, create a new one
         if pumpio is None:
             # Remove Elite11-specific keys to only have HamiltonPumpIO's kwargs
-            config_for_pumpio = {k: v for k, v in config.items() if k not in ("diameter", "address", "name", "syringe_volume")}
+            config_for_pumpio = {
+                k: v
+                for k, v in config.items()
+                if k not in ("diameter", "address", "name", "syringe_volume")
+            }
             pumpio = PumpIO(**config_for_pumpio)
 
-        return cls(pumpio, address=config.get("address"), name=config.get("name"), diameter=config.get("diameter"),
-                   syringe_volume=config.get("syringe_volume"))
+        return cls(
+            pumpio,
+            address=config.get("address"),
+            name=config.get("name"),
+            diameter=config.get("diameter"),
+            syringe_volume=config.get("syringe_volume"),
+        )
 
     async def initialize(self):
         """ Ensure a valid connection with the pump has been established and sets parameters. """
@@ -510,7 +534,9 @@ class Elite11:
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
 
-        self.log.info(f"Connected to pump '{self.name}' on port {self.pump_io.name}:{self.address}!")
+        self.log.info(
+            f"Connected to pump '{self.name}' on port {self.pump_io.name}:{self.address}!"
+        )
 
         # Enable withdraw commands only on pumps that support them...
         pump_info = await self.pump_info()
@@ -568,7 +594,9 @@ class Elite11:
 
     async def get_status(self) -> PumpStatus:
         """ Empty message to trigger a new reply and evaluate connection and pump current status via reply prompt """
-        status = await self.send_command_and_read_reply(Elite11Commands.EMPTY_MESSAGE, parse=False)
+        status = await self.send_command_and_read_reply(
+            Elite11Commands.EMPTY_MESSAGE, parse=False
+        )
         return PumpStatus(status[0][2:3])
 
     async def is_moving(self) -> bool:
@@ -682,13 +710,17 @@ class Elite11:
 
     async def get_infused_volume(self) -> float:
         """ Return infused volume in ml """
-        infused_w_units = await self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)
+        infused_w_units = await self.send_command_and_read_reply(
+            Elite11Commands.INFUSED_VOLUME
+        )
         return flowchem_ureg(infused_w_units).m_as("ml")
 
     async def get_withdrawn_volume(self):
         """ Returns the withdrawn volume from the last clear_*_volume() command, according to the pump """
         self.ensure_withdraw_is_enabled()
-        withdrawn_w_units = await self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)
+        withdrawn_w_units = await self.send_command_and_read_reply(
+            Elite11Commands.WITHDRAWN_VOLUME
+        )
         return flowchem_ureg(withdrawn_w_units).m_as("ml")
 
     async def clear_infused_volume(self):
@@ -703,7 +735,9 @@ class Elite11:
     async def clear_infused_withdrawn_volume(self):
         """ Reset both the pump infused and withdrawn volume counters to 0 """
         self.ensure_withdraw_is_enabled()
-        await self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_WITHDRAWN_VOLUME)
+        await self.send_command_and_read_reply(
+            Elite11Commands.CLEAR_INFUSED_WITHDRAWN_VOLUME
+        )
         sleep(0.1)  # FIXME check if needed
 
     async def clear_volumes(self):
@@ -727,6 +761,7 @@ class Elite11:
         return int(percent[:-1])
 
     async def set_force(self, force_percent: int):
+        """ Sets the pump force, see `Elite11.get_force()` for suggested values. """
         await self.send_command_and_read_reply(
             Elite11Commands.SET_FORCE, parameter=str(int(force_percent))
         )
@@ -758,7 +793,9 @@ class Elite11:
         :return: current moving rate
         """
         if await self.is_moving():
-            return await self.send_command_and_read_reply(Elite11Commands.CURRENT_MOVING_RATE)
+            return await self.send_command_and_read_reply(
+                Elite11Commands.CURRENT_MOVING_RATE
+            )
         else:
             warnings.warn("Pump is not moving, cannot provide moving rate!")
             return None
@@ -767,7 +804,9 @@ class Elite11:
         """
         Returns target volume in ml. If the volume is set to 0, the target is cleared.
         """
-        target_vol = await self.send_command_and_read_reply(Elite11Commands.GET_TARGET_VOLUME)
+        target_vol = await self.send_command_and_read_reply(
+            Elite11Commands.GET_TARGET_VOLUME
+        )
         if "Target volume not set" in target_vol:
             return None
         # Returns in ml
@@ -784,8 +823,10 @@ class Elite11:
                 Elite11Commands.SET_TARGET_VOLUME, parameter=f"{target_volume_in_ml} m"
             )
             if "Argument error" in set_vol:
-                warnings.warn(f"Cannot set target volume of {target_volume_in_ml} ml with a "
-                              f"{self.get_syringe_volume()} ml syringe!")
+                warnings.warn(
+                    f"Cannot set target volume of {target_volume_in_ml} ml with a "
+                    f"{self.get_syringe_volume()} ml syringe!"
+                )
 
     async def pump_info(self) -> PumpInfo:
         """ Returns many info
@@ -823,8 +864,12 @@ class Elite11:
         from fastapi import APIRouter
 
         router = APIRouter()
-        router.add_api_route("/parameters/syringe-volume", self.get_syringe_volume, methods=["GET"])
-        router.add_api_route("/parameters/syringe-volume", self.set_syringe_volume, methods=["PUT"])
+        router.add_api_route(
+            "/parameters/syringe-volume", self.get_syringe_volume, methods=["GET"]
+        )
+        router.add_api_route(
+            "/parameters/syringe-volume", self.set_syringe_volume, methods=["PUT"]
+        )
         router.add_api_route("/parameters/force", self.get_force, methods=["PUT"])
         router.add_api_route("/parameters/force", self.set_force, methods=["PUT"])
         router.add_api_route("/run", self.run, methods=["PUT"])
@@ -834,16 +879,32 @@ class Elite11:
         router.add_api_route("/stop", self.stop, methods=["PUT"])
         router.add_api_route("/infusion-rate", self.get_infusion_rate, methods=["GET"])
         router.add_api_route("/infusion-rate", self.set_infusion_rate, methods=["PUT"])
-        router.add_api_route("/withdraw-rate", self.get_withdrawing_rate, methods=["GET"])
-        router.add_api_route("/withdraw-rate", self.set_withdrawing_rate, methods=["PUT"])
+        router.add_api_route(
+            "/withdraw-rate", self.get_withdrawing_rate, methods=["GET"]
+        )
+        router.add_api_route(
+            "/withdraw-rate", self.set_withdrawing_rate, methods=["PUT"]
+        )
         router.add_api_route("/info/version", self.version, methods=["GET"])
-        router.add_api_route("/info/status", self.get_status, methods=["GET"], response_model=PumpStatus)  # CHECK THIS!
+        router.add_api_route(
+            "/info/status", self.get_status, methods=["GET"], response_model=PumpStatus
+        )  # CHECK THIS!
         router.add_api_route("/info/is-moving", self.is_moving, methods=["GET"])
-        router.add_api_route("/info/current-flowrate", self.get_current_flowrate, methods=["GET"])
-        router.add_api_route("/info/infused-volume", self.get_infused_volume, methods=["GET"])
-        router.add_api_route("/info/reset-infused-volume", self.clear_infused_volume, methods=["PUT"])
-        router.add_api_route("/info/withdrawn-volume", self.get_withdrawn_volume, methods=["GET"])
-        router.add_api_route("/info/reset-withdrawn", self.clear_withdrawn_volume, methods=["PUT"])
+        router.add_api_route(
+            "/info/current-flowrate", self.get_current_flowrate, methods=["GET"]
+        )
+        router.add_api_route(
+            "/info/infused-volume", self.get_infused_volume, methods=["GET"]
+        )
+        router.add_api_route(
+            "/info/reset-infused-volume", self.clear_infused_volume, methods=["PUT"]
+        )
+        router.add_api_route(
+            "/info/withdrawn-volume", self.get_withdrawn_volume, methods=["GET"]
+        )
+        router.add_api_route(
+            "/info/reset-withdrawn", self.clear_withdrawn_volume, methods=["PUT"]
+        )
         router.add_api_route("/info/reset-all", self.clear_volumes, methods=["GET"])
 
         return router
@@ -856,6 +917,7 @@ if __name__ == "__main__":
     pump = Elite11.from_config(port="COM4", syringe_volume=10, diameter=10)
 
     async def main():
+        """ Test function """
         await pump.initialize()
         await pump.clear_volumes()
         assert await pump.get_infused_volume() == 0

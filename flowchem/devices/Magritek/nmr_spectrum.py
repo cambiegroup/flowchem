@@ -1,15 +1,23 @@
+""" NMR-spectrum object represents an NMR spectrum.  """
 import nmrglue as ng
 from pathlib import Path
 import matplotlib.pyplot as plt
 
 
-class Spectrum:
+class NMR_Spectrum:
+    """ General spectrum object, instantiated from Spinsolve folder w/ experimental results. """
+
     def __init__(self, location: Path):
         self.dic, self.raw_data = ng.spinsolve.read(dir=location.as_posix())
         self.processed_data = None
 
     @property
     def uc(self):
+        """
+
+        Returns:
+
+        """
         data = self.processed_data if self.processed_data is not None else self.raw_data
         return ng.spinsolve.make_uc(self.dic, data)
 

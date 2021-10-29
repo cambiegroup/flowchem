@@ -17,7 +17,7 @@ from typing import Optional
 import aioserial
 from aioserial import SerialException
 
-from flowchem.constants import InvalidConfiguration
+from flowchem.exceptions import InvalidConfiguration
 
 
 @dataclass
@@ -116,7 +116,9 @@ class HamiltonPumpIO:
             configuration.pop("hw_initialization")
             serial_object = aioserial.AioSerial(**configuration)
         except SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the pump on the port <{configuration.get('port')}>") from e
+            raise InvalidConfiguration(
+                f"Cannot connect to the pump on the port <{configuration.get('port')}>"
+            ) from e
 
         return cls(serial_object, config.get("hw_initialization", True))
 
@@ -126,7 +128,9 @@ class HamiltonPumpIO:
         A custom command syntax with no addresses is used here so read and write has been rewritten
         """
         try:
-            self._serial.write("1a\r".encode("ascii"))  # Do not use async here as it is called during init()
+            self._serial.write(
+                "1a\r".encode("ascii")
+            )  # Do not use async here as it is called during init()
         except aioserial.SerialException as e:
             raise InvalidConfiguration from e
 
@@ -176,13 +180,18 @@ class HamiltonPumpIO:
     def parse_response(self, response: str) -> str:
         """ Split a received line in its components: success, reply """
         status = response[:1]
-        assert status in (HamiltonPumpIO.ACKNOWLEDGE, HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE), "Invalid status reply!"
+        assert status in (
+            HamiltonPumpIO.ACKNOWLEDGE,
+            HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE,
+        ), "Invalid status reply!"
 
         if status == HamiltonPumpIO.ACKNOWLEDGE:
             self.logger.debug("Positive acknowledge received")
         else:
             self.logger.warning("Negative acknowledge received")
-            warnings.warn("Negative acknowledge reply received from pump: check command validity!")
+            warnings.warn(
+                "Negative acknowledge reply received from pump: check command validity!"
+            )
 
         return response[1:].rstrip()
 
@@ -248,6 +257,7 @@ class ML600:
 
     class ValvePositionName(IntEnum):
         """ Maps valve position to the corresponding number """
+
         POSITION_1 = 1
         # POSITION_2 = 2
         POSITION_3 = 3
@@ -313,7 +323,9 @@ class ML600:
         # Test connectivity by querying the pump's firmware version
         fw_cmd = Protocol1CommandTemplate(command="U").to_pump(self.address)
         firmware_version = self.pump_io.write_and_read_reply(fw_cmd)
-        self.log.info(f"Connected to Hamilton ML600 {self.name} - FW version: {firmware_version}!")
+        self.log.info(
+            f"Connected to Hamilton ML600 {self.name} - FW version: {firmware_version}!"
+        )
 
     @classmethod
     def from_config(cls, config):
@@ -325,6 +337,7 @@ class ML600:
         # HamiltonPump_IO() manually instantiated are not accounted for.
         pumpio = None
         for obj in ML600._io_instances:
+            # noinspection PyProtectedMember
             if obj._serial.port == config.get("port"):
                 pumpio = obj
                 break
@@ -332,11 +345,19 @@ class ML600:
         # If not existing serial object are available for the port provided, create a new one
         if pumpio is None:
             # Remove ML600-specific keys to only have HamiltonPumpIO's kwargs
-            config_for_pumpio = {k: v for k, v in config.items() if k not in ("syringe_volume", "address", "name")}
+            config_for_pumpio = {
+                k: v
+                for k, v in config.items()
+                if k not in ("syringe_volume", "address", "name")
+            }
             pumpio = HamiltonPumpIO.from_config(config_for_pumpio)
 
-        return cls(pumpio, syringe_volume=config.get("syringe_volume"), address=config.get("address"),
-                   name=config.get("name"))
+        return cls(
+            pumpio,
+            syringe_volume=config.get("syringe_volume"),
+            address=config.get("address"),
+            name=config.get("name"),
+        )
 
     async def send_command_and_read_reply(
         self,
@@ -357,7 +378,9 @@ class ML600:
         # Cast to int
         speed = int(round(speed))
         if not 2 <= speed <= 3692:
-            warnings.warn("Invalid initialization speed provided: {speed}. Acceptable range is 2-3692! Ignoring value.")
+            warnings.warn(
+                "Invalid initialization speed provided: {speed}. Acceptable range is 2-3692! Ignoring value."
+            )
             return ""
         return str(speed)
 
@@ -367,19 +390,27 @@ class ML600:
         speed: 2-3692 is in seconds/stroke
         """
         init_cmd = Protocol1CommandTemplate(command="X", optional_parameter="S")
-        return await self.send_command_and_read_reply(init_cmd, argument_value=self._validate_speed(speed))
+        return await self.send_command_and_read_reply(
+            init_cmd, argument_value=self._validate_speed(speed)
+        )
 
     async def initialize_valve(self):
         """ Initialize valve only """
-        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="LX"))
+        return await self.send_command_and_read_reply(
+            Protocol1CommandTemplate(command="LX")
+        )
 
     async def initialize_syringe(self, speed: int = None):
         """
         Initialize syringe only
         speed: 2-3692 is in seconds/stroke
         """
-        init_syringe_cmd = Protocol1CommandTemplate(command="X1", optional_parameter="S")
-        return await self.send_command_and_read_reply(init_syringe_cmd, argument_value=self._validate_speed(speed))
+        init_syringe_cmd = Protocol1CommandTemplate(
+            command="X1", optional_parameter="S"
+        )
+        return await self.send_command_and_read_reply(
+            init_syringe_cmd, argument_value=self._validate_speed(speed)
+        )
 
     def flowrate_to_seconds_per_stroke(self, flowrate_in_ml_min: float):
         """
@@ -399,16 +430,20 @@ class ML600:
         # Target flow rate too high
         if seconds_per_stroke < 2:
             seconds_per_stroke = 2
-            warnings.warn(f"Desired flow rate ({flowrate_in_ml_min}) is unachievable!"
-                          f"Set to {self.seconds_per_stroke_to_flowrate(seconds_per_stroke)}"
-                          f"Wrong units? A bigger syringe is needed?")
+            warnings.warn(
+                f"Desired flow rate ({flowrate_in_ml_min}) is unachievable!"
+                f"Set to {self.seconds_per_stroke_to_flowrate(seconds_per_stroke)}"
+                f"Wrong units? A bigger syringe is needed?"
+            )
 
         # Target flow rate too low
         if seconds_per_stroke > 3692:
             seconds_per_stroke = 3692
-            warnings.warn(f"Desired flow rate ({flowrate_in_ml_min}) is unachievable!"
-                          f"Set to {self.seconds_per_stroke_to_flowrate(seconds_per_stroke)}"
-                          f"Wrong units? A smaller syringe is needed?")
+            warnings.warn(
+                f"Desired flow rate ({flowrate_in_ml_min}) is unachievable!"
+                f"Set to {self.seconds_per_stroke_to_flowrate(seconds_per_stroke)}"
+                f"Wrong units? A smaller syringe is needed?"
+            )
 
         return round(seconds_per_stroke)
 
@@ -426,11 +461,15 @@ class ML600:
     async def _to_step_position(self, position: int, speed: int = ""):
         """ Absolute move to step position. """
         abs_move_cmd = Protocol1CommandTemplate(command="M", optional_parameter="S")
-        return await self.send_command_and_read_reply(abs_move_cmd, str(position), self._validate_speed(speed))
+        return await self.send_command_and_read_reply(
+            abs_move_cmd, str(position), self._validate_speed(speed)
+        )
 
     async def get_current_volume(self) -> float:
         """ Return current syringe position in ml. """
-        syringe_pos = await self.send_command_and_read_reply(Protocol1CommandTemplate(command="YQP"))
+        syringe_pos = await self.send_command_and_read_reply(
+            Protocol1CommandTemplate(command="YQP")
+        )
         current_steps = int(syringe_pos) - self._offset_steps
         return current_steps / self._steps_per_ml
 
@@ -443,16 +482,22 @@ class ML600:
 
     async def pause(self):
         """ Pause any running command. """
-        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="K", execute_command=False))
+        return await self.send_command_and_read_reply(
+            Protocol1CommandTemplate(command="K", execute_command=False)
+        )
 
     async def resume(self):
         """ Resume any paused command. """
-        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="$", execute_command=False))
+        return await self.send_command_and_read_reply(
+            Protocol1CommandTemplate(command="$", execute_command=False)
+        )
 
     async def stop(self):
         """ Stops and abort any running command. """
         await self.pause()
-        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="V", execute_command=False))
+        return await self.send_command_and_read_reply(
+            Protocol1CommandTemplate(command="V", execute_command=False)
+        )
 
     async def wait_until_idle(self):
         """ Returns when no more commands are present in the pump buffer. """
@@ -463,11 +508,18 @@ class ML600:
 
     async def version(self) -> str:
         """ Returns the current firmware version reported by the pump. """
-        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="U"))
+        return await self.send_command_and_read_reply(
+            Protocol1CommandTemplate(command="U")
+        )
 
     async def is_idle(self) -> bool:
         """ Checks if the pump is idle (actually check if the last command has ended). """
-        return await self.send_command_and_read_reply(Protocol1CommandTemplate(command="F")) == "Y"
+        return (
+            await self.send_command_and_read_reply(
+                Protocol1CommandTemplate(command="F")
+            )
+            == "Y"
+        )
 
     async def is_busy(self) -> bool:
         """ Pump is not idle. """
@@ -475,66 +527,102 @@ class ML600:
 
     async def get_valve_position(self) -> ValvePositionName:
         """ Represent the position of the valve: getter returns Enum, setter needs Enum. """
-        valve_pos = await self.send_command_and_read_reply(Protocol1CommandTemplate(command="LQP"))
+        valve_pos = await self.send_command_and_read_reply(
+            Protocol1CommandTemplate(command="LQP")
+        )
         return ML600.ValvePositionName(int(valve_pos))
 
-    async def set_valve_position(self, target_position: ValvePositionName, wait_for_movement_end: bool = True):
+    async def set_valve_position(
+        self, target_position: ValvePositionName, wait_for_movement_end: bool = True
+    ):
         """ Set valve position. wait_for_movement_end is defaulted to True as it is a common mistake not to wait... """
         valve_by_name_cw = Protocol1CommandTemplate(command="LP0")
-        await self.send_command_and_read_reply(valve_by_name_cw, command_value=str(int(target_position)))
+        await self.send_command_and_read_reply(
+            valve_by_name_cw, command_value=str(int(target_position))
+        )
         self.log.debug(f"{self.name} valve position set to {target_position.name}")
         if wait_for_movement_end:
             await self.wait_until_idle()
 
     async def get_return_steps(self) -> int:
         """ Return steps getter. Applied to the end of a downward syringe movement to removes mechanical slack. """
-        steps = await self.send_command_and_read_reply(Protocol1CommandTemplate(command="YQN"))
+        steps = await self.send_command_and_read_reply(
+            Protocol1CommandTemplate(command="YQN")
+        )
         return int(steps)
 
     async def set_return_steps(self, target_steps: int):
         """ Return steps setter. Applied to the end of a downward syringe movement to removes mechanical slack. """
         set_return_steps_cmd = Protocol1CommandTemplate(command="YSN")
-        await self.send_command_and_read_reply(set_return_steps_cmd, command_value=str(int(target_steps)))
+        await self.send_command_and_read_reply(
+            set_return_steps_cmd, command_value=str(int(target_steps))
+        )
 
-    async def pickup(self, volume_in_ml: float, from_valve: ValvePositionName,
-                     flowrate_in_ml_min: float = 1.0, wait: bool = False):
+    async def pickup(
+        self,
+        volume_in_ml: float,
+        from_valve: ValvePositionName,
+        flowrate_in_ml_min: float = 1.0,
+        wait: bool = False,
+    ):
         """ Get volume from valve specified at given flowrate. """
         cur_vol = await self.get_current_volume()
         if (cur_vol + volume_in_ml) > self._max_vol:
-            warnings.warn(f"Cannot withdraw {volume_in_ml} given the current syringe position {cur_vol} ml and a "
-                          f"syringe volume of {self.syringe_volume}")
+            warnings.warn(
+                f"Cannot withdraw {volume_in_ml} given the current syringe position {cur_vol} ml and a "
+                f"syringe volume of {self.syringe_volume}"
+            )
             return
 
         # Valve to position specified
         await self.set_valve_position(from_valve, wait_for_movement_end=True)
         # Move up to target volume
-        await self.to_volume(cur_vol + volume_in_ml, speed=self.flowrate_to_seconds_per_stroke(flowrate_in_ml_min))
+        await self.to_volume(
+            cur_vol + volume_in_ml,
+            speed=self.flowrate_to_seconds_per_stroke(flowrate_in_ml_min),
+        )
 
         if wait:
             await self.wait_until_idle()
 
-    async def deliver(self, volume_in_ml: float, to_valve: ValvePositionName,
-                      flowrate_in_ml_min: float = 1.0, wait: bool = False):
+    async def deliver(
+        self,
+        volume_in_ml: float,
+        to_valve: ValvePositionName,
+        flowrate_in_ml_min: float = 1.0,
+        wait: bool = False,
+    ):
         """ Delivers volume to valve specified at given flowrate. """
         cur_vol = await self.get_current_volume()
         if volume_in_ml > cur_vol:
-            warnings.warn(f"Cannot deliver {volume_in_ml} given the current syringe position {cur_vol} ml!")
+            warnings.warn(
+                f"Cannot deliver {volume_in_ml} given the current syringe position {cur_vol} ml!"
+            )
             return
 
         # Valve to position specified
         await self.set_valve_position(to_valve, wait_for_movement_end=True)
         # Move up to target volume
-        await self.to_volume(cur_vol - volume_in_ml, speed=self.flowrate_to_seconds_per_stroke(flowrate_in_ml_min))
+        await self.to_volume(
+            cur_vol - volume_in_ml,
+            speed=self.flowrate_to_seconds_per_stroke(flowrate_in_ml_min),
+        )
 
         if wait:
             await self.wait_until_idle()
 
-    async def transfer(self, volume_in_ml: float, from_valve: ValvePositionName,
-                       to_valve: ValvePositionName, flowrate_in: float = 1.0,
-                       flowrate_out: float = 1.0, wait: bool = False):
+    async def transfer(
+        self,
+        volume_in_ml: float,
+        from_valve: ValvePositionName,
+        to_valve: ValvePositionName,
+        flowrate_in: float = 1.0,
+        flowrate_out: float = 1.0,
+        wait: bool = False,
+    ):
         """ Move liquid from place to place. """
         await self.pickup(volume_in_ml, from_valve, flowrate_in, wait=True)
-        await self.deliver(volume_in_ml, to_valve, flowrate_out, wait=False)
+        await self.deliver(volume_in_ml, to_valve, flowrate_out, wait=wait)
 
     def get_router(self):
         """ Creates an APIRouter for this object. """
@@ -543,8 +631,12 @@ class ML600:
         router = APIRouter()
         router.add_api_route("/firmware-version", self.version, methods=["GET"])
         router.add_api_route("/initialize/pump", self.initialize_pump, methods=["PUT"])
-        router.add_api_route("/initialize/valve", self.initialize_valve, methods=["PUT"])
-        router.add_api_route("/initialize/syringe", self.initialize_syringe, methods=["PUT"])
+        router.add_api_route(
+            "/initialize/valve", self.initialize_valve, methods=["PUT"]
+        )
+        router.add_api_route(
+            "/initialize/syringe", self.initialize_syringe, methods=["PUT"]
+        )
         router.add_api_route("/pause", self.pause, methods=["PUT"])
         router.add_api_route("/resume", self.resume, methods=["PUT"])
         router.add_api_route("/resume", self.resume, methods=["PUT"])
@@ -552,12 +644,22 @@ class ML600:
         router.add_api_route("/version", self.stop, methods=["PUT"])
         router.add_api_route("/is-idle", self.is_idle, methods=["GET"])
         router.add_api_route("/is-busy", self.is_busy, methods=["GET"])
-        router.add_api_route("/valve/position", self.get_valve_position, methods=["GET"])
-        router.add_api_route("/valve/position", self.set_valve_position, methods=["PUT"])
-        router.add_api_route("/syringe/volume", self.get_current_volume, methods=["GET"])
+        router.add_api_route(
+            "/valve/position", self.get_valve_position, methods=["GET"]
+        )
+        router.add_api_route(
+            "/valve/position", self.set_valve_position, methods=["PUT"]
+        )
+        router.add_api_route(
+            "/syringe/volume", self.get_current_volume, methods=["GET"]
+        )
         router.add_api_route("/syringe/volume", self.to_volume, methods=["PUT"])
-        router.add_api_route("/syringe/return-steps", self.get_return_steps, methods=["GET"])
-        router.add_api_route("/syringe/return-steps", self.set_return_steps, methods=["PUT"])
+        router.add_api_route(
+            "/syringe/return-steps", self.get_return_steps, methods=["GET"]
+        )
+        router.add_api_route(
+            "/syringe/return-steps", self.set_return_steps, methods=["PUT"]
+        )
         router.add_api_route("/pickup", self.pickup, methods=["PUT"])
         router.add_api_route("/deliver", self.deliver, methods=["PUT"])
         # router.add_api_route("/transfer", self.transfer, methods=["PUT"])  # Might go in timeout
@@ -596,6 +698,7 @@ class TwoPumpAssembly(Thread):
 
     @property
     def flowrate(self):
+        """ Returns/sets flowrate. """
         return self._flowrate
 
     @flowrate.setter

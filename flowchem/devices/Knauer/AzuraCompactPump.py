@@ -48,6 +48,7 @@ class AzuraPumpHeads(Enum):
 
 class AzuraCompactPump(KnauerEthernetDevice):
     """ Control module for Knauer Azura Compact pumps. """
+
     def __init__(self, ip_address):
         super().__init__(ip_address)
         self.eol = b"\n\r"
@@ -80,8 +81,10 @@ class AzuraCompactPump(KnauerEthernetDevice):
             warnings.warn(f"Invalid message sent to device.\n")
 
         elif "ERROR:2" in reply:
-            warnings.warn(f"Setpoint refused by device.\n"
-                          f"Refer to manual for allowed values.\n")
+            warnings.warn(
+                f"Setpoint refused by device.\n"
+                f"Refer to manual for allowed values.\n"
+            )
         else:
             warnings.warn("Unspecified error detected!")
         return True
@@ -136,11 +139,15 @@ class AzuraCompactPump(KnauerEthernetDevice):
         # SETTER with range
         if setpoint_range:
             if setpoint in range(*setpoint_range):
-                return await self._transmit_and_parse_reply(message + ":" + str(setpoint))
+                return await self._transmit_and_parse_reply(
+                    message + ":" + str(setpoint)
+                )
 
-            warnings.warn(f"The setpoint provided {setpoint} is not valid for the command "
-                          f"{message}!\n Accepted range is: {setpoint_range}.\n"
-                          f"Command ignored")
+            warnings.warn(
+                f"The setpoint provided {setpoint} is not valid for the command "
+                f"{message}!\n Accepted range is: {setpoint_range}.\n"
+                f"Command ignored"
+            )
             return ""
 
         # SETTER w/o range
@@ -162,6 +169,7 @@ class AzuraCompactPump(KnauerEthernetDevice):
             self.max_pressure, self.max_flow = 150, 50000
 
     async def get_headtype(self):
+        """ Returns pump's head type. """
         head_type_id = await self.create_and_send_command(HEADTYPE)
         try:
             headtype = AzuraPumpHeads(int(head_type_id))
@@ -177,6 +185,7 @@ class AzuraCompactPump(KnauerEthernetDevice):
         return headtype
 
     async def set_headtype(self, head_type: AzuraPumpHeads):
+        """ Sets pump's head type. """
         await self.create_and_send_command(HEADTYPE, setpoint=head_type.value)
         # Update internal property (changes max flowrate etc)
         self._headtype = head_type
@@ -213,7 +222,8 @@ class AzuraCompactPump(KnauerEthernetDevice):
 
         pressure_in_bar = value_to_bar(pressure)
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
-        await self.create_and_send_command(command,
+        await self.create_and_send_command(
+            command,
             setpoint=round(pressure_in_bar.magnitude),
             setpoint_range=(0, self.max_pressure + 1),
         )
@@ -302,7 +312,9 @@ class AzuraCompactPump(KnauerEthernetDevice):
     async def set_correction_factor(self, setpoint=None):
         """ Sets the correction factor. Not clear what it is. """
         command = CORR10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else CORR50
-        reply = await self.create_and_send_command(command, setpoint=setpoint, setpoint_range=(0, 301))
+        reply = await self.create_and_send_command(
+            command, setpoint=setpoint, setpoint_range=(0, 301)
+        )
         self.logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
     async def read_pressure(self) -> str:
@@ -312,11 +324,13 @@ class AzuraCompactPump(KnauerEthernetDevice):
         return str(p_in_bar)
 
     async def read_extflow(self) -> float:
+        """ Read the set flowrate from analog in.  """
         ext_flow = await self._transmit_and_parse_reply(EXTFLOW)
         self.logger.debug(f"Extflow reading returns {ext_flow}")
         return float(ext_flow)
 
     async def read_errors(self):
+        """ Returns the last 5 errors.  """
         last_5_errors = await self.create_and_send_command(ERRORS)
         self.logger.debug(f"Error reading returns {last_5_errors}")
         return last_5_errors
@@ -373,9 +387,10 @@ class AzuraCompactPump(KnauerEthernetDevice):
         self.logger.debug(f"External control set to {value}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # This is a bug of asyncio on Windows :|
     import sys
+
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -384,6 +399,7 @@ if __name__ == '__main__':
     p = AzuraCompactPump(ip_address="192.168.1.126")
 
     async def main(pump: AzuraCompactPump):
+        """ Test function """
         await pump.initialize()
         init_val = await pump.get_adjusting_factor()
         await pump.set_adjusting_factor(0)
