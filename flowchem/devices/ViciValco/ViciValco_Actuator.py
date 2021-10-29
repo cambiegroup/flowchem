@@ -92,7 +92,7 @@ class ViciValcoValveIO:
         configuration = dict(ViciValcoValveIO.DEFAULT_CONFIG, **config)
 
         try:
-            #configuration.pop("hw_initialization")
+            configuration.pop("hw_initialization")
             serial_object = aioserial.AioSerial(**configuration)
         except SerialException as e:
             raise InvalidConfiguration(f"Cannot connect to the valve on the port <{configuration.get('port')}>") from e
@@ -120,7 +120,7 @@ class ViciValcoValveIO:
 
     def _hw_init(self):
         """ Send to all valves the HW initialization command (i.e. homing) """
-        self._serial.write("*GO1\r".encode("ascii"))  # Broadcast: initialize + execute
+        self._serial.write("*HM\r".encode("ascii"))  # Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
 
     def _write(self, command: bytes):
