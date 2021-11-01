@@ -10,7 +10,7 @@ import warnings
 from dataclasses import dataclass
 from enum import Enum
 from time import sleep
-from typing import Union, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import aioserial
 from pydantic import BaseModel
@@ -129,12 +129,12 @@ class PumpIO:
 
     async def _write(self, command: Protocol11Command):
         """ Writes a command to the pump """
-        command = command.compile()
+        command_msg = command.compile()
         try:
-            await self._serial.write_async(command.encode("ascii"))
+            await self._serial.write_async(command_msg.encode("ascii"))
         except aioserial.SerialException as e:
             raise InvalidConfiguration from e
-        self.logger.debug(f"Sent {repr(command)}!")
+        self.logger.debug(f"Sent {repr(command_msg)}!")
 
     async def _read_reply(self, command) -> List[str]:
         """ Reads the pump reply from serial communication """
@@ -175,7 +175,7 @@ class PumpIO:
     def parse_response(
         response: List[str],
     ) -> Tuple[List[int], List[PumpStatus], List[str]]:
-        """ Aggregates address prompt and reply body from all the reply lines and return them """
+        """ Aggregates address prompt and reply body from all the reply lines and return them. """
         parsed_lines = list(map(PumpIO.parse_response_line, response))
         # noinspection PyTypeChecker
         return zip(*parsed_lines)
@@ -214,8 +214,11 @@ class PumpIO:
 
     async def write_and_read_reply(
         self, command: Protocol11Command, return_parsed: bool = True
-    ) -> Union[List[str], str]:
-        """ Main PumpIO method. Sends a command to the pump, read the replies and returns it, optionally parsed """
+    ) -> List[str]:
+        """ Main PumpIO method. Sends a command to the pump, read the replies and returns it, optionally parsed.
+
+         If unparsed reply is a List[str] with raw replies.
+         If parsed reply is a List[str] w/ reply body (address and prompt removed from each line)"""
         self.reset_buffer()
         await self._write(command)
         response = await self._read_reply(command)
@@ -240,7 +243,7 @@ class PumpIO:
 
         PumpIO.check_for_errors(last_response_line=response[-1], command_sent=command)
 
-        return parsed_response[0] if return_parsed else response
+        return parsed_response if return_parsed else response
 
     @property
     def name(self) -> Optional[str]:
@@ -543,8 +546,19 @@ class Elite11:
 
     async def send_command_and_read_reply(
         self, command_template: Protocol11CommandTemplate, parameter="", parse=True
-    ) -> Union[str, List[str]]:
+    ) -> str:
         """ Sends a command based on its template and return the corresponding reply as str """
+
+        reply = await self.pump_io.write_and_read_reply(
+            command_template.to_pump(self.address, parameter), return_parsed=parse
+        )
+        return reply[0]
+
+    async def send_command_and_read_reply_multiline(
+        self, command_template: Protocol11CommandTemplate, parameter="", parse=True
+    ) -> List[str]:
+        """ Sends a command based on its template and return the corresponding reply as str """
+
         return await self.pump_io.write_and_read_reply(
             command_template.to_pump(self.address, parameter), return_parsed=parse
         )
@@ -586,7 +600,7 @@ class Elite11:
         status = await self.send_command_and_read_reply(
             Elite11Commands.EMPTY_MESSAGE, parse=False
         )
-        return PumpStatus(status[0][2:3])
+        return PumpStatus(status[2:3])
 
     async def is_moving(self) -> bool:
         """ Evaluate prompt for current status, i.e. moving or not """
@@ -842,10 +856,8 @@ class Elite11:
         'Limit switches     No',
         'Command set        None', '')
         """
-        non_parsed_reply: List[str] = await self.send_command_and_read_reply(
-            Elite11Commands.METRICS, parse=False
-        )
-        _, _, parsed_multiline_response = PumpIO.parse_response(non_parsed_reply)
+        parsed_multiline_response = await self.send_command_and_read_reply_multiline(
+            Elite11Commands.METRICS)
         return PumpInfo.parse_pumpstring(parsed_multiline_response)
 
     def get_router(self):

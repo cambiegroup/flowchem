@@ -1,22 +1,21 @@
 """" Run with uvicorn main:app """
+import inspect
+import itertools
 import json
-from pathlib import Path
-
+import logging
 import os
+from pathlib import Path
+from types import ModuleType
+from typing import Iterable, Dict, Tuple
 
 import jsonschema
 import yaml
-import logging
-import flowchem
-import inspect
-import itertools
-from types import ModuleType
-from typing import Iterable, Dict, Tuple, Union
-
 from fastapi import FastAPI
-from mdns_server import Server_mDNS
+
+import flowchem
 from device_node_creator import DeviceNode
 from flowchem.server import test_devices
+from mdns_server import Server_mDNS
 
 logger = logging.getLogger(__name__)
 
@@ -56,15 +55,20 @@ def load_schema():
         return schema
 
 
-def create_server_from_config(config: Union[Path, Dict]) -> Tuple[FastAPI, Server_mDNS]:
+def create_server_from_config(config: Dict = None, config_file: Path = None) -> Tuple[FastAPI, Server_mDNS]:
     """
     Based on the yaml device graph provided, creates device objects and connect to them + .
 
     config: Path to the yaml file with the device config or dict.
     """
-    if isinstance(config, Path):
-        with config.open() as stream:
+    # I wish the xor operator in python were a thing...
+    assert config is not None and config_file is None or config is None and config_file is not None
+
+    if config_file is not None:
+        with config_file.open() as stream:
             config = yaml.safe_load(stream)
+
+    assert isinstance(config, dict)  # This is here just to make mypy happy.
 
     # Validate config
     schema = load_schema()
@@ -111,7 +115,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(logging.DEBUG)
 
-    app, zeroconf = create_server_from_config(Path("sample_config.yml"))
+    app, zeroconf = create_server_from_config(config_file=Path("sample_config.yml"))
 
     @app.get("/")
     def root():

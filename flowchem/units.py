@@ -1,15 +1,15 @@
 """ Unit-conversion related functions """
-import warnings
-from typing import Union, TypeVar, Optional
-
 import os
-import pint
+import warnings
+from typing import Union, Optional
 
+import pint
 # Unit converter, see pint docs for info
 from pint import DimensionalityError
 
 # Custom type
-AnyQuantity = TypeVar('AnyQuantity', pint.Quantity, str, float, int)
+
+AnyQuantity = Union[pint.Quantity, str, float, int]
 
 flowchem_ureg = pint.UnitRegistry()
 

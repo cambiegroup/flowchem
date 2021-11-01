@@ -12,7 +12,7 @@ import warnings
 from dataclasses import dataclass
 from enum import IntEnum
 from threading import Thread
-from typing import Optional
+from typing import Optional, Set
 
 import aioserial
 from aioserial import SerialException
@@ -54,7 +54,7 @@ class Protocol1Command(Protocol1CommandTemplate):
     # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
     # Note ':' is used for broadcast within the daisy chain.
 
-    target_pump_num: Optional[int] = 1
+    target_pump_num: int = 1
     command_value: Optional[str] = None
     argument_value: Optional[str] = None
 
@@ -103,7 +103,7 @@ class HamiltonPumpIO:
 
         # These will be set by `HamiltonPumpIO.initialize()`
         self._initialized = False
-        self.num_pump_connected = False
+        self.num_pump_connected: Optional[int] = None
 
     @classmethod
     def from_config(cls, config):
@@ -128,7 +128,7 @@ class HamiltonPumpIO:
             hw_initialization: Whether each pumps has to be initialized. Note that this might be undesired!
         """
         # This has to be run after each power cycle to assign addresses to pumps
-        self.num_pump_connected = self._assign_pump_address()
+        self.num_pump_connected = await self._assign_pump_address()
         if hw_initialization:
             await self._hw_init()
 
@@ -232,7 +232,7 @@ class ML600:
     """
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
-    _io_instances = set()
+    _io_instances: Set[HamiltonPumpIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
     # When several pumps are daisy chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
@@ -302,7 +302,7 @@ class ML600:
         self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         self._max_vol = (48000 - self._offset_steps) * flowchem_ureg.step / self._steps_per_ml
 
-        self.log = logging.getLogger(__name__).getChild(__class__.__name__)
+        self.log = logging.getLogger(__name__).getChild("ML600").getChild(self.name)
 
     @classmethod
     def from_config(cls, config):
@@ -437,7 +437,8 @@ class ML600:
         """ Converts a volume to a step position. """
         # noinspection PyArgumentEqualDefault
         volume = ensure_quantity(volume_w_units, "ml")
-        return round(volume * self._steps_per_ml).magnitude + self._offset_steps
+        steps = volume * self._steps_per_ml
+        return round(steps.magnitude) + self._offset_steps
 
     async def _to_step_position(self, position: int, speed: AnyQuantity = ""):
         """ Absolute move to step position. """
@@ -661,7 +662,7 @@ class TwoPumpAssembly(Thread):
         self.daemon = True
         self.cancelled = threading.Event()
         self._flowrate = target_flowrate
-        self.log = logging.getLogger(__name__).getChild(__class__.__name__)
+        self.log = logging.getLogger(__name__).getChild("TwoPumpAssembly")
         # How many seconds per stroke for first filling? application dependent, as fast as possible, but not too much.
         self.init_secs = init_seconds
 
@@ -713,12 +714,12 @@ class TwoPumpAssembly(Thread):
         pump_full.to_volume(0, speed=speed_s_per_stroke)
         self.log.debug("Pumping...")
         # Then start refilling the empty one
-        pump_empty.valve_position = pump_empty.ValvePositionName.INPUT
+        pump_empty.set_valve_position(pump_empty.ValvePositionName.INPUT)
         # And do that fast so that we finish refill before the pumping is over
         pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke - 5)
         pump_empty.wait_until_idle()
         # This allows us to set the right pump position on the pump that was empty (not full and ready for next cycle)
-        pump_empty.valve_position = pump_empty.ValvePositionName.OUTPUT
+        pump_empty.set_valve_position(pump_empty.ValvePositionName.OUTPUT)
         pump_full.wait_until_idle()
 
     def run(self):
