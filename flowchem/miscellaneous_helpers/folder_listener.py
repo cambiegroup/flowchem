@@ -16,7 +16,7 @@ class FolderListener:
         for filepath in self.folder_path.glob(file_pattern):
             if filepath not in self.files:
                 self.files.append(filepath)
-        self._watcher = Thread(target=self._watch_forever, args=(self.folder_path, file_pattern))
+        self._watcher = Thread(target=self._watch_forever, args=(file_pattern,))
         self._watcher.start()
 
     def get_all_objects(self,  file_pattern: str) -> iter:
@@ -28,7 +28,7 @@ class FolderListener:
 
     def _watch_forever(self, file_pattern: str) -> None:
         while True:  # This could be replaced by some experiment_running flag
-            self.get_all_objects(self.folder_path, file_pattern)
+            self.get_all_objects(file_pattern)
             sleep(1)
 
 
@@ -41,7 +41,7 @@ class ResultListener:
         for filepath in folder_path.glob(file_pattern):
             if filepath not in self.files:
                 self.files.append(filepath)
-        self._watcher = Thread(target=self._watch_forever, args=(self.folder_path, file_pattern))
+        self._watcher = Thread(target=self._watch_forever, args=(file_pattern, ))
         self._watcher.start()
 
     def get_all_objects(self, file_pattern: str) -> iter:
@@ -54,7 +54,7 @@ class ResultListener:
 
     def _watch_forever(self, file_pattern: str) -> None:
         while True:  # This could be replaced by some experiment_running flag
-            self.get_all_objects(self.folder_path, file_pattern)
+            self.get_all_objects(file_pattern)
             sleep(1)
 
 
@@ -95,9 +95,9 @@ class FileSender:
         s.close()
 
 
-
 class FileReceiver:
-    def __init__(self, server_host, server_port, directory_to_safe_to: Path =Path('D:\\transferred_chromatograms'), buffer_size=4096, separator='<SEPARATOR>', allowed_address='192.168.1.12'):
+    def __init__(self, server_host, server_port, directory_to_safe_to: Path = Path('D:\\transferred_chromatograms'),
+                 buffer_size=4096, separator='<SEPARATOR>', allowed_address='192.168.1.12'):
         self.buffer_size = buffer_size
         self.allowed_address = allowed_address
         self.separator = separator
