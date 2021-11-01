@@ -3,11 +3,13 @@ from flowchem.devices.Petite_Fleur_chiller import Huber
 import queue
 from threading import Thread
 from datetime import datetime
+import asyncio
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.Knauer.HPLC_control import ClarityInterface
 from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump
 from flowchem.miscellaneous_helpers.folder_listener import FileReceiver, ResultListener
 from flowchem.devices.Hamilton.ML600 import HamiltonPumpIO, ML600
+from flowchem.devices.ViciValco.ViciValco_Actuator import ViciValco
 import logging
 from flowchem.constants import flowchem_ureg
 from numpy import array, sum
@@ -23,15 +25,17 @@ class ExperimentConditions:
     ExperimentConditions has to be dropped into a database, eventually, with analytic results and the optimizer activated"""
 
     # fixed, only changed for a new experiment sequence (if stock solution changes)
-    _stock_concentration_donor = 0.1 * flowchem_ureg.molar
-    _stock_concentration_activator = 1 * flowchem_ureg.molar
-    _stock_concentration_quencher = 1 * flowchem_ureg.molar
+    _stock_concentration_donor = 0.09 * flowchem_ureg.molar
+    _stock_concentration_activator = 0.156 * flowchem_ureg.molar
+    _stock_concentration_quencher = 0.62 * flowchem_ureg.molar
     # how many reactor volumes until steady state reached
     _reactor_volumes = 3
-    _quencher_eq_to_activator = 2
+    _quencher_eq_to_activator = 50
+
+    # alternative: hardcode flowrates
 
     # this are the experiment base conditions, if changing conditions, adjust the parameters when creating a new condition object
-    def __init__(self, residence_time_in_seconds=60, activator_equivalents=1.5, temperature_in_celsius=25):
+    def __init__(self, residence_time_in_seconds=300, activator_equivalents=1.7333, temperature_in_celsius=25):
         # mutable
         self.residence_time = residence_time_in_seconds * flowchem_ureg.second  # sec
         self.concentration_donor = self._stock_concentration_donor
@@ -70,11 +74,11 @@ class ExperimentConditions:
     def chromatogram(self):
         return self._chromatogram
 
-    @property.setter
+    @chromatogram.setter
     def chromatogram(self, path: str):
         #Damn, if several detectors are exported, this creates several header lines
         try:
-            return read_csv(Path(path), header=16, sep = '\t').to_json()
+            read_csv(Path(path), header=16, sep='\t').to_json()
         except errors.ParserError:
             raise errors.ParserError('Please make sure your Analytical data is compliant with pandas.read_csv')
 
@@ -109,7 +113,7 @@ class FlowConditions:
         self.donor_flow_rate = self.donor_flow_rate.to(flowchem_ureg.milliliter / flowchem_ureg.minute)
 
         # TODO watch out, now the quencher equivalents are based on donor, I think
-        self.quencher_flow_rate = self.get_flowrate_added_stream(self._concentration_donor, self.donor_flow_rate, self._concentration_quencher, experiment_conditions._quencher_equivalents)
+        self.quencher_flow_rate = 0.1*flowchem_ureg.mL/flowchem_ureg.min #self.get_flowrate_added_stream(self._concentration_donor, self.donor_flow_rate, self._concentration_quencher, experiment_conditions._quencher_equivalents)
 
         self.temperature = experiment_conditions.temperature
 
@@ -140,6 +144,9 @@ class FlowConditions:
                                   concentration_added_stream:float, equivalents_added_stream:float):
         return (concentration_reference_stream*flowrate_reference_stream*equivalents_added_stream)/concentration_added_stream
 
+    def wait_for_steady_state(self, steady_state_time):
+        pass
+
 
 class FlowProcedure:
 
@@ -147,6 +154,7 @@ class FlowProcedure:
         self.pumps = platform_graph['pumps']
         self.hplc: ClarityInterface = platform_graph['HPLC']
         self.chiller: Huber = platform_graph['chiller']
+        self.sample_loop = platform_graph['sample_loop']
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
     def individual_procedure(self, flow_conditions: FlowConditions):
@@ -164,26 +172,27 @@ class FlowProcedure:
         # set all flow rates
         self.log.info(f'Setting donor flow rate to  {flow_conditions.donor_flow_rate}')
         self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate.m_as('mL/min') # dimensionless, in ml/min
+        self.pumps['activator'].infusion_rate = flow_conditions.activator_flow_rate.m_as('mL/min')
 
         self.log.info(f'Setting quencher flow rate to  {flow_conditions.quencher_flow_rate}')
-        self.pumps['quencher'].set_flow = flow_conditions.quencher_flow_rate.m_as('mL/min') # in principal, this works, if wrong flowrate set, check from here what is problen
+        self.pumps['quencher'].set_flow(flow_conditions.quencher_flow_rate.m_as('mL/min')) # in principal, this works, if wrong flowrate set, check from here what is problen
 
         self.log.info('Starting donor pump')
         self.pumps['donor'].run()
 
         self.log.info('Starting aactivator pump')
-        self.pumps['activator'].deliver_from_syringe(flow_conditions.activator_flow_rate.m_as('mL/min'))
+        self.pumps['activator'].run()
 
         self.log.info('Starting quencher pump')
         self.pumps['quencher'].start_flow()
 
         # start timer
         self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}')
-        sleep(flow_conditions.steady_state_time.magnitude)
+        sleep(3)#flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
 
 #        self.hplc.set_sample_name(flow_conditions.experiment_id)
-#        self.hplc.run()
+        asyncio.run(self.sample_loop.set_valve_position(2))
 
         # timer is over, start
         self.log.info('Stop pump Donor')
@@ -192,8 +201,7 @@ class FlowProcedure:
         self.log.info('Stop pump Activator')
         self.pumps['activator'].stop()
 
-        self.log.info('refill activator')
-        self.pumps['activator'].refill_syringe(4, 8)
+        asyncio.run(self.sample_loop.set_valve_position(1))
 
         # I think that's not nice
         self.log.info(f'setting experiment {flow_conditions.experiment_id} as finished')
@@ -228,11 +236,9 @@ class FlowProcedure:
 
         # fill the activator to the hamilton syringe
 
-        self.log.info('getting the platform ready: filling activator')
-        self.pumps['activator'].refill_syringe(4, 8)
-
         self.log.info('getting the platform ready: setting HPLC max pressure')
         self.pumps['quencher'].set_maximum_pressure(13)
+        asyncio.run(self.sample_loop.initialize_valve())
 
 
 class Scheduler:
@@ -245,9 +251,10 @@ class Scheduler:
         self.procedure = FlowProcedure(self.graph)
         self.experiment_queue = queue.Queue()
         # start worker
-        self.log.debug('Starting the experiment worker')
+
         self.experiment_worker = Thread(target=self.experiment_handler)
         self.experiment_worker.start()
+        self.log.debug('Starting the experiment worker')
         self.analysis_results = analysis_results
 
         # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
@@ -258,15 +265,15 @@ class Scheduler:
         # for now it only holds analysed samples, but later it should be used to add the analysis results and spectrum to experiment conditions
         self.analysed_samples = []
 
-        self.log.debug('Starting the data worker')
         self.data_worker = Thread(target=self.data_handler)
         self.data_worker.start()
+        self.log.debug('Starting the data worker')
 
         self._experiment_running = False
 
-        self.log.debug('Initialising the platform')
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
+        self.log.debug('Initialising the platform')
         self.experiments_results = experiments_results / str(round(datetime.timestamp(datetime.now())))
 
     @property
@@ -282,27 +289,27 @@ class Scheduler:
     def data_handler(self):
         """Checks if there is new analysis results. Since there may be multiple result files, these need to be pruned to individual ID and put into the set"""
 
+        # TODO put that part of code to the folder listener or so -> could more easily and readable just change experiment status
         while True:
             if self.started_experiments:
                 # return volatile copy so no size change during iteration
                for experiment_id in list(self.started_experiments.keys()):
                     if self.started_experiments[experiment_id].experiment_finished and not self.started_experiments[experiment_id].analysis_finished:
                         # needs to
-                        for analysed_samples_files in self.analysed_samples:
-                            if str(experiment_id) in analysed_samples_files:
-                                self.started_experiments[experiment_id].analysis_finished = True
+                        if str(experiment_id) in self.analysed_samples:
+                            self.started_experiments[experiment_id].analysis_finished = True
+                            print(experiment_id)
+                            self.log.info(f'New analysis result found for experiment {experiment_id}, analysis set True accordingly')
 
-                                self.log.info(f'New analysis result found for experiment {experiment_id}, analysis set True accordingly')
+                            self.started_experiments[experiment_id].chromatogram = self.analysis_results / Path((str(experiment_id)+'.txt'))
 
-                                self.started_experiments[experiment_id].chromatogram = self.analysis_results / Path((str(experiment_id)+'.txt'))
+                            self.log.debug('Experiment running was set false')
+                            self.experiment_running = False # potentially redundant
 
-                                self.log.debug('Experiment running was set false')
-                                self.experiment_running = False # potentially redundant
-
-                                # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
-                                with open(self.experiments_results, 'w') as f:
-                                    json.dump(self.started_experiments)
-                                # TODO this can be expanded to trigger the analysis of the sample
+                            # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
+                            with open(self.experiments_results, 'w') as f:
+                                json.dump(self.started_experiments)
+                            # TODO this can be expanded to trigger the analysis of the sample
 
 # check if experiments can be stopped by only chromatogram available, but actually not having been ran -> this happens. Here not important, but in general, streamlining could mean that experiments are started before previous analysis is over
 
@@ -337,20 +344,22 @@ class Scheduler:
 if __name__ == "__main__":
     # FlowGraph as dicitonary
     logging.basicConfig()
-    logging.getLogger("sugar_experiment_activation").setLevel(logging.DEBUG)
+    logging.getLogger("__main__").setLevel(logging.DEBUG)
+
     # missing init parameters
+    elite_port=PumpIO("COM11")
     SugarPlatform = {
         # try to combine two pumps to one. flow rate with ratio gives individual flow rate
         'pumps': {
-            'donor': Elite11(PumpIO("COM11"), address=0, diameter=14.567, volume_syringe=10),
+            'donor': Elite11(elite_port, address=0, diameter=14.567, volume_syringe=10),
 
-            'activator': ML600(HamiltonPumpIO("COM12"), 5),
+            'activator': Elite11(elite_port, address=1, diameter=14.567, volume_syringe=10), # for now elite11 pump, hamilton will be used once small syringes arrive, and will be used in continuous mode
 
             'quencher': KnauerPump("192.168.10.113"),
         },
         'HPLC': ClarityInterface(remote=True, host='192.168.10.11', port=10014, instrument_number=2),
 
-
+        'sample_loop': ViciValco.from_config({"port": "COM13", "address": 0, "name": "test1"}),
         'chiller': Huber('COM1'),
         # assume always the same volume from pump to inlet, before T-mixer can be neglected, times three for inlets since 3 equal inlets
         'internal_volumes': {'dead_volume_before_reactor': (56+3)* 3 * flowchem_ureg.microliter, # TODO misses volume from tmixer to steel capillaries
@@ -369,10 +378,10 @@ if __name__ == "__main__":
     # This obviously could be included into the scheduler
     results_listener = ResultListener(analysed_samples_folder, '*.txt', scheduler.analysed_samples)
 
-    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=1))
-    scheduler.create_experiment(ExperimentConditions(temperature_in_celsius=23))
-    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=5))
-    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=10))
-    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
+    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=300, temperature_in_celsius=25))
+    scheduler.create_experiment(ExperimentConditions(temperature_in_celsius=23, residence_time_in_seconds=300))
+    # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=5))
+    # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=10))
+    # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
 
     # TODO when queue empty, after some while everything should be switched off
