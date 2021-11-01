@@ -2,6 +2,7 @@
 import warnings
 from pathlib import Path
 from typing import TypedDict, List
+
 from pydantic import BaseModel
 
 
@@ -117,7 +118,7 @@ class iCIR_spectrometer:
                         1
                     ].strip()
 
-        return probe_info
+        return probe_info  # type: ignore
 
 
 class IRSpectrum(BaseModel):

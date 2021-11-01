@@ -1,9 +1,9 @@
-import logging
-import queue
 import asyncio
+import logging
+import pprint as pp
+import queue
 import threading
 import warnings
-import pprint as pp
 from pathlib import Path
 from typing import Optional, Union
 
@@ -18,12 +18,12 @@ from flowchem.devices.Magritek.msg_maker import (
     set_attribute,
     get_request,
 )
-from flowchem.devices.Magritek.reader import Reader
-from flowchem.devices.Magritek.utils import run_loop, get_streams_for_connection
 from flowchem.devices.Magritek.parser import (
     parse_status_notification,
     StatusNotification,
 )
+from flowchem.devices.Magritek.reader import Reader
+from flowchem.devices.Magritek.utils import run_loop, get_streams_for_connection
 
 
 class Spinsolve:
@@ -53,9 +53,8 @@ class Spinsolve:
         # IOs
         self._io_writer = io_writer
         self._io_reader = io_reader
-        self._replies = (
-            queue.Queue()
-        )  # Queue needed for thread-safe operation, the reader is in a different thread
+        # Queue needed for thread-safe operation, the reader is in a different thread
+        self._replies: queue.Queue = queue.Queue()
         self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
 
         # Event loop to run the connection listener
@@ -300,7 +299,7 @@ class Spinsolve:
         """
         Read all the StatusNotification and returns the dataFolder
         """
-        remote_folder = ""
+        remote_folder = Path(".")
         while True:
             # Get all StatusNotification
             # status_update = self._read_reply("StatusNotification", 6000)

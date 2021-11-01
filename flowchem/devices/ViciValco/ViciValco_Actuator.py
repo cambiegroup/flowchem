@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import logging
-
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Set
 
 import aioserial
 from aioserial import SerialException
 
-from flowchem.constants import InvalidConfiguration, ActuationError
+from flowchem.exceptions import InvalidConfiguration, ActuationError
+
 
 @dataclass
 class ViciProtocolCommandTemplate:
@@ -145,7 +145,7 @@ class ViciValcoValveIO:
         """ Reads the valve reply from serial communication """
         reply_string = ''
         for line in range(lines):
-            a = ''
+            a = b''
             a = await self._serial.readline_async()
             reply_string += a.decode("ascii")
 
@@ -165,33 +165,37 @@ class ViciValcoValveIO:
         """ Sends a command to the valve, read the replies and returns it, optionally parsed """
         self.reset_buffer()
         self._write(command.compile())
-        if lines:
-            response = self._read_reply(lines)
 
-            if not response:
-                raise InvalidConfiguration(
-                    f"No response received from valve, check valve address! "
-                    f"(Currently set to {command.target_valve_num})"
-                )
+        if not lines:
+            return ""
 
-            return self.parse_response(response)
+        response = self._read_reply(lines)
+
+        if not response:
+            raise InvalidConfiguration(
+                f"No response received from valve, check valve address! "
+                f"(Currently set to {command.target_valve_num})"
+            )
+
+        return self.parse_response(response)
 
     async def write_and_read_reply_async(self, command: ViciProtocolCommand, lines) -> str:
         """ Main ViciValcoValveIO method.
         Sends a command to the valve, read the replies and returns it, optionally parsed """
         self.reset_buffer()
         await self._write_async(command.compile())
-        if lines:
-            response = await self._read_reply_async(lines)
 
-            if not response:
-                raise InvalidConfiguration(
-                    f"No response received from valve, check valve address! "
-                    f"(Currently set to {command.target_valve_num})"
-                )
-            return self.parse_response(response)
+        if not lines:
+            return ""
 
+        response = await self._read_reply_async(lines)
 
+        if not response:
+            raise InvalidConfiguration(
+                f"No response received from valve, check valve address! "
+                f"(Currently set to {command.target_valve_num})"
+            )
+        return self.parse_response(response)
 
     @property
     def name(self) -> str:
@@ -201,19 +205,19 @@ class ViciValcoValveIO:
         except AttributeError:
             return ""
 
+
 class ViciValco:
     """"
     """
 
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
-    _io_instances = set()
+    _io_instances: Set[ViciValcoValveIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
     # When several valves are daisy chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
 
     valve_position_name = {'A': 1, 'B': 2}
-
 
     def __init__(
         self,
@@ -240,7 +244,7 @@ class ViciValco:
 
         # Syringe valves only perform linear movement, and the volume displaced is function of the syringe loaded.
 
-        self.log = logging.getLogger(__name__).getChild(__class__.__name__)
+        self.log = logging.getLogger(__name__).getChild("ViciValco")
 
         # Test connectivity by querying the valve's firmware version
         fw_cmd = ViciProtocolCommandTemplate(command="VR").to_valve(self.address)

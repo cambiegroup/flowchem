@@ -1,8 +1,8 @@
 import asyncio
+import ctypes.wintypes
 import warnings
 from pathlib import Path
-import ctypes.wintypes
-from typing import Union, Callable
+from typing import Union, Callable, Tuple
 
 
 def get_my_docs_path():
@@ -37,6 +37,7 @@ def create_folder_mapper(remote_root: Path, local_root: Path) -> Callable[[Union
 
         nonlocal remote_root, local_root
         # If relative translate if not error
+        # NOTE: Path.is_relative_to() is available from Py 3.9 only. NBD as this is not often used.
         if path_to_be_translated.is_relative_to(remote_root):
             suffix = path_to_be_translated.relative_to(remote_root)
             return local_root / suffix
@@ -50,8 +51,8 @@ def create_folder_mapper(remote_root: Path, local_root: Path) -> Callable[[Union
 
 
 async def get_streams_for_connection(
-    host, port
-) -> (asyncio.StreamReader, asyncio.StreamWriter):
+        host, port
+) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
     """
     Given a target (host, port) returns the corresponding asyncio streams (I/O).
     """

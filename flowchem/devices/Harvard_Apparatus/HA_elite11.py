@@ -10,7 +10,7 @@ import warnings
 from dataclasses import dataclass
 from enum import Enum
 from time import sleep
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Set
 
 import aioserial
 from pydantic import BaseModel
@@ -178,7 +178,7 @@ class PumpIO:
         """ Aggregates address prompt and reply body from all the reply lines and return them. """
         parsed_lines = list(map(PumpIO.parse_response_line, response))
         # noinspection PyTypeChecker
-        return zip(*parsed_lines)
+        return zip(*parsed_lines)  # type: ignore
 
     @staticmethod
     def check_for_errors(last_response_line, command_sent):
@@ -432,7 +432,7 @@ class Elite11:
     """
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
-    _io_instances = set()
+    _io_instances: Set[PumpIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
     # When several pumps are daisy chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
@@ -457,8 +457,8 @@ class Elite11:
         self.pump_io = pump_io
         Elite11._io_instances.add(self.pump_io)  # See above for details.
 
+        self.address = address if address else 0
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
-        self.address = address
 
         # diameter and syringe volume - these will be set in initialize() - check values here though.
         if diameter is None:
@@ -478,7 +478,7 @@ class Elite11:
         # This will also be inspected in initialize.
         self._withdraw_enabled = False
 
-        self.log = logging.getLogger(__name__).getChild(__class__.__name__)
+        self.log = logging.getLogger(__name__).getChild("Elite11")
 
     @classmethod
     def from_config(cls, **config):

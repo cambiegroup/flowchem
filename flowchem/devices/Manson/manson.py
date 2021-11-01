@@ -7,11 +7,11 @@ Changes:
     * Refactoring according to PEP8 and Zen of Python
 """
 
+import logging
 import re
 import warnings
-from typing import Literal, Tuple, Optional, List
+from typing import Literal, Tuple, Optional, List, Union
 
-import logging
 import aioserial
 
 from flowchem.exceptions import InvalidConfiguration, DeviceError
@@ -99,7 +99,7 @@ class MansonPowerSupply:
         response = await self._send_command("SOUT1")
         return response == "OK"
 
-    async def get_output_read(self) -> Tuple[float, float, Literal["CC", "CV", False]]:
+    async def get_output_read(self) -> Tuple[float, float, Union[Literal["CC"], Literal["CV"], Literal["NN"]]]:
         """ Returns actual values of voltage, current and mode """
         response = await self._send_command("GETD")
 
@@ -108,17 +108,14 @@ class MansonPowerSupply:
             curr = float(response[4:8]) / 100
         except ValueError:
             warnings.warn("Invalid values from device!")
-            return 0, 0, False
+            return 0, 0, "NN"
 
         if response[8:9] == "0":
-            mode = "CV"
+            return volt, curr, "CV"
         elif response[8:9] == "1":
-            mode = "CC"
+            return volt, curr, "CC"
         else:
-            mode = False
-
-        # noinspection PyTypeChecker
-        return volt, curr, mode
+            return volt, curr, "NN"
 
     async def get_output_voltage(self) -> float:
         """ Returns output voltage in Volt """
@@ -130,7 +127,7 @@ class MansonPowerSupply:
         _, current, _ = await self.get_output_read()
         return current
 
-    async def get_output_mode(self) -> Literal["CC", "CV"]:
+    async def get_output_mode(self) -> Literal["CC", "CV", "NN"]:
         """ Returns output mode: either current control (CC) or voltage control (CV) """
         _, _, mode = await self.get_output_read()
         return mode
@@ -144,15 +141,14 @@ class MansonPowerSupply:
         """ Returns maximum voltage and current, as tuple, or False. """
         response = await self._send_command("GMAX")
 
-        max_v = int(response[0:3])
-        max_c = int(response[3:6])
+        max_v_raw = int(response[0:3])
+        max_c_raw = int(response[3:6])
 
-        if 0 <= max_v <= 999:
-            max_v /= float(10)
+        max_v = max_v_raw / 10
+        # Some models report current as 0.1 A others at 0.01 A
         model = await self.get_info()
-        if model in self.MODEL_ALT_RANGE:
-            max_c /= 10
-        return max_v, max_c / float(10)
+        divider = 100 if model in self.MODEL_ALT_RANGE else 10
+        return max_v, max_c_raw / divider
 
     async def get_setting(self) -> Tuple[float, float]:
         """ Returns current setting as tuple (voltage, current). """

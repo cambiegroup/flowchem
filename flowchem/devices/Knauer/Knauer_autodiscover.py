@@ -23,7 +23,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
         self.loop = asyncio.get_event_loop()
         self._queue = response_queue
 
-    def connection_made(self, transport: asyncio.transports.DatagramTransport):
+    def connection_made(self, transport: asyncio.transports.DatagramTransport):  # type: ignore
         """ Called upon connection. """
         sock = transport.get_extra_info("socket")  # type: socket.socket
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # sets to broadcast
