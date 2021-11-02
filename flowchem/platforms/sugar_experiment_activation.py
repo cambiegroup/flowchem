@@ -200,7 +200,7 @@ class FlowProcedure:
         self.log.info('Timer over, now take measurement}')
 
 #        self.hplc.set_sample_name(flow_conditions.experiment_id)
-        asyncio.run(self.sample_loop.set_valve_position(2))
+        self.sample_loop.set_valve_position_sync(2)
 
         # timer is over, start
         self.log.info('Stop pump Donor')
@@ -209,7 +209,7 @@ class FlowProcedure:
         self.log.info('Stop pump Activator')
         self.pumps['activator'].stop()
 
-        asyncio.run(self.sample_loop.set_valve_position(1))
+        self.sample_loop.set_valve_position_sync(1)
 
         # I think that's not nice
         self.log.info(f'setting experiment {flow_conditions.experiment_id} as finished')
