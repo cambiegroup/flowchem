@@ -166,6 +166,14 @@ class ViciValcoValveIO:
                 )
             return response.rstrip()
 
+    def write_and_read_reply_sync(self, command: ViciProtocolCommand, lines) -> str:
+        """ Main ViciValcoValveIO method.
+                Sends a command to the valve, read the replies and returns it, optionally parsed """
+        self.reset_buffer()
+        self._serial.write(command.compile())
+        x = self._serial.readline()
+        return x
+
     @property
     def name(self) -> str:
         """ This is used to provide a nice-looking default name to valves based on their serial connection. """
@@ -242,6 +250,16 @@ class ViciValco:
         firmware_version = await self.valve_io.write_and_read_reply(fw_cmd, lines=5)
         self.log.info(f"Connected to Vici Valve {self.name} - FW version: {firmware_version}!")
 
+    def send_command_and_read_reply_sync(        self,
+        command_template: ViciProtocolCommandTemplate,
+        command_value="",
+        argument_value="",
+        lines=1):
+        """ Sends a command based on its template by adding valve address and parameters, returns reply """
+        return self.valve_io.write_and_read_reply_sync(
+            command_template.to_valve(self.address, command_value, argument_value), lines
+        )
+
     async def send_command_and_read_reply(
         self,
         command_template: ViciProtocolCommandTemplate,
@@ -273,6 +291,14 @@ class ViciValco:
         """ Represent the position of the valve: getter returns Enum, setter needs Enum. """
         valve_pos = await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="CP"))
         return ViciValco.valve_position_name[valve_pos[-1]]
+
+    def set_valve_position_sync(self, target_position: int):
+        """ Set valve position. Switches really quick and doesn't reply, so waiting does not make sense
+
+        """
+        valve_by_name_cw = ViciProtocolCommandTemplate(command="GO")
+        self.send_command_and_read_reply_sync(valve_by_name_cw, command_value=str(target_position), lines=0)
+        self.log.debug(f"{self.name} valve position set to {target_position}")
 
     async def set_valve_position(self, target_position: int):
         """ Set valve position. Switches really quick and doesn't reply, so waiting does not make sense
