@@ -763,7 +763,7 @@ class Elite11:
         percent = await self.send_command_and_read_reply(Elite11Commands.GET_FORCE)
         return int(percent[:-1])
 
-    async def set_force(self, force_percent: int):
+    async def set_force(self, force_percent: float):
         """ Sets the pump force, see `Elite11.get_force()` for suggested values. """
         await self.send_command_and_read_reply(
             Elite11Commands.SET_FORCE, parameter=str(int(force_percent))
