@@ -17,7 +17,7 @@ if sys.platform == "win32":
 
 
 # noinspection PyUnusedLocal
-@pytest.yield_fixture(scope="session")
+@pytest.fixture(scope="session")
 def event_loop(request):
     """
 
