@@ -3,8 +3,9 @@ HA Elite11 tests
 Run with python -m pytest ./tests -m HApump and updates pump com port and address in pump below
 """
 import asyncio
-import pytest
 import math
+
+import pytest
 
 from flowchem.devices.Harvard_Apparatus.HA_elite11 import (
     Elite11,
@@ -20,7 +21,7 @@ async def move_infuse(pump):
     await pump.infuse_run()
 
 
-@pytest.yield_fixture(scope="session")
+@pytest.fixture(scope="session")
 def event_loop(request):
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
