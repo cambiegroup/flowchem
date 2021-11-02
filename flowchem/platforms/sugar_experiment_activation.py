@@ -16,6 +16,14 @@ from numpy import array, sum
 from pandas import read_csv, errors
 from pathlib import Path
 import json
+import dataclasses
+
+
+class EnhancedJSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
+        return super().default(o)
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
 
@@ -304,10 +312,10 @@ class Scheduler:
                             self.log.debug('Experiment running was set false')
                             self.experiment_running = False # potentially redundant
 
-                            # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
-                            with open(self.experiments_results, 'w') as f:
-                                json.dump(self.started_experiments)
-                            # TODO this can be expanded to trigger the analysis of the sample
+                                # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
+                                with open(self.experiments_results, 'w') as f:
+                                    json.dump(self.started_experiments, f, cls = EnhancedJSONEncoder)
+                                # TODO this can be expanded to trigger the analysis of the sample
 
 # check if experiments can be stopped by only chromatogram available, but actually not having been ran -> this happens. Here not important, but in general, streamlining could mean that experiments are started before previous analysis is over
 
