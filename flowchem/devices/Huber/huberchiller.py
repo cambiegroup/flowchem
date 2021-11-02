@@ -8,9 +8,11 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional
 
 import aioserial
+import pint
 from aioserial import SerialException
 
 from flowchem.exceptions import InvalidConfiguration, DeviceError
+from flowchem.units import flowchem_ureg, AnyQuantity, ensure_quantity
 
 
 @dataclass
@@ -46,18 +48,25 @@ class PBCommand:
         """ Data portion of PBCommand. """
         return self.command[4:8]
 
-    def parse_temperature(self):
+    def parse_temperature(self) -> str:
         """ Parse a device temp from hex string to celsius float [two's complement 16 bit signed hex, see manual] """
         temp = (
             (int(self.data, 16) - 65536) / 100
             if int(self.data, 16) > 32767
             else (int(self.data, 16)) / 100
         )
-        return temp
+        # -151 used for invalid temperatures
+        if temp == -151:
+            return ""
+        return str(flowchem_ureg.Quantity(temp, "degree_Celsius"))
 
-    def parse_integer(self):
-        """ Parse a device reply from hexadecimal string to to base 10 integers. """
+    def parse_integer(self) -> int:
+        """ Parse a device reply from hexadecimal string to base 10 integers. """
         return int(self.data, 16)
+
+    def parse_rpm(self) -> str:
+        """ Parse a device reply from hexadecimal string to rpm. """
+        return str(flowchem_ureg.Quantity(self.parse_integer(), "rpm"))
 
     def parse_bits(self) -> List[bool]:
         """" Parse a device reply from hexadecimal string to 16 constituting bits. """
@@ -159,15 +168,16 @@ class HuberChiller:
         self.logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
         return reply.decode("ascii")
 
-    async def get_temperature_setpoint(self) -> float:
+    async def get_temperature_setpoint(self) -> str:
         """ Returns the set point used by temperature controller. Internal if not probe, otherwise process temp. """
         reply = await self.send_command_and_read_reply("{M00****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_temperature_setpoint(self, temp: float):
+    async def set_temperature_setpoint(self, temp: AnyQuantity):
         """ Set the set point used by temperature controller. Internal if not probe, otherwise process temp. """
-        min_t = await self.min_setpoint()
-        max_t = await self.max_setpoint()
+        min_t = flowchem_ureg.Quantity(await self.min_setpoint())
+        max_t = flowchem_ureg.Quantity(await self.max_setpoint())
+        temp = ensure_quantity(temp, "degree_Celsius")
 
         if temp > max_t:
             temp = max_t
@@ -184,33 +194,32 @@ class HuberChiller:
 
         await self.send_command_and_read_reply("{M00" + self.temp_to_string(temp))
 
-    async def internal_temperature(self) -> float:
+    async def internal_temperature(self) -> str:
         """ Returns internal temp (bath temperature). """
         reply = await self.send_command_and_read_reply("{M01****")
         return PBCommand(reply).parse_temperature()
 
-    async def process_temperature(self) -> Optional[float]:
+    async def process_temperature(self) -> str:
         """ Returns the current process temperature. If not T probe, the device returns -151, here parsed as None. """
         reply = await self.send_command_and_read_reply("{M3A****")
-        if temp := PBCommand(reply).parse_temperature() == -151:
-            return None
-        else:
-            return temp
+        return PBCommand(reply).parse_temperature()
 
-    async def return_temperature(self) -> float:
+    async def return_temperature(self) -> str:
         """ Returns the temp of the thermal fluid flowing back to the device. """
         reply = await self.send_command_and_read_reply("{M02****")
         return PBCommand(reply).parse_temperature()
 
-    async def pump_pressure(self) -> float:
-        """ Return pump pressure in mbarg """
+    async def pump_pressure(self) -> str:
+        """ Return pump pressure in mbar (note that you probably want barg, i.e. to remove 1 bar) """
         reply = await self.send_command_and_read_reply("{M03****")
-        return PBCommand(reply).parse_integer() - 1000
+        mbar = PBCommand(reply).parse_integer()
+        return str(flowchem_ureg.Quantity(mbar, "mbar"))
 
-    async def current_power(self) -> float:
+    async def current_power(self) -> str:
         """ Returns the current power in Watts (negative for cooling, positive for heating). """
         reply = await self.send_command_and_read_reply("{M04****")
-        return PBCommand(reply).parse_integer()
+        power = PBCommand(reply).parse_integer()
+        return str(flowchem_ureg.Quantity(power, "watt"))
 
     async def status(self) -> Dict[str, bool]:
         """ Returns the info contained in vstatus1 as dict. """
@@ -248,27 +257,25 @@ class HuberChiller:
         """ Stops circulation pump. """
         await self.send_command_and_read_reply("{M160000")
 
-    async def pump_speed(self) -> int:
+    async def pump_speed(self) -> str:
         """ Returns current circulation pump speed (in rpm). """
         reply = await self.send_command_and_read_reply("{M26****")
-        return PBCommand(reply).parse_integer()
+        return PBCommand(reply).parse_rpm()
 
-    async def pump_speed_setpoint(self) -> int:
+    async def pump_speed_setpoint(self) -> str:
         """ Returns the set point of the circulation pump speed (in rpm). """
         reply = await self.send_command_and_read_reply("{M48****")
-        return PBCommand(reply).parse_integer()
+        return PBCommand(reply).parse_rpm()
 
     async def set_pump_speed(self, rpm: int):
         """ Set the pump speed, in rpm. See device display for range. """
-        await self.send_command_and_read_reply("{M48" + self.int_to_string(rpm))
+        rpm = ensure_quantity(rpm, "rpm")
+        await self.send_command_and_read_reply("{M48" + self.int_to_string(rpm.magnitude))
 
-    async def cooling_water_temp(self) -> Optional[float]:
+    async def cooling_water_temp(self) -> str:
         """ Returns the cooling water inlet temperature (in Celsius). """
         reply = await self.send_command_and_read_reply("{M2C****")
-        if temp := PBCommand(reply).parse_temperature() == -151:
-            return None
-        else:
-            return temp
+        return PBCommand(reply).parse_temperature()
 
     async def cooling_water_pressure(self) -> Optional[float]:
         """ Returns the cooling water inlet pressure (in mbar). """
@@ -278,68 +285,71 @@ class HuberChiller:
         else:
             return pressure
 
-    async def cooling_water_temp_outflow(self) -> Optional[float]:
+    async def cooling_water_temp_outflow(self) -> str:
         """ Returns the cooling water outlet temperature (in Celsius). """
         reply = await self.send_command_and_read_reply("{M4C****")
-        if temp := PBCommand(reply).parse_temperature() == -151:
-            return None
-        else:
-            return temp
+        return PBCommand(reply).parse_temperature()
 
-    async def min_setpoint(self) -> float:
+    async def min_setpoint(self) -> str:
         """ Returns the minimum accepted value for the temperature setpoint (in Celsius). """
         reply = await self.send_command_and_read_reply("{M30****")
         return PBCommand(reply).parse_temperature()
 
-    async def max_setpoint(self) -> float:
+    async def max_setpoint(self) -> str:
         """ Returns the maximum accepted value for the temperature setpoint (in Celsius). """
         reply = await self.send_command_and_read_reply("{M31****")
         return PBCommand(reply).parse_temperature()
 
-    async def alarm_max_internal_temp(self) -> float:
+    async def alarm_max_internal_temp(self) -> str:
         """ Returns the max internal temp before the alarm is triggered and a fault generated. """
         reply = await self.send_command_and_read_reply("{M51****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_max_internal_temp(self, temp: float):
+    async def set_alarm_max_internal_temp(self, temp: AnyQuantity):
         """ Sets the max internal temp before the alarm is triggered and a fault generated. """
+        temp = ensure_quantity(temp, "celsius")
         await self.send_command_and_read_reply("{M51" + self.temp_to_string(temp))
 
-    async def alarm_min_internal_temp(self) -> float:
+    async def alarm_min_internal_temp(self) -> str:
         """ Returns the min internal temp before the alarm is triggered and a fault generated. """
         reply = await self.send_command_and_read_reply("{M52****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_min_internal_temp(self, temp: float):
+    async def set_alarm_min_internal_temp(self, temp: AnyQuantity):
         """ Sets the min internal temp before the alarm is triggered and a fault generated. """
+        temp = ensure_quantity(temp, "celsius")
         await self.send_command_and_read_reply("{M52" + self.temp_to_string(temp))
 
-    async def alarm_max_process_temp(self) -> float:
+    async def alarm_max_process_temp(self) -> str:
         """ Returns the max process temp before the alarm is triggered and a fault generated. """
         reply = await self.send_command_and_read_reply("{M53****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_max_process_temp(self, temp: float):
+    async def set_alarm_max_process_temp(self, temp: AnyQuantity):
         """ Sets the max process temp before the alarm is triggered and a fault generated. """
+        temp = ensure_quantity(temp, "celsius")
         await self.send_command_and_read_reply("{M53" + self.temp_to_string(temp))
 
-    async def alarm_min_process_temp(self) -> float:
+    async def alarm_min_process_temp(self) -> str:
         """ Returns the min process temp before the alarm is triggered and a fault generated. """
         reply = await self.send_command_and_read_reply("{M54****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_min_process_temp(self, temp: float):
+    async def set_alarm_min_process_temp(self, temp: AnyQuantity):
         """ Sets the min process temp before the alarm is triggered and a fault generated. """
+        temp = ensure_quantity(temp, "celsius")
         await self.send_command_and_read_reply("{M54" + self.temp_to_string(temp))
 
-    async def set_ramp_duration(self, time: int):
+    async def set_ramp_duration(self, ramp_time: AnyQuantity):
         """ Sets the duration (in seconds) of a ramp to the temperature set by a later call to ramp_to_temperature. """
-        await self.send_command_and_read_reply("{M59" + self.int_to_string(time))
+        ramp_time = ensure_quantity(ramp_time, "second")
+        await self.send_command_and_read_reply("{M59" + self.int_to_string(ramp_time.magnitude))
 
     async def ramp_to_temperature(self, temperature: float):
         """ Sets the duration (in seconds) of a ramp to the temperature set by a later call to start_ramp(). """
+        temp = ensure_quantity(temperature, "celsius")
         await self.send_command_and_read_reply(
-            "{M5A" + self.temp_to_string(temperature)
+            "{M5A" + self.temp_to_string(temp)
         )
 
     async def is_venting(self) -> bool:
@@ -384,11 +394,13 @@ class HuberChiller:
         raise NotImplementedError
 
     @staticmethod
-    def temp_to_string(temp: float) -> str:
+    def temp_to_string(temp: pint.Quantity) -> str:
         """ From temperature to string for command. f^-1 of PCommand.parse_temperature. """
-        assert -151 <= temp <= 327
+        minT = flowchem_ureg.Quantity(-151, "celsius")
+        maxT = flowchem_ureg.Quantity(327, "celsius")
+        assert minT <= temp <= maxT
         # Hexadecimal two's complement
-        return f"{int(temp * 100) & 65535:04X}"
+        return f"{int(temp.magnitude * 100) & 65535:04X}"
 
     @staticmethod
     def int_to_string(number: int) -> str:
