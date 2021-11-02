@@ -84,7 +84,7 @@ class ExperimentConditions:
     def chromatogram(self, path: str):
         #Damn, if several detectors are exported, this creates several header lines
         try:
-            read_csv(Path(path), header=16, sep='\t').to_json()
+            self._chromatogram = read_csv(Path(path), header=16, sep='\t').to_json(index=False, orient='split')
         except errors.ParserError:
             raise errors.ParserError('Please make sure your Analytical data is compliant with pandas.read_csv')
 
