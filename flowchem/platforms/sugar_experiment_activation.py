@@ -238,7 +238,7 @@ class FlowProcedure:
 
         self.log.info('getting the platform ready: setting HPLC max pressure')
         self.pumps['quencher'].set_maximum_pressure(13)
-        asyncio.run(self.sample_loop.initialize_valve())
+        asyncio.run(self.sample_loop.valve_io.initialize())
 
 
 class Scheduler:
