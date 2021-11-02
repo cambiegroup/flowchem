@@ -104,12 +104,14 @@ class FlowConditions:
         # better readability
         self.platform_volumes = flow_platform['internal_volumes']
 
-        self._concentration_donor = experiment_conditions.concentration_donor
-        self._concentration_activator = experiment_conditions.stock_concentration_activator
-        self._concentration_quencher = experiment_conditions.stock_concentration_quencher
+# translate to pint
+        self._concentration_donor = flowchem_ureg(experiment_conditions.concentration_donor).to('M')
+        self._concentration_activator = flowchem_ureg(experiment_conditions.stock_concentration_activator).to('M')
+        self._concentration_quencher = flowchem_ureg(experiment_conditions.stock_concentration_quencher).to('M')
+        self.residence_time = flowchem_ureg(experiment_conditions.residence_time).to('s')
 
         self._total_flow_rate = self.get_flow_rate(self.platform_volumes['volume_reactor'],
-                                                   experiment_conditions.residence_time)
+                                                   self.residence_time)
 
 
         self.activator_flow_rate, self.donor_flow_rate = self.get_individual_flow_rate(self._total_flow_rate,
@@ -121,7 +123,7 @@ class FlowConditions:
         # TODO watch out, now the quencher equivalents are based on donor, I think
         self.quencher_flow_rate = 0.1*flowchem_ureg.mL/flowchem_ureg.min #self.get_flowrate_added_stream(self._concentration_donor, self.donor_flow_rate, self._concentration_quencher, experiment_conditions._quencher_equivalents)
 
-        self.temperature = experiment_conditions.temperature
+        self.temperature = flowchem_ureg(experiment_conditions.temperature)
 
         # Todo in theory not that simple anymore if different flowrates
         self._time_start_till_end = ((self.platform_volumes['dead_volume_before_reactor'] +
@@ -129,11 +131,11 @@ class FlowConditions:
                                      (self.platform_volumes['dead_volume_to_HPLC'] / (self._total_flow_rate +
                                                                                       self.quencher_flow_rate))).to(flowchem_ureg.second)
 
-        self.steady_state_time = (self._time_start_till_end + experiment_conditions.residence_time *
+        self.steady_state_time = (self._time_start_till_end + self.residence_time *
                                   (experiment_conditions.reactor_volumes-1)).to(flowchem_ureg.second)
 
-    def get_flow_rate(self, relevant_volume: float, residence_time: int):
-        return (relevant_volume / residence_time).to(flowchem_ureg.milliliter / flowchem_ureg.minute)
+    def get_flow_rate(self, relevant_volume, residence_time):
+        return (relevant_volume / residence_time).to('mL/min')
 
     #TODO for now concentration needs to go in always in the same dimension, and as float, for future, iterate over tuple, bring to same unit and use a copy of that for array
     def get_individual_flow_rate(self, target_flow_rate: float, equivalents: tuple = (), concentrations: tuple = ()):
