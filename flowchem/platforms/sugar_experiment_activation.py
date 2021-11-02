@@ -213,7 +213,7 @@ class FlowProcedure:
 
         # I think that's not nice
         self.log.info(f'setting experiment {flow_conditions.experiment_id} as finished')
-        scheduler.started_experiments[str(flow_conditions.experiment_id)].experiment_finished = True
+        scheduler.started_experiments[str(flow_conditions.experiment_id)]._experiment_finished = True
 
     def get_platform_ready(self):
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
@@ -221,6 +221,8 @@ class FlowProcedure:
         # prepare HPLC
 
         self.log.info('getting the platform ready: HPLC')
+        #self.pumps['donor'].stop()
+        [p.stop() for p in self.pumps.values() if isinstance(p, Elite11)]
 
 #        self.hplc.exit()
 #        self.hplc.switch_lamp_on()  # address and port hardcoded
@@ -301,18 +303,20 @@ class Scheduler:
         while True:
             if self.started_experiments:
                 # return volatile copy so no size change during iteration
-               for experiment_id in list(self.started_experiments.keys()):
-                    if self.started_experiments[experiment_id].experiment_finished and not self.started_experiments[experiment_id].analysis_finished:
+                # change logic so the results worker will  inform about result being there
+                for experiment_id in list(self.started_experiments.keys()):
+                    if self.started_experiments[experiment_id]._experiment_finished and not self.started_experiments[experiment_id]._analysis_finished:
                         # needs to
-                        if str(experiment_id) in self.analysed_samples:
-                            self.started_experiments[experiment_id].analysis_finished = True
-                            print(experiment_id)
-                            self.log.info(f'New analysis result found for experiment {experiment_id}, analysis set True accordingly')
+                        for analysed_samples_files in self.analysed_samples:
+                            if str(experiment_id) in analysed_samples_files:
+                                self.started_experiments[experiment_id]._analysis_finished = True
+                                print(experiment_id)
+                                self.log.info(f'New analysis result found for experiment {experiment_id}, analysis set True accordingly')
 
-                            self.started_experiments[experiment_id].chromatogram = self.analysis_results / Path((str(experiment_id)+'.txt'))
+                                self.started_experiments[experiment_id].chromatogram = self.analysis_results / Path((str(experiment_id)+'.txt'))
 
-                            self.log.debug('Experiment running was set false')
-                            self.experiment_running = False # potentially redundant
+                                self.log.debug('Experiment running was set false')
+                                self.experiment_running = False # potentially redundant
 
                                 # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
                                 with open(self.experiments_results, 'w') as f:
@@ -370,10 +374,10 @@ if __name__ == "__main__":
         'sample_loop': ViciValco.from_config({"port": "COM13", "address": 0, "name": "test1"}),
         'chiller': Huber('COM1'),
         # assume always the same volume from pump to inlet, before T-mixer can be neglected, times three for inlets since 3 equal inlets
-        'internal_volumes': {'dead_volume_before_reactor': (56+3)* 3 * flowchem_ureg.microliter, # TODO misses volume from tmixer to steel capillaries
+        'internal_volumes': {'dead_volume_before_reactor': (8)* 3 * flowchem_ureg.microliter, # TODO misses volume from tmixer to steel capillaries
                              'volume_mixing': 9.5 * flowchem_ureg.microliter,
-                             'volume_reactor': 68.8 * flowchem_ureg.microliter,
-                             'dead_volume_to_HPLC': (56+15) * flowchem_ureg.microliter,
+                             'volume_reactor': 58 * flowchem_ureg.microliter,
+                             'dead_volume_to_HPLC': (46+28+56) * flowchem_ureg.microliter,
                              }
     }
 
@@ -386,10 +390,11 @@ if __name__ == "__main__":
     # This obviously could be included into the scheduler
     results_listener = ResultListener(analysed_samples_folder, '*.txt', scheduler.analysed_samples)
 
-    scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=300, temperature_in_celsius=25))
-    scheduler.create_experiment(ExperimentConditions(temperature_in_celsius=23, residence_time_in_seconds=300))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="25 °C"))
+    scheduler.create_experiment(ExperimentConditions(temperature="23 °C", residence_time="300 s"))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=5))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=10))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
 
     # TODO when queue empty, after some while everything should be switched off
+    # TODO serialization has to be done with preserving °C -> encoding problem
