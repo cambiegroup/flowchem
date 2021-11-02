@@ -55,6 +55,8 @@
         "$ref": "#/definitions/knauer-valve-6-6"
       }, "Knauer6Port2PositionValve": {
         "$ref": "#/definitions/knauer-valve-6-2"
+      }, "ClarityInterface": {
+        "$ref": "#/definitions/clarity_interface"
       }, "ViciValco": {
         "$ref": "#/definitions/vici-valco"
       }
@@ -114,6 +116,10 @@
       }, {
         "required": [
           "Knauer6Port2PositionValve"
+        ]
+      }, {
+        "required": [
+          "ClarityInterface"
         ]
       }, {
         "required": [
@@ -269,6 +275,14 @@
       }
     }, "required": [
       "mac_address"
+    ]
+  }, "clarity_interface": {
+    "id": "#/definitions/clarity_interface", "type": "object", "properties": {
+      "instrument_number": {
+        "type": "int"
+      }
+    }, "required": [
+      "instrument_number"
     ]
   }, "vici-valco": {
     "id": "#/definitions/vici-valco", "type": "object", "properties": {
