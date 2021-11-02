@@ -19,36 +19,34 @@ import json
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
 
+# what I don't really get is why the class attributes are not printed to dict
+@dataclasses.dataclass
 class ExperimentConditions:
     """This is actively changed, either by human or by optimizer. Goes into the queue.
     When the conditions are taken from the queue, a FlowConditions object is derived from ExperimentCondition.
     ExperimentConditions has to be dropped into a database, eventually, with analytic results and the optimizer activated"""
 
     # fixed, only changed for a new experiment sequence (if stock solution changes)
-    _stock_concentration_donor = 0.09 * flowchem_ureg.molar
-    _stock_concentration_activator = 0.156 * flowchem_ureg.molar
-    _stock_concentration_quencher = 0.62 * flowchem_ureg.molar
+    _stock_concentration_donor = "0.09 molar"
+    _stock_concentration_activator = "0.156 molar"
+    _stock_concentration_quencher = "0.62 molar"
     # how many reactor volumes until steady state reached
-    _reactor_volumes = 3
+    _reactor_volumes: float = 3
     _quencher_eq_to_activator = 50
 
     # alternative: hardcode flowrates
 
-    # this are the experiment base conditions, if changing conditions, adjust the parameters when creating a new condition object
-    def __init__(self, residence_time_in_seconds=300, activator_equivalents=1.7333, temperature_in_celsius=25):
-        # mutable
-        self.residence_time = residence_time_in_seconds * flowchem_ureg.second  # sec
-        self.concentration_donor = self._stock_concentration_donor
-        self.activator_equivalents = activator_equivalents
-        self._quencher_equivalents = self._quencher_eq_to_activator * self.activator_equivalents
-        self.temperature = flowchem_ureg.Quantity(temperature_in_celsius, flowchem_ureg.celsius)
+    residence_time: str = "300 s"
+    concentration_donor: str = _stock_concentration_donor
+    activator_equivalents: float = 1.7333
+    _quencher_equivalents = _quencher_eq_to_activator * activator_equivalents
+    temperature: str = "25  °C"
 
-        self.experiment_finished = False
-        self.analysis_finished = False
+    _experiment_finished: bool = False
+    _analysis_finished: bool = False
 
-        # when fully analysed, hold a dataframe of the chromatogram. Once automatic analysis/assignment works, this should also go in
-        self._chromatogram = None
-
+    # when fully analysed, hold a dataframe of the chromatogram. Once automatic analysis/assignment works, this should also go in
+    _chromatogram: dict = None
 
     @property
     def stock_concentration_donor(self):
