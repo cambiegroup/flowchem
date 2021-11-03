@@ -6,6 +6,7 @@ import asyncio
 import math
 import sys
 
+import pint
 import pytest
 
 from flowchem import AzuraCompactPump
@@ -15,8 +16,14 @@ if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
-@pytest.yield_fixture(scope="session")
+# noinspection PyUnusedLocal
+@pytest.fixture(scope="session")
 def event_loop(request):
+    """
+
+    Args:
+        request:
+    """
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -51,10 +58,10 @@ async def test_pumphead(pump: AzuraCompactPump):
 async def test_flow_rate(pump: AzuraCompactPump):
     await pump.set_flow(1.25)
     await pump.start_flow()
-    #FIXME
-    assert await pump.get_flow() == 1.25
+    # FIXME
+    assert pint.Quantity(await pump.get_flow()).magnitude == 1.25
     await pump.set_flow(math.pi)
-    assert math.isclose(await pump.get_flow(), math.pi, abs_tol=1e-3)
+    assert math.isclose(pint.Quantity(await pump.get_flow()).magnitude, math.pi, abs_tol=1e-3)
     await pump.stop_flow()
 
 

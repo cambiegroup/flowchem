@@ -5,7 +5,7 @@ import warnings
 import logging
 from typing import List, Optional
 
-from flowchem.constants import DeviceError
+from flowchem.exceptions import DeviceError
 from flowchem.devices.MettlerToledo.iCIR_common import IRSpectrum
 
 import asyncio
@@ -41,7 +41,9 @@ class FlowIR(iCIR_spectrometer):
         try:
             await self.opcua.connect()
         except asyncio.TimeoutError:
-            raise DeviceError(f"Could not connect to FlowIR on {self.opcua.server_url}!")
+            raise DeviceError(
+                f"Could not connect to FlowIR on {self.opcua.server_url}!"
+            )
         await self.check_version()
 
     async def check_version(self):
@@ -112,9 +114,7 @@ class FlowIR(iCIR_spectrometer):
 
     async def last_spectrum_raw(self) -> IRSpectrum:
         """ RAW result latest scan """
-        return await FlowIR.spectrum_from_node(
-            self.opcua.get_node(self.SPECTRA_RAW)
-        )
+        return await FlowIR.spectrum_from_node(self.opcua.get_node(self.SPECTRA_RAW))
 
     async def last_spectrum_background(self) -> IRSpectrum:
         """ RAW result latest scan """
@@ -125,6 +125,12 @@ class FlowIR(iCIR_spectrometer):
     async def start_experiment(
         self, template: str, name: str = "Unnamed flowchem exp."
     ):
+        """ Starts an experiment on iCIR
+
+        Args:
+            template: name of the experiment template, should be in the right folder on the PC running iCIR
+            name: experiment name.
+        """
         template = FlowIR._normalize_template_name(template)
         if self.is_local() and FlowIR.is_template_name_valid(template) is False:
             raise DeviceError(
@@ -172,11 +178,23 @@ class FlowIR(iCIR_spectrometer):
         router.add_api_route("/is-running", self.is_running, methods=["GET"])
         router.add_api_route("/probe/info", self.is_iCIR_connected, methods=["GET"])
         router.add_api_route("/probe/status", self.is_iCIR_connected, methods=["GET"])
-        router.add_api_route("/sample/last-acquisition-time", self.last_sample_time, methods=["GET"])
-        router.add_api_route("/sample/spectrum/last-treated", self.last_spectrum_treated, methods=["GET"])
-        router.add_api_route("/sample/spectrum/last-raw", self.last_spectrum_raw, methods=["GET"])
-        router.add_api_route("/sample/spectrum/last-background", self.last_spectrum_background, methods=["GET"])
-        router.add_api_route("/experiment/start", self.start_experiment, methods=["PUT"])
+        router.add_api_route(
+            "/sample/last-acquisition-time", self.last_sample_time, methods=["GET"]
+        )
+        router.add_api_route(
+            "/sample/spectrum/last-treated", self.last_spectrum_treated, methods=["GET"]
+        )
+        router.add_api_route(
+            "/sample/spectrum/last-raw", self.last_spectrum_raw, methods=["GET"]
+        )
+        router.add_api_route(
+            "/sample/spectrum/last-background",
+            self.last_spectrum_background,
+            methods=["GET"],
+        )
+        router.add_api_route(
+            "/experiment/start", self.start_experiment, methods=["PUT"]
+        )
         router.add_api_route("/experiment/stop", self.stop_experiment, methods=["GET"])
 
         return router

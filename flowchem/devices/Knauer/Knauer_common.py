@@ -3,9 +3,10 @@ Module for communication with Knauer pumps and valves.
 """
 import asyncio
 import logging
+from asyncio import StreamReader, StreamWriter
 
-from flowchem.constants import InvalidConfiguration
 from flowchem.devices.Knauer.Knauer_autodiscover import autodiscover_knauer
+from flowchem.exceptions import InvalidConfiguration
 
 
 class KnauerEthernetDevice:
@@ -24,10 +25,15 @@ class KnauerEthernetDevice:
         self._name = name
 
         # Logger
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__).getChild(self.name)
+        self.logger = (
+            logging.getLogger(__name__)
+            .getChild(self.__class__.__name__)
+            .getChild(self.name)
+        )
 
         # These will be set in initialize()
-        self._reader, self._writer = None, None
+        self._reader: StreamReader = None  # type: ignore
+        self._writer: StreamWriter = None  # type: ignore
 
         # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by sublcasses
         self.eol = b""
@@ -60,18 +66,24 @@ class KnauerEthernetDevice:
         if device_ip:
             return cls(device_ip)
         else:
-            raise InvalidConfiguration(f"Device with MAC address={mac_address} not found!\n"
-                                       f"[Available: {available_devices}]")
+            raise InvalidConfiguration(
+                f"Device with MAC address={mac_address} not found!\n"
+                f"[Available: {available_devices}]"
+            )
 
     async def initialize(self):
         """ Initialize connection """
         try:
-            self._reader, self._writer = await asyncio.open_connection(host=self.ip_address, port=10001)
+            self._reader, self._writer = await asyncio.open_connection(
+                host=self.ip_address, port=10001
+            )
         except ConnectionError as e:
-            raise InvalidConfiguration(f"Cannot open connection with Knauer Device IP={self.ip_address}") from e
+            raise InvalidConfiguration(
+                f"Cannot open connection with Knauer Device IP={self.ip_address}"
+            ) from e
 
     async def _send_and_receive(self, message: str) -> str:
-        self._writer.write(message.encode("ascii")+self.eol)
+        self._writer.write(message.encode("ascii") + self.eol)
         self.logger.debug(f"WRITE >>> '{message}' ")
         reply = await self._reader.readuntil(separator=b"\r")
         self.logger.debug(f"READ <<< '{reply.decode().strip()}' ")

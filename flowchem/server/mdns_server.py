@@ -1,7 +1,9 @@
+""" Creates mDNS server """
 import hashlib
 import logging
 import uuid
 
+# noinspection PyProtectedMember
 from zeroconf import IPVersion, ServiceInfo, Zeroconf, get_all_addresses
 
 
@@ -27,7 +29,8 @@ class Server_mDNS:
         self.mdns_addresses = [
             ip
             for ip in get_all_addresses()  # Get all local IP
-            if ip not in ("127.0.0.1", "0.0.0.0") and not ip.startswith("169.254")  # Remove invalid IPs
+            if ip not in ("127.0.0.1", "0.0.0.0")
+            and not ip.startswith("169.254")  # Remove invalid IPs
         ]
 
         # Logger
@@ -44,6 +47,7 @@ class Server_mDNS:
             return f"{hashlib.sha1(candidate_name.encode()).hexdigest()}._labthing._tcp.local."
 
     def include_device(self, name, url_prefix):
+        """ Adds device to the server. """
         service_name = Server_mDNS._get_valid_service_name(name)
 
         # LabThing service
@@ -67,7 +71,7 @@ class Server_mDNS:
             print("Zeroconf server stopped")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test = Server_mDNS()
     print("ok")
     input()

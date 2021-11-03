@@ -4,14 +4,14 @@ import asyncio
 import aioserial
 import pytest
 
-from flowchem.constants import InvalidConfiguration
 from flowchem.devices.Huber.huberchiller import HuberChiller, PBCommand
+from flowchem.exceptions import InvalidConfiguration
 
 
 # TEST PBCommand parsers first
 def test_pbcommand_parse_temp():
-    assert PBCommand("{S00F2DF").parse_temperature() == -33.61
-    assert PBCommand("{S0004DA").parse_temperature() == 12.42
+    assert PBCommand("{S00F2DF").parse_temperature() == "-33.61 degree_Celsius"
+    assert PBCommand("{S0004DA").parse_temperature() == "12.42 degree_Celsius"
 
 
 def test_pbcommand_parse_int():
@@ -21,7 +21,8 @@ def test_pbcommand_parse_int():
 
 
 def test_pbcommand_parse_bits():
-    assert PBCommand("{S001234").parse_bits() == [False, False, False, True, False, False, True, False, False, False, True, True, False, True, False, False]
+    assert PBCommand("{S001234").parse_bits() == [False, False, False, True, False, False, True, False, False, False,
+                                                  True, True, False, True, False, False]
 
 
 def test_pbcommand_parse_bool():
@@ -118,17 +119,19 @@ async def test_status2(chiller):
 async def test_get_temperature_setpoint(chiller):
     chiller._serial.fixed_reply = None
     temp = await chiller.get_temperature_setpoint()
-    assert temp == 12.42
+    assert temp == "12.42 degree_Celsius"
 
     chiller._serial.fixed_reply = b"{S00F2DF"
     temp = await chiller.get_temperature_setpoint()
-    assert temp == -33.61
+    assert temp == "-33.61 degree_Celsius"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_set_temperature_setpoint(chiller):
     chiller._serial.fixed_reply = None
     await chiller.set_temperature_setpoint(20)
+    print(chiller._serial.last_command)
     assert chiller._serial.last_command == b"{M0007D0\r\n"
 
     await chiller.set_temperature_setpoint(-20)
@@ -143,6 +146,7 @@ async def test_set_temperature_setpoint(chiller):
         assert chiller._serial.last_command == b"{M003A98\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_internal_temperature(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -150,6 +154,7 @@ async def test_internal_temperature(chiller):
     assert chiller._serial.last_command == b"{M01****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_return_temperature(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -157,6 +162,7 @@ async def test_return_temperature(chiller):
     assert chiller._serial.last_command == b"{M02****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_process_temperature(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -164,20 +170,22 @@ async def test_process_temperature(chiller):
     assert chiller._serial.last_command == b"{M3A****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_pump_pressure(chiller):
     chiller._serial.fixed_reply = None
     pressure = await chiller.pump_pressure()
     assert chiller._serial.last_command == b"{M03****\r\n"
-    assert pressure == 1560
+    assert pressure == "2560 millibar"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_current_power(chiller):
     chiller._serial.fixed_reply = None
     power = await chiller.current_power()
     assert chiller._serial.last_command == b"{M04****\r\n"
-    assert power == 10
+    assert power == "10 watt"
 
 
 @pytest.mark.asyncio
@@ -190,6 +198,7 @@ async def test_get_temperature_control(chiller):
     assert t_ctl is True
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_temperature_control(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -209,6 +218,7 @@ async def test_get_circulation(chiller):
     assert circulation is True
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_circulation(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -222,32 +232,35 @@ async def test_circulation(chiller):
 async def test_min_setpoint(chiller):
     chiller._serial.fixed_reply = None
     min_t = await chiller.min_setpoint()
-    assert min_t == -50.0
+    assert min_t == "-50.0 degree_Celsius"
 
 
 @pytest.mark.asyncio
 async def test_max_setpoint(chiller):
     chiller._serial.fixed_reply = None
     max_t = await chiller.max_setpoint()
-    assert max_t == 150.0
+    assert max_t == "150.0 degree_Celsius"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_pump_speed(chiller):
     chiller._serial.fixed_reply = None
     speed = await chiller.pump_speed()
     assert chiller._serial.last_command == b"{M26****\r\n"
-    assert speed == 10
+    assert speed == "10 revolutions_per_minute"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_pump_speed_setpoint(chiller):
     chiller._serial.fixed_reply = b"{S480000"
     speed = await chiller.pump_speed_setpoint()
     assert chiller._serial.last_command == b"{M48****\r\n"
-    assert speed == 0
+    assert speed == "0 revolutions_per_minute"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_set_pump_speed(chiller):
     chiller._serial.fixed_reply = b"{S480000"
@@ -255,6 +268,7 @@ async def test_set_pump_speed(chiller):
     assert chiller._serial.last_command == b"{M48000A\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_cooling_water_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -262,6 +276,7 @@ async def test_cooling_water_temp(chiller):
     assert chiller._serial.last_command == b"{M2C****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_cooling_water_pressure(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -269,6 +284,7 @@ async def test_cooling_water_pressure(chiller):
     assert chiller._serial.last_command == b"{M2D****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_cooling_water_temp_out(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -276,6 +292,7 @@ async def test_cooling_water_temp_out(chiller):
     assert chiller._serial.last_command == b"{M4C****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_alarm_max_internal_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -283,6 +300,7 @@ async def test_alarm_max_internal_temp(chiller):
     assert chiller._serial.last_command == b"{M51****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_alarm_min_internal_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -290,6 +308,7 @@ async def test_alarm_min_internal_temp(chiller):
     assert chiller._serial.last_command == b"{M52****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_alarm_max_process_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -297,6 +316,7 @@ async def test_alarm_max_process_temp(chiller):
     assert chiller._serial.last_command == b"{M53****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_alarm_min_process_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -304,6 +324,7 @@ async def test_alarm_min_process_temp(chiller):
     assert chiller._serial.last_command == b"{M54****\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_set_alarm_max_internal_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -311,6 +332,7 @@ async def test_set_alarm_max_internal_temp(chiller):
     assert chiller._serial.last_command == b"{M5103E8\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_set_alarm_min_internal_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -318,6 +340,7 @@ async def test_set_alarm_min_internal_temp(chiller):
     assert chiller._serial.last_command == b"{M5203E8\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_set_alarm_max_process_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
@@ -325,6 +348,7 @@ async def test_set_alarm_max_process_temp(chiller):
     assert chiller._serial.last_command == b"{M5303E8\r\n"
 
 
+# noinspection PyUnresolvedReferences
 @pytest.mark.asyncio
 async def test_set_alarm_min_process_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"

@@ -4,7 +4,7 @@ import logging
 import warnings
 from enum import Enum
 
-from flowchem.constants import DeviceError
+from flowchem.exceptions import DeviceError
 from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
 
 
@@ -56,26 +56,36 @@ class KnauerValve(KnauerEthernetDevice):
             return None
 
         if "E0" in reply:
-            DeviceError(f"The valve refused to switch.\n"
-                        f"Replace the rotor seals of the valve or replace the motor drive unit.")
+            DeviceError(
+                f"The valve refused to switch.\n"
+                f"Replace the rotor seals of the valve or replace the motor drive unit."
+            )
         elif "E1" in reply:
-            DeviceError(f"Skipped switch: motor current too high!\n"
-                        f"Replace the rotor seals of the valve.")
+            DeviceError(
+                f"Skipped switch: motor current too high!\n"
+                f"Replace the rotor seals of the valve."
+            )
         elif "E2" in reply:
-            DeviceError(f"Change from one valve position to the next takes too long.\n"
-                        f"Replace the rotor seals of the valve.")
+            DeviceError(
+                f"Change from one valve position to the next takes too long.\n"
+                f"Replace the rotor seals of the valve."
+            )
         elif "E3" in reply:
-            DeviceError(f"Switch position of DIP 3 and 4 are not correct.\n"
-                        f"Correct DIP switch 3 and 4.")
+            DeviceError(
+                f"Switch position of DIP 3 and 4 are not correct.\n"
+                f"Correct DIP switch 3 and 4."
+            )
         elif "E4" in reply:
-            DeviceError(f"Valve homing position not recognized.\n"
-                        f"Readjust sensor board.")
+            DeviceError(
+                f"Valve homing position not recognized.\n" f"Readjust sensor board."
+            )
         elif "E5" in reply:
-            DeviceError(f"Switch position of DIP 1 and 2 are not correct.\n"
-                        f"Correct DIP switch 1 and 2.")
+            DeviceError(
+                f"Switch position of DIP 1 and 2 are not correct.\n"
+                f"Correct DIP switch 1 and 2."
+            )
         elif "E6" in reply:
-            DeviceError(f"Memory error.\n"
-                        f"Power-cycle valve!")
+            DeviceError(f"Memory error.\n" f"Power-cycle valve!")
         else:
             DeviceError("Unspecified error detected!")
 
@@ -142,6 +152,7 @@ class KnauerValve(KnauerEthernetDevice):
 
 class Knauer6Port2PositionValve(KnauerValve):
     """ KnauerValve of type SIX_PORT_TWO_POSITION """
+
     async def initialize(self):
         """ Ensure valve type """
         await super().initialize()
@@ -150,6 +161,7 @@ class Knauer6Port2PositionValve(KnauerValve):
 
 class Knauer6Port6PositionValve(KnauerValve):
     """ KnauerValve of type SIX_PORT_SIX_POSITION """
+
     async def initialize(self):
         """ Ensure valve type """
         await super().initialize()
@@ -158,6 +170,7 @@ class Knauer6Port6PositionValve(KnauerValve):
 
 class Knauer12PortValve(KnauerValve):
     """ KnauerValve of type TWELVE_PORT_TWELVE_POSITION """
+
     async def initialize(self):
         """ Ensure valve type """
         await super().initialize()
@@ -166,6 +179,7 @@ class Knauer12PortValve(KnauerValve):
 
 class Knauer16PortValve(KnauerValve):
     """ KnauerValve of type SIXTEEN_PORT_SIXTEEN_POSITION """
+
     async def initialize(self):
         """ Ensure valve type """
         await super().initialize()
@@ -185,11 +199,11 @@ if __name__ == "__main__":
     v = KnauerValve(ip_address="192.168.1.176")
 
     async def main(valve: KnauerValve):
+        """ test function """
         await valve.initialize()
         await valve.switch_to_position("I")
         print(await valve.get_current_position())
         await valve.switch_to_position("L")
         print(await valve.get_current_position())
-
 
     asyncio.run(main(v))
