@@ -2,9 +2,6 @@
 import logging
 import time
 import warnings
-from typing import Optional
-
-from units import AnyQuantity, ensure_quantity, flowchem_ureg
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -24,6 +21,7 @@ else:
     else:
         HAS_PHIDGET = True
 
+from flowchem.units import AnyQuantity, ensure_quantity, flowchem_ureg
 from flowchem.exceptions import DeviceError, InvalidConfiguration
 
 
