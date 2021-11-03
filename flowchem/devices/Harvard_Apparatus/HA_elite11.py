@@ -16,7 +16,7 @@ import aioserial
 from pydantic import BaseModel
 
 from flowchem.exceptions import InvalidConfiguration, DeviceError
-from flowchem.units import flowchem_ureg
+from flowchem.units import flowchem_ureg, AnyQuantity, ensure_quantity
 
 
 class PumpInfo(BaseModel):
@@ -563,7 +563,7 @@ class Elite11:
             command_template.to_pump(self.address, parameter), return_parsed=parse
         )
 
-    async def bound_rate_to_pump_limits(self, rate_in_ml_min: float) -> float:
+    async def bound_rate_to_pump_limits(self, rate: AnyQuantity) -> float:
         """ Bound the rate provided to pump's limit. These are function of the syringe diameter.
 
         NOTE: Infusion and withdraw limits are equal! """
@@ -576,18 +576,20 @@ class Elite11:
         lower_limit, upper_limit = map(flowchem_ureg, limits_raw.split(" to "))
 
         # Also add units to the provided rate
-        value_w_units = flowchem_ureg.Quantity(rate_in_ml_min, "ml/min")
+        set_rate = ensure_quantity(rate, "ml/min")
 
         # Bound rate to acceptance range
-        set_rate = max(lower_limit, min(upper_limit, value_w_units)).m_as("ml/min")
+        if set_rate < lower_limit:
+            warnings.warn(f"The requested rate {rate} is lower than the minimum possible ({lower_limit})!"
+                          f"Setting rate to {lower_limit} instead!")
+            set_rate = lower_limit
 
-        # If the set rate was adjusted to fit limits warn user
-        if set_rate != rate_in_ml_min:
-            warnings.warn(
-                f"The requested rate {rate_in_ml_min} ml/min was outside the acceptance range"
-                f"[{lower_limit} - {upper_limit}] and was bounded to {set_rate} ml/min!"
-            )
-        return set_rate
+        if set_rate > upper_limit:
+            warnings.warn(f"The requested rate {rate} is higher than the maximum possible ({upper_limit})!"
+                          f"Setting rate to {upper_limit} instead!")
+            set_rate = upper_limit
+
+        return set_rate.to("ml/min").magnitude
 
     async def version(self) -> str:
         """ Returns the current firmware version reported by the pump """
@@ -611,23 +613,21 @@ class Elite11:
         """ Returns true if idle. """
         return not await self.is_moving()
 
-    async def get_syringe_volume(self) -> float:
-        """ Returns the syringe volume in ml. """
-        volume_w_units = await self.send_command_and_read_reply(
+    async def get_syringe_volume(self) -> str:
+        """ Returns the syringe volume as str w/ units. """
+        return await self.send_command_and_read_reply(
             Elite11Commands.GET_SYRINGE_VOLUME
         )  # e.g. '100 ml'
-        return flowchem_ureg(volume_w_units).m_as(
-            "ml"
-        )  # Unit registry does the unit conversion and returns ml
 
-    async def set_syringe_volume(self, volume_in_ml: float = None):
+    async def set_syringe_volume(self, volume: AnyQuantity = None):
         """
         Sets the syringe volume in ml.
 
-        :param volume_in_ml: the volume of the syringe.
+        :param volume: the volume of the syringe.
         """
+        volume_in_ml = ensure_quantity(volume, "ml")
         await self.send_command_and_read_reply(
-            Elite11Commands.SET_SYRINGE_VOLUME, parameter=f"{volume_in_ml:.15f} m"
+            Elite11Commands.SET_SYRINGE_VOLUME, parameter=f"{volume_in_ml.magnitude:.15f} m"
         )
 
     async def run(self):
@@ -679,52 +679,46 @@ class Elite11:
         while await self.is_moving():
             await asyncio.sleep(0.05)
 
-    async def get_infusion_rate(self) -> float:
-        """ Returns the infusion rate in ml*min-1 """
-        rate_w_units = await self.send_command_and_read_reply(
+    async def get_infusion_rate(self) -> str:
+        """ Returns the infusion rate as str w/ units """
+        return await self.send_command_and_read_reply(
             Elite11Commands.GET_INFUSE_RATE
         )  # e.g. '0.2 ml/min'
-        # Unit registry does the unit conversion and returns ml/min
-        return flowchem_ureg(rate_w_units).m_as("ml/min")
 
-    async def set_infusion_rate(self, rate_in_ml_min: float):
-        """ Sets the infusion rate in ml*min-1 """
-        set_rate = await self.bound_rate_to_pump_limits(rate_in_ml_min=rate_in_ml_min)
+    async def set_infusion_rate(self, rate: AnyQuantity):
+        """ Sets the infusion rate """
+        set_rate = await self.bound_rate_to_pump_limits(rate=rate)
         await self.send_command_and_read_reply(
             Elite11Commands.SET_INFUSE_RATE, parameter=f"{set_rate:.10f} m/m"
         )
 
-    async def get_withdrawing_rate(self) -> float:
-        """ Returns the infusion rate in ml*min-1 """
+    async def get_withdrawing_rate(self) -> str:
+        """ Returns the infusion rate as a string w/ units """
         self.ensure_withdraw_is_enabled()
-        rate_w_units = await self.send_command_and_read_reply(
+        return await self.send_command_and_read_reply(
             Elite11Commands.GET_WITHDRAW_RATE
         )
-        # Unit registry does the unit conversion and returns ml/min
-        return flowchem_ureg(rate_w_units).m_as("ml/min")
 
-    async def set_withdrawing_rate(self, rate_in_ml_min: float):
-        """ Sets the infusion rate in ml*min-1 """
+    async def set_withdrawing_rate(self, rate: AnyQuantity):
+        """ Sets the infusion rate """
         self.ensure_withdraw_is_enabled()
-        set_rate = await self.bound_rate_to_pump_limits(rate_in_ml_min=rate_in_ml_min)
+        set_rate = await self.bound_rate_to_pump_limits(rate=rate)
         await self.send_command_and_read_reply(
             Elite11Commands.SET_WITHDRAW_RATE, parameter=f"{set_rate} m/m"
         )
 
-    async def get_infused_volume(self) -> float:
-        """ Return infused volume in ml """
-        infused_w_units = await self.send_command_and_read_reply(
+    async def get_infused_volume(self) -> str:
+        """ Return infused volume as string w/ units """
+        return await self.send_command_and_read_reply(
             Elite11Commands.INFUSED_VOLUME
         )
-        return flowchem_ureg(infused_w_units).m_as("ml")
 
-    async def get_withdrawn_volume(self):
+    async def get_withdrawn_volume(self) -> str:
         """ Returns the withdrawn volume from the last clear_*_volume() command, according to the pump """
         self.ensure_withdraw_is_enabled()
-        withdrawn_w_units = await self.send_command_and_read_reply(
+        return await self.send_command_and_read_reply(
             Elite11Commands.WITHDRAWN_VOLUME
         )
-        return flowchem_ureg(withdrawn_w_units).m_as("ml")
 
     async def clear_infused_volume(self):
         """ Reset the pump infused volume counter to 0 """
@@ -769,28 +763,26 @@ class Elite11:
             Elite11Commands.SET_FORCE, parameter=str(int(force_percent))
         )
 
-    async def get_syringe_diameter(self) -> float:
-        """
-        Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
-        """
-        diameter = await self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)
-        return float(diameter[:-3])
+    async def get_syringe_diameter(self) -> str:
+        """ Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm """
+        return await self.send_command_and_read_reply(Elite11Commands.GET_DIAMETER)
 
-    async def set_syringe_diameter(self, diameter_in_mm: float):
+    async def set_syringe_diameter(self, diameter: AnyQuantity):
         """
-        Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm
+        Set syringe diameter. This can be set in the interval 1 mm to 33 mm
         """
-        if not 1 <= diameter_in_mm <= 33:
+        diameter = ensure_quantity(diameter, "mm")
+        if not 1 * flowchem_ureg.mm <= diameter <= 33 * flowchem_ureg.mm:
             warnings.warn(
-                f"Diameter provided ({diameter_in_mm}) is not valid, ignored! [Accepted range: 1-33 mm]"
+                f"Diameter provided ({diameter}) is not valid, ignored! [Accepted range: 1-33 mm]"
             )
             return
 
         await self.send_command_and_read_reply(
-            Elite11Commands.SET_DIAMETER, parameter=f"{diameter_in_mm:.4f}"
+            Elite11Commands.SET_DIAMETER, parameter=f"{diameter.to('mm'):.4f}"
         )
 
-    async def get_current_flowrate(self):
+    async def get_current_flowrate(self) -> str:
         """
         If pump moves, this returns the current moving rate. If not running None.
         :return: current moving rate
@@ -801,34 +793,33 @@ class Elite11:
             )
         else:
             warnings.warn("Pump is not moving, cannot provide moving rate!")
-            return None
+            return ""
 
-    async def get_target_volume(self) -> Optional[float]:
-        """
-        Returns target volume in ml. If the volume is set to 0, the target is cleared.
-        """
+    async def get_target_volume(self) -> str:
+        """ Returns target volume or a falsy empty string if not set. """
+
         target_vol = await self.send_command_and_read_reply(
             Elite11Commands.GET_TARGET_VOLUME
         )
         if "Target volume not set" in target_vol:
-            return None
-        # Returns in ml
-        return flowchem_ureg(target_vol).m_as("ml")
+            return ""
+        return target_vol
 
-    async def set_target_volume(self, target_volume_in_ml: float):
+    async def set_target_volume(self, target_volume: AnyQuantity):
         """
         Sets target volume in ml. If the volume is set to 0, the target is cleared.
         """
+        target_volume_in_ml = ensure_quantity(target_volume, "ml")
         if target_volume_in_ml == 0:
             await self.send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME)
         else:
             set_vol = await self.send_command_and_read_reply(
-                Elite11Commands.SET_TARGET_VOLUME, parameter=f"{target_volume_in_ml} m"
+                Elite11Commands.SET_TARGET_VOLUME, parameter=f"{target_volume_in_ml.magnitude} m"
             )
             if "Argument error" in set_vol:
                 warnings.warn(
-                    f"Cannot set target volume of {target_volume_in_ml} ml with a "
-                    f"{self.get_syringe_volume()} ml syringe!"
+                    f"Cannot set target volume of {target_volume_in_ml} with a "
+                    f"{self.get_syringe_volume()} syringe!"
                 )
 
     async def pump_info(self) -> PumpInfo:
