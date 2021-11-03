@@ -4,6 +4,8 @@ import time
 import warnings
 from typing import Optional
 
+from units import AnyQuantity, ensure_quantity, flowchem_ureg
+
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
     from Phidget22.Devices.Log import Log, LogLevel
@@ -30,8 +32,8 @@ class PressureSensor:
 
     def __init__(
         self,
-        sensor_min_bar: float = 0,
-        sensor_max_bar: float = 10,
+        sensor_min: AnyQuantity = 0,
+        sensor_max: AnyQuantity = 10,
         vint_serial_number: int = None,
         vint_channel: int = None,
         phidget_is_remote: bool = False,
@@ -45,8 +47,8 @@ class PressureSensor:
         self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
         # Sensor range
-        self._minP = sensor_min_bar
-        self._maxP = sensor_max_bar
+        self._minP = ensure_quantity(sensor_min, "bar")
+        self._maxP = ensure_quantity(sensor_max, "bar")
         # current meter
         self.phidget = CurrentInput()
 
@@ -91,15 +93,15 @@ class PressureSensor:
         """ Whether the device is connected """
         return bool(self.phidget.getAttached())
 
-    def _current_to_pressure(self, current_in_ampere: float) -> float:
+    def _current_to_pressure(self, current_in_ampere: float) -> str:
         """ Converts current reading into pressure value """
         ma = current_in_ampere * 1000
         # minP..maxP is 4..20mA
         pressure_reading = self._minP + ((ma - 4) / 16) * (self._maxP - self._minP)
         self.log.debug(f"Read pressure {pressure_reading} barg!")
-        return pressure_reading
+        return str(pressure_reading * flowchem_ureg.bar)
 
-    def read_pressure(self) -> Optional[float]:
+    def read_pressure(self) -> str:
         """
         Read pressure from sensor, in bar.
 
@@ -118,14 +120,14 @@ class PressureSensor:
             self.log.debug(f"Current pressure: {current}")
         except PhidgetException:
             warnings.warn("Cannot read pressure!")
-            return None
+            return ""
         else:
             return self._current_to_pressure(current)
 
 
 if __name__ == "__main__":
     test = PressureSensor(
-        sensor_min_bar=0, sensor_max_bar=25, vint_serial_number=627768, vint_channel=0
+        sensor_min=0, sensor_max=25, vint_serial_number=627768, vint_channel=0
     )
     while True:
         print(test.read_pressure())
