@@ -61,7 +61,7 @@ async def test_status_infusing(pump: Elite11):
 @pytest.mark.asyncio
 async def test_status_withdrawing(pump: Elite11):
     await pump.set_syringe_diameter(10)
-    await pump.set_withdrawing_rate(1)
+    await pump.set_withdraw_rate(1)
     await pump.withdraw_run()
     assert await pump.get_status() is PumpStatus.WITHDRAWING
     await pump.stop()
@@ -122,7 +122,7 @@ async def test_get_infused_volume(pump: Elite11):
 @pytest.mark.asyncio
 async def test_get_withdrawn_volume(pump: Elite11):
     await pump.clear_volumes()
-    await pump.set_withdrawing_rate(10)
+    await pump.set_withdraw_rate(10)
     await pump.set_target_volume(0.1)
     await pump.withdraw_run()
     await asyncio.sleep(1)
