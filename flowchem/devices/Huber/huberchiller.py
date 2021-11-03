@@ -267,7 +267,7 @@ class HuberChiller:
         reply = await self.send_command_and_read_reply("{M48****")
         return PBCommand(reply).parse_rpm()
 
-    async def set_pump_speed(self, rpm: int):
+    async def set_pump_speed(self, rpm: AnyQuantity):
         """ Set the pump speed, in rpm. See device display for range. """
         rpm = ensure_quantity(rpm, "rpm")
         await self.send_command_and_read_reply("{M48" + self.int_to_string(rpm.magnitude))

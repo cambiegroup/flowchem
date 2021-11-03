@@ -82,7 +82,7 @@ class ViciValcoValveIO:
         self._serial = aio_port
 
         # These will be set in initialize
-        self.num_valve_connected = None
+        self.num_valve_connected = 0
         self._initialized = False
 
     @classmethod
@@ -155,12 +155,12 @@ class ViciValcoValveIO:
         """ Main ViciValcoValveIO method.
         Sends a command to the valve, read the replies and returns it, optionally parsed """
         self.reset_buffer()
-        await self._write_async(command.compile())
+        await self._write(command.compile())
 
         if not lines:
             return ""
 
-        response = await self._read_reply_async(lines)
+        response = await self._read_reply(lines)
 
         if not response:
             raise InvalidConfiguration(

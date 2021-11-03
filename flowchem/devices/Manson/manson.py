@@ -53,7 +53,7 @@ class MansonPowerSupply:
         # Zero fill by left pad with zeros, up to three digits
         return str(value_in_volt.magnitude * 10).zfill(3)
 
-    def _format_amperage(self, current: AnyQuantity) -> str:
+    async def _format_amperage(self, current: AnyQuantity) -> str:
         """ Format a current intensity in the format the power supply understands """
         current_in_ampere = ensure_quantity(current, "A").magnitude
 
@@ -186,7 +186,7 @@ class MansonPowerSupply:
     async def set_current(self, current: AnyQuantity) -> bool:
         """ Set target current """
 
-        cmd = "CURR" + self._format_amperage(current)
+        cmd = "CURR" + await self._format_amperage(current)
         response = await self._send_command(cmd)
         return response == "OK"
 
@@ -197,7 +197,7 @@ class MansonPowerSupply:
         for set_values in preset:
             voltage, current = set_values
             voltage_string = self._format_voltage(voltage)
-            current_string = self._format_amperage(current)
+            current_string = await self._format_amperage(current)
             command += voltage_string + current_string
 
         # Set new values (no reply from device on this command)
@@ -240,10 +240,10 @@ class MansonPowerSupply:
         if await self.get_info() in self.MODEL_ALT_RANGE:
             voltage = [x / 10 for x in voltage]
 
-        voltage = [str(flowchem_ureg.Quantity(x, "V")) for x in voltage]
-        current = [str(flowchem_ureg.Quantity(x, "A")) for x in current]
+        voltage_str = [str(flowchem_ureg.Quantity(x, "V")) for x in voltage]
+        current_str = [str(flowchem_ureg.Quantity(x, "A")) for x in current]
 
-        return list(zip(voltage, current))
+        return list(zip(voltage_str, current_str))
 
     async def get_preset(self, index) -> Tuple[str, str]:
         """ Get voltage and current for given preset position [0..2] """
