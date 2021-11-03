@@ -6,6 +6,7 @@ import aioserial
 import logging
 
 from flowchem.exceptions import DeviceError, InvalidConfiguration
+from units import AnyQuantity, ensure_quantity
 
 try:
     from flowchem.devices.Vapourtec.commands import R4Command, VapourtecCommand
@@ -37,7 +38,7 @@ class R4Heater:
                 f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
             ) from e
 
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
+        self.logger = logging.getLogger(__name__).getChild("R4Heater").getChild(self._serial.name)
 
     async def _write(self, command: str):
         """ Writes a command to the pump """
@@ -101,13 +102,15 @@ class R4Heater:
                 time.sleep(1)
 
     async def set_temperature(
-        self, channel, target_temperature: int, wait: bool = False
+        self, channel, target_temperature: AnyQuantity, wait: bool = False
     ):
         """ Set temperature and optionally waits for S """
         set_command = getattr(VapourtecCommand, f"SET_CH{channel}_TEMP")
+
+        set_temperature = ensure_quantity(target_temperature, "degree_Celsius")
         # Float not accepted, must cast to int
         await self.write_and_read_reply(
-            set_command.set_argument(int(target_temperature))
+            set_command.set_argument(round(set_temperature.magnitude))
         )
         # Set temperature implies channel on
         await self.write_and_read_reply(VapourtecCommand.CH_ON.set_argument(channel))
