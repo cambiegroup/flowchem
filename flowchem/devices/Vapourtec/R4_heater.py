@@ -1,16 +1,18 @@
 """ Control module for the Vapourtec R4 heater """
+import logging
 import time
 from typing import Tuple
 
 import aioserial
-import logging
 
 from flowchem.exceptions import DeviceError, InvalidConfiguration
-from units import AnyQuantity, ensure_quantity
+from flowchem.units import AnyQuantity, ensure_quantity
 
 try:
     from flowchem.devices.Vapourtec.commands import R4Command, VapourtecCommand
+    HAS_VAPOURTEC_COMMANDS = True
 except ImportError as e:
+    HAS_VAPOURTEC_COMMANDS = False
     raise PermissionError(
         "Cannot redistribute Vapourtec commands... Contact Vapourtec to get them!"
     ) from e
@@ -29,6 +31,13 @@ class R4Heater:
     """ Virtual control of the Vapourtec R4 heating module. """
 
     def __init__(self, **config):
+
+        if not HAS_VAPOURTEC_COMMANDS:
+            raise InvalidConfiguration(
+                "R4Heater unusable: Vapourtec Commands specification missing and cannot be redistributed.\n"
+                "Contact your distributor to get the serial API documentation."
+            )
+
         # Merge default settings, including serial, with provided ones.
         configuration = dict(R4Heater.DEFAULT_CONFIG, **config)
         try:
