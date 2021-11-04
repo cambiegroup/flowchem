@@ -38,7 +38,8 @@ setuptools.setup(
         "nmrglue",
         "aioserial",
         "jsonschema",
-        "loguru"
+        "loguru",
+        "networkx"
     ],
     python_requires=">=3.8",
     entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},
