@@ -114,15 +114,15 @@ class PumpIO:
     DEFAULT_CONFIG = {"timeout": 0.1, "baudrate": 115200}
 
     # noinspection PyPep8
-    def __init__(self, **config):
+    def __init__(self, port: str, **kwargs):
         # Merge default settings, including serial, with provided ones.
-        configuration = dict(PumpIO.DEFAULT_CONFIG, **config)
+        configuration = dict(PumpIO.DEFAULT_CONFIG, **kwargs)
 
         try:
-            self._serial = aioserial.AioSerial(**configuration)
+            self._serial = aioserial.AioSerial(port, **configuration)
         except aioserial.SerialException as e:
             raise InvalidConfiguration(
-                f"Cannot connect to the Pump on the port <{config.get('port')}>"
+                f"Cannot connect to the Pump on the port <{port}>"
             ) from e
 
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
@@ -252,6 +252,14 @@ class PumpIO:
             return self._serial.name
         except AttributeError:
             return None
+
+    def autodetermine_address(self) -> int:
+        self._serial.write("\r\n".encode("ascii"))
+        self._serial.readline()
+        prompt = self._serial.readline()
+        address = int(prompt[0:2])
+        self.logger.debug(f"Address autodetected as {address}")
+        return address
 
 
 # noinspection SpellCheckingInspection
@@ -481,7 +489,7 @@ class Elite11:
         self.log = logging.getLogger(__name__).getChild("Elite11")
 
     @classmethod
-    def from_config(cls, **config):
+    def from_config(cls, port: str, diameter: AnyQuantity, syringe_volume: AnyQuantity, address: int, name: str, **serial_kwargs):
         """ Programmatic instantiation from configuration
 
         Many pump can be present on the same serial port with different addresses.
@@ -492,37 +500,28 @@ class Elite11:
         """
         pumpio = None
         for obj in Elite11._io_instances:
-            if obj._serial.port == config.get("port"):
+            if obj._serial.port == port:
                 pumpio = obj
                 break
 
         # If not existing serial object are available for the port provided, create a new one
         if pumpio is None:
-            # Remove Elite11-specific keys to only have HamiltonPumpIO's kwargs
-            config_for_pumpio = {
-                k: v
-                for k, v in config.items()
-                if k not in ("diameter", "address", "name", "syringe_volume")
-            }
-            pumpio = PumpIO(**config_for_pumpio)
+            pumpio = PumpIO(port, **serial_kwargs)
 
         return cls(
             pumpio,
-            address=config.get("address"),
-            name=config.get("name"),
-            diameter=config.get("diameter"),
-            syringe_volume=config.get("syringe_volume"),
+            address=address,
+            name=name,
+            diameter=diameter,
+            syringe_volume=syringe_volume,
         )
 
     async def initialize(self):
         """ Ensure a valid connection with the pump has been established and sets parameters. """
         # Autodetect address if none provided
         if self.address is None:
-            self.pump_io._serial.write("\r\n".encode("ascii"))
-            self.pump_io._serial.readline()
-            prompt = self.pump_io._serial.readline()
-            self.address = int(prompt[0:2])
-            self.log.debug(f"Address autodetected as {self.address}")
+            self.address = self.pump_io.autodetermine_address()
+
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
 
