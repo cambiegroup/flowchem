@@ -27,20 +27,65 @@ devices:
         HuberChiller:
             port: COM1
 
-    donor_solution:
-        FlowchemVessel:
-            description: Long description of the donor
+    mixer1:
+        TMixer:
+
+    mixer2:
+        TMixer:
+
 
 connections:
-    Tube:
+    - Tube:
         from:
-            device: pump1
-            position: 0
+            device: donor
         to:
-            device: myreagent
-            position: 0
+            device: mixer1
 
         length: 0.1 m
         inner-diameter: 0.760 mm
         outer-diameter: 1.6 mm
         material: "PFA"
+
+    - Tube:
+        from:
+            device: activator
+        to:
+            device: mixer1
+
+        length: 0.1 m
+        inner-diameter: 0.760 mm
+        outer-diameter: 1.6 mm
+        material: "PFA"
+
+    - Tube:
+        from:
+            device: mixer1
+        to:
+            device: mixer2
+
+        length: 0.1 m
+        inner-diameter: 0.760 mm
+        outer-diameter: 1.6 mm
+        material: "glass"
+
+    - Tube:
+          from:
+              device: quencher
+          to:
+              device: mixer2
+
+          length: 0.1 m
+          inner-diameter: 0.760 mm
+          outer-diameter: 1.6 mm
+          material: "PFA"
+
+    - Tube:
+          from:
+              device: mixer2
+          to:
+              device: sample_loop
+
+          length: 0.1 m
+          inner-diameter: 0.760 mm
+          outer-diameter: 1.6 mm
+          material: "PFA"

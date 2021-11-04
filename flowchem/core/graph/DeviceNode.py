@@ -20,6 +20,14 @@ class DeviceNode:
         self._title = device_name
         self._router = None
 
+        # No configuration for t-mixer et al.
+        if device_config is None:
+            device_config = {}
+
+        # Add name to initialization args
+        if "name" not in device_config:
+            device_config["name"] = device_name
+
         # DEVICE INSTANTIATION
         try:
             # Special class method for initialization required for some devices
@@ -30,7 +38,7 @@ class DeviceNode:
             self.logger.debug(f"Created {self.title} instance: {self.device}")
         except TypeError as e:
             raise ConnectionError(
-                f"Wrong configuration provided for device: {self.title}!\n"
+                f"Wrong configuration provided for device: {self.title} of type {obj_type}!\n"
                 f"Configuration: {device_config}\n"
                 f"Accepted parameters: {inspect.getfullargspec(obj_type).args}"
             ) from e

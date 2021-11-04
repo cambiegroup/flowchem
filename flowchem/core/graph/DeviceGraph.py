@@ -20,7 +20,7 @@ from flowchem.components.stdlib import Tube
 from flowchem.core.apparatus import Apparatus
 
 # packages containing the device class definitions. Target classes should be available in the module top level.
-DEVICE_MODULES = [flowchem.components.devices]
+DEVICE_MODULES = [flowchem.components.devices, flowchem.components.stdlib]
 
 # Validation schema for graph file
 SCHEMA = os.path.join(
@@ -139,30 +139,38 @@ class DeviceGraph:
                 f"Created device <{device_name}> with config: {device_config}"
             )
 
-        for tube_config in config["connections"].values():
-            # length: str, ID: str, OD: str, material: str):
-            tube = Tube(
-                length=tube_config["length"],
-                ID=tube_config["inner-diameter"],
-                OD=tube_config["outer-diameter"],
-                material=tube_config["material"],
-            )
+        for edge in config["connections"]:
+            if "Tube" in edge:
+                connection = self.parse_tube_connection(edge["Tube"])
 
-            # Devices
-            try:
-                from_device = self.device[tube_config["from"]["device"]]
-                to_device = self.device[tube_config["to"]["device"]]
-            except KeyError as ke:
-                raise InvalidConfiguration("A Tube refers to a non existing node!\n"
-                                           f"Tube config: {tube_config}") from ke
+            self.edge_list.append(connection)
 
-            # If necessary updates mapping.
-            if tube_config["from"]["position"] != 0:
-                from_device.mapping[from_device.name] = tube_config["from"]["position"]
-            if tube_config["to"]["position"] != 0:
-                to_device.mapping[from_device.name] = tube_config["to"]["position"]
+    def parse_tube_connection(self, tube_config) -> Connection:
+        """ Parse a dict containing the Tube connection and returns the Connection """
+        # length: str, ID: str, OD: str, material: str):
+        tube = Tube(
+            length=tube_config["length"],
+            ID=tube_config["inner-diameter"],
+            OD=tube_config["outer-diameter"],
+            material=tube_config["material"],
+        )
 
-            self.edge_list.append(Connection(from_device, to_device, tube))
+        # Devices
+        try:
+            from_device = self.device[tube_config["from"]["device"]]
+            to_device = self.device[tube_config["to"]["device"]]
+        except KeyError as ke:
+            raise InvalidConfiguration("A Tube refers to a non existing node!\n"
+                                       f"Missing node: {ke}\n"
+                                       f"Tube config: {tube_config}") from ke
+
+        # If necessary updates mapping.
+        if tube_config["from"].get("position", 0) != 0:
+            from_device.mapping[from_device.name] = tube_config["from"]["position"]
+        if tube_config["to"].get("position", 0) != 0:
+            to_device.mapping[from_device.name] = tube_config["to"]["position"]
+
+        return Connection(from_device, to_device, tube)
 
     def to_apparatus(self) -> Apparatus:
         """
