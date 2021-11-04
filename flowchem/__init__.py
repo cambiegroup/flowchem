@@ -1,4 +1,3 @@
-from .devices import *
-from . import mechwolf_components
+from .components import *
 
 __version__ = "0.0.3"

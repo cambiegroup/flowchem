@@ -15,3 +15,7 @@ class InvalidConfiguration(DeviceError):
 class ActuationError(DeviceError):
     """The attepted move did not succeed"""
     pass
+
+
+class ProtocolCancelled(Exception):
+    pass
