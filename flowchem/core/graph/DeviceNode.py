@@ -7,7 +7,7 @@ from flowchem.core.server.routers import spinsolve_get_router
 
 
 class DeviceNode:
-    """ Represent a node in the device graph, holds the HW object and its metadata/config. """
+    """Represent a node in the device graph, holds the HW object and its metadata/config."""
 
     # Router generators for device class that do not implement self.get_router()
     # All callable take the device obj and return an APIRouter
@@ -39,7 +39,7 @@ class DeviceNode:
 
     @property
     def router(self):
-        """ Returns an APIRouter associated with the device """
+        """Returns an APIRouter associated with the device"""
         if self._router:
             return self._router
 
@@ -68,7 +68,7 @@ class DeviceNode:
 
     @property
     def title(self) -> str:
-        """ Human-readable title of the Node """
+        """Human-readable title of the Node"""
         return self._title
 
     @title.setter
@@ -81,7 +81,7 @@ class DeviceNode:
 
     @property
     def safe_title(self) -> str:
-        """ Lowercase title with no whitespace """
+        """Lowercase title with no whitespace"""
         title = self.title
         if not title:
             title = "unknown"

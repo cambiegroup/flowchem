@@ -9,7 +9,11 @@ from flowchem.exceptions import DeviceError, InvalidConfiguration
 from flowchem.units import AnyQuantity, ensure_quantity
 
 try:
-    from flowchem.components.devices.Vapourtec.commands import R4Command, VapourtecCommand
+    from flowchem.components.devices.Vapourtec.commands import (
+        R4Command,
+        VapourtecCommand,
+    )
+
     HAS_VAPOURTEC_COMMANDS = True
 except ImportError as e:
     HAS_VAPOURTEC_COMMANDS = False
@@ -19,7 +23,7 @@ except ImportError as e:
 
 
 class R4Heater:
-    """ R4 reactor heater control class. """
+    """R4 reactor heater control class."""
 
     DEFAULT_CONFIG = {
         "timeout": 0.1,
@@ -47,23 +51,25 @@ class R4Heater:
                 f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
             ) from e
 
-        self.logger = logging.getLogger(__name__).getChild("R4Heater").getChild(self._serial.name)
+        self.logger = (
+            logging.getLogger(__name__).getChild("R4Heater").getChild(self._serial.name)
+        )
 
     async def _write(self, command: str):
-        """ Writes a command to the pump """
+        """Writes a command to the pump"""
         cmd = command + "\r\n"
         await self._serial.write_async(cmd.encode("ascii"))
         self.logger.debug(f"Sent command: {repr(command)}")
 
     async def _read_reply(self) -> str:
-        """ Reads the pump reply from serial communication """
+        """Reads the pump reply from serial communication"""
         reply_string = await self._serial.readline_async()
         self.logger.debug(f"Reply received: {reply_string.decode('ascii')}")
         return reply_string.decode("ascii")
 
     @staticmethod
     def parse_response(response: str) -> Tuple[bool, str]:
-        """ Split a received line in its components: success, reply """
+        """Split a received line in its components: success, reply"""
         try:
             if response[0:2] != "ER":
                 return True, response.rstrip()
@@ -73,8 +79,8 @@ class R4Heater:
             raise DeviceError(f"Invalid reply {response}")
 
     async def write_and_read_reply(self, command: R4Command) -> str:
-        """ Main HamiltonPumpIO method.
-        Sends a command to the pump, read the replies and returns it, optionally parsed """
+        """Main HamiltonPumpIO method.
+        Sends a command to the pump, read the replies and returns it, optionally parsed"""
         self._serial.reset_input_buffer()
         await self._write(command.compile())
         response = await self._read_reply()
@@ -88,7 +94,7 @@ class R4Heater:
         return parsed_response
 
     async def wait_for_target_temp(self, channel: int):
-        """ Waits until the target channel has reached the desired temperature and is stable """
+        """Waits until the target channel has reached the desired temperature and is stable"""
         t_stable = False
         failure = 0
         while not t_stable:
@@ -113,7 +119,7 @@ class R4Heater:
     async def set_temperature(
         self, channel, target_temperature: AnyQuantity, wait: bool = False
     ):
-        """ Set temperature and optionally waits for S """
+        """Set temperature and optionally waits for S"""
         set_command = getattr(VapourtecCommand, f"SET_CH{channel}_TEMP")
 
         set_temperature = ensure_quantity(target_temperature, "degree_Celsius")
@@ -128,7 +134,7 @@ class R4Heater:
             await self.wait_for_target_temp(channel)
 
     def get_router(self):
-        """ Creates an APIRouter for this object. """
+        """Creates an APIRouter for this object."""
         from fastapi import APIRouter
 
         router = APIRouter()
@@ -143,7 +149,7 @@ if __name__ == "__main__":
     heat = R4Heater(port="COM11")
 
     async def main():
-        """ test function """
+        """test function"""
         # noinspection PyArgumentEqualDefault
         await heat.set_temperature(0, 30, wait=False)
         print("not waiting - default behaviour.")

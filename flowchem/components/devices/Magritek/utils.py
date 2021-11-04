@@ -1,4 +1,4 @@
-from typing import *
+from typing import Callable, Union, Tuple
 import asyncio
 import ctypes.wintypes
 import warnings
@@ -21,7 +21,9 @@ def get_my_docs_path():
     return Path(buf.value)
 
 
-def create_folder_mapper(remote_root: Path, local_root: Path) -> Callable[[Union[Path, str]], Path]:
+def create_folder_mapper(
+    remote_root: Path, local_root: Path
+) -> Callable[[Union[Path, str]], Path]:
     """
     Returns a function that converts path relative to remote_root to their corresponding on local_root
     Used when using spinsolve on a remote PC to share the result data via a remotely mounted network drive
@@ -51,7 +53,7 @@ def create_folder_mapper(remote_root: Path, local_root: Path) -> Callable[[Union
 
 
 async def get_streams_for_connection(
-        host, port
+    host, port
 ) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
     """
     Given a target (host, port) returns the corresponding asyncio streams (I/O).

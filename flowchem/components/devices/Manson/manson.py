@@ -19,7 +19,7 @@ from flowchem.units import flowchem_ureg, AnyQuantity, ensure_quantity
 
 
 class MansonPowerSupply:
-    """ Control module for Manson Power Supply (e.g. used to power LEDs in the photo-rector or as potentiostat) """
+    """Control module for Manson Power Supply (e.g. used to power LEDs in the photo-rector or as potentiostat)"""
 
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
@@ -37,7 +37,7 @@ class MansonPowerSupply:
             ) from e
 
     def initialize(self):
-        """ Ensure the connection w/ device is working. """
+        """Ensure the connection w/ device is working."""
         model_info = await self.get_info()
         if model_info == "":
             raise DeviceError("Communication with device failed!")
@@ -48,13 +48,13 @@ class MansonPowerSupply:
 
     @staticmethod
     def _format_voltage(voltage: AnyQuantity) -> str:
-        """ Format a voltage in the format the power supply understands """
+        """Format a voltage in the format the power supply understands"""
         value_in_volt = ensure_quantity(voltage, "V")
         # Zero fill by left pad with zeros, up to three digits
         return str(value_in_volt.magnitude * 10).zfill(3)
 
     async def _format_amperage(self, current: AnyQuantity) -> str:
-        """ Format a current intensity in the format the power supply understands """
+        """Format a current intensity in the format the power supply understands"""
         current_in_ampere = ensure_quantity(current, "A").magnitude
 
         multiplier = 100 if await self.get_info() in self.MODEL_ALT_RANGE else 10
@@ -66,7 +66,7 @@ class MansonPowerSupply:
         multiline_reply: bool = False,
         no_reply_expected: bool = False,
     ) -> str:
-        """ Internal function to send command and read reply. """
+        """Internal function to send command and read reply."""
 
         # Flush buffer, write command and read reply
         try:
@@ -88,7 +88,7 @@ class MansonPowerSupply:
         return response
 
     async def get_info(self) -> str:
-        """ Returns the model name of the connected device """
+        """Returns the model name of the connected device"""
         response = await self._send_command("GMOD")
 
         pattern = re.compile(r".*\d{4}\s")
@@ -101,17 +101,19 @@ class MansonPowerSupply:
         return ""
 
     async def output_on(self) -> bool:
-        """ Turn on electricity on output """
+        """Turn on electricity on output"""
         response = await self._send_command("SOUT0")
         return response == "OK"
 
     async def output_off(self) -> bool:
-        """ Turn off electricity on output """
+        """Turn off electricity on output"""
         response = await self._send_command("SOUT1")
         return response == "OK"
 
-    async def get_output_read(self) -> Tuple[str, str, Union[Literal["CC"], Literal["CV"], Literal["NN"]]]:
-        """ Returns actual values of voltage, current and mode """
+    async def get_output_read(
+        self,
+    ) -> Tuple[str, str, Union[Literal["CC"], Literal["CV"], Literal["NN"]]]:
+        """Returns actual values of voltage, current and mode"""
         response = await self._send_command("GETD")
 
         try:
@@ -129,28 +131,28 @@ class MansonPowerSupply:
             return str(volt), str(curr), "NN"
 
     async def get_output_voltage(self) -> str:
-        """ Returns output voltage in Volt """
+        """Returns output voltage in Volt"""
         voltage, _, _ = await self.get_output_read()
         return voltage
 
     async def get_output_current(self) -> str:
-        """ Returns output current in Ampere """
+        """Returns output current in Ampere"""
         _, current, _ = await self.get_output_read()
         return current
 
     async def get_output_mode(self) -> Literal["CC", "CV", "NN"]:
-        """ Returns output mode: either current control (CC) or voltage control (CV) """
+        """Returns output mode: either current control (CC) or voltage control (CV)"""
         _, _, mode = await self.get_output_read()
         return mode
 
     async def get_output_power(self) -> str:
-        """ Returns output power in watts """
+        """Returns output power in watts"""
         voltage, intensity, _ = await self.get_output_read()
         power = flowchem_ureg.Quantity(voltage) * flowchem_ureg.Quantity(intensity)
         return str(power.to("W"))
 
     async def get_max(self) -> Tuple[str, str]:
-        """ Returns maximum voltage and current, as tuple, or False. """
+        """Returns maximum voltage and current, as tuple, or False."""
         response = await self._send_command("GMAX")
 
         max_v_raw = int(response[0:3]) * flowchem_ureg.volt
@@ -163,7 +165,7 @@ class MansonPowerSupply:
         return str(max_v), str(max_c_raw / divider)
 
     async def get_setting(self) -> Tuple[str, str]:
-        """ Returns current setting as tuple (voltage, current). """
+        """Returns current setting as tuple (voltage, current)."""
         response = await self._send_command("GETS")
 
         # RegEx to only keep numbers
@@ -177,21 +179,21 @@ class MansonPowerSupply:
         return str(v_setting), str(c_setting / 10)
 
     async def set_voltage(self, voltage: AnyQuantity) -> bool:
-        """ Set target voltage """
+        """Set target voltage"""
 
         cmd = "VOLT" + self._format_voltage(voltage)
         response = await self._send_command(cmd)
         return response == "OK"
 
     async def set_current(self, current: AnyQuantity) -> bool:
-        """ Set target current """
+        """Set target current"""
 
         cmd = "CURR" + await self._format_amperage(current)
         response = await self._send_command(cmd)
         return response == "OK"
 
     async def set_all_preset(self, preset: List[Tuple[str, str]]) -> bool:
-        """ Set all 3 preset memory position with voltage/current values """
+        """Set all 3 preset memory position with voltage/current values"""
         command = "PROM"
 
         for set_values in preset:
@@ -204,18 +206,22 @@ class MansonPowerSupply:
         await self._send_command(command, no_reply_expected=True)
         return True
 
-    async def set_preset(self, index: int, voltage: AnyQuantity, current: AnyQuantity) -> bool:
-        """ Set preset position index with the provided values of voltage and current """
+    async def set_preset(
+        self, index: int, voltage: AnyQuantity, current: AnyQuantity
+    ) -> bool:
+        """Set preset position index with the provided values of voltage and current"""
         preset = await self.get_all_preset()
         try:
-            preset[index] = (voltage, current)
+            volt_str = self._format_voltage(voltage)
+            curr_str = await self._format_amperage(current)
+            preset[index] = (volt_str, curr_str)
         except KeyError:
             warnings.warn(f"Preset {index} not found! Command ignored")
             return False
         return await self.set_all_preset(preset)
 
     async def get_all_preset(self) -> List[Tuple[str, str]]:
-        """ Get voltage and current for all 3 memory preset position """
+        """Get voltage and current for all 3 memory preset position"""
         response = await self._send_command("GETM", multiline_reply=True)
         response_lines = response.split("\r")
 
@@ -246,7 +252,7 @@ class MansonPowerSupply:
         return list(zip(voltage_str, current_str))
 
     async def get_preset(self, index) -> Tuple[str, str]:
-        """ Get voltage and current for given preset position [0..2] """
+        """Get voltage and current for given preset position [0..2]"""
         all_preset = await self.get_all_preset()
         try:
             return all_preset[index]
@@ -255,7 +261,7 @@ class MansonPowerSupply:
             return "", ""
 
     async def run_preset(self, index: int) -> bool:
-        """ Set Voltage and Current using values saved in one of the three memory locations: 0, 1 or 2 """
+        """Set Voltage and Current using values saved in one of the three memory locations: 0, 1 or 2"""
         if not 0 <= int(index) < 3:
             warnings.warn(f"Invalid preset value: <{index}>!")
             return False
@@ -264,24 +270,22 @@ class MansonPowerSupply:
         return response == "OK"
 
     async def remove_protection(self) -> bool:
-        """" I guess it removes over voltage protection? """
+        """ " I guess it removes over voltage protection?"""
         response = await self._send_command("SPRO0")
         return bool(response)
 
     async def add_protection(self) -> bool:
-        """" I guess it adds over voltage protection? """
+        """ " I guess it adds over voltage protection?"""
         response = await self._send_command("SPRO1")
         return bool(response)
 
-    async def set_voltage_and_current(
-        self, voltage: AnyQuantity, current: AnyQuantity
-    ):
-        """ Convenience method to set both voltage and current """
+    async def set_voltage_and_current(self, voltage: AnyQuantity, current: AnyQuantity):
+        """Convenience method to set both voltage and current"""
         await self.set_voltage(voltage)
         await self.set_current(current)
 
     def get_router(self):
-        """ Creates an APIRouter for this MansonPowerSupply instance. """
+        """Creates an APIRouter for this MansonPowerSupply instance."""
         from fastapi import APIRouter
 
         router = APIRouter()

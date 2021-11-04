@@ -16,7 +16,7 @@ from flowchem.exceptions import InvalidConfiguration, ActuationError, DeviceErro
 
 @dataclass
 class ViciProtocolCommandTemplate:
-    """ Class representing a valve command and its expected reply, but without target valve number """
+    """Class representing a valve command and its expected reply, but without target valve number"""
 
     command: str
     optional_parameter: str = ""
@@ -24,7 +24,7 @@ class ViciProtocolCommandTemplate:
     def to_valve(
         self, address: int, command_value: str = "", argument_value: str = ""
     ) -> ViciProtocolCommand:
-        """ Returns a Protocol11Command by adding to the template valve address and command arguments """
+        """Returns a Protocol11Command by adding to the template valve address and command arguments"""
         return ViciProtocolCommand(
             target_valve_num=address,
             command=self.command,
@@ -36,22 +36,21 @@ class ViciProtocolCommandTemplate:
 
 @dataclass
 class ViciProtocolCommand(ViciProtocolCommandTemplate):
-    """ Class representing a valve command and its expected reply """
+    """Class representing a valve command and its expected reply"""
 
     target_valve_num: Optional[int] = 1
     command_value: Optional[str] = None
     argument_value: Optional[str] = None
 
     def compile(self) -> bytes:
-        """ Create actual command byte by prepending valve address to command and appending executing command. """
+        """Create actual command byte by prepending valve address to command and appending executing command."""
 
         assert self.target_valve_num in range(0, 11)
         if not self.command_value:
             self.command_value = ""
 
         compiled_command = (
-            f"{self.target_valve_num}"
-            f"{self.command}{self.command_value}"
+            f"{self.target_valve_num}" f"{self.command}{self.command_value}"
         )
 
         if self.argument_value:
@@ -61,7 +60,7 @@ class ViciProtocolCommand(ViciProtocolCommandTemplate):
 
 
 class ViciValcoValveIO:
-    """ Setup with serial parameters, low level IO"""
+    """Setup with serial parameters, low level IO"""
 
     DEFAULT_CONFIG = {
         "timeout": 0.5,
@@ -87,19 +86,21 @@ class ViciValcoValveIO:
 
     @classmethod
     def from_config(cls, config):
-        """ Create ViciValcoValveIO from config. """
+        """Create ViciValcoValveIO from config."""
         # Merge default settings, including serial, with provided ones.
         configuration = dict(ViciValcoValveIO.DEFAULT_CONFIG, **config)
 
         try:
             serial_object = aioserial.AioSerial(**configuration)
         except SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the valve on the port <{configuration.get('port')}>") from e
+            raise InvalidConfiguration(
+                f"Cannot connect to the valve on the port <{configuration.get('port')}>"
+            ) from e
 
         return cls(serial_object)
 
     async def initialize(self, hw_initialization: bool = True):
-        """ Ensure connection + initialize. """
+        """Ensure connection + initialize."""
         # This has to be run after each power cycle to assign addresses to valves
         self.num_valve_connected = await self.detect_valve_address()
 
@@ -109,7 +110,7 @@ class ViciValcoValveIO:
         self._initialized = True
 
     async def detect_valve_address(self) -> int:
-        """ Detects number of valves connected. """
+        """Detects number of valves connected."""
         try:
             await self._serial.write_async("*ID\r".encode("ascii"))
         except aioserial.SerialException as e:
@@ -124,23 +125,25 @@ class ViciValcoValveIO:
             return len(reply)
 
     def _hw_init(self):
-        """ Send to all valves the HW initialization command (i.e. homing) """
+        """Send to all valves the HW initialization command (i.e. homing)"""
         self._serial.write("*HM\r".encode("ascii"))  # Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
 
     async def _write(self, command: bytes):
-        """ Writes a command to the valve """
+        """Writes a command to the valve"""
         if not self._initialized:
-            raise DeviceError("Valve not initialized!\n"
-                              "Have you called `initialize()` after object creation?")
+            raise DeviceError(
+                "Valve not initialized!\n"
+                "Have you called `initialize()` after object creation?"
+            )
         await self._serial.write_async(command)
         self.logger.debug(f"Command {repr(command)} sent!")
 
     async def _read_reply(self, lines) -> str:
-        """ Reads the valve reply from serial communication """
-        reply_string = ''
+        """Reads the valve reply from serial communication"""
+        reply_string = ""
         for line in range(lines):
-            a = b''
+            a = b""
             a = await self._serial.readline_async()
             reply_string += a.decode("ascii")
 
@@ -148,12 +151,12 @@ class ViciValcoValveIO:
         return reply_string
 
     def reset_buffer(self):
-        """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
+        """Reset input buffer before reading from serial. In theory not necessary if all replies are consumed..."""
         self._serial.reset_input_buffer()
 
     async def write_and_read_reply(self, command: ViciProtocolCommand, lines) -> str:
-        """ Main ViciValcoValveIO method.
-        Sends a command to the valve, read the replies and returns it, optionally parsed """
+        """Main ViciValcoValveIO method.
+        Sends a command to the valve, read the replies and returns it, optionally parsed"""
         self.reset_buffer()
         await self._write(command.compile())
 
@@ -171,7 +174,7 @@ class ViciValcoValveIO:
 
     @property
     def name(self) -> str:
-        """ This is used to provide a nice-looking default name to valves based on their serial connection. """
+        """This is used to provide a nice-looking default name to valves based on their serial connection."""
         try:
             return self._serial.name
         except AttributeError:
@@ -179,8 +182,7 @@ class ViciValcoValveIO:
 
 
 class ViciValco:
-    """"
-    """
+    """ " """
 
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
     _io_instances: Set[ViciValcoValveIO] = set()
@@ -189,7 +191,7 @@ class ViciValco:
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
 
-    valve_position_name = {'A': 1, 'B': 2}
+    valve_position_name = {"A": 1, "B": 2}
 
     def __init__(
         self,
@@ -218,7 +220,7 @@ class ViciValco:
 
     @classmethod
     def from_config(cls, config):
-        """ This class method is used to create instances via config file by the server for HTTP interface. """
+        """This class method is used to create instances via config file by the server for HTTP interface."""
         # Many valve can be present on the same serial port with different addresses.
         # This shared list of ViciValcoValveIO objects allow shared state in a borg-inspired way, avoiding singletons
         # This is only relevant to programmatic instantiation, i.e. when from_config() is called per each valve from a
@@ -232,68 +234,89 @@ class ViciValco:
 
         # If not existing serial object are available for the port provided, create a new one
         if valveio is None:
-            config_for_valveio = {k: v for k, v in config.items() if k not in ("address", "name")}
+            config_for_valveio = {
+                k: v for k, v in config.items() if k not in ("address", "name")
+            }
             valveio = ViciValcoValveIO.from_config(config_for_valveio)
 
         return cls(valveio, address=config.get("address"), name=config.get("name"))
 
     async def initialize(self):
-        """ Must be called after init before anything else. """
+        """Must be called after init before anything else."""
         # Test connectivity by querying the valve's firmware version
         fw_cmd = ViciProtocolCommandTemplate(command="VR").to_valve(self.address)
         firmware_version = await self.valve_io.write_and_read_reply(fw_cmd, lines=5)
-        self.log.info(f"Connected to Vici Valve {self.name} - FW version: {firmware_version}!")
+        self.log.info(
+            f"Connected to Vici Valve {self.name} - FW version: {firmware_version}!"
+        )
 
     async def send_command_and_read_reply(
         self,
         command_template: ViciProtocolCommandTemplate,
         command_value="",
         argument_value="",
-        lines=1
+        lines=1,
     ) -> str:
-        """ Sends a command based on its template by adding valve address and parameters, returns reply """
+        """Sends a command based on its template by adding valve address and parameters, returns reply"""
         return await self.valve_io.write_and_read_reply(
-            command_template.to_valve(self.address, command_value, argument_value), lines
+            command_template.to_valve(self.address, command_value, argument_value),
+            lines,
         )
 
     async def learn_valve_positions(self) -> None:
-        """ Initialize valve only, there is no reply -> lines = 0 """
-        await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="LRN"), lines=0)
+        """Initialize valve only, there is no reply -> lines = 0"""
+        await self.send_command_and_read_reply(
+            ViciProtocolCommandTemplate(command="LRN"), lines=0
+        )
 
     async def initialize_valve(self) -> None:
-        """ Initialize valve only: Move to Home position """
-        await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="HM"), lines=0)
+        """Initialize valve only: Move to Home position"""
+        await self.send_command_and_read_reply(
+            ViciProtocolCommandTemplate(command="HM"), lines=0
+        )
         # seems necessary to make sure move is finished
         await self.get_valve_position()
 
     async def version(self) -> str:
-        """ Returns the current firmware version reported by the valve. """
+        """Returns the current firmware version reported by the valve."""
 
-        return await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="VR"), lines=5)
+        return await self.send_command_and_read_reply(
+            ViciProtocolCommandTemplate(command="VR"), lines=5
+        )
 
     async def get_valve_position(self) -> int:
-        """ Represent the position of the valve: getter returns Enum, setter needs Enum. """
-        valve_pos = await self.send_command_and_read_reply(ViciProtocolCommandTemplate(command="CP"))
+        """Represent the position of the valve: getter returns Enum, setter needs Enum."""
+        valve_pos = await self.send_command_and_read_reply(
+            ViciProtocolCommandTemplate(command="CP")
+        )
         return ViciValco.valve_position_name[valve_pos[-1]]
 
     async def set_valve_position(self, target_position: int):
-        """ Set valve position. Switches really quick and doesn't reply, so waiting does not make sense. """
+        """Set valve position. Switches really quick and doesn't reply, so waiting does not make sense."""
         valve_by_name_cw = ViciProtocolCommandTemplate(command="GO")
-        await self.send_command_and_read_reply(valve_by_name_cw, command_value=str(target_position), lines=0)
+        await self.send_command_and_read_reply(
+            valve_by_name_cw, command_value=str(target_position), lines=0
+        )
         self.log.debug(f"{self.name} valve position set to {target_position}")
         new_position = await self.get_valve_position()
         if not new_position == target_position:
             raise ActuationError
 
     def get_router(self):
-        """ Creates an APIRouter for this object. """
+        """Creates an APIRouter for this object."""
         from fastapi import APIRouter
 
         router = APIRouter()
         router.add_api_route("/firmware-version", self.version, methods=["GET"])
-        router.add_api_route("/initialize/valve", self.initialize_valve, methods=["PUT"])
-        router.add_api_route("/valve/position", self.get_valve_position, methods=["GET"])
-        router.add_api_route("/valve/position", self.set_valve_position, methods=["PUT"])
+        router.add_api_route(
+            "/initialize/valve", self.initialize_valve, methods=["PUT"]
+        )
+        router.add_api_route(
+            "/valve/position", self.get_valve_position, methods=["GET"]
+        )
+        router.add_api_route(
+            "/valve/position", self.set_valve_position, methods=["PUT"]
+        )
 
         return router
 

@@ -1,5 +1,5 @@
 """ Autodiscover Knauer devices on network """
-from typing import *
+from typing import Tuple, Union, Text, Dict
 import asyncio
 import queue
 import socket
@@ -24,18 +24,18 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
         self._queue = response_queue
 
     def connection_made(self, transport: asyncio.transports.DatagramTransport):  # type: ignore
-        """ Called upon connection. """
+        """Called upon connection."""
         sock = transport.get_extra_info("socket")  # type: socket.socket
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # sets to broadcast
         transport.sendto(b"\x00\x01\x00\xf6", self.target)
 
     def datagram_received(self, data: Union[bytes, Text], addr: Address):
-        """ Called on data received """
+        """Called on data received"""
         self._queue.put(addr[0])
 
 
 async def get_device_type(ip_address: str) -> str:
-    """ Returns either 'Pump', 'Valve' or 'Unknown' """
+    """Returns either 'Pump', 'Valve' or 'Unknown'"""
     try:
         reader, writer = await asyncio.open_connection(host=ip_address, port=10001)
     except ConnectionError:

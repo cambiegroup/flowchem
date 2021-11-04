@@ -4,7 +4,7 @@ from flowchem import Spinsolve
 
 
 def spinsolve_get_router(device: Spinsolve) -> APIRouter:
-    """ Adds an APIRouter on top of an existing Spinsolve object """
+    """Adds an APIRouter on top of an existing Spinsolve object"""
     router = APIRouter()
 
     @router.get("/solvent")

@@ -21,6 +21,9 @@ from xxhash import xxh32
 from flowchem.components.stdlib import ActiveComponent, Sensor
 from flowchem.core.execute import main
 
+if TYPE_CHECKING:
+    from flowchem import Protocol, Datapoint
+
 
 class Experiment(object):
     """
@@ -182,6 +185,13 @@ class Experiment(object):
                 duration += pause["stop"] - pause["start"]
         return duration
 
+    def get_confirmation(self):
+        """ Ensure user input is present before starting procedure. """
+        confirmation = input("Execute? [y/N]: ").lower()
+        if not confirmation or confirmation[0] != "y":
+            logger.critical("Aborting execution...")
+            raise RuntimeError("Execution aborted by user.")
+
     def _execute(
         self,
         dry_run: Union[bool, int],
@@ -197,10 +207,7 @@ class Experiment(object):
 
         # make the user confirm if it's the real deal
         if not self.dry_run and not confirm:
-            confirmation = input(f"Execute? [y/N]: ").lower()
-            if not confirmation or confirmation[0] != "y":
-                logger.critical("Aborting execution...")
-                raise RuntimeError("Execution aborted by user.")
+            self.get_confirmation()
 
         self._compiled_protocol = self.protocol._compile(dry_run=bool(dry_run))
 
@@ -218,6 +225,9 @@ class Experiment(object):
                 except FileExistsError:
                     pass
                 log_file = mw_path / Path(self.experiment_id + ".log.jsonl")
+
+            # for typing's sake
+            assert isinstance(log_file, (str, os.PathLike))
 
             # automatically configure a logger to persist the logs
             self._file_logger_id = logger.add(
@@ -244,9 +254,9 @@ class Experiment(object):
                 self._log_file = Path(log_file)
 
         if data_file:
-            # automatically log to the mw directory
+            # automatically log to user directory
             if data_file is True:
-                mw_path = Path("~/.mechwolf").expanduser()
+                mw_path = Path("~/.flowchem").expanduser()
                 try:
                     mw_path.mkdir()
                 except FileExistsError:
@@ -355,7 +365,7 @@ class Experiment(object):
             level=verbosity,
             colorize=True,
             format="{level.icon} {message}",
-        )
+        )  # type: ignore
 
         display(self._output_widget)
 
@@ -401,11 +411,11 @@ class Experiment(object):
             logger.warning("Pausing repeatedly may adversely affect protocol timing.")
 
         if paused and not self._paused:
-            logger.warning(f"Paused execution.")
+            logger.warning("Paused execution.")
             self._pause_times.append(dict(start=time.time()))
         elif not paused and self._paused:
             self._pause_times[-1]["stop"] = time.time()
-            logger.warning(f"Resumed execution.")
+            logger.warning("Resumed execution.")
         self._paused = paused
 
         # control the pause button

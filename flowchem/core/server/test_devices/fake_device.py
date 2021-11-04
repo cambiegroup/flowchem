@@ -12,17 +12,17 @@ class FakeDevice:
         self._temp = 20
 
     def get_router(self):
-        """ Returns the router object. """
+        """Returns the router object."""
         router = APIRouter()
 
         @router.get("/temperature")
         async def get_temp():
-            """ Fake function returning temperature """
+            """Fake function returning temperature"""
             return self.temperature
 
         @router.put("/temperature/{temp}")
         async def set_temp(temp: float):
-            """ Fake temperature setter. """
+            """Fake temperature setter."""
             self.temperature = temp
 
         return router

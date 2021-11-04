@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 class NMR_Spectrum:
-    """ General spectrum object, instantiated from Spinsolve folder w/ experimental results. """
+    """General spectrum object, instantiated from Spinsolve folder w/ experimental results."""
 
     def __init__(self, location: Path):
         self.dic, self.raw_data = ng.spinsolve.read(dir=location.as_posix())
@@ -22,7 +22,7 @@ class NMR_Spectrum:
         return ng.spinsolve.make_uc(self.dic, data)
 
     def process(self):
-        """ Basic spectrum processing. Application-specific processing suggested. """
+        """Basic spectrum processing. Application-specific processing suggested."""
         # Zerofill
         self.processed_data = ng.proc_base.zf_auto(
             ng.proc_base.zf_double(self.raw_data, 1)
@@ -40,7 +40,7 @@ class NMR_Spectrum:
         self.processed_data = ng.proc_base.di(self.processed_data)
 
     def plot(self, ppm_range=(8, 0)):
-        """ Returns spectrum as matplotlib figure """
+        """Returns spectrum as matplotlib figure"""
         if self.processed_data is None:
             self.process()
 

@@ -61,7 +61,7 @@ class KnauerEthernetDevice:
         self.eol = b""
 
     def _ip_from_mac(self, mac_address: str) -> str:
-        """ Gets IP from MAC. """
+        """Gets IP from MAC."""
         # Autodiscover IP from MAC address
         available_devices = autodiscover_knauer()
         # IP if found, None otherwise
@@ -74,7 +74,7 @@ class KnauerEthernetDevice:
         return ip_address
 
     async def initialize(self):
-        """ Initialize connection """
+        """Initialize connection"""
         try:
             self._reader, self._writer = await asyncio.open_connection(
                 host=self.ip_address, port=10001

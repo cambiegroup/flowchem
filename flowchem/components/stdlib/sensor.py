@@ -1,13 +1,16 @@
 from __future__ import annotations
 import asyncio
 import time
-from typing import *
+from typing import Optional, AsyncGenerator, TYPE_CHECKING
 from warnings import warn
 
 from loguru import logger
 
 from flowchem.units import flowchem_ureg
 from flowchem.components.stdlib import ActiveComponent
+
+if TYPE_CHECKING:
+    from flowchem import Experiment
 
 
 class Sensor(ActiveComponent):
@@ -35,7 +38,7 @@ class Sensor(ActiveComponent):
         raise NotImplementedError
 
     async def _monitor(
-        self, experiment: "flowchem.Experiment", dry_run: bool = False
+        self, experiment: "Experiment", dry_run: bool = False
     ) -> AsyncGenerator:
         """
         If data collection is off and needs to be turned on, turn it on.
@@ -61,7 +64,7 @@ class Sensor(ActiveComponent):
     def _validate(self, dry_run: bool) -> None:
         logger.debug(f"Performing sensor specific checks for {self}...")
         if not dry_run:
-            logger.trace(f"Executing Sensor-specific checks...")
+            logger.trace("Executing Sensor-specific checks...")
             logger.trace("Entering context...")
             with self:
                 logger.trace("Context entered")

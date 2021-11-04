@@ -73,7 +73,7 @@ class Reader:
                 return reply
 
     def clear_replies(self, reply_type=""):
-        """ Remove old replies. """
+        """Remove old replies."""
         # Shortcut if none provided
         if not reply_type:
             self._replies.clear()

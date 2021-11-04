@@ -23,7 +23,10 @@ from flowchem.components.devices.Magritek.parser import (
     StatusNotification,
 )
 from flowchem.components.devices.Magritek.reader import Reader
-from flowchem.components.devices.Magritek.utils import run_loop, get_streams_for_connection
+from flowchem.components.devices.Magritek.utils import (
+    run_loop,
+    get_streams_for_connection,
+)
 
 
 class Spinsolve:
@@ -103,7 +106,7 @@ class Spinsolve:
 
     @classmethod
     def from_config(cls, config):
-        """ Create instance from config dict """
+        """Create instance from config dict"""
         # Get loop if passed or existing
         loop = config.get("loop", asyncio.get_event_loop())
         # Create stream reader/writer pair
@@ -138,7 +141,7 @@ class Spinsolve:
 
     @property
     def solvent(self) -> str:
-        """ Get current solvent """
+        """Get current solvent"""
         # Send request
         self.send_message(get_request("Solvent"))
 
@@ -150,12 +153,12 @@ class Spinsolve:
 
     @solvent.setter
     def solvent(self, solvent: str):
-        """ Sets the solvent """
+        """Sets the solvent"""
         self.send_message(set_attribute("Solvent", solvent))
 
     @property
     def sample(self) -> str:
-        """ Get current solvent (appears in acqu.par) """
+        """Get current solvent (appears in acqu.par)"""
         # Send request
         self.send_message(get_request("Sample"))
 
@@ -167,24 +170,24 @@ class Spinsolve:
 
     @sample.setter
     def sample(self, sample: str):
-        """ Sets the sample name (appears in acqu.par) """
+        """Sets the sample name (appears in acqu.par)"""
         self.send_message(set_attribute("Sample", sample))
 
     @property
     def data_folder(self):
-        """ Get current data_folder location """
+        """Get current data_folder location"""
         return self._data_folder  # No command available to directly query Spinsolve :(
 
     @data_folder.setter
     def data_folder(self, location: str):
-        """ Sets the location provided as data folder. optionally, with typeThese are included in acq.par """
+        """Sets the location provided as data folder. optionally, with typeThese are included in acq.par"""
         if location is not None:
             self._data_folder = location
             self.send_message(set_data_folder(location))
 
     @property
     def user_data(self) -> dict:
-        """ Create a get user data request and parse result """
+        """Create a get user data request and parse result"""
         # Send request
         self.send_message(get_request("UserData"))
 
@@ -199,11 +202,11 @@ class Spinsolve:
 
     @user_data.setter
     def user_data(self, data_to_be_set: dict):
-        """ Sets the user data proewqvided in the dict. These are included in acq.par """
+        """Sets the user data proewqvided in the dict. These are included in acq.par"""
         self.send_message(set_user_data(data_to_be_set))
 
     def _read_reply(self, reply_type="", timeout=5):
-        """ Looks in the received replies for one of type reply_type """
+        """Looks in the received replies for one of type reply_type"""
         # Get reply of reply_type from the reader object that holds the StreamReader
         reply = self._reader.wait_for_reply(reply_type=reply_type, timeout=timeout)
         self._log.debug(f"Got a reply from spectrometer: {etree.tostring(reply)}")
@@ -328,15 +331,15 @@ class Spinsolve:
         return remote_folder
 
     def abort(self):
-        """ Abort current running command """
+        """Abort current running command"""
         self.send_message(create_message("Abort"))
 
     def is_protocol_available(self, desired_protocol):
-        """ Check if the desired protocol is available on the current instrument """
+        """Check if the desired protocol is available on the current instrument"""
         return desired_protocol in self.protocols_option
 
     def _validate_protocol_request(self, protocol_name, protocol_options) -> dict:
-        """ Ensures the protocol names, option name and option values are valid. """
+        """Ensures the protocol names, option name and option values are valid."""
         # Valid option for protocol
         valid_options = self.protocols_option.get(protocol_name)
         if valid_options is None or protocol_options is None:
@@ -397,5 +400,5 @@ class Spinsolve:
     #     return float(reply.find(".//LineWidth").text), float(reply.find(".//BaseWidth").text)
 
     def shim(self):
-        """ Performs a shim on sample """
+        """Performs a shim on sample"""
         raise NotImplementedError("Use run protocol with a shimming protocol instead!")

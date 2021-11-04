@@ -49,12 +49,6 @@ async def test_pumphead(pump: AzuraCompactPump):
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_pumphead(pump: AzuraCompactPump):
-    assert await pump.get_headtype() in AzuraPumpHeads
-
-
-@pytest.mark.KPump
-@pytest.mark.asyncio
 async def test_flow_rate(pump: AzuraCompactPump):
     await pump.set_flow(1.25)
     await pump.start_flow()
@@ -72,15 +66,6 @@ async def test_analog_control(pump: AzuraCompactPump):
     assert await pump.is_analog_control_enabled() is True
     await pump.enable_analog_control(False)
     assert await pump.is_analog_control_enabled() is False
-
-
-@pytest.mark.KPump
-@pytest.mark.asyncio
-async def test_is_running(pump: AzuraCompactPump):
-    await pump.set_flow(1)
-    await pump.start_flow()
-    assert pump.is_running() is True
-    await pump.stop_flow()
 
 
 @pytest.mark.KPump

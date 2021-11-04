@@ -1,4 +1,4 @@
-from typing import *
+from typing import Iterable, List, Mapping, Optional, Set, Union
 from collections import namedtuple
 from warnings import warn
 
@@ -85,12 +85,9 @@ class Apparatus(object):
 
         For args, see add().
         """
-        if not isinstance(from_component, Component):
-            raise ValueError("From component must be an instance of Component")
-        if not isinstance(to_component, Component):
-            raise ValueError("To component must be an instance of Component")
-        if not isinstance(tube, Tube):
-            raise ValueError("Tube must be an instance of Tube")
+        assert isinstance(from_component, Component), "From component must be an instance of Component"
+        assert isinstance(to_component, Component), "To component must be an instance of Component"
+        assert isinstance(tube, Tube), "Tube must be an instance of Tube"
 
         # check for duplicate names
         try:

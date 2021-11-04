@@ -1,4 +1,4 @@
-from typing import *
+from typing import Mapping, Optional
 
 from flowchem.components.stdlib import ActiveComponent, Component
 

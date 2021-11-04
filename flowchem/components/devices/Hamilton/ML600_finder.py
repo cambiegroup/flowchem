@@ -7,13 +7,16 @@ import logging
 import aioserial
 import serial.tools.list_ports
 
-from flowchem.components.devices.Hamilton.ML600 import InvalidConfiguration, HamiltonPumpIO
+from flowchem.components.devices.Hamilton.ML600 import (
+    InvalidConfiguration,
+    HamiltonPumpIO,
+)
 
 log = logging.getLogger(__name__)
 
 
 def ml600_finder():
-    """ Try to initialize an ML600 on every available COM port. """
+    """Try to initialize an ML600 on every available COM port."""
     port_available = [comport.device for comport in serial.tools.list_ports.comports()]
 
     # Ports connected to an ML600-looking device

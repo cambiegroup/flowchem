@@ -38,7 +38,7 @@ class Server_mDNS:
 
     @staticmethod
     def _get_valid_service_name(name: str):
-        """ Given a desired service name, returns a valid one ;) """
+        """Given a desired service name, returns a valid one ;)"""
         candidate_name = f"{name}._labthing._tcp.local."
         if len(candidate_name) < 64:
             return candidate_name
@@ -47,7 +47,7 @@ class Server_mDNS:
             return f"{hashlib.sha1(candidate_name.encode()).hexdigest()}._labthing._tcp.local."
 
     def include_device(self, name, url_prefix):
-        """ Adds device to the server. """
+        """Adds device to the server."""
         service_name = Server_mDNS._get_valid_service_name(name)
 
         # LabThing service

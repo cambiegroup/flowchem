@@ -5,7 +5,9 @@ import logging
 
 import serial.tools.list_ports
 
-from flowchem.components.devices.Harvard_Apparatus.HA_elite11 import HarvardApparatusPumpIO
+from flowchem.components.devices.Harvard_Apparatus.HA_elite11 import (
+    HarvardApparatusPumpIO,
+)
 from flowchem.exceptions import InvalidConfiguration
 
 # logging.basicConfig()
@@ -15,7 +17,7 @@ log = logging.getLogger(__name__)
 
 # noinspection PyProtectedMember
 def elite11_finder():
-    """ Try to initialize an Elite11 on every available COM port. """
+    """Try to initialize an Elite11 on every available COM port."""
     port_available = [comport.device for comport in serial.tools.list_ports.comports()]
 
     # Ports connected to an elite11-looking device

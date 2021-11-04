@@ -8,21 +8,32 @@ import yaml
 from fastapi import FastAPI
 
 import flowchem
-from flowchem.graph.DeviceGraph import DEVICE_MODULES, get_device_class_mapper, load_schema
+from flowchem.graph.DeviceGraph import (
+    DEVICE_MODULES,
+    get_device_class_mapper,
+    load_schema,
+)
 from flowchem.graph.DeviceNode import DeviceNode
 from mdns_server import Server_mDNS
 
 logger = logging.getLogger(__name__)
 
 
-def create_server_from_config(config: Dict = None, config_file: Path = None) -> Tuple[FastAPI, Server_mDNS]:
+def create_server_from_config(
+    config: Dict = None, config_file: Path = None
+) -> Tuple[FastAPI, Server_mDNS]:
     """
     Based on the yaml device graph provided, creates device objects and connect to them + .
 
     config: Path to the yaml file with the device config or dict.
     """
 
-    assert config is not None and config_file is None or config is None and config_file is not None
+    assert (
+        config is not None
+        and config_file is None
+        or config is None
+        and config_file is not None
+    )
 
     if config_file is not None:
         with config_file.open() as stream:
@@ -75,11 +86,13 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(logging.DEBUG)
 
-    app, zeroconf = create_server_from_config(config_file=Path("../graph/sample_config.yml"))
+    app, zeroconf = create_server_from_config(
+        config_file=Path("../graph/sample_config.yml")
+    )
 
     @app.get("/")
     def root():
-        """ Server root """
+        """Server root"""
         # FIXME add landing page
         return "<h1>hello world!</h1>"
 

@@ -64,7 +64,7 @@ def parse_status_notification(xml_message: etree.Element):
 
 
 def parse_state(xml_message: etree.Element):
-    """ Parse state message """
+    """Parse state message"""
     status_type = StatusNotification.UNKNOWN
 
     # Parse status

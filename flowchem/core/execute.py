@@ -15,6 +15,9 @@ from flowchem import __version__
 from flowchem.components.stdlib import ActiveComponent, Sensor
 from flowchem.exceptions import ProtocolCancelled
 
+if TYPE_CHECKING:
+    from flowchem import Experiment
+
 
 Datapoint = namedtuple("Datapoint", ["data", "timestamp", "experiment_elapsed_time"])
 
@@ -32,15 +35,16 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
     logger.info(f"Using Flowchem v{__version__} ⚗️👩‍👨🧪")
     logger.info("Performing final launch status check...")
 
-    tasks = []
-
     # Run protocol
     try:
         # To programmatically enter many context manager (one per component) AsyncExitStack is used
         async with AsyncExitStack() as stack:
             # Enter async context manager of each component. This initializes connections to hardware.
             if not dry_run:
-                components = [await stack.enter_context(compo) for compo in experiment._compiled_protocol.keys()]
+                components = [
+                    await stack.enter_context(compo)
+                    for compo in experiment._compiled_protocol.keys()
+                ]
             else:
                 components = list(experiment._compiled_protocol.keys())
 
@@ -51,16 +55,16 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                 end_time: float = max(end_times)  # we only want the last end time
                 logger.trace(f"Calculated end time for {component} as {end_time}s")
 
-                for procedure in experiment._compiled_protocol[component]:
-                    tasks.append(
-                        wait_and_execute_procedure(
-                            procedure=procedure,
-                            component=component,
-                            experiment=experiment,
-                            dry_run=dry_run,
-                            strict=strict,
-                        )
+                tasks = [
+                    wait_and_execute_procedure(
+                        procedure=procedure,
+                        component=component,
+                        experiment=experiment,
+                        dry_run=dry_run,
+                        strict=strict,
                     )
+                    for procedure in experiment._compiled_protocol[component]
+                ]
                 logger.trace(f"Task list generated for {component}.")
 
                 # for sensors, add the monitor task
@@ -69,7 +73,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                     tasks.append(_monitor(component, experiment, bool(dry_run), strict))
                 logger.debug(f"{component} is GO!")
 
-            logger.debug(f"All components are GO!")
+            logger.debug("All components are GO!")
 
             # Add a task to monitor the stop button
             tasks.append(check_if_cancelled(experiment))
@@ -135,7 +139,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                 logger.critical(end_msg)
 
             except ProtocolCancelled:
-                logger.error(f"Stop button pressed.")
+                logger.error("Stop button pressed.")
                 logger.error("Protocol execution is stopping NOW!")
                 logger.critical(end_msg)
 

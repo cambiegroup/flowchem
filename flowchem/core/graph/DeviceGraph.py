@@ -8,7 +8,7 @@ import os
 from collections import namedtuple
 from pathlib import Path
 from types import ModuleType
-from typing import *
+from typing import Iterable, Dict, Optional, Any, List, Union
 
 import jsonschema
 import yaml
@@ -50,7 +50,7 @@ def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
 
 
 def load_schema():
-    """ loads the schema defining valid config file. """
+    """loads the schema defining valid config file."""
     with open(SCHEMA, "r") as fp:
         schema = json.load(fp)
         jsonschema.Draft7Validator.check_schema(schema)
@@ -94,7 +94,7 @@ class DeviceGraph:
 
     @classmethod
     def from_file(cls, file: Union[Path, str]):
-        """ Creates DeviceGraph from config file """
+        """Creates DeviceGraph from config file"""
 
         file_path = Path(file)
         name = file_path.stem
@@ -105,12 +105,12 @@ class DeviceGraph:
         return cls(config, name)
 
     def validate(self, config):
-        """ Validates config syntax. """
+        """Validates config syntax."""
         schema = load_schema()
         jsonschema.validate(config, schema=schema)
 
     def parse(self, config: Dict):
-        """ Parse config and generate graph. """
+        """Parse config and generate graph."""
 
         # Device mapper
         device_mapper = get_device_class_mapper(DEVICE_MODULES)
@@ -126,21 +126,27 @@ class DeviceGraph:
                     name for name in device_mapper.keys() if name in node_config
                 ].pop()
             except IndexError as e:
-                raise InvalidConfiguration(f"Node config invalid: {node_config}")
+                raise InvalidConfiguration(f"Node config invalid: {node_config}") from e
 
             # Object type
             obj_type = device_mapper[device_class]
             device_config = node_config[device_class]
 
-            self.device[device_name] = DeviceNode(device_name, device_config, obj_type).device
-            self.log.debug(f"Created device <{device_name}> with config: {device_config}")
+            self.device[device_name] = DeviceNode(
+                device_name, device_config, obj_type
+            ).device
+            self.log.debug(
+                f"Created device <{device_name}> with config: {device_config}"
+            )
 
         for tube_config in config["connections"].values():
             # length: str, ID: str, OD: str, material: str):
-            tube = Tube(length=tube_config["length"],
-                           ID=tube_config["inner-diameter"],
-                           OD=tube_config["outer-diameter"],
-                           material=tube_config["material"])
+            tube = Tube(
+                length=tube_config["length"],
+                ID=tube_config["inner-diameter"],
+                OD=tube_config["outer-diameter"],
+                material=tube_config["material"],
+            )
 
             # Devices
             from_device = self.device[tube_config["from"]["device"]]
@@ -159,7 +165,9 @@ class DeviceGraph:
         Convert the graph to an mw.Apparatus object.
         """
 
-        appa = Apparatus(self.name, f"Apparatus auto-generated from flowchem DeviceGraph.")
+        appa = Apparatus(
+            self.name, "Apparatus auto-generated from flowchem DeviceGraph."
+        )
         for edge in self.edge_list:
             print(edge)
             print(edge.from_device)
@@ -187,9 +195,7 @@ class DeviceGraph:
         # If a type is passed return devices with that type
         if isinstance(item, type):
             return [
-                device
-                for device in self.device.values()
-                if isinstance(device, item)
+                device for device in self.device.values() if isinstance(device, item)
             ]
         # If a string is passed return the device with that name
         elif isinstance(item, str):
@@ -205,7 +211,7 @@ class DeviceGraph:
             raise KeyError(f"{repr(item)} is not in {repr(self)}.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     graph = DeviceGraph.from_file("sample_config.yml")
     a = graph.to_apparatus()
     print(a)

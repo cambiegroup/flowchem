@@ -1,4 +1,4 @@
-from typing import *
+from typing import Union, Optional, Mapping, MutableMapping, List, Dict, Any, Iterable
 
 import json
 import os
@@ -287,7 +287,9 @@ class Protocol(object):
 
         Returns:
         - A dict with components as the values and lists of their procedures as the value.
-        The elements of the list of procedures are dicts with two keys: "time" in seconds, and "params", whose value is a dict of parameters for the procedure.
+        The elements of the list of procedures are dicts with two keys:
+            "time" in seconds
+            "params", whose value is a dict of parameters for the procedure.
 
         Raises:
         - `RuntimeError`: When compilation fails.
@@ -550,8 +552,11 @@ class Protocol(object):
 
         Arguments:
         - `confirm`: Whether to bypass the manual confirmation message before execution.
-        - `dry_run`: Whether to simulate the experiment or actually perform it. Defaults to `False`, which means executing the protocol on real hardware. If an integer greater than zero, the dry run will execute at that many times speed.
-        - `strict`: Whether to stop execution upon encountering any errors. If False, errors will be noted but ignored.
+        - `dry_run`: Whether to simulate the experiment or actually perform it. Defaults to `False`,
+        which means executing the protocol on real hardware. If an integer greater than zero,
+        the dry run will execute at that many times speed.
+        - `strict`: Whether to stop execution upon encountering any errors.
+        If False, errors will be noted but ignored.
         - `verbosity`: The level of logging verbosity. One of "critical", "error", "warning", "success", "info", "debug", or "trace" in descending order of severity. "debug" and (especially) "trace" are not meant to be used regularly, as they generate significant amounts of usually useless information. However, these verbosity levels are useful for tracing where exactly a bug was generated, especially if no error message was thrown.
         - `log_file`: The file to write the logs to during execution. If `True`, the data will be written to a file in `~/.mechwolf` with the filename `{experiment_id}.log.jsonl`. If falsey, no logs will be written to the file.
         - `log_file_verbosity`: How verbose the logs in file should be. By default, it is "trace", which is the most verbose logging available. If `None`, it will use the same level as `verbosity`.

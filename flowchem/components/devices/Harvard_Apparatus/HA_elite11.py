@@ -3,7 +3,7 @@ This module is used to control Harvard Apparatus Elite 11 syringe pump via the 1
 """
 
 from __future__ import annotations
-from typing import *
+from typing import Set, Optional, List, Tuple
 
 import asyncio
 import logging
@@ -198,7 +198,11 @@ class HarvardApparatusPumpIO:
             )
 
         # Parse reply
-        pump_address, return_status, parsed_response = HarvardApparatusPumpIO.parse_response(response)
+        (
+            pump_address,
+            return_status,
+            parsed_response,
+        ) = HarvardApparatusPumpIO.parse_response(response)
 
         # Ensures that all the replies came from the target pump (this should always be the case)
         assert all(address == command.target_pump_address for address in pump_address)
@@ -207,7 +211,9 @@ class HarvardApparatusPumpIO:
         if PumpStatus.STALLED in return_status:
             raise DeviceError("Pump stalled! Press display on pump to clear error :(")
 
-        HarvardApparatusPumpIO.check_for_errors(last_response_line=response[-1], command_sent=command)
+        HarvardApparatusPumpIO.check_for_errors(
+            last_response_line=response[-1], command_sent=command
+        )
 
         return parsed_response if return_parsed else response
 
@@ -321,8 +327,7 @@ class Elite11(Pump):
                 "email": "dario.cambie@mpikg.mpg.de",
                 "institution": "Max Planck Institute of Colloids and Interfaces",
                 "github_username": "dcambie",
-            }
-
+            },
         ],
         "stability": "beta",
         "supported": True,
@@ -372,9 +377,16 @@ class Elite11(Pump):
         self.log = logging.getLogger(__name__).getChild("Elite11")
 
     @classmethod
-    def from_config(cls, port: str, diameter: AnyQuantity, syringe_volume: AnyQuantity, address: int = None,
-                    name: str = None, **serial_kwargs):
-        """ Programmatic instantiation from configuration
+    def from_config(
+        cls,
+        port: str,
+        diameter: AnyQuantity,
+        syringe_volume: AnyQuantity,
+        address: int = None,
+        name: str = None,
+        **serial_kwargs,
+    ):
+        """Programmatic instantiation from configuration
 
         Many pump can be present on the same serial port with different addresses.
         This shared list of PumpIO objects allow shared state in a borg-inspired way, avoiding singletons
@@ -488,7 +500,7 @@ class Elite11(Pump):
         return set_rate.to("ml/min").magnitude
 
     def parse_version(self, version_text: str) -> Tuple[int, int, int]:
-        """ Extract semver from version string """
+        """Extract semver from version string"""
 
         numbers = version_text.split(" ")[-1]
         version_digits = numbers.split(".")
@@ -617,7 +629,7 @@ class Elite11(Pump):
         return await self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)
 
     async def clear_infused_volume(self):
-        """ Reset the pump infused volume counter to 0 """
+        """Reset the pump infused volume counter to 0"""
         if self._version[0] < 3:
             warnings.warn("Command not supported by pump, update firmware!")
             return
@@ -808,7 +820,8 @@ class Elite11(Pump):
             diameter=self.syringe_diameter,
             syringe_volume=self.syringe_volume,
             address=self.address,
-            name=self.name)
+            name=self.name,
+        )
         await self._pump.initialize()
         return self
 
@@ -817,7 +830,7 @@ class Elite11(Pump):
         del self._pump
 
     async def _update(self):
-        """ Actuates flow rate changes. """
+        """Actuates flow rate changes."""
         if self.rate == 0:
             await self._pump.stop()
         else:

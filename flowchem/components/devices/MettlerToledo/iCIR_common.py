@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 
 class ProbeInfo(TypedDict):
-    """ Dictionary returned from iCIR with probe info. """
+    """Dictionary returned from iCIR with probe info."""
 
     spectrometer: str
     spectrometer_SN: str
@@ -24,7 +24,7 @@ class ProbeInfo(TypedDict):
 
 # noinspection PyPep8Naming
 class iCIR_spectrometer:
-    """ Common code between sync and async implementations """
+    """Common code between sync and async implementations"""
 
     iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
     _supported_versions = {"7.1.91.0"}
@@ -42,7 +42,7 @@ class iCIR_spectrometer:
     METHODS = "ns=2;s=Local.iCIR.Probe1.Methods"
 
     def is_local(self):
-        """ Returns true if the server is on the same machine running the python code. """
+        """Returns true if the server is on the same machine running the python code."""
         # noinspection PyUnresolvedReferences
         return any(
             x in self.opcua.aio_obj.server_url.netloc
@@ -51,7 +51,7 @@ class iCIR_spectrometer:
 
     @staticmethod
     def _normalize_template_name(template_name) -> str:
-        """ Adds .iCIRTemplate extension from string if not already present """
+        """Adds .iCIRTemplate extension from string if not already present"""
         return (
             template_name
             if template_name.endswith(".iCIRTemplate")
@@ -85,7 +85,7 @@ class iCIR_spectrometer:
 
     @staticmethod
     def parse_probe_info(probe_info_reply: str) -> ProbeInfo:
-        """ Convert the device reply into a ProbeInfo dictionary
+        """Convert the device reply into a ProbeInfo dictionary
 
         Example probe_info_reply reply is:
         'FlowIR; SN: 2989; Detector: DTGS; Apodization: HappGenzel; IP Address: 192.168.1.2;
