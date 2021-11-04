@@ -1,12 +1,7 @@
 """" Run with uvicorn main:app """
-import inspect
-import itertools
-import json
 import logging
-import os
 from pathlib import Path
-from types import ModuleType
-from typing import Iterable, Dict, Tuple
+from typing import Dict, Tuple
 
 import jsonschema
 import yaml
@@ -14,45 +9,10 @@ from fastapi import FastAPI
 
 import flowchem
 from device_node_creator import DeviceNode
-from flowchem.server import test_devices
+from graph.DeviceGraph import DEVICE_MODULES, get_device_class_mapper, load_schema
 from mdns_server import Server_mDNS
 
 logger = logging.getLogger(__name__)
-
-# packages containing the device class definitions. Target classes should be available in the module top level.
-DEVICE_MODULES = [flowchem, test_devices]
-SCHEMA = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "flowchem-graph-spec.schema"
-)
-
-
-def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
-    """
-    Given an iterable of modules containing the device classes, return a
-    dictionary Dict[device_class_name, DeviceClass]
-
-    Args:
-        modules (Iterable[ModuleType]): The modules to inspect for devices.
-            Only class in the top level of each module will be extracted.
-    Returns:
-        device_dict (Dict[str, type]): Dict of device class names and their
-            respective classes, i.e. {device_class_name: DeviceClass}.
-    """
-    # Get (name, obj) tuple for the top level of each modules.
-    objects_in_modules = [
-        inspect.getmembers(module, inspect.isclass) for module in modules
-    ]
-
-    # Return them as dict (itertools to flatten the nested, per module, lists)
-    return {k: v for (k, v) in itertools.chain.from_iterable(objects_in_modules)}
-
-
-def load_schema():
-    """ loads the schema defining valid config file. """
-    with open(SCHEMA, "r") as fp:
-        schema = json.load(fp)
-        jsonschema.Draft7Validator.check_schema(schema)
-        return schema
 
 
 def create_server_from_config(config: Dict = None, config_file: Path = None) -> Tuple[FastAPI, Server_mDNS]:
@@ -115,7 +75,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(logging.DEBUG)
 
-    app, zeroconf = create_server_from_config(config_file=Path("sample_config.yml"))
+    app, zeroconf = create_server_from_config(config_file=Path("../graph/sample_config.yml"))
 
     @app.get("/")
     def root():
