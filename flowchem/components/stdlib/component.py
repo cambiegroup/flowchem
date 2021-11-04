@@ -1,6 +1,4 @@
-import warnings
 from typing import Set, Optional
-from loguru import logger
 
 
 class Component(object):
@@ -35,23 +33,10 @@ class Component(object):
     def __str__(self):
         return f"{self.__class__.__name__} {self.name}"
 
-    def __enter__(self):
-        logger.trace(f"Entering context for {self}")
-        warnings.warn(
-            "Sync context managers should not be used", category=DeprecationWarning
-        )
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        logger.trace(f"Exiting context for {self}")
-        pass
-
     async def __aenter__(self):
-        logger.trace(f"Entering async context for {self}")
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        logger.trace(f"Exiting async context for {self}")
         pass
 
     def _validate(self, dry_run):

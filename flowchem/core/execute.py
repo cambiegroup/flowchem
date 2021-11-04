@@ -42,7 +42,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
             # Enter async context manager of each component. This initializes connections to hardware.
             if not dry_run:
                 components = [
-                    await stack.enter_context(compo)
+                    await stack.enter_async_context(compo)
                     for compo in experiment._compiled_protocol.keys()  # type:ignore
                 ]
             else:

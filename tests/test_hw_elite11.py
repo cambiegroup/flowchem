@@ -11,7 +11,6 @@ from flowchem.components.devices.Harvard_Apparatus.HA_elite11 import (
     Elite11,
     PumpStatus
 )
-from flowchem.exceptions import DeviceError
 from flowchem.units import flowchem_ureg
 
 

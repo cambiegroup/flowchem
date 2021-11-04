@@ -106,9 +106,12 @@ class ActiveComponent(Component):
         if not dry_run:
             self._update_from_params(self._base_state)
             logger.trace(f"Attempting to call _update() for {repr(self)}.")
-            with self:
-                res = asyncio.run(self._update())
-                if res is not None:
-                    raise ValueError(f"Received return value {res} from update.")
+            asyncio.run(self._validate_update())
 
         logger.debug(f"{repr(self)} is valid")
+
+    async def _validate_update(self):
+        async with self:
+            res = await self._update()
+            if res is not None:
+                raise ValueError(f"Received return value {res} from update.")

@@ -16,9 +16,6 @@ class Pump(ActiveComponent):
     - `rate`: The flow rate of the pump as a `pint.Quantity`. Must be of the dimensionality of volume/time.
     """
 
-    async def _update(self):
-        raise NotImplementedError()
-
     def __init__(self, name: Optional[str] = None):
         super().__init__(name=name)
         self.rate = flowchem_ureg.parse_expression("0 ml/min")

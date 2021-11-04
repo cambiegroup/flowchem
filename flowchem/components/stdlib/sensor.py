@@ -61,19 +61,22 @@ class Sensor(ActiveComponent):
 
         logger.debug(f"Monitor loop for {self} has completed.")
 
+    async def _validate_read(self):
+        async with self:
+            logger.trace("Context entered")
+            res = await self._read()
+            if not res:
+                warn(
+                    "Sensor reads should probably return data. "
+                    f"Currently, {self}._read() does not return anything."
+                )
+
     def _validate(self, dry_run: bool) -> None:
         logger.debug(f"Performing sensor specific checks for {self}...")
         if not dry_run:
             logger.trace("Executing Sensor-specific checks...")
             logger.trace("Entering context...")
-            with self:
-                logger.trace("Context entered")
-                res = asyncio.run(self._read())
-                if not res:
-                    warn(
-                        "Sensor reads should probably return data. "
-                        f"Currently, {self}._read() does not return anything."
-                    )
+            asyncio.run(self._validate_read())
         logger.trace("Performing general component checks...")
         super()._validate(dry_run=dry_run)
 
