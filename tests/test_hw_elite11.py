@@ -12,6 +12,7 @@ from flowchem.devices.Harvard_Apparatus.HA_elite11 import (
     PumpStatus
 )
 from flowchem.exceptions import DeviceError
+from flowchem.units import flowchem_ureg
 
 
 async def move_infuse(pump):
@@ -31,7 +32,7 @@ def event_loop(request):
 @pytest.fixture(scope="session")
 async def pump():
     """ Change to match your hardware ;) """
-    pump = Elite11.from_config(port="COM4", address=6, syringe_volume=5, diameter=20)
+    pump = Elite11.from_config(port="COM11", syringe_volume=5, diameter=20)
     await pump.initialize()
     return pump
 
@@ -79,13 +80,14 @@ async def test_is_moving(pump: Elite11):
 @pytest.mark.HApump
 @pytest.mark.asyncio
 async def test_syringe_volume(pump: Elite11):
-    assert isinstance(await pump.get_syringe_volume(), (float, int))
     await pump.set_syringe_volume(10)
-    assert await pump.get_syringe_volume() == 10
+    assert await pump.get_syringe_volume() == "10 ml"
     await pump.set_syringe_volume(math.pi)
-    assert math.isclose(await pump.get_syringe_volume(), math.pi, abs_tol=10e-4)
-    await pump.set_syringe_volume(3.2e-05)
-    assert math.isclose(await pump.get_syringe_volume(), 3.2e-5)
+    vol = flowchem_ureg.Quantity(await pump.get_syringe_volume()).magnitude
+    assert math.isclose(vol, math.pi, abs_tol=10e-4)
+    await pump.set_syringe_volume(3e-05)
+    vol = flowchem_ureg.Quantity(await pump.get_syringe_volume()).magnitude
+    assert math.isclose(vol, 3e-5)
     await pump.set_syringe_volume(50)  # Leave a sensible value otherwise other tests will fail!
 
 
@@ -97,25 +99,29 @@ async def test_infusion_rate(pump: Elite11):
     assert await pump.get_infusion_rate()
     with pytest.warns(UserWarning):
         await pump.set_infusion_rate(121)
-    assert math.isclose(await pump.get_infusion_rate(), 12.49, rel_tol=0.01)
+    rate = flowchem_ureg.Quantity(await pump.get_infusion_rate()).magnitude
+    assert math.isclose(rate, 12.49, rel_tol=0.01)
     with pytest.warns(UserWarning):
         await pump.set_infusion_rate(0)
-    assert math.isclose(await pump.get_infusion_rate(), 1e-05, abs_tol=1e-5)
+    rate = flowchem_ureg.Quantity(await pump.get_infusion_rate()).magnitude
+    assert math.isclose(rate, 1e-05, abs_tol=1e-5)
     await pump.set_infusion_rate(math.pi)
-    assert math.isclose(await pump.get_infusion_rate(), math.pi, abs_tol=0.001)
+    rate = flowchem_ureg.Quantity(await pump.get_infusion_rate()).magnitude
+    assert math.isclose(rate, math.pi, abs_tol=0.001)
 
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
 async def test_get_infused_volume(pump: Elite11):
     await pump.clear_volumes()
-    assert await pump.get_infused_volume() == 0
+    assert await pump.get_infused_volume() == "0 ul"
     await pump.set_syringe_diameter(30)
     await pump.set_infusion_rate(5)
     await pump.set_target_volume(0.05)
     await pump.infuse_run()
     await asyncio.sleep(2)
-    assert math.isclose(await pump.get_infused_volume(), 0.05, abs_tol=1e-4)
+    vol = flowchem_ureg.Quantity(await pump.get_infused_volume()).to("ml").magnitude
+    assert math.isclose(vol, 0.05, abs_tol=1e-4)
 
 
 @pytest.mark.HApump
@@ -126,7 +132,8 @@ async def test_get_withdrawn_volume(pump: Elite11):
     await pump.set_target_volume(0.1)
     await pump.withdraw_run()
     await asyncio.sleep(1)
-    assert await pump.get_withdrawn_volume() == 0.1
+    vol = flowchem_ureg.Quantity(await pump.get_withdrawn_volume()).to("ml").magnitude
+    assert math.isclose(vol, 0.1, abs_tol=1e-4)
 
 
 @pytest.mark.HApump
@@ -146,7 +153,7 @@ async def test_force(pump: Elite11):
 @pytest.mark.asyncio
 async def test_diameter(pump: Elite11):
     await pump.set_syringe_diameter(10)
-    assert await pump.get_syringe_diameter() == 10
+    assert await pump.get_syringe_diameter() == "10.0000 mm"
 
     with pytest.warns(UserWarning):
         await pump.set_syringe_diameter(34)
@@ -155,7 +162,8 @@ async def test_diameter(pump: Elite11):
         await pump.set_syringe_diameter(0.01)
 
     await pump.set_syringe_diameter(math.pi)
-    math.isclose(await pump.get_syringe_diameter(), math.pi)
+    dia = flowchem_ureg.Quantity(await pump.get_syringe_diameter()).magnitude
+    math.isclose(dia, math.pi)
 
 
 @pytest.mark.HApump
@@ -163,6 +171,8 @@ async def test_diameter(pump: Elite11):
 async def test_target_volume(pump: Elite11):
     await pump.set_syringe_volume(10)
     await pump.set_target_volume(math.pi)
-    assert math.isclose(await pump.get_target_volume(), math.pi, abs_tol=10e-4)
+    vol = flowchem_ureg.Quantity(await pump.get_target_volume()).magnitude
+    assert math.isclose(vol, math.pi, abs_tol=10e-4)
     await pump.set_target_volume(1e-04)
-    assert math.isclose(await pump.get_target_volume(), 1e-4, abs_tol=10e-4)
+    vol = flowchem_ureg.Quantity(await pump.get_target_volume()).magnitude
+    assert math.isclose(vol, 1e-4, abs_tol=10e-4)
