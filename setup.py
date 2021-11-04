@@ -45,7 +45,7 @@ setuptools.setup(
         "aiofiles",
         "pyyaml",
         "bokeh",
-        "xxhash"
+        "graphviz"
     ],
     python_requires=">=3.8",
     entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},

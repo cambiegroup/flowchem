@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import time
+from hashlib import blake2b
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from warnings import warn
@@ -16,7 +17,6 @@ from bokeh.resources import INLINE
 from IPython import get_ipython
 from IPython.display import display
 from loguru import logger
-from xxhash import xxh32
 
 from flowchem.components.stdlib import ActiveComponent, Sensor
 from flowchem.core.execute import main
@@ -43,7 +43,7 @@ class Experiment(object):
     - `dry_run`: Whether the experiment is a dry run and, if so, by what factor it is sped up by.
     - `end_time`: The Unix time of the experiment's end.
     - `executed_procedures`: A list of the procedures that were executed during the experiment.
-    - `experiment_id`: The experiment's ID. By default, of the form `YYYY_MM_DD_HH_MM_SS_HASH`, where HASH is the 32-bit hexadecimal xxhash of the protocol's YAML.
+    - `experiment_id`: The experiment's ID. By default, of the form `YYYY_MM_DD_HH_MM_SS_HASH`, where HASH is the 3-bytes hexadecimal blake2b hash of the protocol's YAML.
     - `paused`: Whether the experiment is currently paused.
     - `protocol`: The protocol for which the experiment was conducted.
     - `start_time`: The Unix time of the experiment's is.
@@ -212,7 +212,7 @@ class Experiment(object):
         self._compiled_protocol = self.protocol._compile(dry_run=bool(dry_run))
 
         # now that we're ready to start, create the time and ID attributes
-        protocol_hash: str = xxh32(str(self.protocol.yaml())).hexdigest()
+        protocol_hash: str = blake2b(str(self.protocol.yaml()).encode(), digest_size=3).hexdigest()
         self.experiment_id = f"{self._created_time_local}_{protocol_hash}"
 
         # handle logging to a file
