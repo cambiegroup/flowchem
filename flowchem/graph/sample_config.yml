@@ -19,86 +19,88 @@ devices:
 #    ir:
 #        FlowIR: {}
 #
-    p-sensor:
-        PressureSensor:
-            vint_serial_number: 627768
+#    p-sensor:
+#        PressureSensor:
+#            vint_serial_number: 627768
     # Temperature control
 
-    heater:
-        R4Heater:
-            port: COM4
+#    heater:
+#        R4Heater:
+#            port: COM4
 
-    chiller:
-        HuberChiller:
-            port: COM1
-
-    # Pumps
-
+#    chiller:
+#        HuberChiller:
+#            port: COM1
+#
+#    # Pumps
+#
+#    pump1:
+#        ML600:
+#            port: COM5
+#            address: 1
+#            syringe_volume: 5
+#
+#    pump2:
+#        ML600:
+#            port: COM5
+#            address: 2
+#            syringe_volume: 5
+#
+#    pump3:
+#        Elite11:
+#            port: COM6
+#            address: 1
+#            syringe_volume: 5
+#            diameter: 12.23
+#
+#    pump4:
+#        AzuraCompactPump:
+#            mac_address: 00:12:a2:b4:33:11
+#
+#    # Valves
+#
+#    valve1:
+#        Knauer16PortValve:
+#            mac_address: 00:00:00:00:1a:ff
+#
+#    valve2:
+#        Knauer12PortValve:
+#            mac_address: 00:00:00:00:1a:fe
+#
+#    valve3:
+#        Knauer6Port6PositionValve:
+#            mac_address: 00:00:00:00:1a:fc
+#    valve4:
+#        Knauer6Port2PositionValve:
+#            mac_address: 00:00:00:00:1a:fb
+#
+#    valve5:
+#        ViciValco:
+#            port: COM5
+#            address: 0
+#    # Other
+#
+#    power-supply:
+#        MansonPowerSupply:
+#            port: COM7
     pump1:
-        ML600:
-            port: COM5
-            address: 1
-            syringe_volume: 5
-
-    pump2:
-        ML600:
-            port: COM5
-            address: 2
-            syringe_volume: 5
-
-    pump3:
-        Elite11:
-            port: COM6
-            address: 1
-            syringe_volume: 5
-            diameter: 12.23
-
-    pump4:
-        AzuraCompactPump:
+        KnauerAzuraPump:
             mac_address: 00:12:a2:b4:33:11
 
-    # Valves
-
-    valve1:
-        Knauer16PortValve:
-            mac_address: 00:00:00:00:1a:ff
-
-    valve2:
-        Knauer12PortValve:
-            mac_address: 00:00:00:00:1a:fe
-
-    valve3:
-        Knauer6Port6PositionValve:
-            mac_address: 00:00:00:00:1a:fc
-    valve4:
-        Knauer6Port2PositionValve:
-            mac_address: 00:00:00:00:1a:fb
-
-    valve5:
-        ViciValco:
-            port: COM5
-            address: 0
-    # Other
-
-    power-supply:
-        MansonPowerSupply:
-            port: COM7
+    myreagent:
+        FlowchemVessel:
+            description: Long description
 
 connections:
     Tube:
         from:
-            device: valve1
-            position: 1
+            device: pump1
+            position: 0
         to:
-            device: valve2
-            position: 3
+            device: myreagent
+            position: 0
 
-        from_device: valve1
-        from_position: 1
-        to_device: valve2
-        to_position: 3
-
-        length: 0.1
-        inner-diameter: 0.760
-        outer-diameter: 1.6
+        length: 0.1 m
+        inner-diameter: 0.760 mm
+        outer-diameter: 1.6 mm
         material: "PFA"
