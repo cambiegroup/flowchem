@@ -39,7 +39,13 @@ setuptools.setup(
         "aioserial",
         "jsonschema",
         "loguru",
-        "networkx"
+        "networkx",
+        "ipython",
+        "altair",
+        "aiofiles",
+        "pyyaml",
+        "bokeh",
+        "xxhash"
     ],
     python_requires=">=3.8",
     entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},
