@@ -155,7 +155,7 @@ def test_sync_update():
             pass
 
     Test()._validate(dry_run=True)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Test()._validate(dry_run=False)
 
 
@@ -172,7 +172,7 @@ def test_sync_read():
             pass
 
     Test()._validate(dry_run=True)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Test()._validate(dry_run=False)
 
 

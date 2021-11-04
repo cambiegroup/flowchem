@@ -15,13 +15,13 @@ def test_add_basic():
 
 
 def test_add_errors():
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         A.add(a, b, a)  # not using a tube
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         A.add(a, t, t)  # using a tube instead of a component
 
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         A.add(Component, b, t)  # adding a class, not an instance of one
 
 
