@@ -43,14 +43,14 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
             if not dry_run:
                 components = [
                     await stack.enter_context(compo)
-                    for compo in experiment._compiled_protocol.keys()
+                    for compo in experiment._compiled_protocol.keys()  # type:ignore
                 ]
             else:
-                components = list(experiment._compiled_protocol.keys())
+                components = list(experiment._compiled_protocol.keys())  # type:ignore
 
             for component in components:
                 # Find out when each component's monitoring should end
-                procedures: Iterable = experiment._compiled_protocol[component]
+                procedures: Iterable = experiment._compiled_protocol[component]  # type:ignore
                 end_times: List[float] = [p["time"] for p in procedures]
                 end_time: float = max(end_times)  # we only want the last end time
                 logger.trace(f"Calculated end time for {component} as {end_time}s")
@@ -63,7 +63,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                         dry_run=dry_run,
                         strict=strict,
                     )
-                    for procedure in experiment._compiled_protocol[component]
+                    for procedure in experiment._compiled_protocol[component]  # type:ignore
                 ]
                 logger.trace(f"Task list generated for {component}.")
 
@@ -113,7 +113,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                 logger.debug("Resetting all components")
 
                 # reset object
-                for component in list(experiment._compiled_protocol.keys()):
+                for component in list(experiment._compiled_protocol.keys()):  # type:ignore
                     # reset object
                     logger.debug(f"Resetting {component} to base state")
                     component._update_from_params(component._base_state)
@@ -151,15 +151,15 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
     finally:
 
         # set some protocol metadata
-        experiment.was_executed = True
+        experiment.was_executed = True  # type:ignore
         # after E.was_executed=True, we THEN log that we're cleaning up so it's shown
         # in the cleanup category, not with a time in EET
         logger.info("Experimentation is over. Cleaning up...")
-        experiment.is_executing = False
+        experiment.is_executing = False  # type:ignore
 
-        if experiment._bound_logger is not None:
+        if experiment._bound_logger is not None:  # type:ignore
             logger.trace("Deactivating logging to Jupyter notebook widget...")
-            logger.remove(experiment._bound_logger)
+            logger.remove(experiment._bound_logger)  # type:ignore
 
 
 async def wait_and_execute_procedure(
@@ -225,13 +225,13 @@ async def _monitor(
 
 
 async def end_loop(experiment: "Experiment"):
-    await wait(experiment.protocol._inferred_duration, experiment, "End loop")
-    experiment._end_loop = True
+    await wait(experiment.protocol._inferred_duration, experiment, "End loop")  # type:ignore
+    experiment._end_loop = True  # type:ignore
 
 
 async def check_if_cancelled(experiment: "Experiment") -> None:
-    while not experiment._end_loop:
-        if experiment.cancelled:
+    while not experiment._end_loop:  # type:ignore
+        if experiment.cancelled:  # type:ignore
             raise ProtocolCancelled("protocol cancelled")
         await asyncio.sleep(0)
 
@@ -242,7 +242,7 @@ async def pause_handler(
     was_paused = False
     states: Dict[ActiveComponent, dict] = {}
     # this is either the planned duration of the experiment or cancellation
-    while not experiment._end_loop:
+    while not experiment._end_loop:  # type:ignore
 
         # we need to pause
         if experiment.paused and not was_paused:

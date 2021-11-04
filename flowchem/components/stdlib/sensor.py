@@ -44,7 +44,7 @@ class Sensor(ActiveComponent):
         If data collection is off and needs to be turned on, turn it on.
         If data collection is on and needs to be turned off, turn off and return data.
         """
-        while not experiment._end_loop:
+        while not experiment._end_loop:  # type: ignore
             # if the sensor is off, hand control back over
             if not self.rate:
                 await asyncio.sleep(0)

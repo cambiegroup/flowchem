@@ -331,12 +331,7 @@ class ViciValco(Valve):
 if __name__ == "__main__":
     import asyncio
 
-    conf = {
-        "port": "COM13",
-        "address": 0,
-        "name": "test1",
-    }
-    valve1 = ViciValco.from_config(conf)
+    valve1 = ViciValco.from_config(port="COM13", address=0, name="test1")
 
     asyncio.run(valve1.initialize_valve())
 
