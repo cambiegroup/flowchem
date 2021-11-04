@@ -143,9 +143,6 @@ async def test_force(pump: Elite11):
     assert await pump.get_force() == 10
     await pump.set_force(50.2)
     assert await pump.get_force() == 50
-    with pytest.raises(DeviceError) as exception_info:
-        await pump.set_force(110)
-    assert "Out of range" in str(exception_info.value)
     assert await pump.get_force() == 50
 
 
