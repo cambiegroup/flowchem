@@ -457,7 +457,7 @@ class Elite11:
         self.pump_io = pump_io
         Elite11._io_instances.add(self.pump_io)  # See above for details.
 
-        self.address = address if address else 0
+        self.address: int = address if address else None  # type: ignore
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
 
         # diameter and syringe volume - these will be set in initialize() - check values here though.
