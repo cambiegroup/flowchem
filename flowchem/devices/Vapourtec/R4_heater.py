@@ -34,7 +34,7 @@ class R4Heater:
 
         if not HAS_VAPOURTEC_COMMANDS:
             raise InvalidConfiguration(
-                "R4Heater unusable: Vapourtec Commands specification missing and cannot be redistributed.\n"
+                "R4Heater unusable: no Vapourtec Commands available.\n"
                 "Contact your distributor to get the serial API documentation."
             )
 

@@ -277,9 +277,7 @@ class ViciValco:
         return ViciValco.valve_position_name[valve_pos[-1]]
 
     async def set_valve_position(self, target_position: int):
-        """ Set valve position. Switches really quick and doesn't reply, so waiting does not make sense
-
-        """
+        """ Set valve position. Switches really quick and doesn't reply, so waiting does not make sense. """
         valve_by_name_cw = ViciProtocolCommandTemplate(command="GO")
         await self.send_command_and_read_reply(valve_by_name_cw, command_value=str(target_position), lines=0)
         self.log.debug(f"{self.name} valve position set to {target_position}")

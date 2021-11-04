@@ -3,9 +3,10 @@ This module is used to discover the serial address of any ML600 connected to the
 """
 import logging
 
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.devices.Harvard_Apparatus.HA_elite11 import PumpIO
 import serial.tools.list_ports
+
+from flowchem.devices.Harvard_Apparatus.HA_elite11 import HarvardApparatusPumpIO
+from flowchem.exceptions import InvalidConfiguration
 
 # logging.basicConfig()
 log = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def elite11_finder():
     for serial_port in port_available:
         try:
             print(f"Looking for pump on {serial_port}...")
-            link = PumpIO(port=serial_port)
+            link = HarvardApparatusPumpIO(port=serial_port)
             link._serial.write("\r\n".encode("ascii"))
             if link._serial.readline() == b"\n":
                 valid_ports.add(serial_port)
