@@ -14,7 +14,7 @@ else:
         Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
     except (OSError, FileNotFoundError) as e:
         warnings.warn(
-            "Phidget22 pacakge installed but Phidget library not found!\n"
+            "Phidget22 package installed but Phidget library not found!\n"
             "Get it from https://www.phidgets.com/docs/Operating_System_Support"
         )
         HAS_PHIDGET = False
