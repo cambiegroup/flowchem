@@ -83,3 +83,22 @@ devices:
     power-supply:
         MansonPowerSupply:
             port: COM7
+
+connections:
+    Tube:
+        from:
+            device: valve1
+            position: 1
+        to:
+            device: valve2
+            position: 3
+
+        from_device: valve1
+        from_position: 1
+        to_device: valve2
+        to_position: 3
+
+        length: 0.1
+        inner-diameter: 0.760
+        outer-diameter: 1.6
+        material: "PFA"
