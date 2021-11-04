@@ -2,10 +2,8 @@
 import inspect
 import logging
 
-from fastapi import APIRouter
-
 from flowchem import Spinsolve
-from flowchem.server.routers import *
+from server.routers import spinsolve_get_router
 
 
 class DeviceNode:
@@ -20,6 +18,7 @@ class DeviceNode:
     def __init__(self, device_name, device_config, obj_type):
         self.logger = logging.getLogger(__name__)
         self._title = device_name
+        self._router = None
 
         # DEVICE INSTANTIATION
         try:
@@ -36,18 +35,23 @@ class DeviceNode:
                 f"Accepted parameters: {inspect.getfullargspec(obj_type).args}"
             ) from e
 
-        # ROUTER CREATION
-        if hasattr(obj_type, "get_router"):
-            self.router = self.device.get_router()
+        # self.service_info = None
+
+    @property
+    def router(self):
+        """ Returns an APIRouter associated with the device """
+        if self._router:
+            return self._router
+
+        if hasattr(self.device, "get_router"):
+            router = self.device.get_router()
         else:
-            self.router = DeviceNode.router_generator[obj_type](self.device)
+            router = DeviceNode.router_generator[type(self.device)](self.device)
 
-        assert isinstance(self.router, APIRouter)
-        # Config router
-        self.router.prefix = f"/{self.safe_title}"
-        self.router.tags = self.safe_title
-
-        self.service_info = None  # TODO: populate
+        router.prefix = f"/{self.safe_title}"
+        router.tags = self.safe_title
+        self._router = router
+        return self._router
 
     # @property
     # def description(self) -> str:

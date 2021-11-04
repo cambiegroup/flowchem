@@ -8,8 +8,8 @@ import yaml
 from fastapi import FastAPI
 
 import flowchem
-from device_node_creator import DeviceNode
-from graph.DeviceGraph import DEVICE_MODULES, get_device_class_mapper, load_schema
+from flowchem.graph.DeviceGraph import DEVICE_MODULES, get_device_class_mapper, load_schema
+from flowchem.graph.DeviceNode import DeviceNode
 from mdns_server import Server_mDNS
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ def create_server_from_config(config: Dict = None, config_file: Path = None) -> 
 
     config: Path to the yaml file with the device config or dict.
     """
-    # I wish the xor operator in python were a thing...
+
     assert config is not None and config_file is None or config is None and config_file is not None
 
     if config_file is not None:

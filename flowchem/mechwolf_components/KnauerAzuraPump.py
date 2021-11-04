@@ -1,8 +1,7 @@
-from mechwolf import Pump
-from mechwolf import _ureg
+import mechwolf as mw
 
 
-class KnauerAzuraPump(Pump):
+class KnauerAzuraPump(mw.Pump):
     """
     A Knauer Azura Compact P2.1 pump
 
@@ -19,7 +18,7 @@ class KnauerAzuraPump(Pump):
                 "first_name": "Dario",
                 "last_name": "Cambie",
                 "email": "dario.cambie@mpikg.mpg.de",
-                "institution": "Max Planck Institute of Colloids and interfaces",
+                "institution": "Max Planck Institute of Colloids and Interfaces",
                 "github_username": "dcambie",
             }
         ],
@@ -29,13 +28,12 @@ class KnauerAzuraPump(Pump):
 
     def __init__(self, mac_address, name=None):
         super().__init__(name=name)
-        self.rate = _ureg.parse_expression("0 ml/min")
+        self.rate = mw._ureg.parse_expression("0 ml/min")
         self.mac_address = mac_address
 
     def __enter__(self):
         from flowchem import AzuraCompactPump
         self._pump = AzuraCompactPump.from_config(mac_address=self.mac_address)
-        await self._pump.start_flow()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -52,7 +50,8 @@ class KnauerAzuraPump(Pump):
         Returns: None
 
         """
-        self._pump.set_flow(setpoint_in_ml_min=flow_rate.to(_ureg.ml / _ureg.min).magnitude)
+        self._pump.set_flow(setpoint_in_ml_min=flow_rate.to(mw._ureg.ml / mw._ureg.min).magnitude)
+        await self._pump.start_flow()
 
     async def _update(self):
         await self._set_flow(self.rate)
