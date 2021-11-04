@@ -7,7 +7,7 @@ import math
 
 import pytest
 
-from flowchem.devices.Harvard_Apparatus.HA_elite11 import (
+from flowchem.components.devices.Harvard_Apparatus.HA_elite11 import (
     Elite11,
     PumpStatus
 )

@@ -413,7 +413,7 @@ class HuberChiller(TempControl):
 
     async def __aenter__(self):
         await self.initialize()
-        await self.set_temperature_setpoint(temp = "20 degC")
+        await self.set_temperature_setpoint(temp="20 degC")
         await self.start_temperature_control()
         await self.start_circulation()
         return self
