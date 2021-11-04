@@ -204,9 +204,7 @@ class HarvardApparatusPumpIO:
 
         # Ensure no stall is present (this might happen, so let's raise an Exception w/ diagnostic text)
         if PumpStatus.STALLED in return_status:
-            raise DeviceError(
-                "Pump stalled! Press display to clear error and restart :("
-            )
+            raise DeviceError("Pump stalled! Press display on pump to clear error :(")
 
         HarvardApparatusPumpIO.check_for_errors(last_response_line=response[-1], command_sent=command)
 
@@ -502,8 +500,7 @@ class Elite11:
         )  # e.g. '100 ml'
 
     async def set_syringe_volume(self, volume: AnyQuantity = None):
-        """
-        Sets the syringe volume in ml.
+        """Sets the syringe volume in ml.
 
         :param volume: the volume of the syringe.
         """
