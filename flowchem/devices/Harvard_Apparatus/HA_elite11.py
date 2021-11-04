@@ -308,8 +308,8 @@ class Elite11:
     def __init__(
         self,
         pump_io: HarvardApparatusPumpIO,
-        diameter: float,
-        syringe_volume: float,
+        diameter: AnyQuantity,
+        syringe_volume: AnyQuantity,
         address: Optional[int] = None,
         name: Optional[str] = None,
     ):
@@ -349,7 +349,8 @@ class Elite11:
         self.log = logging.getLogger(__name__).getChild("Elite11")
 
     @classmethod
-    def from_config(cls, port: str, diameter: AnyQuantity, syringe_volume: AnyQuantity, address: int, name: str, **serial_kwargs):
+    def from_config(cls, port: str, diameter: AnyQuantity, syringe_volume: AnyQuantity, address: int = None,
+                    name: str = None, **serial_kwargs):
         """ Programmatic instantiation from configuration
 
         Many pump can be present on the same serial port with different addresses.
