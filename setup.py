@@ -37,8 +37,7 @@ setuptools.setup(
         "lmfit",
         "nmrglue",
         "aioserial",
-        "jsonschema",
-        "mechwolf"
+        "jsonschema"
     ],
     python_requires=">=3.8",
     entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},
