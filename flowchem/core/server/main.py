@@ -8,12 +8,12 @@ import yaml
 from fastapi import FastAPI
 
 import flowchem
-from flowchem.graph.DeviceGraph import (
+from flowchem.core.graph.DeviceGraph import (
     DEVICE_MODULES,
     get_device_class_mapper,
     load_schema,
 )
-from flowchem.graph.DeviceNode import DeviceNode
+from flowchem.core.graph.DeviceNode import DeviceNode
 from mdns_server import Server_mDNS
 
 logger = logging.getLogger(__name__)

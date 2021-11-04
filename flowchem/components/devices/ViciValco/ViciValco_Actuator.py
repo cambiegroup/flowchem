@@ -11,6 +11,7 @@ from typing import Optional, Set
 import aioserial
 from aioserial import SerialException
 
+from flowchem.components.stdlib import Valve
 from flowchem.exceptions import InvalidConfiguration, ActuationError, DeviceError
 
 
@@ -85,16 +86,16 @@ class ViciValcoValveIO:
         self._initialized = False
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, port, **serial_kwargs):
         """Create ViciValcoValveIO from config."""
         # Merge default settings, including serial, with provided ones.
-        configuration = dict(ViciValcoValveIO.DEFAULT_CONFIG, **config)
+        configuration = dict(ViciValcoValveIO.DEFAULT_CONFIG, **serial_kwargs)
 
         try:
-            serial_object = aioserial.AioSerial(**configuration)
+            serial_object = aioserial.AioSerial(port, **configuration)
         except SerialException as e:
             raise InvalidConfiguration(
-                f"Cannot connect to the valve on the port <{configuration.get('port')}>"
+                f"Cannot connect to the valve on the port <{port}>"
             ) from e
 
         return cls(serial_object)
@@ -181,7 +182,7 @@ class ViciValcoValveIO:
             return ""
 
 
-class ViciValco:
+class ViciValco(Valve):
     """ " """
 
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
@@ -193,12 +194,7 @@ class ViciValco:
 
     valve_position_name = {"A": 1, "B": 2}
 
-    def __init__(
-        self,
-        valve_io: ViciValcoValveIO,
-        address: int = 0,
-        name: str = None,
-    ):
+    def __init__(self, valve_io: ViciValcoValveIO, address: int = 0, name: str = None):
         """
         Default constructor, needs an ViciValcoValveIO object. See from_config() class method for config-based init.
         Args:
@@ -206,20 +202,23 @@ class ViciValco:
             address: number of valve in array, 1 for first one, auto-assigned on init based on position.
             name: 'cause naming stuff is important.
         """
+
         # ViciValcoValveIO
         self.valve_io = valve_io
         ViciValco._io_instances.add(self.valve_io)  # See above for details.
 
-        # valve address is the valve sequence number if in chain. Count starts at 1, default.
-        self.address = int(address)
-
         # The valve name is used for logs and error messages.
         self.name = f"Valve {self.valve_io.name}:{address}" if name is None else name
+
+        super().__init__(name)
+
+        # valve address is the valve sequence number if in chain. Count starts at 1, default.
+        self.address = int(address)
 
         self.log = logging.getLogger(__name__).getChild("ViciValco").getChild(self.name)
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, port: str, address: int, name: str = None, **serial_kwargs):
         """This class method is used to create instances via config file by the server for HTTP interface."""
         # Many valve can be present on the same serial port with different addresses.
         # This shared list of ViciValcoValveIO objects allow shared state in a borg-inspired way, avoiding singletons
@@ -228,18 +227,15 @@ class ViciValco:
         # ViciValcoValve_IO() manually instantiated are not accounted for.
         valveio = None
         for obj in ViciValco._io_instances:
-            if obj._serial.port == config.get("port"):
+            if obj._serial.port == port:
                 valveio = obj
                 break
 
         # If not existing serial object are available for the port provided, create a new one
         if valveio is None:
-            config_for_valveio = {
-                k: v for k, v in config.items() if k not in ("address", "name")
-            }
-            valveio = ViciValcoValveIO.from_config(config_for_valveio)
+            valveio = ViciValcoValveIO.from_config(port, **serial_kwargs)
 
-        return cls(valveio, address=config.get("address"), name=config.get("name"))
+        return cls(valveio, address=address, name=name)
 
     async def initialize(self):
         """Must be called after init before anything else."""
@@ -301,6 +297,17 @@ class ViciValco:
         new_position = await self.get_valve_position()
         if not new_position == target_position:
             raise ActuationError
+
+    async def __aenter__(self):
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        pass
+
+    async def _update(self):
+        """ Used in automation. """
+        await self.set_valve_position(self.setting)
 
     def get_router(self):
         """Creates an APIRouter for this object."""

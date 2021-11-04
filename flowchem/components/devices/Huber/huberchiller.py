@@ -11,6 +11,7 @@ import aioserial
 import pint
 from aioserial import SerialException
 
+from flowchem.components.stdlib import TempControl
 from flowchem.exceptions import InvalidConfiguration, DeviceError
 from flowchem.units import flowchem_ureg, AnyQuantity, ensure_quantity
 
@@ -110,30 +111,31 @@ class PBCommand:
         )
 
 
-class HuberChiller:
+class HuberChiller(TempControl):
     """
     Control class for Huber chillers.
     """
 
-    def __init__(self, aio: aioserial.AioSerial):
+    def __init__(self, aio: aioserial.AioSerial, name=None):
+        super().__init__(name)
         self._serial = aio
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
+        self.logger = logging.getLogger(__name__).getChild("HuberChiller")
 
     @classmethod
-    def from_config(cls, config: dict):
+    def from_config(cls, port, name=None, **serial_kwargs):
         """
         Create instance from config dict. Used by server to initialize obj from config.
 
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
         try:
-            serial_object = aioserial.AioSerial(**config)
+            serial_object = aioserial.AioSerial(port, **serial_kwargs)
         except SerialException as e:
             raise InvalidConfiguration(
-                f"Cannot connect to the HuberChiller on the port <{config.get('port')}>"
+                f"Cannot connect to the HuberChiller on the port <{port}>"
             ) from e
 
-        return cls(serial_object)
+        return cls(serial_object, name)
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
@@ -408,6 +410,27 @@ class HuberChiller:
     def int_to_string(number: int) -> str:
         """From temperature to string for command. f^-1 of PCommand.parse_integer."""
         return f"{number:04X}"
+
+    async def __aenter__(self):
+        await self.initialize()
+        await self.set_temperature_setpoint(temp = "20 degC")
+        await self.start_temperature_control()
+        await self.start_circulation()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.set_temperature_setpoint("20 C")
+
+        # Wait until close to room temperature before turning off chiller
+        while flowchem_ureg.parse_expression(await self.process_temperature()) > flowchem_ureg.parse_expression("40 degC"):
+            await asyncio.sleep(5)
+
+        # Actually turn off chiller
+        await self.stop_circulation()
+        await self.stop_temperature_control()
+
+    async def _update(self):
+        await self.set_temperature_setpoint(self.temp)
 
     def get_router(self):
         """Creates an APIRouter for this HuberChiller instance."""

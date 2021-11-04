@@ -4,7 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 
-class NMR_Spectrum:
+class NMRSpectrum:
     """General spectrum object, instantiated from Spinsolve folder w/ experimental results."""
 
     def __init__(self, location: Path):

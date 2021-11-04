@@ -1,33 +1,31 @@
 devices:
 
     donor:
-        HarvardApparatusElite11:
+        Elite11:
             port: COM11
-            syringe_diameter: 14.567 mm
+            diameter: 14.567 mm
             syringe_volume: 10 ml
             address: 0
 
     activator:
-        HarvardApparatusElite11:
+        Elite11:
             port: COM11
-            syringe_diameter: 14.567 mm
+            diameter: 14.567 mm
             syringe_volume: 10 ml
             address: 1
 
     quencher:
-        KnauerAzuraPump:
+        AzuraCompactPump:
             ip_address: 192.168.10.113
 
     sample_loop:
-        ViciValve:
-            serial_port: COM13
-            mapping:
-                reactor: 1
-                HPLC: 2
+        ViciValco:
+            port: COM13
+            address: 0
 
     chiller:
         HuberChiller:
-            serial_port: COM1
+            port: COM1
 
     donor_solution:
         FlowchemVessel:

@@ -149,8 +149,12 @@ class DeviceGraph:
             )
 
             # Devices
-            from_device = self.device[tube_config["from"]["device"]]
-            to_device = self.device[tube_config["to"]["device"]]
+            try:
+                from_device = self.device[tube_config["from"]["device"]]
+                to_device = self.device[tube_config["to"]["device"]]
+            except KeyError as ke:
+                raise InvalidConfiguration("A Tube refers to a non existing node!\n"
+                                           f"Tube config: {tube_config}") from ke
 
             # If necessary updates mapping.
             if tube_config["from"]["position"] != 0:
@@ -212,7 +216,7 @@ class DeviceGraph:
 
 
 if __name__ == "__main__":
-    graph = DeviceGraph.from_file("sample_config.yml")
+    graph = DeviceGraph.from_file("owen_config2.yml")
     a = graph.to_apparatus()
     print(a)
     input()

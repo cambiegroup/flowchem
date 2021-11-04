@@ -417,7 +417,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        self.stop_flow()
+        await self.stop_flow()
 
     async def _update(self):
         """Called automatically to change flow rate."""

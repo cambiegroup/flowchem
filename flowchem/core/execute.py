@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Union
 
 from loguru import logger
 
-from flowchem import __version__
 from flowchem.components.stdlib import ActiveComponent, Sensor
 from flowchem.exceptions import ProtocolCancelled
+import flowchem
 
 if TYPE_CHECKING:
     from flowchem import Experiment
@@ -32,7 +32,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
     - `strict`: Whether to stop execution upon any errors.
     """
 
-    logger.info(f"Using Flowchem v{__version__} ⚗️👩‍👨🧪")
+    logger.info(f"Using Flowchem v{flowchem.__version__} ⚗️👩‍👨🧪")
     logger.info("Performing final launch status check...")
 
     # Run protocol

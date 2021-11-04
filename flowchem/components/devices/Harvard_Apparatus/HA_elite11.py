@@ -333,14 +333,8 @@ class Elite11(Pump):
         "supported": True,
     }
 
-    def __init__(
-        self,
-        pump_io: HarvardApparatusPumpIO,
-        diameter: AnyQuantity,
-        syringe_volume: AnyQuantity,
-        address: Optional[int] = None,
-        name: Optional[str] = None,
-    ):
+    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: AnyQuantity, syringe_volume: AnyQuantity,
+                 address: Optional[int] = None, name: Optional[str] = None):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
         are the prompt XXY, where XX is the address and Y is pump status.
@@ -349,12 +343,14 @@ class Elite11(Pump):
         The prompt is used to confirm that the address is correct.
         This acts as a check to see that the pump is connected and working."""
 
+        self.name = f"Pump {pump_io.name}:{address}" if name is None else name
+        super().__init__(name)
+
         self.pump_io = pump_io
         Elite11._io_instances.add(self.pump_io)  # See above for details.
 
         self.address: int = address if address else None  # type: ignore
         self._version = None  # Set in initialize
-        self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
 
         # diameter and syringe volume - these will be set in initialize() - check values here though.
         if diameter is None:
@@ -815,27 +811,19 @@ class Elite11(Pump):
         return router
 
     async def __aenter__(self):
-        self._pump = Elite11.from_config(
-            port=self.port,
-            diameter=self.syringe_diameter,
-            syringe_volume=self.syringe_volume,
-            address=self.address,
-            name=self.name,
-        )
-        await self._pump.initialize()
+        await self.initialize()
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        self._pump.stop()
-        del self._pump
+        await self.stop()
 
     async def _update(self):
         """Actuates flow rate changes."""
         if self.rate == 0:
-            await self._pump.stop()
+            await self.stop()
         else:
-            await self._pump.set_infusion_rate(str(self.rate))
-            await self._pump.infuse_run()
+            await self.set_infusion_rate(str(self.rate))
+            await self.infuse_run()
 
 
 if __name__ == "__main__":

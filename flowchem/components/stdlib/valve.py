@@ -33,6 +33,9 @@ class Valve(ActiveComponent):
 
         self._base_state = {"setting": 1}
 
+    async def _update(self):
+        raise NotImplementedError
+
     def _validate(self, dry_run):
         if not self.mapping:
             raise ValueError(f"{self} requires a mapping. None provided.")
