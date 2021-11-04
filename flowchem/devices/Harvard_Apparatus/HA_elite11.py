@@ -458,6 +458,7 @@ class Elite11:
         Elite11._io_instances.add(self.pump_io)  # See above for details.
 
         self.address: int = address if address else None  # type: ignore
+        self._version = None  # Set in initialize
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
 
         # diameter and syringe volume - these will be set in initialize() - check values here though.
@@ -521,7 +522,7 @@ class Elite11:
             self.pump_io._serial.write("\r\n".encode("ascii"))
             self.pump_io._serial.readline()
             prompt = self.pump_io._serial.readline()
-            self.address = int(prompt[0:2])
+            self.address = 0 if prompt[0:2] == b":" else int(prompt[0:2])
             self.log.debug(f"Address autodetected as {self.address}")
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
@@ -535,7 +536,10 @@ class Elite11:
         self._withdraw_enabled = not pump_info.infuse_only
 
         # makes sure that a 'clean' pump is initialized.
-        await self.clear_volumes()
+        self._version = self.parse_version(await self.version())
+
+        if self._version[0] >= 3:
+            await self.clear_volumes()
 
     def ensure_withdraw_is_enabled(self):
         """ To be used on methods that need withdraw capabilities """
@@ -590,6 +594,13 @@ class Elite11:
             set_rate = upper_limit
 
         return set_rate.to("ml/min").magnitude
+
+    def parse_version(self, version_text: str) -> Tuple[int, int, int]:
+        """ Extract semver from version string """
+
+        numbers = version_text.split(" ")[-1]
+        version_digits = numbers.split(".")
+        return int(version_digits[0]), int(version_digits[1]), int(version_digits[2])
 
     async def version(self) -> str:
         """ Returns the current firmware version reported by the pump """
@@ -722,6 +733,9 @@ class Elite11:
 
     async def clear_infused_volume(self):
         """ Reset the pump infused volume counter to 0 """
+        if self._version[0] < 3:
+            warnings.warn("Command not supported by pump, update firmware!")
+            return
         await self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_VOLUME)
 
     async def clear_withdrawn_volume(self):
@@ -732,6 +746,9 @@ class Elite11:
     async def clear_infused_withdrawn_volume(self):
         """ Reset both the pump infused and withdrawn volume counters to 0 """
         self.ensure_withdraw_is_enabled()
+        if self._version[0] < 3:
+            warnings.warn("Command not supported by pump, update firmware!")
+            return
         await self.send_command_and_read_reply(
             Elite11Commands.CLEAR_INFUSED_WITHDRAWN_VOLUME
         )
@@ -740,6 +757,7 @@ class Elite11:
     async def clear_volumes(self):
         """ Set all pump volumes to 0 """
         await self.set_target_volume(0)
+
         if self._withdraw_enabled:
             await self.clear_infused_withdrawn_volume()
         else:
