@@ -10,13 +10,13 @@ from types import ModuleType
 from typing import *
 
 import jsonschema
+import mechwolf as mw
 import yaml
 
 import flowchem
-from server import test_devices
 
 # packages containing the device class definitions. Target classes should be available in the module top level.
-DEVICE_MODULES = [flowchem, test_devices]
+DEVICE_MODULES = [flowchem]
 
 # Validation schema for graph file
 SCHEMA = os.path.join(
@@ -96,8 +96,8 @@ class DeviceGraph:
             f"The following device classes have been found: {device_mapper.keys()}"
         )
 
-
-
+    def to_apparatus(self) -> mw.Apparatus:
+        raise NotImplementedError
 
 
 
