@@ -14,13 +14,14 @@ import jsonschema
 import yaml
 
 import flowchem.components.devices
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.core.graph.DeviceNode import DeviceNode
+from components.stdlib import Interface
 from flowchem.components.stdlib import Tube
 from flowchem.core.apparatus import Apparatus
+from flowchem.core.graph.DeviceNode import DeviceNode
+from flowchem.exceptions import InvalidConfiguration
 
 # packages containing the device class definitions. Target classes should be available in the module top level.
-DEVICE_MODULES = [flowchem.components.devices, flowchem.components.stdlib]
+DEVICE_MODULES = [flowchem.components.devices, flowchem.components.stdlib, flowchem.components.reactors]
 
 # Validation schema for graph file
 SCHEMA = os.path.join(
@@ -143,16 +144,14 @@ class DeviceGraph:
             if "Tube" in edge:
                 connection = self.parse_tube_connection(edge["Tube"])
             elif "Interface" in edge:
-                do_later.appoend(edge)
-
-        for edge in do_later:
-            #stuff
+                connection = self.parse_interface_connection(edge["Interface"])
+            else:
+                raise InvalidConfiguration(f"Invalid connection type in {edge}")
 
             self.edge_list.append(connection)
 
     def parse_tube_connection(self, tube_config) -> Connection:
         """ Parse a dict containing the Tube connection and returns the Connection """
-        # length: str, ID: str, OD: str, material: str):
         tube = Tube(
             length=tube_config["length"],
             ID=tube_config["inner-diameter"],
@@ -176,6 +175,20 @@ class DeviceGraph:
             to_device.mapping[from_device.name] = tube_config["to"]["position"]
 
         return Connection(from_device, to_device, tube)
+
+    def parse_interface_connection(self, iface_config) -> Connection:
+        """ Parse a dict containing the Tube connection and returns the Connection """
+        interface = Interface()
+
+        try:
+            from_device = self.device[iface_config["from"]["device"]]
+            to_device = self.device[iface_config["to"]["device"]]
+        except KeyError as ke:
+            raise InvalidConfiguration("An Interface refers to a non existing node!\n"
+                                       f"Missing node: {ke}\n"
+                                       f"Interface config: {iface_config}") from ke
+
+        return Connection(from_device, to_device, interface)
 
     def to_apparatus(self) -> Apparatus:
         """
@@ -231,7 +244,6 @@ class DeviceGraph:
 if __name__ == "__main__":
     from flowchem import Protocol
     from datetime import timedelta
-    import logging
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
 

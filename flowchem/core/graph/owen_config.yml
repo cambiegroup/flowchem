@@ -1,39 +1,41 @@
 devices:
 
     donor:
-        Elite11:
-            port: COM11
-            diameter: 4.6 mm
-            syringe_volume: 1 ml
-            address: 0
+      DummyPump:
+#        Elite11:
+#            port: COM11
+#            diameter: 4.6 mm
+#            syringe_volume: 1 ml
+#            address: 0
 
     activator:
-        Elite11:
-            port: COM11
-            diameter: 4.6 mm
-            syringe_volume: 1 ml
-            address: 1
+      DummyPump:
+#        Elite11:
+#            port: COM11
+#            diameter: 4.6 mm
+#            syringe_volume: 1 ml
+#            address: 1
 
     quencher:
-        AzuraCompactPump:
-#            mac_address: 00:80:A3:BA:C3:4A
-            ip_address: 192.168.10.113
-            max_pressure: 13 bar
+      DummyPump:
+#        AzuraCompactPump:
+##            mac_address: 00:80:A3:BA:C3:4A
+#            ip_address: 192.168.10.113
+#            max_pressure: 13 bar
 
     sample_loop:
-        ViciValco:
-            port: COM13
-            address: 0
+      DummyValve:
+#        ViciValco:
+#            port: COM13
+#            address: 0
 
     chiller:
-        HuberChiller:
-            port: COM1
+      Dummy:
+#        HuberChiller:
+#            port: COM3
 
-    mixer1:
-        TMixer:
-
-    mixer2:
-        TMixer:
+    reactor:
+        LTF_HTM_ST_3_1:
 
 
 connections:
@@ -41,7 +43,8 @@ connections:
         from:
             device: donor
         to:
-            device: mixer1
+            device: reactor
+            position: 1
 
         length: 0.1 m
         inner-diameter: 0.760 mm
@@ -52,7 +55,8 @@ connections:
         from:
             device: activator
         to:
-            device: mixer1
+            device: reactor
+            position: 2
 
         length: 0.1 m
         inner-diameter: 0.760 mm
@@ -63,26 +67,15 @@ connections:
           from:
               device: chiller
 
-          betweeen:
-              before: mixer1
-              after: mixer2
-
-    - Tube:
-        from:
-            device: mixer1
-        to:
-            device: mixer2
-
-        length: 0.1 m
-        inner-diameter: 0.760 mm
-        outer-diameter: 1.6 mm
-        material: "glass"
+          to:
+              device: reactor
 
     - Tube:
           from:
               device: quencher
           to:
-              device: mixer2
+              device: reactor
+              position: 3
 
           length: 0.1 m
           inner-diameter: 0.760 mm
@@ -91,7 +84,8 @@ connections:
 
     - Tube:
           from:
-              device: mixer2
+              device: reactor
+              position: 4
           to:
               device: sample_loop
 

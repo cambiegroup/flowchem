@@ -4,8 +4,9 @@ from warnings import warn
 from flowchem.units import flowchem_ureg
 
 
-class Tube(object):
-    """A tube.
+class Tube:
+    """
+    A tube.
 
     Arguments:
     - `length`: The length of the tube as a str.
