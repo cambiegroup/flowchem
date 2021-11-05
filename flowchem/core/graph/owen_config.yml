@@ -58,6 +58,14 @@ connections:
         outer-diameter: 1.6 mm
         material: "PFA"
 
+    - Interface:
+          from:
+              device: chiller
+
+          betweeen:
+              before: mixer1
+              after: mixer2
+
     - Tube:
         from:
             device: mixer1
@@ -90,3 +98,5 @@ connections:
           inner-diameter: 0.760 mm
           outer-diameter: 1.6 mm
           material: "PFA"
+
+

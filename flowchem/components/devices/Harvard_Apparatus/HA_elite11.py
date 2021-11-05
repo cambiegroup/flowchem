@@ -415,6 +415,7 @@ class Elite11(Pump):
             self.address = self.pump_io.autodetermine_address()
 
         await self.stop()
+
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
 
@@ -650,7 +651,7 @@ class Elite11(Pump):
 
     async def clear_volumes(self):
         """Set all pump volumes to 0"""
-        await self.set_target_volume(0)
+        await self.set_target_volume(self._syringe_volume)
 
         if self._withdraw_enabled:
             await self.clear_infused_withdrawn_volume()

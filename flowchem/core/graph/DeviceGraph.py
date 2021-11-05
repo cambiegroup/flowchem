@@ -142,6 +142,11 @@ class DeviceGraph:
         for edge in config["connections"]:
             if "Tube" in edge:
                 connection = self.parse_tube_connection(edge["Tube"])
+            elif "Interface" in edge:
+                do_later.appoend(edge)
+
+        for edge in do_later:
+            #stuff
 
             self.edge_list.append(connection)
 
@@ -226,15 +231,11 @@ class DeviceGraph:
 if __name__ == "__main__":
     from flowchem import Protocol
     from datetime import timedelta
-    import asyncio
     import logging
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
 
-
     graph = DeviceGraph.from_file("owen_config.yml")
-
-    # asyncio.run(graph["quencher"].initialize())
 
     a = graph.to_apparatus()
     print(a)
@@ -244,6 +245,10 @@ if __name__ == "__main__":
 
     # p.add(graph["quencher"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min")
     p.add(graph["activator"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min")
+    print(graph["chiller"])
+    print(type(graph["chiller"]))
+    p.add(graph["chiller"], start=t0, duration=timedelta(seconds=10), temp="45 degC")
+
 
     E = p.execute(dry_run=False)
     # E.visualize()
