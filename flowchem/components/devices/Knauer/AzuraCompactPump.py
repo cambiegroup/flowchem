@@ -377,7 +377,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         """Stops flow"""
         await self._transmit_and_parse_reply(PUMP_OFF)
         self._running = False
-        logging.info("Pump switched off")
+        logging.info("Pump not pumping")
 
     def is_running(self):
         """Get pump state."""
@@ -438,14 +438,14 @@ if __name__ == "__main__":
 
     logging.basicConfig()
     logging.getLogger().setLevel(logging.DEBUG)
-    p = AzuraCompactPump(ip_address="192.168.1.126")
+    p = AzuraCompactPump(ip_address="192.168.10.113")
 
     async def main(pump: AzuraCompactPump):
         """Test function"""
         await pump.initialize()
-        init_val = await pump.get_adjusting_factor()
-        await pump.set_adjusting_factor(0)
-        assert await pump.get_adjusting_factor() == 0
-        await pump.set_adjusting_factor(init_val)
+        await pump.set_flow("0.1 ml/min")
+        await pump.start_flow()
+        await asyncio.sleep(5)
+        await pump.stop_flow()
 
     asyncio.run(main(p))

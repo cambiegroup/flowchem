@@ -224,7 +224,27 @@ class DeviceGraph:
 
 
 if __name__ == "__main__":
-    graph = DeviceGraph.from_file("owen_config2.yml")
+    from flowchem import Protocol
+    from datetime import timedelta
+    import asyncio
+    import logging
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG)
+
+
+    graph = DeviceGraph.from_file("owen_config.yml")
+
+    # asyncio.run(graph["quencher"].initialize())
+
     a = graph.to_apparatus()
     print(a)
-    input()
+    p = Protocol(a)
+
+    t0 = timedelta(seconds=0)
+
+    # p.add(graph["quencher"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min")
+    p.add(graph["activator"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min")
+
+    E = p.execute(dry_run=False)
+    # E.visualize()
+

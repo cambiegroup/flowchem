@@ -316,7 +316,7 @@ class Protocol(object):
             try:
                 component._validate(dry_run=dry_run)
             except Exception as e:
-                raise RuntimeError(f"{component} isn't valid. Got error: '{str(e)}'.")
+                raise RuntimeError(f"{component} isn't valid. Got error: '{str(e)}'.") from e
 
             # check for conflicting continuous procedures
             if (

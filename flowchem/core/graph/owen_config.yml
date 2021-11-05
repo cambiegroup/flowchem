@@ -3,19 +3,20 @@ devices:
     donor:
         Elite11:
             port: COM11
-            diameter: 14.567 mm
-            syringe_volume: 10 ml
+            diameter: 4.6 mm
+            syringe_volume: 1 ml
             address: 0
 
     activator:
         Elite11:
             port: COM11
-            diameter: 14.567 mm
-            syringe_volume: 10 ml
+            diameter: 4.6 mm
+            syringe_volume: 1 ml
             address: 1
 
     quencher:
         AzuraCompactPump:
+#            mac_address: 00:80:A3:BA:C3:4A
             ip_address: 192.168.10.113
 
     sample_loop:
