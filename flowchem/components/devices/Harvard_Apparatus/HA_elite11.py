@@ -422,8 +422,8 @@ class Elite11(Pump):
         )
 
         # Enable withdraw commands only on pumps that support them...
-        pump_info = await self.pump_info()
-        self._withdraw_enabled = not pump_info.infuse_only
+        # pump_info = await self.pump_info()
+        self._withdraw_enabled = True
 
         # makes sure that a 'clean' pump is initialized.
         self._version = self.parse_version(await self.version())
