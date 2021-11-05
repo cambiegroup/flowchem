@@ -39,7 +39,7 @@ class ExperimentConditions:
     _stock_concentration_activator = "0.156 molar"
     _stock_concentration_quencher = "0.62 molar"
     # how many reactor volumes until steady state reached
-    _reactor_volumes: float = 3
+    _reactor_volumes: float = 1.5#3
     _quencher_eq_to_activator = 50
 
     # alternative: hardcode flowrates
@@ -104,7 +104,7 @@ class FlowConditions:
         # better readability
         self.platform_volumes = flow_platform['internal_volumes']
 
-# translate to pint
+        # translate to pint
         self._concentration_donor = flowchem_ureg(experiment_conditions.concentration_donor).to('M')
         self._concentration_activator = flowchem_ureg(experiment_conditions.stock_concentration_activator).to('M')
         self._concentration_quencher = flowchem_ureg(experiment_conditions.stock_concentration_quencher).to('M')
@@ -121,7 +121,7 @@ class FlowConditions:
         self.donor_flow_rate = self.donor_flow_rate.to(flowchem_ureg.milliliter / flowchem_ureg.minute)
 
         # TODO watch out, now the quencher equivalents are based on donor, I think
-        self.quencher_flow_rate = 0.1*flowchem_ureg.mL/flowchem_ureg.min #self.get_flowrate_added_stream(self._concentration_donor, self.donor_flow_rate, self._concentration_quencher, experiment_conditions._quencher_equivalents)
+        self.quencher_flow_rate = 0*flowchem_ureg.mL/flowchem_ureg.min #self.get_flowrate_added_stream(self._concentration_donor, self.donor_flow_rate, self._concentration_quencher, experiment_conditions._quencher_equivalents)
 
         self.temperature = flowchem_ureg(experiment_conditions.temperature)
 
@@ -167,11 +167,11 @@ class FlowProcedure:
 
     def individual_procedure(self, flow_conditions: FlowConditions):
         # TODO also here, for now this is a workaround for ureg.
-        self.log.info(f'Setting Ciller to  {flow_conditions.temperature}')
+        self.log.info(f'Setting Chiller to  {flow_conditions.temperature}')
         self.chiller.set_temperature(flow_conditions.temperature.magnitude)
         self.log.info(f'Chiller successfully set to  {flow_conditions.temperature}')
         self.chiller.start()
-        self.log.info('Ciller started')
+        self.log.info('Chiller started')
 
         while abs(abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
             sleep(10)
@@ -188,7 +188,7 @@ class FlowProcedure:
         self.log.info('Starting donor pump')
         self.pumps['donor'].run()
 
-        self.log.info('Starting aactivator pump')
+        self.log.info('Starting activator pump')
         self.pumps['activator'].run()
 
         self.log.info('Starting quencher pump')
@@ -196,10 +196,10 @@ class FlowProcedure:
 
         # start timer
         self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}')
-        sleep(3)#flow_conditions.steady_state_time.magnitude)
+        sleep(flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
 
-#        self.hplc.set_sample_name(flow_conditions.experiment_id)
+        self.hplc.set_sample_name(flow_conditions.experiment_id)
         self.sample_loop.set_valve_position_sync(2)
 
         # timer is over, start
@@ -221,25 +221,28 @@ class FlowProcedure:
         # prepare HPLC
 
         self.log.info('getting the platform ready: HPLC')
-        #self.pumps['donor'].stop()
         [p.stop() for p in self.pumps.values() if isinstance(p, Elite11)]
 
-#        self.hplc.exit()
-#        self.hplc.switch_lamp_on()  # address and port hardcoded
-#        self.hplc.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ",
-#                                     start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
-#        self.hplc.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
-#                                     method_list=("autostartup_005_Sugar-c18_shortened.MET",
-                                                  # "autostartup_01_Sugar-c18_shortened.MET",
-                                                  # "autostartup_015_Sugar-c18_shortened.MET",
-                                                  # "autostartup_02_Sugar-c18_shortened.MET",
-                                                  # "autostartup_025_Sugar-c18_shortened.MET",
-                                                  # "autostartup_03_Sugar-c18_shortened.MET",
-                                                  # "autostartup_035_Sugar-c18_shortened.MET",
-                                                  # "autostartup_04_Sugar-c18_shortened.MET",
-                                                  # "autostartup_045_Sugar-c18_shortened.MET",
-#                                                  "autostartup_05_Sugar-c18_shortened.MET",))
-#        self.hplc.load_file(r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET")
+        self.hplc.exit()
+        self.hplc.switch_lamp_on()  # address and port hardcoded
+        self.log.info('switch on lamps')
+
+        self.hplc.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ",
+                     start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
+        self.log.info('open clarity and now start ramp')
+        self.hplc.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
+                    method_list=("autostartup_005_Sugar-c18_shortened.MET",
+                                  "autostartup_01_Sugar-c18_shortened.MET",
+                                  "autostartup_015_Sugar-c18_shortened.MET",
+                                  "autostartup_02_Sugar-c18_shortened.MET",
+                                  "autostartup_025_Sugar-c18_shortened.MET",
+                                  "autostartup_03_Sugar-c18_shortened.MET",
+                                  "autostartup_035_Sugar-c18_shortened.MET",
+                                  "autostartup_04_Sugar-c18_shortened.MET",
+                                  "autostartup_045_Sugar-c18_shortened.MET",
+                                 "autostartup_05_Sugar-c18_shortened.MET",))
+        self.hplc.load_file(r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET")
+        self.log.info('load method')
 
         # Todo fill
         # commander.load_file("opendedicatedproject") # open a project for measurements
@@ -322,6 +325,7 @@ class Scheduler:
                                 with open(self.experiments_results, 'w') as f:
                                     json.dump(self.started_experiments, f, cls = EnhancedJSONEncoder)
                                 # TODO this can be expanded to trigger the analysis of the sample
+                                # should become MongoDB,  should be possible to be updated from somewhere else, eg with current T
 
 # check if experiments can be stopped by only chromatogram available, but actually not having been ran -> this happens. Here not important, but in general, streamlining could mean that experiments are started before previous analysis is over
 
@@ -363,9 +367,9 @@ if __name__ == "__main__":
     SugarPlatform = {
         # try to combine two pumps to one. flow rate with ratio gives individual flow rate
         'pumps': {
-            'donor': Elite11(elite_port, address=0, diameter=14.567, volume_syringe=10),
+            'donor': Elite11(elite_port, address=0, diameter=4.606, volume_syringe=1),
 
-            'activator': Elite11(elite_port, address=1, diameter=14.567, volume_syringe=10), # for now elite11 pump, hamilton will be used once small syringes arrive, and will be used in continuous mode
+            'activator': Elite11(elite_port, address=1, diameter=4.606, volume_syringe=1), # for now elite11 pump, hamilton will be used once small syringes arrive, and will be used in continuous mode
 
             'quencher': KnauerPump("192.168.10.113"),
         },
