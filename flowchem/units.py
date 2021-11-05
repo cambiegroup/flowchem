@@ -32,7 +32,7 @@ def ensure_quantity(
 
     # If it is a string, likely with units...
     if isinstance(value, str):
-        parsed_value = pint.Quantity(value)
+        parsed_value = flowchem_ureg.Quantity(value)
 
         # If not unit cast it back to number and it will be treated as such
         if parsed_value.dimensionless:
