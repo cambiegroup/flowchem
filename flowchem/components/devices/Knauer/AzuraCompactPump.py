@@ -10,9 +10,9 @@ from typing import Union
 import pint
 
 from flowchem.components.devices.Knauer.Knauer_common import KnauerEthernetDevice
-from flowchem.exceptions import DeviceError
-from flowchem.units import flowchem_ureg, ensure_quantity
 from flowchem.components.stdlib import Pump
+from flowchem.exceptions import DeviceError
+from flowchem.units import flowchem_ureg, ensure_quantity, AnyQuantity
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
@@ -71,14 +71,15 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         "supported": True,
     }
 
-    def __init__(self, ip_address=None, mac_address=None, name=None):
-        super().__init__(ip_address, mac_address)
+    def __init__(self, ip_address=None, mac_address=None, name=None, max_pressure: AnyQuantity = None):
+        super().__init__(ip_address, mac_address, name)
         self.eol = b"\n\r"
 
         # All of the following are set upon initialize()
-        self.max_pressure, self.max_flow = None, None
+        self.max_allowed_pressure, self.max_allowed_flow = None, None
         self._headtype = None
         self._running = None
+        self._pressure_limit = max_pressure
 
         self.rate = flowchem_ureg.parse_expression("0 ml/min")
         self._visualization_shape = "box3d"
@@ -95,6 +96,9 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         await self.set_remote()
         # Also ensure rest state is not pumping.
         await self.stop_flow()
+
+        if self._pressure_limit is not None:
+            await self.set_maximum_pressure(self._pressure_limit)
 
     @staticmethod
     def error_present(reply: str) -> bool:
@@ -190,9 +194,9 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         self.__headtype = htype
 
         if htype == AzuraPumpHeads.FLOWRATE_TEN_ML:
-            self.max_pressure, self.max_flow = 400, 10000
+            self.max_allowed_pressure, self.max_allowed_flow = 400, 10000
         elif htype == AzuraPumpHeads.FLOWRATE_FIFTY_ML:
-            self.max_pressure, self.max_flow = 150, 50000
+            self.max_allowed_pressure, self.max_allowed_flow = 150, 50000
 
     async def get_headtype(self):
         """Returns pump's head type."""
@@ -232,7 +236,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         await self.create_and_send_command(
             FLOW,
             setpoint=round(ensure_quantity(setpoint, "ul/min").magnitude),
-            setpoint_range=(0, self.max_flow + 1),
+            setpoint_range=(0, self.max_allowed_flow + 1),
         )
         self.logger.info(f"Flow set to {setpoint}")
 
@@ -251,7 +255,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         await self.create_and_send_command(
             command,
             setpoint=round(pressure_in_bar.magnitude),
-            setpoint_range=(0, self.max_pressure + 1),
+            setpoint_range=(0, self.max_allowed_pressure + 1),
         )
         logging.info(f"Minimum pressure set to {pressure_in_bar}")
 
@@ -262,7 +266,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         p_max = await self.create_and_send_command(command) * flowchem_ureg.bar
         return str(p_max)
 
-    async def set_maximum_pressure(self, pressure):
+    async def set_maximum_pressure(self, pressure: AnyQuantity):
         """Sets maximum pressure. The pumps stops if the measured P is higher than this."""
 
         pressure_in_bar = ensure_quantity(pressure, "bar")
@@ -270,7 +274,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         await self.create_and_send_command(
             command,
             setpoint=round(pressure_in_bar.magnitude),
-            setpoint_range=(0, self.max_pressure + 1),
+            setpoint_range=(0, self.max_allowed_pressure + 1),
         )
         logging.info(f"Maximum pressure set to {pressure_in_bar}")
 

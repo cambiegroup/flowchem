@@ -17,6 +17,7 @@ devices:
     quencher:
         AzuraCompactPump:
             ip_address: 192.168.10.113
+            max_pressure: 13 bar
 
     sample_loop:
         ViciValco:
