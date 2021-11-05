@@ -414,6 +414,8 @@ class Elite11(Pump):
         if self.address is None:
             self.address = self.pump_io.autodetermine_address()
 
+        await self.stop()
+
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
 
@@ -422,8 +424,8 @@ class Elite11(Pump):
         )
 
         # Enable withdraw commands only on pumps that support them...
-        pump_info = await self.pump_info()
-        self._withdraw_enabled = not pump_info.infuse_only
+        # pump_info = await self.pump_info()
+        self._withdraw_enabled = True
 
         # makes sure that a 'clean' pump is initialized.
         self._version = self.parse_version(await self.version())
@@ -649,7 +651,7 @@ class Elite11(Pump):
 
     async def clear_volumes(self):
         """Set all pump volumes to 0"""
-        await self.set_target_volume(0)
+        await self.set_target_volume(self._syringe_volume)
 
         if self._withdraw_enabled:
             await self.clear_infused_withdrawn_volume()
@@ -830,16 +832,17 @@ if __name__ == "__main__":
     logging.basicConfig()
     logging.getLogger("__main__").setLevel(logging.DEBUG)
 
-    pump = Elite11.from_config(port="COM4", syringe_volume=10, diameter=10)
+    pump = Elite11.from_config(port="COM11", syringe_volume=1, diameter=5, address=0)
 
     async def main():
         """Test function"""
         await pump.initialize()
-        assert await pump.get_infused_volume() == 0
+        # assert await pump.get_infused_volume() == 0
         await pump.set_syringe_diameter(30)
-        await pump.set_infusion_rate(5)
+        await pump.set_infusion_rate(0.1)
         await pump.set_target_volume(0.05)
         await pump.infuse_run()
         await asyncio.sleep(2)
+        await pump.pump_info()
 
     asyncio.run(main())

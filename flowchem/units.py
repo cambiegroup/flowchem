@@ -12,8 +12,7 @@ from pint import DimensionalityError
 
 AnyQuantity = Union[pint.Quantity, str, float, int]
 
-flowchem_ureg = pint.UnitRegistry()
-flowchem_ureg.autoconvert_offset_to_baseunit = True
+flowchem_ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
 
 UNIT_REGISTER = os.path.join(os.path.dirname(os.path.realpath(__file__)), "units.txt")
 flowchem_ureg.load_definitions(UNIT_REGISTER)
@@ -32,7 +31,7 @@ def ensure_quantity(
 
     # If it is a string, likely with units...
     if isinstance(value, str):
-        parsed_value = pint.Quantity(value)
+        parsed_value = flowchem_ureg.Quantity(value)
 
         # If not unit cast it back to number and it will be treated as such
         if parsed_value.dimensionless:
