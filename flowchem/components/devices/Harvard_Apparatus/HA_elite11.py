@@ -414,6 +414,7 @@ class Elite11(Pump):
         if self.address is None:
             self.address = self.pump_io.autodetermine_address()
 
+        await self.stop()
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
 
