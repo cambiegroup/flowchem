@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, asctime
 from flowchem.devices.Petite_Fleur_chiller import Huber
 import queue
 from threading import Thread
@@ -8,7 +8,6 @@ from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.Knauer.HPLC_control import ClarityInterface
 from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump
 from flowchem.miscellaneous_helpers.folder_listener import FileReceiver, ResultListener
-from flowchem.devices.Hamilton.ML600 import HamiltonPumpIO, ML600
 from flowchem.devices.ViciValco.ViciValco_Actuator import ViciValco
 import logging
 from flowchem.constants import flowchem_ureg
@@ -26,7 +25,6 @@ class EnhancedJSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
-
 # what I don't really get is why the class attributes are not printed to dict
 @dataclasses.dataclass
 class ExperimentConditions:
@@ -39,7 +37,7 @@ class ExperimentConditions:
     _stock_concentration_activator = "0.156 molar"
     _stock_concentration_quencher = "0.62 molar"
     # how many reactor volumes until steady state reached
-    _reactor_volumes: float = 1.5#3
+    _reactor_volumes: float = 2
     _quencher_eq_to_activator = 50
 
     # alternative: hardcode flowrates
@@ -84,6 +82,9 @@ class ExperimentConditions:
     def chromatogram(self, path: str):
         #Damn, if several detectors are exported, this creates several header lines
         try:
+            # several times, I observed pandas.errors.EmptyDataError: No columns to parse from file. The file was
+            # checked manually and fine: therefore the sleep
+            sleep(1)
             self._chromatogram = read_csv(Path(path), header=16, sep='\t').to_json(index=False, orient='split')
         except errors.ParserError:
             raise errors.ParserError('Please make sure your Analytical data is compliant with pandas.read_csv')
@@ -121,7 +122,7 @@ class FlowConditions:
         self.donor_flow_rate = self.donor_flow_rate.to(flowchem_ureg.milliliter / flowchem_ureg.minute)
 
         # TODO watch out, now the quencher equivalents are based on donor, I think
-        self.quencher_flow_rate = 0*flowchem_ureg.mL/flowchem_ureg.min #self.get_flowrate_added_stream(self._concentration_donor, self.donor_flow_rate, self._concentration_quencher, experiment_conditions._quencher_equivalents)
+        self.quencher_flow_rate = 0.1*flowchem_ureg.mL/flowchem_ureg.min #self.get_flowrate_added_stream(self._concentration_donor, self.donor_flow_rate, self._concentration_quencher, experiment_conditions._quencher_equivalents)
 
         self.temperature = flowchem_ureg(experiment_conditions.temperature)
 
@@ -173,7 +174,7 @@ class FlowProcedure:
         self.chiller.start()
         self.log.info('Chiller started')
 
-        while abs(abs(self.chiller.get_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
+        while abs(abs(self.chiller.get_process_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
             sleep(10)
             self.log.info(f'Chiller waiting for temperature, at {self.chiller.get_temperature()} set {flow_conditions.temperature}')
 
@@ -257,7 +258,7 @@ class FlowProcedure:
 class Scheduler:
     """put together procedures and conditions, assign ID, put this to experiment Queue"""
 
-    def __init__(self, graph: dict, analysis_results: Path = Path('D:\\transferred_chromatograms'), experiments_results: Path = Path(f'D:/transferred_chromatograms/')):
+    def __init__(self, graph: dict, experiment_name: str= "", analysis_results: Path = Path('D:\\transferred_chromatograms'), experiments_results: Path = Path(f'D:/transferred_chromatograms/')):
 
         self.graph = graph
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
@@ -287,7 +288,7 @@ class Scheduler:
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
         self.log.debug('Initialising the platform')
-        self.experiments_results = experiments_results / str(round(datetime.timestamp(datetime.now())))
+        self.experiments_results = experiments_results / (experiment_name + (asctime().replace(":", "-")).replace("  ", " ").replace(" ", "_"))
 
     @property
     def experiment_running(self) -> bool:
@@ -378,8 +379,7 @@ if __name__ == "__main__":
         'sample_loop': ViciValco.from_config({"port": "COM13", "address": 0, "name": "test1"}),
         'chiller': Huber('COM1'),
         # assume always the same volume from pump to inlet, before T-mixer can be neglected, times three for inlets since 3 equal inlets
-        'internal_volumes': {'dead_volume_before_reactor': (8)* 3 * flowchem_ureg.microliter, # TODO misses volume from tmixer to steel capillaries
-                             'volume_mixing': 9.5 * flowchem_ureg.microliter,
+        'internal_volumes': {'dead_volume_before_reactor': (8)* 2 * flowchem_ureg.microliter, # TODO misses volume from tmixer to steel capillaries
                              'volume_reactor': 58 * flowchem_ureg.microliter,
                              'dead_volume_to_HPLC': (46+28+56) * flowchem_ureg.microliter,
                              }
@@ -388,14 +388,16 @@ if __name__ == "__main__":
     #
     fr = FileReceiver('192.168.10.20', 10339, allowed_address='192.168.10.11')
     analysed_samples_folder = Path(r'D:/transferred_chromatograms')
-    scheduler = Scheduler(SugarPlatform,  analysis_results = analysed_samples_folder, experiments_results=analysed_samples_folder / Path('experiments_test'))
+    scheduler = Scheduler(SugarPlatform,  experiment_name='activationminus15_w_pyrdmfquench',analysis_results = analysed_samples_folder, experiments_results=analysed_samples_folder / Path('experiments_test'))
 
 
     # This obviously could be included into the scheduler
     results_listener = ResultListener(analysed_samples_folder, '*.txt', scheduler.analysed_samples)
 
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="25 °C"))
-    scheduler.create_experiment(ExperimentConditions(temperature="23 °C", residence_time="300 s"))
+    #scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-40 °C"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-15 °C"))
+
+    #scheduler.create_experiment(ExperimentConditions(temperature="23 °C", residence_time="300 s"))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=5))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=10))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
