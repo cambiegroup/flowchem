@@ -389,7 +389,12 @@ class Scheduler:
                 self.experiment_queue.task_done()
             elif self.experiment_queue.empty and not self.experiment_running:
                 # start timer in separate thread. this timer should be killed by having sth in the queue again. When exceeding some time, platform shuts down
-                self.log.info('Queue empty and nothing running, switch me off')
+                self.log.info('Queue empty and nothing running, switch me off or add a new experiment. Add one or '
+                              'multiple experiments by specifying temperatures, separated by semicolons, eg 25 °C; 35 °C')
+                new_user_experiments = input().split(';')
+                for new_user_experiment in new_user_experiments:
+                    self.create_experiment(ExperimentConditions(temperature=new_user_experiment))
+
 
 
 if __name__ == "__main__":
