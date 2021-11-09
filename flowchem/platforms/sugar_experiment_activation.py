@@ -50,6 +50,7 @@ class ExperimentConditions:
 
     _experiment_finished: bool = False
     _analysis_finished: bool = False
+    _experiment_failed: bool = False
 
     # when fully analysed, hold a dataframe of the chromatogram. Once automatic analysis/assignment works, this should also go in
     _chromatogram: dict = None
@@ -200,21 +201,35 @@ class FlowProcedure:
         sleep(flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
 
-        self.hplc.set_sample_name(flow_conditions.experiment_id)
-        self.sample_loop.set_valve_position_sync(2)
 
-        # timer is over, start
-        self.log.info('Stop pump Donor')
-        self.pumps['donor']. stop()
+        if self.pumps['donor'].is_moving() and self.pumps['activator'].is_moving():
+            pass
 
-        self.log.info('Stop pump Activator')
-        self.pumps['activator'].stop()
+                # set experiment
 
-        self.sample_loop.set_valve_position_sync(1)
+            self.hplc.set_sample_name(flow_conditions.experiment_id)
+            self.sample_loop.set_valve_position_sync(2)
 
-        # I think that's not nice
-        self.log.info(f'setting experiment {flow_conditions.experiment_id} as finished')
-        scheduler.started_experiments[str(flow_conditions.experiment_id)]._experiment_finished = True
+            # timer is over, start
+            self.log.info('Stop pump Donor')
+            self.pumps['donor'].stop()
+
+            self.log.info('Stop pump Activator')
+            self.pumps['activator'].stop()
+
+            self.sample_loop.set_valve_position_sync(1)
+
+            # I think that's not nice
+            self.log.info(f'setting experiment {flow_conditions.experiment_id} as finished')
+            scheduler.started_experiments[str(flow_conditions.experiment_id)]._experiment_finished = True
+
+        else:
+            # this indicates that a syringe pump blocked. there will be no further handling
+            scheduler.started_experiments[str(flow_conditions.experiment_id)]._experiment_failed = True
+            self.pumps['donor'].stop()
+            self.pumps['activator'].stop()
+            self.log.warning('One syringe pump stopped, likely due to stalling. Please resolve.')
+            # TODO ideal behaviour: stop all pumps, after a while also cooling, ideally resume experiments and repeated the failed one, once a user enters sth
 
     def get_platform_ready(self):
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
@@ -339,13 +354,32 @@ class Scheduler:
         """sits in separate thread, checks if previous job is finished and if so grabs new job from queue and executes it in a new thread"""
         while True:
             sleep(1)
-            if self.experiment_queue.not_empty and not self.experiment_running:
+            if self.experiment_running:
+                # no! this is a local variable, the current_experiment. It needs to be checked if current experiment in the  list has failed
+                if current_experiment._experiment_failed:
+                    self.experiment_queue.put(current_experiment)
+                    print('Last experiment failed due to pump stalling. Please, refill the syringe and then press enter. '
+                          'Press Y for resuming or N for ending the experiment. The failed experiment was put to the '
+                          'queue again and will be repeated')
+                    user_input = input()
+                    while user_input not in 'YN':
+                        print('Please, type either Y or N')
+                        user_input = input()
+                    if user_input == 'Y':
+                        self.experiment_running = False
+
+                    elif user_input == 'N':
+                        break
+                        # TODO stopping procedure should be included
+
+
+            elif self.experiment_queue.not_empty and not self.experiment_running:
                 # get raw experimental data, derive actual platform parameters, create sequence function and execute that in a thread
-                experiment: ExperimentConditions = self.experiment_queue.get()
+                current_experiment: ExperimentConditions = self.experiment_queue.get()
                 # append the experiment  to the dictionary
-                individual_conditions = FlowConditions(experiment, self.graph)
+                individual_conditions = FlowConditions(current_experiment, self.graph)
                 self.log.info(f'New experiment {individual_conditions.experiment_id} about to be started')
-                self.started_experiments[str(individual_conditions.experiment_id)] = experiment # the actual  Experiment conditions instance sits in the self.started experiments under its id, so attributes can be changed here (analysed and running mainly)
+                self.started_experiments[str(individual_conditions.experiment_id)] = current_experiment # the actual  Experiment conditions instance sits in the self.started experiments under its id, so attributes can be changed here (analysed and running mainly)
                 new_thread = Thread(target=FlowProcedure.individual_procedure,
                                     args=(self.procedure, individual_conditions,))
                 new_thread.start()
