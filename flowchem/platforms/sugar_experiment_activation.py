@@ -63,7 +63,7 @@ class ExperimentConditions:
 
     @experiment_id.setter
     def experiment_id(self, exp_id: int):
-        if not self._experiment_id:
+        if not self.experiment_id or not exp_id:
             self._experiment_id = exp_id
         else:
             # for now
@@ -96,7 +96,7 @@ class ExperimentConditions:
     @chromatogram.setter
     def chromatogram(self, path: str):
         #Damn, if several detectors are exported, this creates several header lines
-        if not self._chromatogram:
+        if not self.chromatogram:
             try:
                 # several times, I observed pandas.errors.EmptyDataError: No columns to parse from file. The file was
                 # checked manually and fine: therefore the sleep
@@ -328,14 +328,14 @@ class Scheduler:
 
     @current_experiment.setter
     def current_experiment(self, new_running_experiment: ExperimentConditions):
-        if not self.current_experiment:
+        if not self.current_experiment or not new_running_experiment:
             self._current_experiment = new_running_experiment
         else:
             self.log.warning(f'Something is trying to replace the current, still running experiment {scheduler.current_experiment.experiment_id} with a new experiment')
 
     @experiment_waiting_for_analysis.setter
     def experiment_waiting_for_analysis(self, new_experiment_waiting: ExperimentConditions):
-        if not self.experiment_waiting_for_analysis:
+        if not self.experiment_waiting_for_analysis or not new_experiment_waiting:
             self._experiment_waiting_for_analysis = new_experiment_waiting
         else:
             self.log.warning(f'Something is trying to replace experiment {scheduler.experiment_waiting_for_analysis.experiment_id} currently still waiting for analysis with a new experiment')
