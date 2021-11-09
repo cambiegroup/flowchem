@@ -36,6 +36,7 @@ class ExperimentConditions:
     _stock_concentration_donor = "0.09 molar"
     _stock_concentration_activator = "0.156 molar"
     _stock_concentration_quencher = "0.62 molar"
+    _analysis_time = '16 min'
     # how many reactor volumes until steady state reached
     _reactor_volumes: float = 2
     _quencher_eq_to_activator = 50
@@ -49,7 +50,7 @@ class ExperimentConditions:
     temperature: str = "25  °C"
 
     _experiment_finished: bool = False
-    _analysis_finished: bool = False
+
     _experiment_failed: bool = False
     _experiment_id: int = None
 
@@ -95,13 +96,16 @@ class ExperimentConditions:
     @chromatogram.setter
     def chromatogram(self, path: str):
         #Damn, if several detectors are exported, this creates several header lines
-        try:
-            # several times, I observed pandas.errors.EmptyDataError: No columns to parse from file. The file was
-            # checked manually and fine: therefore the sleep
-            sleep(1)
-            self._chromatogram = read_csv(Path(path), header=16, sep='\t').to_json(index=False, orient='split')
-        except errors.ParserError:
-            raise errors.ParserError('Please make sure your Analytical data is compliant with pandas.read_csv')
+        if not self._chromatogram:
+            try:
+                # several times, I observed pandas.errors.EmptyDataError: No columns to parse from file. The file was
+                # checked manually and fine: therefore the sleep
+                sleep(1)
+                self._chromatogram = read_csv(Path(path), header=16, sep='\t').to_json(index=False, orient='split')
+            except errors.ParserError:
+                raise errors.ParserError('Please make sure your Analytical data is compliant with pandas.read_csv')
+        else:
+            print('attempt was made to overwrite chromatogram, check code or stop doing this')
 
 
 class FlowConditions:
@@ -227,13 +231,12 @@ class FlowProcedure:
 
             self.sample_loop.set_valve_position_sync(1)
 
-            # I think that's not nice
-            self.log.info(f'setting experiment {flow_conditions.experiment_id} as finished')
-            scheduler.started_experiments[str(flow_conditions.experiment_id)]._experiment_finished = True
+            self.log.info(f'setting experiment {scheduler.current_experiment._experiment_finished} as finished')
+            scheduler.current_experiment._experiment_finished = True
 
         else:
             # this indicates that a syringe pump blocked. there will be no further handling
-            scheduler.started_experiments[str(flow_conditions.experiment_id)]._experiment_failed = True
+            scheduler.current_experiment._experiment_failed = True
             self.pumps['donor'].stop()
             self.pumps['activator'].stop()
             self.log.warning('One syringe pump stopped, likely due to stalling. Please resolve.')
