@@ -51,9 +51,22 @@ class ExperimentConditions:
     _experiment_finished: bool = False
     _analysis_finished: bool = False
     _experiment_failed: bool = False
+    _experiment_id: int = None
 
     # when fully analysed, hold a dataframe of the chromatogram. Once automatic analysis/assignment works, this should also go in
     _chromatogram: dict = None
+
+    @property
+    def experiment_id(self):
+        return self._experiment_id
+
+    @experiment_id.setter
+    def experiment_id(self, exp_id: int):
+        if not self._experiment_id:
+            self._experiment_id = exp_id
+        else:
+            # for now
+            print(f'You are trying to change the ID of {self._experiment_id} to {exp_id}. Don\'t do that')
 
     @property
     def stock_concentration_donor(self):
@@ -101,7 +114,7 @@ class FlowConditions:
     def __init__(self, experiment_conditions: ExperimentConditions,
                  flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and abstraction still low
 
-        self.experiment_id = round(datetime.timestamp(datetime.now()))
+        experiment_conditions.experiment_id = round(datetime.timestamp(datetime.now()))
 
         # better readability
         self.platform_volumes = flow_platform['internal_volumes']
@@ -201,13 +214,8 @@ class FlowProcedure:
         sleep(flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
 
-
         if self.pumps['donor'].is_moving() and self.pumps['activator'].is_moving():
-            pass
-
-                # set experiment
-
-            self.hplc.set_sample_name(flow_conditions.experiment_id)
+            self.hplc.set_sample_name(scheduler.current_experiment.experiment_id)
             self.sample_loop.set_valve_position_sync(2)
 
             # timer is over, start
@@ -229,7 +237,6 @@ class FlowProcedure:
             self.pumps['donor'].stop()
             self.pumps['activator'].stop()
             self.log.warning('One syringe pump stopped, likely due to stalling. Please resolve.')
-            # TODO ideal behaviour: stop all pumps, after a while also cooling, ideally resume experiments and repeated the failed one, once a user enters sth
 
     def get_platform_ready(self):
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
@@ -291,6 +298,9 @@ class Scheduler:
         # and drop it to the sql. in future, also hand it to the optimizer
         self.started_experiments = {}
 
+        self._current_experiment:  ExperimentConditions = None
+        self._experiment_waiting_for_analysis: ExperimentConditions = None
+
         # for now it only holds analysed samples, but later it should be used to add the analysis results and spectrum to experiment conditions
         self.analysed_samples = []
 
@@ -298,7 +308,7 @@ class Scheduler:
         self.data_worker.start()
         self.log.debug('Starting the data worker')
 
-        self._experiment_running = False
+
 
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
@@ -306,44 +316,45 @@ class Scheduler:
         self.experiments_results = experiments_results / (experiment_name + (asctime().replace(":", "-")).replace("  ", " ").replace(" ", "_"))
 
     @property
-    def experiment_running(self) -> bool:
-        "returns the flag if experiment is running"
-        return self._experiment_running
+    def current_experiment(self):
+        return self._current_experiment
 
-    @experiment_running.setter
-    def experiment_running(self, experiment_running: bool):
-        self.log.debug('experiment set running')
-        self._experiment_running = experiment_running
+    @property
+    def experiment_waiting_for_analysis(self):
+        return self._experiment_waiting_for_analysis
+
+    @current_experiment.setter
+    def current_experiment(self, new_running_experiment: ExperimentConditions):
+        if not self.current_experiment:
+            self._current_experiment = new_running_experiment
+        else:
+            self.log.warning(f'Something is trying to replace the current, still running experiment {scheduler.current_experiment.experiment_id} with a new experiment')
+
+    @experiment_waiting_for_analysis.setter
+    def experiment_waiting_for_analysis(self, new_experiment_waiting: ExperimentConditions):
+        if not self.experiment_waiting_for_analysis:
+            self._experiment_waiting_for_analysis = new_experiment_waiting
+        else:
+            self.log.warning(f'Something is trying to replace experiment {scheduler.experiment_waiting_for_analysis.experiment_id} currently still waiting for analysis with a new experiment')
 
     def data_handler(self):
         """Checks if there is new analysis results. Since there may be multiple result files, these need to be pruned to individual ID and put into the set"""
 
-        # TODO put that part of code to the folder listener or so -> could more easily and readable just change experiment status
+        # Think about how to do that in more simple way
         while True:
-            if self.started_experiments:
-                # return volatile copy so no size change during iteration
-                # change logic so the results worker will  inform about result being there
-                for experiment_id in list(self.started_experiments.keys()):
-                    if self.started_experiments[experiment_id]._experiment_finished and not self.started_experiments[experiment_id]._analysis_finished:
-                        # needs to
-                        for analysed_samples_files in self.analysed_samples:
-                            if str(experiment_id) in analysed_samples_files:
-                                self.started_experiments[experiment_id]._analysis_finished = True
-                                print(experiment_id)
-                                self.log.info(f'New analysis result found for experiment {experiment_id}, analysis set True accordingly')
+            if self.experiment_waiting_for_analysis:
+                for analysed_samples_file in self.analysed_samples:
+                    if str(self.experiment_waiting_for_analysis.experiment_id) in analysed_samples_file:
+                        self.log.info(f'New analysis result found for experiment {self.experiment_waiting_for_analysis.experiment_id}, analysis set True accordingly')
 
-                                self.started_experiments[experiment_id].chromatogram = self.analysis_results / Path((str(experiment_id)+'.txt'))
+                        self.experiment_waiting_for_analysis.chromatogram = self.analysis_results / Path((str(self.experiment_waiting_for_analysis.experiment_id)+'.txt'))
 
-                                self.log.debug('Experiment running was set false')
-                                self.experiment_running = False # potentially redundant
-
-                                # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
-                                with open(self.experiments_results, 'w') as f:
-                                    json.dump(self.started_experiments, f, cls = EnhancedJSONEncoder)
-                                # TODO this can be expanded to trigger the analysis of the sample
-                                # should become MongoDB,  should be possible to be updated from somewhere else, eg with current T
-
-# check if experiments can be stopped by only chromatogram available, but actually not having been ran -> this happens. Here not important, but in general, streamlining could mean that experiments are started before previous analysis is over
+                        # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
+                        with open(self.experiments_results, 'w') as f:
+                            json.dump(self.started_experiments, f, cls = EnhancedJSONEncoder)
+                        self.experiment_waiting_for_analysis = None
+                        sleep(1)
+                        # should become MongoDB,  should be possible to be updated from somewhere else, eg with current T
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
     def create_experiment(self, conditions: ExperimentConditions) -> None:
@@ -354,46 +365,73 @@ class Scheduler:
         """sits in separate thread, checks if previous job is finished and if so grabs new job from queue and executes it in a new thread"""
         while True:
             sleep(1)
-            if self.experiment_running:
+            if self.current_experiment:
                 # no! this is a local variable, the current_experiment. It needs to be checked if current experiment in the  list has failed
-                if current_experiment._experiment_failed:
-                    self.experiment_queue.put(current_experiment)
+                if self.current_experiment._experiment_failed:
+                    self.current_experiment._experiment_failed = False
+                    self.current_experiment.experiment_id = None
+                    self.experiment_queue.put(self.current_experiment)
+                    self.current_experiment = None
+                    # TODO setter has to accept changes to current experiment
+
                     print('Last experiment failed due to pump stalling. Please, refill the syringe and then press enter. '
                           'Press Y for resuming or N for ending the experiment. The failed experiment was put to the '
                           'queue again and will be repeated')
+
                     user_input = input()
-                    while user_input not in 'YN':
+                    while user_input != 'Y' or 'N':
                         print('Please, type either Y or N')
                         user_input = input()
                     if user_input == 'Y':
-                        self.experiment_running = False
-
+                        pass
                     elif user_input == 'N':
                         break
-                        # TODO stopping procedure should be included
+
+                elif  self.current_experiment._experiment_finished == True:
+                    self.experiment_waiting_for_analysis = self.current_experiment
+                    self.current_experiment = None
+
+            elif not self.current_experiment:
+                if self.experiment_queue.not_empty:
+                        # get raw experimental data, derive actual platform parameters, create sequence function and execute that in a thread
+                    self.current_experiment: ExperimentConditions = self.experiment_queue.get()
+
+                    individual_conditions = FlowConditions(self.current_experiment, self.graph)
+                    self.log.info(f'New experiment {self.current_experiment.experiment_id} about to be started')
+
+                    # TODO check arguments, sounds weird (but seemed to have worked)
+                    new_thread = Thread(target=FlowProcedure.individual_procedure,
+                                        args=(self.procedure, individual_conditions,))
+
+                    # use ureg
+                    if not self.experiment_waiting_for_analysis:  # avoids contests
+                        new_thread.start()
+                        self.log.info('New experiment started because none was waiting for analysis')
+                        # this should be called when experiment is over
+                        self.experiment_queue.task_done()
+                    elif individual_conditions._time_start_till_end > flowchem_ureg(self.current_experiment._analysis_time):
+                        new_thread.start()
+                        self.log.info('New experiment started, though one is still waiting for analysis because analysis time is shorter than experiment time')
+                        # this should be called when experiment is over
+                        self.experiment_queue.task_done()
+                    # TODO this still is not ideal, because it will always wait a bit before starting,
+                    else:
+                        time_difference = flowchem_ureg(self.current_experiment._analysis_time) - individual_conditions._time_start_till_end
+                        sleep(time_difference.m_as('s')+60) # add one min as safety margin
+                        new_thread.start()
+                        self.log.info(
+                            'New experiment started, though one is still waiting for analysis after waiting for the lag time')
+                        # this should be called when experiment is over
+                        self.experiment_queue.task_done()
 
 
-            elif self.experiment_queue.not_empty and not self.experiment_running:
-                # get raw experimental data, derive actual platform parameters, create sequence function and execute that in a thread
-                current_experiment: ExperimentConditions = self.experiment_queue.get()
-                # append the experiment  to the dictionary
-                individual_conditions = FlowConditions(current_experiment, self.graph)
-                self.log.info(f'New experiment {individual_conditions.experiment_id} about to be started')
-                self.started_experiments[str(individual_conditions.experiment_id)] = current_experiment # the actual  Experiment conditions instance sits in the self.started experiments under its id, so attributes can be changed here (analysed and running mainly)
-                new_thread = Thread(target=FlowProcedure.individual_procedure,
-                                    args=(self.procedure, individual_conditions,))
-                new_thread.start()
-                self.log.info('experiment running set True')
-                self.experiment_running = True
-                # this should be called when experiment is over
-                self.experiment_queue.task_done()
-            elif self.experiment_queue.empty and not self.experiment_running:
-                # start timer in separate thread. this timer should be killed by having sth in the queue again. When exceeding some time, platform shuts down
-                self.log.info('Queue empty and nothing running, switch me off or add a new experiment. Add one or '
-                              'multiple experiments by specifying temperatures, separated by semicolons, eg 25 °C; 35 °C')
-                new_user_experiments = input().split(';')
-                for new_user_experiment in new_user_experiments:
-                    self.create_experiment(ExperimentConditions(temperature=new_user_experiment))
+                elif self.experiment_queue.empty:
+                    # start timer in separate thread. this timer should be killed by having sth in the queue again. When exceeding some time, platform shuts down
+                    self.log.info('Queue empty and nothing running, switch me off or add a new experiment. Add one or '
+                                  'multiple experiments by specifying temperatures, separated by semicolons, eg 25 °C; 35 °C')
+                    new_user_experiments = input().split(';')
+                    for new_user_experiment in new_user_experiments:
+                        self.create_experiment(ExperimentConditions(temperature=new_user_experiment))
 
 
 
@@ -418,7 +456,7 @@ if __name__ == "__main__":
         'sample_loop': ViciValco.from_config({"port": "COM13", "address": 0, "name": "test1"}),
         'chiller': Huber('COM1'),
         # assume always the same volume from pump to inlet, before T-mixer can be neglected, times three for inlets since 3 equal inlets
-        'internal_volumes': {'dead_volume_before_reactor': (8)* 2 * flowchem_ureg.microliter, # TODO misses volume from tmixer to steel capillaries
+        'internal_volumes': {'dead_volume_before_reactor': (8)* 2 * flowchem_ureg.microliter,
                              'volume_reactor': 58 * flowchem_ureg.microliter,
                              'dead_volume_to_HPLC': (46+28+56) * flowchem_ureg.microliter,
                              }
