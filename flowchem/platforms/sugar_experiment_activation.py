@@ -41,7 +41,7 @@ class ExperimentConditions:
     _stock_concentration_quencher = "0.62 molar"
     _analysis_time = '16 min'
     # how many reactor volumes until steady state reached
-    _reactor_volumes: float = 2
+    _reactor_volumes: float = 2.5
     _quencher_eq_to_activator = 50
 
     # alternative: hardcode flowrates
@@ -123,7 +123,7 @@ class FlowConditions:
                  flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and
         # abstraction still low
 
-        experiment_conditions.experiment_id = round(datetime.timestamp(datetime.now()))
+        experiment_conditions.experiment_id = round(datetime.datetime.timestamp(datetime.datetime.now()))
 
         # better readability
         self.platform_volumes = flow_platform['internal_volumes']
@@ -207,11 +207,12 @@ class FlowProcedure:
 
         while abs(abs(self.chiller.get_process_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
             sleep(10)
-            self.log.info(f'Chiller waiting for temperature, at {self.chiller.get_temperature()} set {flow_conditions.temperature}')
+            self.log.info(
+                f'Chiller waiting, current: {self.chiller.get_process_temperature()} set: {flow_conditions.temperature}')
 
         # set all flow rates
         self.log.info(f'Setting donor flow rate to  {flow_conditions.donor_flow_rate}')
-        self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate.m_as('mL/min') # dimensionless, in ml/min
+        self.pumps['donor'].infusion_rate = flow_conditions.donor_flow_rate.m_as('mL/min')  # dimensionless, in ml/min
         self.pumps['activator'].infusion_rate = flow_conditions.activator_flow_rate.m_as('mL/min')
 
         self.log.info(f'Setting quencher flow rate to  {flow_conditions.quencher_flow_rate}')
@@ -227,7 +228,8 @@ class FlowProcedure:
         self.pumps['quencher'].start_flow()
 
         # start timer
-        self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}')
+        time_done = (datetime.datetime.now() + datetime.timedelta(0, flow_conditions.steady_state_time.magnitude)).strftime('%H:%M:%S')
+        self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}, current time is {time_done}')
         sleep(flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
 
@@ -244,7 +246,7 @@ class FlowProcedure:
 
             self.sample_loop.set_valve_position_sync(1)
 
-            self.log.info(f'setting experiment {scheduler.current_experiment._experiment_finished} as finished')
+            self.log.info(f'setting experiment {scheduler.current_experiment.experiment_id} as finished')
             scheduler.current_experiment._experiment_finished = True
 
         else:
@@ -303,7 +305,7 @@ class Scheduler:
 
         self.graph = graph
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
-        self.procedure = FlowProcedure(self.graph)
+        self.procedure = procedure(self.graph)
         self.experiment_queue = queue.Queue()
         # start worker
 
@@ -317,7 +319,7 @@ class Scheduler:
         # and drop it to the sql. in future, also hand it to the optimizer
         self.started_experiments = {}
 
-        self._current_experiment:  ExperimentConditions = None
+        self._current_experiment: ExperimentConditions = None
         self._experiment_waiting_for_analysis: ExperimentConditions = None
 
         # for now it only holds analysed samples, but later it should be used to add the analysis results and spectrum to experiment conditions
