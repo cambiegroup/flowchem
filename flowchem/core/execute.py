@@ -22,6 +22,12 @@ if TYPE_CHECKING:
 Datapoint = namedtuple("Datapoint", ["data", "timestamp", "experiment_elapsed_time"])
 
 
+async def handle_exception(tasks_to_cancel):
+    logger.error("Protocol execution is stopping NOW!")
+    for task in tasks_to_cancel:
+        task.cancel()
+    await asyncio.sleep(5)
+
 async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool):
     """
     The function that actually does the execution of the protocol.
@@ -97,12 +103,24 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
             logger.success(start_msg)
 
             try:
-                # FIXME the list tasks actually contains corouteins, not tasks. A rename would be nice.
+                # FIXME the list tasks actually contains coroutines, not tasks. A rename would be nice.
                 tasks = [asyncio.create_task(coro) for coro in tasks]
-                done, pending = await asyncio.wait(
-                    tasks, return_when=asyncio.FIRST_EXCEPTION
-                )
+                await asyncio.gather(*tasks)
 
+            except ProtocolCancelled:
+                logger.error("Stop button pressed.")
+                await handle_exception(tasks)
+                logger.critical(f"{experiment} finished by STOP button.")
+
+            except (RuntimeError, Exception) as e:
+                logger.error(f"Got {repr(e)}. Full traceback is logged at trace level.")
+                await handle_exception(tasks)
+                logger.critical(f"{experiment} finished by exception.")
+
+            else:
+                logger.success(f"{experiment} finished successfully.")
+
+            finally:
                 # when this code block is reached, the tasks will have either all completed or
                 # an exception has occurred.
                 experiment.end_time = time.time()
@@ -122,34 +140,8 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
 
                 await asyncio.sleep(1)
 
-                # Cancel all of the remaining tasks
-                logger.debug("Cancelling all remaining tasks")
-                for task in pending:
-                    task.cancel()
-
-                # Raise exceptions, if any
-                logger.debug("Raising exceptions, if any")
-                for task in done:
-                    task.result()
-
                 # we only reach this line if things went well
-                logger.success(end_msg)
-
-            except RuntimeError as e:
-                logger.error(f"Got {repr(e)}. Full traceback is logged at trace level.")
-                logger.error("Protocol execution is stopping NOW!")
-                logger.critical(end_msg)
-
-            except ProtocolCancelled:
-                logger.error("Stop button pressed.")
-                logger.error("Protocol execution is stopping NOW!")
-                logger.critical(end_msg)
-
-            except Exception:
-                logger.trace(traceback.format_exc())
-                logger.error("Failed to execute protocol due to uncaught error!")
-                logger.error("Protocol execution is stopping NOW!")
-                logger.critical(end_msg)
+                logger.info(end_msg)
     finally:
 
         # set some protocol metadata
