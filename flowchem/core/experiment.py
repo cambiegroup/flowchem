@@ -220,7 +220,7 @@ class Experiment(object):
         if log_file:
             # automatically log to the mw directory
             if log_file is True:
-                mw_path = Path("~/.mechwolf").expanduser()
+                mw_path = Path("~/.flowchem").expanduser()
                 try:
                     mw_path.mkdir()
                 except FileExistsError:

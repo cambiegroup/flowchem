@@ -57,7 +57,7 @@ class Protocol(object):
         if not isinstance(apparatus, Apparatus):
             raise TypeError(
                 f"Must pass an Apparatus object. Got {type(apparatus)}, "
-                "which is not an instance of mechwolf.Apparatus."
+                "which is not an instance of flowchem.Apparatus."
             )
 
         # ensure apparatus is valid
