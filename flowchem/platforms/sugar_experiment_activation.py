@@ -372,6 +372,15 @@ class Scheduler:
                 f'Something is trying to replace experiment {scheduler.experiment_waiting_for_analysis.experiment_id} '
                 f'currently still waiting for analysis with a new experiment')
 
+    def create_experiments_from_user_input(self):
+        self.log.info('Queue empty and nothing running, switch me off or add a new experiment. Add one or '
+                      'multiple experiments by specifying temperatures, separated by semicolons, eg 25 °C; '
+                      '35 °C')
+        new_user_experiments = input().split(';')
+        for new_user_experiment in new_user_experiments:
+            # in case someone gives a string
+            self.create_experiment(ExperimentConditions(temperature=new_user_experiment.strip('\'')))
+
     def data_handler(self):
         """Checks if there is new analysis results. Since there may be multiple result files, these need to be pruned
         to individual ID and put into the set"""
@@ -460,6 +469,7 @@ class Scheduler:
                         self.log.info('New experiment started because none was waiting for analysis')
                         # this should be called when experiment is over
                         self.experiment_queue.task_done()
+                        new_thread.join()
                     elif individual_conditions._time_start_till_end > flowchem_ureg(
                             self.current_experiment._analysis_time):
                         new_thread.start()
@@ -468,7 +478,8 @@ class Scheduler:
                             'shorter than experiment time')
                         # this should be called when experiment is over
                         self.experiment_queue.task_done()
-                    # TODO this still is not ideal, because it will always wait a bit before starting,
+                        new_thread.join()
+
                     else:
                         time_difference = flowchem_ureg(
                             self.current_experiment._analysis_time) - individual_conditions._time_start_till_end
@@ -482,18 +493,15 @@ class Scheduler:
                             ' time')
                         # this should be called when experiment is over
                         self.experiment_queue.task_done()
+                        new_thread.join()
 
             # TODO this is blocking the worker loop and should be moved to a separate thread
             elif self.experiment_queue.empty() and self.started_experiments:
                 # start timer in separate thread. this timer should be killed by having sth in the queue again.
                 # When exceeding some time, platform should shut down
-                self.log.info('Queue empty and nothing running, switch me off or add a new experiment. Add one or '
-                              'multiple experiments by specifying temperatures, separated by semicolons, eg 25 °C; '
-                              '35 °C')
-                new_user_experiments = input().split(';')
-                for new_user_experiment in new_user_experiments:
-                    # in case someone gives a string
-                    self.create_experiment(ExperimentConditions(temperature=new_user_experiment.strip('\'')))
+                user_input = Thread(target=self.create_experiments_from_user_input)
+                user_input.start()
+                user_input.join()
 
 
 if __name__ == "__main__":
