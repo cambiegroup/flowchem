@@ -1,3 +1,4 @@
+from .mapped_component import MappedComponentMixin
 from .active_component import ActiveComponent
 from .broken_dummy_component import BrokenDummyComponent
 from .broken_dummy_sensor import BrokenDummySensor
