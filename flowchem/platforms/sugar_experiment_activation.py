@@ -417,9 +417,12 @@ class Scheduler:
                         'queue again and will be repeated')
 
                     user_input = input()
-                    while user_input != 'Y' or 'N':
+                    while user_input not in 'YN':
                         print('Please, type either Y or N')
                         user_input = input()
+                        if user_input == 'YN':
+                            user_input = ''
+                            self.log.warning("You typed YN, please type either Y or N")
                     if user_input == 'Y':
                         pass
                     elif user_input == 'N':
