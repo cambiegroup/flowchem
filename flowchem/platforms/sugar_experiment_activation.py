@@ -233,7 +233,10 @@ class FlowProcedure:
         sleep(flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
 
-        if self.pumps['donor'].is_moving() and self.pumps['activator'].is_moving():
+        try:
+            self.pumps['donor'].is_moving()
+            self.pumps['activator'].is_moving()
+
             self.hplc.set_sample_name(scheduler.current_experiment.experiment_id)
             self.sample_loop.set_valve_position_sync(2)
 
@@ -249,7 +252,7 @@ class FlowProcedure:
             self.log.info(f'setting experiment {scheduler.current_experiment.experiment_id} as finished')
             scheduler.current_experiment._experiment_finished = True
 
-        else:
+        except PumpStalled:
             # this indicates that a syringe pump blocked. there will be no further handling
             scheduler.current_experiment._experiment_failed = True
             self.pumps['donor'].stop()
