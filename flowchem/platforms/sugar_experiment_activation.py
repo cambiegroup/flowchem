@@ -1,4 +1,4 @@
-from time import sleep, strftime, asctime
+from time import sleep, asctime
 from flowchem.devices.Petite_Fleur_chiller import Huber
 import queue
 from threading import Thread
@@ -228,7 +228,8 @@ class FlowProcedure:
         self.pumps['quencher'].start_flow()
 
         # start timer
-        time_done = (datetime.datetime.now() + datetime.timedelta(0, flow_conditions.steady_state_time.magnitude)).strftime('%H:%M:%S')
+        time_done = (datetime.datetime.now() +
+                     datetime.timedelta(0, flow_conditions.steady_state_time.magnitude)).strftime('%H:%M:%S')
         self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}, current time is {time_done}')
         sleep(flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
@@ -325,8 +326,10 @@ class Scheduler:
         # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
         # and drop it to the sql. in future, also hand it to the optimizer
         self.started_experiments = {}
-
+        
+        # noinspection PyTypeChecker
         self._current_experiment: ExperimentConditions = None
+        # noinspection PyTypeChecker
         self._experiment_waiting_for_analysis: ExperimentConditions = None
 
         # for now it only holds analysed samples, but later it should be used to add the analysis results and spectrum to experiment conditions
@@ -442,8 +445,8 @@ class Scheduler:
                     self.log.info(f'New experiment {self.current_experiment.experiment_id} about to be started')
 
                     # TODO check arguments, sounds weird (but seemed to have worked)
-                    new_thread = Thread(target=FlowProcedure.individual_procedure,
-                                        args=(self.procedure, individual_conditions,))
+                    new_thread = Thread(target=self.procedure.individual_procedure,
+                                        args=(individual_conditions,))
 
                     # use ureg
                     if not self.experiment_waiting_for_analysis:  # avoids contests
