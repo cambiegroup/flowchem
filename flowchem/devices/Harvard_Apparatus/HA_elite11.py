@@ -801,7 +801,6 @@ if __name__ == "__main__":
     logging.getLogger("__main__").setLevel(logging.DEBUG)
 
     pump = Elite11InfuseOnly.from_config(port="COM4", syringe_volume=10, diameter=10)
-    Elite11InfuseWithdraw(pump_io=pumpio, diameter=10.2, syringe_volume=10)
 
     async def main():
         """Test function"""
