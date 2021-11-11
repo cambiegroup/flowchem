@@ -281,7 +281,7 @@ class Elite11Commands:
 
 
 # noinspection PyProtectedMember
-class Elite11:
+class Elite11InfuseOnly:
     """
     Controls Harvard Apparatus Elite11 syringe pumps.
 
@@ -314,7 +314,7 @@ class Elite11:
         This acts as a check to see that the pump is connected and working."""
 
         self.pump_io = pump_io
-        Elite11._io_instances.add(self.pump_io)  # See above for details.
+        Elite11InfuseOnly._io_instances.add(self.pump_io)  # See above for details.
 
         self.address: int = address if address else None  # type: ignore
         self._version = None  # Set in initialize
@@ -335,9 +335,6 @@ class Elite11:
         else:
             self._syringe_volume = syringe_volume
 
-        # This will also be inspected in initialize.
-        self._withdraw_enabled = False
-
         self.log = logging.getLogger(__name__).getChild("Elite11")
 
     @classmethod
@@ -351,7 +348,7 @@ class Elite11:
         Pump_IO() manually instantiated are not accounted for.
         """
         pumpio = None
-        for obj in Elite11._io_instances:
+        for obj in Elite11InfuseOnly._io_instances:
             if obj._serial.port == config.get("port"):
                 pumpio = obj
                 break
@@ -390,22 +387,11 @@ class Elite11:
             f"Connected to pump '{self.name}' on port {self.pump_io.name}:{self.address}!"
         )
 
-        # Enable withdraw commands only on pumps that support them...
-        pump_info = await self.pump_info()
-        self._withdraw_enabled = not pump_info.infuse_only
-
         # makes sure that a 'clean' pump is initialized.
         self._version = self.parse_version(await self.version())
 
         if self._version[0] >= 3:
             await self.clear_volumes()
-
-    def ensure_withdraw_is_enabled(self):
-        """To be used on methods that need withdraw capabilities"""
-        if not self._withdraw_enabled:
-            raise DeviceError(
-                "Cannot call this method with an infuse-only pump! Withdraw needed :("
-            )
 
     async def send_command_and_read_reply(
         self, command: str, parameter="", parse=True
@@ -519,15 +505,6 @@ class Elite11:
         await self.send_command_and_read_reply(Elite11Commands.RUN)
         self.log.info("Pump movement started! (direction unspecified)")
 
-    async def inverse_run(self):
-        """Activates pump, runs opposite to previously set direction."""
-        if await self.is_moving():
-            warnings.warn("Cannot start pump: already moving!")
-            return
-
-        await self.send_command_and_read_reply(Elite11Commands.REVERSE_RUN)
-        self.log.info("Pump movement started in reverse direction!")
-
     async def infuse_run(self):
         """Activates pump, runs in infuse mode."""
         if await self.is_moving():
@@ -536,17 +513,6 @@ class Elite11:
 
         await self.send_command_and_read_reply(Elite11Commands.INFUSE)
         self.log.info("Pump movement started in infuse direction!")
-
-    async def withdraw_run(self):
-        """Activates pump, runs in withdraw mode."""
-        self.ensure_withdraw_is_enabled()
-        if await self.is_moving():
-            warnings.warn("Cannot start pump: already moving!")
-            return
-
-        await self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
-
-        self.log.info("Pump movement started in withdraw direction!")
 
     async def stop(self):
         """stops pump"""
@@ -571,27 +537,9 @@ class Elite11:
             Elite11Commands.INFUSE_RATE, parameter=f"{set_rate:.10f} m/m"
         )
 
-    async def get_withdraw_rate(self) -> str:
-        """Returns the infusion rate as a string w/ units"""
-        self.ensure_withdraw_is_enabled()
-        return await self.send_command_and_read_reply(Elite11Commands.WITHDRAW_RATE)
-
-    async def set_withdraw_rate(self, rate: AnyQuantity):
-        """Sets the infusion rate"""
-        self.ensure_withdraw_is_enabled()
-        set_rate = await self.bound_rate_to_pump_limits(rate=rate)
-        await self.send_command_and_read_reply(
-            Elite11Commands.WITHDRAW_RATE, parameter=f"{set_rate} m/m"
-        )
-
     async def get_infused_volume(self) -> str:
         """Return infused volume as string w/ units"""
         return await self.send_command_and_read_reply(Elite11Commands.INFUSED_VOLUME)
-
-    async def get_withdrawn_volume(self) -> str:
-        """Returns the withdrawn volume from the last clear_*_volume() command, according to the pump"""
-        self.ensure_withdraw_is_enabled()
-        return await self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)
 
     async def clear_infused_volume(self):
         """ Reset the pump infused volume counter to 0 """
@@ -599,11 +547,6 @@ class Elite11:
             warnings.warn("Command not supported by pump, update firmware!")
             return
         await self.send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_VOLUME)
-
-    async def clear_withdrawn_volume(self):
-        """Reset the pump withdrawn volume counter to 0"""
-        self.ensure_withdraw_is_enabled()
-        await self.send_command_and_read_reply(Elite11Commands.CLEAR_WITHDRAWN_VOLUME)
 
     async def clear_infused_withdrawn_volume(self):
         """Reset both the pump infused and withdrawn volume counters to 0"""
@@ -619,11 +562,7 @@ class Elite11:
     async def clear_volumes(self):
         """Set all pump volumes to 0"""
         await self.set_target_volume(0)
-
-        if self._withdraw_enabled:
-            await self.clear_infused_withdrawn_volume()
-        else:
-            await self.clear_infused_volume()
+        await self.clear_infused_volume()
 
     async def get_force(self):
         """
@@ -747,14 +686,10 @@ class Elite11:
         router.add_api_route("/parameters/force", self.get_force, methods=["PUT"])
         router.add_api_route("/parameters/force", self.set_force, methods=["PUT"])
         router.add_api_route("/run", self.run, methods=["PUT"])
-        router.add_api_route("/run/inverse", self.inverse_run, methods=["PUT"])
         router.add_api_route("/run/infuse", self.infuse_run, methods=["PUT"])
-        router.add_api_route("/run/withdraw", self.withdraw_run, methods=["PUT"])
         router.add_api_route("/stop", self.stop, methods=["PUT"])
         router.add_api_route("/infusion-rate", self.get_infusion_rate, methods=["GET"])
         router.add_api_route("/infusion-rate", self.set_infusion_rate, methods=["PUT"])
-        router.add_api_route("/withdraw-rate", self.get_withdraw_rate, methods=["GET"])
-        router.add_api_route("/withdraw-rate", self.set_withdraw_rate, methods=["PUT"])
         router.add_api_route("/info/version", self.version, methods=["GET"])
         router.add_api_route(
             "/info/status", self.get_status, methods=["GET"], response_model=PumpStatus
@@ -769,13 +704,94 @@ class Elite11:
         router.add_api_route(
             "/info/reset-infused-volume", self.clear_infused_volume, methods=["PUT"]
         )
+        router.add_api_route("/info/reset-all", self.clear_volumes, methods=["GET"])
+
+        return router
+
+
+# noinspection PyProtectedMember
+class Elite11InfuseWithdraw(Elite11InfuseOnly):
+    """
+    Controls Harvard Apparatus Elite11 syringe pumps - INFUSE AND WITHDRAW.
+    """
+
+    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: float, syringe_volume: float,
+                 address: Optional[int] = None, name: Optional[str] = None):
+        """Query model and version number of firmware to check pump is
+        OK. Responds with a load of stuff, but the last three characters
+        are the prompt XXY, where XX is the address and Y is pump status.
+        The status can be one of the three: [":", ">" "<"] respectively
+        when stopped, running forwards (pumping), or backwards (withdrawing).
+        The prompt is used to confirm that the address is correct.
+        This acts as a check to see that the pump is connected and working."""
+
+        super().__init__(pump_io, diameter, syringe_volume, address, name)
+
+    async def initialize(self):
+        """Ensure a valid connection with the pump has been established and sets parameters."""
+        await super(Elite11InfuseWithdraw, self).initialize()
+
+        # Additionally, ensure pump support withdrawing upon initialization
+        pump_info = await self.pump_info()
+        assert not pump_info.infuse_only
+
+    async def inverse_run(self):
+        """Activates pump, runs opposite to previously set direction."""
+        if await self.is_moving():
+            warnings.warn("Cannot start pump: already moving!")
+            return
+
+        await self.send_command_and_read_reply(Elite11Commands.REVERSE_RUN)
+        self.log.info("Pump movement started in reverse direction!")
+
+    async def withdraw_run(self):
+        """Activates pump, runs in withdraw mode."""
+        if await self.is_moving():
+            warnings.warn("Cannot start pump: already moving!")
+            return
+
+        await self.send_command_and_read_reply(Elite11Commands.WITHDRAW)
+
+        self.log.info("Pump movement started in withdraw direction!")
+
+    async def get_withdraw_rate(self) -> str:
+        """Returns the infusion rate as a string w/ units"""
+        return await self.send_command_and_read_reply(Elite11Commands.WITHDRAW_RATE)
+
+    async def set_withdraw_rate(self, rate: AnyQuantity):
+        """Sets the infusion rate"""
+        set_rate = await self.bound_rate_to_pump_limits(rate=rate)
+        await self.send_command_and_read_reply(
+            Elite11Commands.WITHDRAW_RATE, parameter=f"{set_rate} m/m"
+        )
+
+    async def get_withdrawn_volume(self) -> str:
+        """Returns the withdrawn volume from the last clear_*_volume() command, according to the pump"""
+        return await self.send_command_and_read_reply(Elite11Commands.WITHDRAWN_VOLUME)
+
+    async def clear_withdrawn_volume(self):
+        """Reset the pump withdrawn volume counter to 0"""
+        await self.send_command_and_read_reply(Elite11Commands.CLEAR_WITHDRAWN_VOLUME)
+
+    async def clear_volumes(self):
+        """Set all pump volumes to 0"""
+        await self.set_target_volume(0)
+        await self.clear_infused_volume()
+        await self.clear_withdrawn_volume()
+
+    def get_router(self):
+        router = super(Elite11InfuseWithdraw, self).get_router()
+        """Creates an APIRouter for this object."""
+        router.add_api_route("/run/inverse", self.inverse_run, methods=["PUT"])
+        router.add_api_route("/run/withdraw", self.withdraw_run, methods=["PUT"])
+        router.add_api_route("/withdraw-rate", self.get_withdraw_rate, methods=["GET"])
+        router.add_api_route("/withdraw-rate", self.set_withdraw_rate, methods=["PUT"])
         router.add_api_route(
             "/info/withdrawn-volume", self.get_withdrawn_volume, methods=["GET"]
         )
         router.add_api_route(
             "/info/reset-withdrawn", self.clear_withdrawn_volume, methods=["PUT"]
         )
-        router.add_api_route("/info/reset-all", self.clear_volumes, methods=["GET"])
 
         return router
 
@@ -784,7 +800,7 @@ if __name__ == "__main__":
     logging.basicConfig()
     logging.getLogger("__main__").setLevel(logging.DEBUG)
 
-    pump = Elite11.from_config(port="COM4", syringe_volume=10, diameter=10)
+    pump = Elite11InfuseOnly.from_config(port="COM4", syringe_volume=10, diameter=10)
 
     async def main():
         """Test function"""
