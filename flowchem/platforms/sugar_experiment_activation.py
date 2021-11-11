@@ -1,10 +1,10 @@
-from time import sleep, asctime
+from time import sleep, strftime, asctime
 from flowchem.devices.Petite_Fleur_chiller import Huber
 import queue
 from threading import Thread
-from datetime import datetime
+import datetime
 import asyncio
-from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
+from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO, PumpStalled
 from flowchem.devices.Knauer.HPLC_control import ClarityInterface
 from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump
 from flowchem.miscellaneous_helpers.folder_listener import FileReceiver, ResultListener
@@ -24,13 +24,16 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return dataclasses.asdict(o)
         return super().default(o)
 
-# TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a good idea...
+
+# TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a
+#  good idea...
 # what I don't really get is why the class attributes are not printed to dict
 @dataclasses.dataclass
 class ExperimentConditions:
     """This is actively changed, either by human or by optimizer. Goes into the queue.
     When the conditions are taken from the queue, a FlowConditions object is derived from ExperimentCondition.
-    ExperimentConditions has to be dropped into a database, eventually, with analytic results and the optimizer activated"""
+    ExperimentConditions has to be dropped into a database, eventually, with analytic results and the optimizer
+    activated"""
 
     # fixed, only changed for a new experiment sequence (if stock solution changes)
     _stock_concentration_donor = "0.09 molar"
@@ -54,7 +57,8 @@ class ExperimentConditions:
     _experiment_failed: bool = False
     _experiment_id: int = None
 
-    # when fully analysed, hold a dataframe of the chromatogram. Once automatic analysis/assignment works, this should also go in
+    # when fully analysed, hold a dataframe of the chromatogram. Once automatic analysis/assignment works,
+    # this should also go in
     _chromatogram: dict = None
 
     @property
@@ -95,7 +99,7 @@ class ExperimentConditions:
 
     @chromatogram.setter
     def chromatogram(self, path: str):
-        #Damn, if several detectors are exported, this creates several header lines
+        # Damn, if several detectors are exported, this creates several header lines
         if not self.chromatogram:
             try:
                 # several times, I observed pandas.errors.EmptyDataError: No columns to parse from file. The file was
@@ -116,7 +120,8 @@ class FlowConditions:
     """
 
     def __init__(self, experiment_conditions: ExperimentConditions,
-                 flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and abstraction still low
+                 flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and
+        # abstraction still low
 
         experiment_conditions.experiment_id = round(datetime.timestamp(datetime.now()))
 
@@ -132,31 +137,39 @@ class FlowConditions:
         self._total_flow_rate = self.get_flow_rate(self.platform_volumes['volume_reactor'],
                                                    self.residence_time)
 
-
         self.activator_flow_rate, self.donor_flow_rate = self.get_individual_flow_rate(self._total_flow_rate,
-                                                                                       concentrations=(self._concentration_activator.magnitude, self._concentration_donor.magnitude,), equivalents=(experiment_conditions.activator_equivalents, 1,))
+                                                                           concentrations=(
+                                                                           self._concentration_activator.magnitude,
+                                                                           self._concentration_donor.magnitude,),
+                                                                           equivalents=(
+                                                                           experiment_conditions.activator_equivalents,
+                                                                           1,))
 
         self.activator_flow_rate = self.activator_flow_rate.to(flowchem_ureg.milliliter / flowchem_ureg.minute)
         self.donor_flow_rate = self.donor_flow_rate.to(flowchem_ureg.milliliter / flowchem_ureg.minute)
 
         # TODO watch out, now the quencher equivalents are based on donor, I think
-        self.quencher_flow_rate = 0.1*flowchem_ureg.mL/flowchem_ureg.min #self.get_flowrate_added_stream(self._concentration_donor, self.donor_flow_rate, self._concentration_quencher, experiment_conditions._quencher_equivalents)
+        self.quencher_flow_rate = 0.1 * flowchem_ureg.mL / flowchem_ureg.min  # self.get_flowrate_added_stream(
+        # self._concentration_donor, self.donor_flow_rate, self._concentration_quencher,
+        # experiment_conditions._quencher_equivalents)
 
         self.temperature = flowchem_ureg(experiment_conditions.temperature)
 
         # Todo in theory not that simple anymore if different flowrates
         self._time_start_till_end = ((self.platform_volumes['dead_volume_before_reactor'] +
-                                     self.platform_volumes['volume_reactor']) / self._total_flow_rate +
+                                      self.platform_volumes['volume_reactor']) / self._total_flow_rate +
                                      (self.platform_volumes['dead_volume_to_HPLC'] / (self._total_flow_rate +
-                                                                                      self.quencher_flow_rate))).to(flowchem_ureg.second)
+                                                                                      self.quencher_flow_rate))).to(
+            flowchem_ureg.second)
 
         self.steady_state_time = (self._time_start_till_end + self.residence_time *
-                                  (experiment_conditions.reactor_volumes-1)).to(flowchem_ureg.second)
+                                  (experiment_conditions.reactor_volumes - 1)).to(flowchem_ureg.second)
 
     def get_flow_rate(self, relevant_volume, residence_time):
         return (relevant_volume / residence_time).to('mL/min')
 
-    #TODO for now concentration needs to go in always in the same dimension, and as float, for future, iterate over tuple, bring to same unit and use a copy of that for array
+    # TODO for now concentration needs to go in always in the same dimension, and as float, for future, iterate over
+    #  tuple, bring to same unit and use a copy of that for array
     def get_individual_flow_rate(self, target_flow_rate: float, equivalents: tuple = (), concentrations: tuple = ()):
         """
         Give as many inputs as desired, output will be in same order as input and hold required flowrates
@@ -202,11 +215,11 @@ class FlowProcedure:
         self.pumps['activator'].infusion_rate = flow_conditions.activator_flow_rate.m_as('mL/min')
 
         self.log.info(f'Setting quencher flow rate to  {flow_conditions.quencher_flow_rate}')
-        self.pumps['quencher'].set_flow(flow_conditions.quencher_flow_rate.m_as('mL/min')) # in principal, this works, if wrong flowrate set, check from here what is problen
+        self.pumps['quencher'].set_flow(flow_conditions.quencher_flow_rate.m_as(
+            'mL/min'))  # in principal, this works, if wrong flowrate set, check from here what is problem
 
         self.log.info('Starting donor pump')
         self.pumps['donor'].run()
-
         self.log.info('Starting activator pump')
         self.pumps['activator'].run()
 
@@ -254,19 +267,20 @@ class FlowProcedure:
         self.log.info('switch on lamps')
 
         self.hplc.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ",
-                     start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
+                                     start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_"
+                                                  r"Sugar-c18_shortened.MET")
         self.log.info('open clarity and now start ramp')
         self.hplc.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
-                    method_list=("autostartup_005_Sugar-c18_shortened.MET",
-                                  "autostartup_01_Sugar-c18_shortened.MET",
-                                  "autostartup_015_Sugar-c18_shortened.MET",
-                                  "autostartup_02_Sugar-c18_shortened.MET",
-                                  "autostartup_025_Sugar-c18_shortened.MET",
-                                  "autostartup_03_Sugar-c18_shortened.MET",
-                                  "autostartup_035_Sugar-c18_shortened.MET",
-                                  "autostartup_04_Sugar-c18_shortened.MET",
-                                  "autostartup_045_Sugar-c18_shortened.MET",
-                                 "autostartup_05_Sugar-c18_shortened.MET",))
+                                     method_list=("autostartup_005_Sugar-c18_shortened.MET",
+                                                  "autostartup_01_Sugar-c18_shortened.MET",
+                                                  "autostartup_015_Sugar-c18_shortened.MET",
+                                                  "autostartup_02_Sugar-c18_shortened.MET",
+                                                  "autostartup_025_Sugar-c18_shortened.MET",
+                                                  "autostartup_03_Sugar-c18_shortened.MET",
+                                                  "autostartup_035_Sugar-c18_shortened.MET",
+                                                  "autostartup_04_Sugar-c18_shortened.MET",
+                                                  "autostartup_045_Sugar-c18_shortened.MET",
+                                                  "autostartup_05_Sugar-c18_shortened.MET",))
         self.hplc.load_file(r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET")
         self.log.info('load method')
 
@@ -283,7 +297,9 @@ class FlowProcedure:
 class Scheduler:
     """put together procedures and conditions, assign ID, put this to experiment Queue"""
 
-    def __init__(self, graph: dict, experiment_name: str= "", analysis_results: Path = Path('D:\\transferred_chromatograms'), experiments_results: Path = Path(f'D:/transferred_chromatograms/')):
+    def __init__(self, graph: dict, experiment_name: str = "",
+                 analysis_results: Path = Path('D:\\transferred_chromatograms'),
+                 experiments_results: Path = Path(f'D:/transferred_chromatograms/'), procedure = FlowProcedure):
 
         self.graph = graph
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
@@ -311,12 +327,11 @@ class Scheduler:
         self.data_worker.start()
         self.log.debug('Starting the data worker')
 
-
-
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
         self.log.debug('Initialising the platform')
-        self.experiments_results = experiments_results / (experiment_name + (asctime().replace(":", "-")).replace("  ", " ").replace(" ", "_"))
+        self.experiments_results = experiments_results / (
+                    experiment_name + (asctime().replace(":", "-")).replace("  ", " ").replace(" ", "_"))
 
     @property
     def current_experiment(self):
@@ -331,33 +346,41 @@ class Scheduler:
         if not self.current_experiment or not new_running_experiment:
             self._current_experiment = new_running_experiment
         else:
-            self.log.warning(f'Something is trying to replace the current, still running experiment {scheduler.current_experiment.experiment_id} with a new experiment')
+            self.log.warning(
+                f'Something is trying to replace the current, still running experiment '
+                f'{scheduler.current_experiment.experiment_id} with a new experiment')
 
     @experiment_waiting_for_analysis.setter
     def experiment_waiting_for_analysis(self, new_experiment_waiting: ExperimentConditions):
         if not self.experiment_waiting_for_analysis or not new_experiment_waiting:
             self._experiment_waiting_for_analysis = new_experiment_waiting
         else:
-            self.log.warning(f'Something is trying to replace experiment {scheduler.experiment_waiting_for_analysis.experiment_id} currently still waiting for analysis with a new experiment')
+            self.log.warning(
+                f'Something is trying to replace experiment {scheduler.experiment_waiting_for_analysis.experiment_id} '
+                f'currently still waiting for analysis with a new experiment')
 
     def data_handler(self):
-        """Checks if there is new analysis results. Since there may be multiple result files, these need to be pruned to individual ID and put into the set"""
+        """Checks if there is new analysis results. Since there may be multiple result files, these need to be pruned
+        to individual ID and put into the set"""
 
         # Think about how to do that in more simple way
         while True:
             if self.experiment_waiting_for_analysis:
                 for analysed_samples_file in self.analysed_samples:
                     if str(self.experiment_waiting_for_analysis.experiment_id) in analysed_samples_file:
-                        self.log.info(f'New analysis result found for experiment {self.experiment_waiting_for_analysis.experiment_id}, analysis set True accordingly')
+                        self.log.info(
+                            f'New analysis result found for experiment '
+                            f'{self.experiment_waiting_for_analysis.experiment_id}, analysis set True accordingly')
 
-                        self.experiment_waiting_for_analysis.chromatogram = self.analysis_results / Path((str(self.experiment_waiting_for_analysis.experiment_id)+'.txt'))
-
+                        self.experiment_waiting_for_analysis.chromatogram = self.analysis_results / Path(
+                            (str(self.experiment_waiting_for_analysis.experiment_id) + '.txt'))
+                        self.started_experiments[self.experiment_waiting_for_analysis.experiment_id] = self.experiment_waiting_for_analysis
                         # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
                         with open(self.experiments_results, 'w') as f:
-                            json.dump(self.started_experiments, f, cls = EnhancedJSONEncoder)
+                            json.dump(self.started_experiments, f, cls=EnhancedJSONEncoder)
                         self.experiment_waiting_for_analysis = None
                         sleep(1)
-                        # should become MongoDB,  should be possible to be updated from somewhere else, eg with current T
+                        # should become MongoDB, should be possible to be updated from somewhere else, eg with current T
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
     def create_experiment(self, conditions: ExperimentConditions) -> None:
@@ -365,11 +388,13 @@ class Scheduler:
         self.experiment_queue.put(conditions)
 
     def experiment_handler(self):
-        """sits in separate thread, checks if previous job is finished and if so grabs new job from queue and executes it in a new thread"""
+        """sits in separate thread, checks if previous job is finished and if so grabs new job from queue and executes
+        it in a new thread"""
         while True:
             sleep(1)
             if self.current_experiment:
-                # no! this is a local variable, the current_experiment. It needs to be checked if current experiment in the  list has failed
+                # no! this is a local variable, the current_experiment. It needs to be checked if current experiment in
+                # the  list has failed
                 if self.current_experiment._experiment_failed:
                     self.current_experiment._experiment_failed = False
                     self.current_experiment.experiment_id = None
@@ -377,9 +402,10 @@ class Scheduler:
                     self.current_experiment = None
                     # TODO setter has to accept changes to current experiment
 
-                    print('Last experiment failed due to pump stalling. Please, refill the syringe and then press enter. '
-                          'Press Y for resuming or N for ending the experiment. The failed experiment was put to the '
-                          'queue again and will be repeated')
+                    print(
+                        'Last experiment failed due to pump stalling. Please, refill the syringe and then press enter. '
+                        'Press Y for resuming or N for ending the experiment. The failed experiment was put to the '
+                        'queue again and will be repeated')
 
                     user_input = input()
                     while user_input != 'Y' or 'N':
@@ -390,7 +416,7 @@ class Scheduler:
                     elif user_input == 'N':
                         break
 
-                elif  self.current_experiment._experiment_finished == True:
+                elif self.current_experiment._experiment_finished == True:
                     self.experiment_waiting_for_analysis = self.current_experiment
                     self.current_experiment = None
 
@@ -412,18 +438,23 @@ class Scheduler:
                         self.log.info('New experiment started because none was waiting for analysis')
                         # this should be called when experiment is over
                         self.experiment_queue.task_done()
-                    elif individual_conditions._time_start_till_end > flowchem_ureg(self.current_experiment._analysis_time):
+                    elif individual_conditions._time_start_till_end > flowchem_ureg(
+                            self.current_experiment._analysis_time):
                         new_thread.start()
-                        self.log.info('New experiment started, though one is still waiting for analysis because analysis time is shorter than experiment time')
+                        self.log.info(
+                            'New experiment started, though one is still waiting for analysis because analysis time is '
+                            'shorter than experiment time')
                         # this should be called when experiment is over
                         self.experiment_queue.task_done()
                     # TODO this still is not ideal, because it will always wait a bit before starting,
                     else:
-                        time_difference = flowchem_ureg(self.current_experiment._analysis_time) - individual_conditions._time_start_till_end
-                        sleep(time_difference.m_as('s')+60) # add one min as safety margin
+                        time_difference = flowchem_ureg(
+                            self.current_experiment._analysis_time) - individual_conditions._time_start_till_end
+                        sleep(time_difference.m_as('s'))  # add one min as safety margin
                         new_thread.start()
                         self.log.info(
-                            'New experiment started, though one is still waiting for analysis after waiting for the lag time')
+                            'New experiment started, though one is still waiting for analysis after waiting for the lag'
+                            ' time')
                         # this should be called when experiment is over
                         self.experiment_queue.task_done()
 
@@ -444,13 +475,13 @@ if __name__ == "__main__":
     logging.getLogger("__main__").setLevel(logging.DEBUG)
 
     # missing init parameters
-    elite_port=PumpIO("COM11")
+    elite_port = PumpIO("COM11")
     SugarPlatform = {
         # try to combine two pumps to one. flow rate with ratio gives individual flow rate
         'pumps': {
             'donor': Elite11(elite_port, address=0, diameter=4.606, volume_syringe=1),
 
-            'activator': Elite11(elite_port, address=1, diameter=4.606, volume_syringe=1), # for now elite11 pump, hamilton will be used once small syringes arrive, and will be used in continuous mode
+            'activator': Elite11(elite_port, address=1, diameter=4.606, volume_syringe=1),
 
             'quencher': KnauerPump("192.168.10.113"),
         },
@@ -458,29 +489,31 @@ if __name__ == "__main__":
 
         'sample_loop': ViciValco.from_config({"port": "COM13", "address": 0, "name": "test1"}),
         'chiller': Huber('COM1'),
-        # assume always the same volume from pump to inlet, before T-mixer can be neglected, times three for inlets since 3 equal inlets
-        'internal_volumes': {'dead_volume_before_reactor': (8)* 2 * flowchem_ureg.microliter,
+        'internal_volumes': {'dead_volume_before_reactor': (8) * 2 * flowchem_ureg.microliter,
                              'volume_reactor': 58 * flowchem_ureg.microliter,
-                             'dead_volume_to_HPLC': (46+28+56) * flowchem_ureg.microliter,
+                             'dead_volume_to_HPLC': (46 + 28 + 56) * flowchem_ureg.microliter,
                              }
     }
 
     #
     fr = FileReceiver('192.168.10.20', 10339, allowed_address='192.168.10.11')
     analysed_samples_folder = Path(r'D:/transferred_chromatograms')
-    scheduler = Scheduler(SugarPlatform,  experiment_name='activationminus15_w_pyrdmfquench',analysis_results = analysed_samples_folder, experiments_results=analysed_samples_folder / Path('experiments_test'))
-
+    scheduler = Scheduler(SugarPlatform, experiment_name='fullcharacterisationyuntao',
+                          analysis_results=analysed_samples_folder,
+                          experiments_results=analysed_samples_folder / Path('experiments_test'))
 
     # This obviously could be included into the scheduler
     results_listener = ResultListener(analysed_samples_folder, '*.txt', scheduler.analysed_samples)
 
-    #scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-40 °C"))
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-15 °C"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="0 °C"))
 
-    #scheduler.create_experiment(ExperimentConditions(temperature="23 °C", residence_time="300 s"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-10 °C"))
+    # scheduler.create_experiment(ExperimentConditions(temperature="23 °C", residence_time="300 s"))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=5))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=10))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
 
     # TODO when queue empty, after some while everything should be switched off
     # TODO serialization has to be done with preserving °C -> encoding problem
+
+# TODO lagtime is a bit excessive - 8 minutes could be saved. Also, chiller should be started for next T once previous experiment is injected
