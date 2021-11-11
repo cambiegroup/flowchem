@@ -433,8 +433,9 @@ class Scheduler:
                     self.current_experiment = None
 
             elif not self.current_experiment:
-                if self.experiment_queue.not_empty:
-                        # get raw experimental data, derive actual platform parameters, create sequence function and execute that in a thread
+                if not self.experiment_queue.empty():
+                    # get raw experimental data, derive actual platform parameters, create sequence function and execute
+                    # that in a thread
                     self.current_experiment: ExperimentConditions = self.experiment_queue.get()
 
                     individual_conditions = FlowConditions(self.current_experiment, self.graph)
@@ -470,15 +471,16 @@ class Scheduler:
                         # this should be called when experiment is over
                         self.experiment_queue.task_done()
 
-
-                elif self.experiment_queue.empty:
-                    # start timer in separate thread. this timer should be killed by having sth in the queue again. When exceeding some time, platform shuts down
-                    self.log.info('Queue empty and nothing running, switch me off or add a new experiment. Add one or '
-                                  'multiple experiments by specifying temperatures, separated by semicolons, eg 25 °C; 35 °C')
-                    new_user_experiments = input().split(';')
-                    for new_user_experiment in new_user_experiments:
-                        self.create_experiment(ExperimentConditions(temperature=new_user_experiment))
-
+            elif self.experiment_queue.empty() and self.started_experiments:
+                # start timer in separate thread. this timer should be killed by having sth in the queue again.
+                # When exceeding some time, platform should shut down
+                self.log.info('Queue empty and nothing running, switch me off or add a new experiment. Add one or '
+                              'multiple experiments by specifying temperatures, separated by semicolons, eg 25 °C; '
+                              '35 °C')
+                new_user_experiments = input().split(';')
+                for new_user_experiment in new_user_experiments:
+                    # in case someone gives a string
+                    self.create_experiment(ExperimentConditions(temperature=new_user_experiment.strip('\'')))
 
 
 if __name__ == "__main__":
