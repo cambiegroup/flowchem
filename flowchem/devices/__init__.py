@@ -1,3 +1,4 @@
+from .Harvard_Apparatus import *
 from .Hamilton import *
 from .Huber import *
 from .Knauer import *
