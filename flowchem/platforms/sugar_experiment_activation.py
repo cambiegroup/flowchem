@@ -180,8 +180,8 @@ class FlowConditions:
         correction_factor = target_flow_rate / sum_of_normalised_flowrates
         return tuple(normalised_flow_rates * correction_factor)
 
-    def get_flowrate_added_stream(self, concentration_reference_stream:float, flowrate_reference_stream:float,
-                                  concentration_added_stream:float, equivalents_added_stream:float):
+    def get_flowrate_added_stream(self, concentration_reference_stream: float, flowrate_reference_stream: float,
+                                  concentration_added_stream: float, equivalents_added_stream: float):
         return (concentration_reference_stream*flowrate_reference_stream*equivalents_added_stream)/concentration_added_stream
 
     def wait_for_steady_state(self, steady_state_time):
@@ -230,7 +230,7 @@ class FlowProcedure:
         # start timer
         time_done = (datetime.datetime.now() +
                      datetime.timedelta(0, flow_conditions.steady_state_time.magnitude)).strftime('%H:%M:%S')
-        self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}, current time is {time_done}')
+        self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}, experiment will be done at {time_done}')
         sleep(flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
 
@@ -326,7 +326,6 @@ class Scheduler:
         # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
         # and drop it to the sql. in future, also hand it to the optimizer
         self.started_experiments = {}
-        
         # noinspection PyTypeChecker
         self._current_experiment: ExperimentConditions = None
         # noinspection PyTypeChecker
@@ -393,6 +392,7 @@ class Scheduler:
                         self.experiment_waiting_for_analysis = None
                         sleep(1)
                         # should become MongoDB, should be possible to be updated from somewhere else, eg with current T
+            sleep(1)
 
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
     def create_experiment(self, conditions: ExperimentConditions) -> None:
@@ -412,16 +412,16 @@ class Scheduler:
                     self.current_experiment.experiment_id = None
                     self.experiment_queue.put(self.current_experiment)
                     self.current_experiment = None
-                    # TODO setter has to accept changes to current experiment
 
-                    print(
+                    self.log.warning(
                         'Last experiment failed due to pump stalling. Please, refill the syringe and then press enter. '
                         'Press Y for resuming or N for ending the experiment. The failed experiment was put to the '
                         'queue again and will be repeated')
 
                     user_input = input()
                     while user_input not in 'YN':
-                        print('Please, type either Y or N')
+                        sleep(1)
+                        self.log.info('Please, type either Y or N')
                         user_input = input()
                         if user_input == 'YN':
                             user_input = ''
@@ -431,7 +431,7 @@ class Scheduler:
                     elif user_input == 'N':
                         break
 
-                elif self.current_experiment._experiment_finished == True:
+                elif self.current_experiment._experiment_finished:
                     self.experiment_waiting_for_analysis = self.current_experiment
                     self.current_experiment = None
 
@@ -466,7 +466,10 @@ class Scheduler:
                     else:
                         time_difference = flowchem_ureg(
                             self.current_experiment._analysis_time) - individual_conditions._time_start_till_end
-                        sleep(time_difference.m_as('s'))  # add one min as safety margin
+                        self.log.info(f'sleeping for {time_difference}, then starting next experiment. This is because '
+                                      f'analysis time is {self.current_experiment._analysis_time}, and the full '
+                                      f'experiment steady state time is {individual_conditions._time_start_till_end}')
+                        sleep(time_difference.m_as('s'))
                         new_thread.start()
                         self.log.info(
                             'New experiment started, though one is still waiting for analysis after waiting for the lag'
@@ -474,6 +477,7 @@ class Scheduler:
                         # this should be called when experiment is over
                         self.experiment_queue.task_done()
 
+            # TODO this is blocking the worker loop and should be moved to a separate thread
             elif self.experiment_queue.empty() and self.started_experiments:
                 # start timer in separate thread. this timer should be killed by having sth in the queue again.
                 # When exceeding some time, platform should shut down
@@ -506,9 +510,9 @@ if __name__ == "__main__":
 
         'sample_loop': ViciValco.from_config({"port": "COM13", "address": 0, "name": "test1"}),
         'chiller': Huber('COM1'),
-        'internal_volumes': {'dead_volume_before_reactor': (8) * 2 * flowchem_ureg.microliter,
+        'internal_volumes': {'dead_volume_before_reactor': 8 * 2 * flowchem_ureg.microliter,
                              'volume_reactor': 58 * flowchem_ureg.microliter,
-                             'dead_volume_to_HPLC': (46 + 28 + 56) * flowchem_ureg.microliter,
+                             'dead_volume_to_HPLC': (46 + 28 + 20) * flowchem_ureg.microliter, # 20 µl for tubing from readtor to valve, 28 µl after microstructure (sounds a lot), 46µL for microrstructure
                              }
     }
 
@@ -522,10 +526,10 @@ if __name__ == "__main__":
     # This obviously could be included into the scheduler
     results_listener = ResultListener(analysed_samples_folder, '*.txt', scheduler.analysed_samples)
 
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="0 °C"))
-
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-40 °C"))
+    scheduler.create_experiment(ExperimentConditions(temperature="-30 °C", residence_time="300 s"))
     scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-10 °C"))
-    # scheduler.create_experiment(ExperimentConditions(temperature="23 °C", residence_time="300 s"))
+    scheduler.create_experiment(ExperimentConditions(temperature="-0 °C", residence_time="300 s"))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=5))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=10))
     # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
@@ -533,4 +537,4 @@ if __name__ == "__main__":
     # TODO when queue empty, after some while everything should be switched off
     # TODO serialization has to be done with preserving °C -> encoding problem
 
-# TODO lagtime is a bit excessive - 8 minutes could be saved. Also, chiller should be started for next T once previous experiment is injected
+# TODO chiller should be started for next T once previous experiment is injected
