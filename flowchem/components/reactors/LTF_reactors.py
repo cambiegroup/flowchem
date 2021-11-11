@@ -1,9 +1,9 @@
 from typing import Optional, Mapping
 
-from flowchem.components.stdlib import Component
+from flowchem.components.stdlib import Component, MappedComponentMixin
 
 
-class LTF_HTM_ST_3_1(Component):
+class LTF_HTM_ST_3_1(MappedComponentMixin, Component):
     """
     An LTF HTM ST 3 1 reactor.
     """
