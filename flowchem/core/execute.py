@@ -97,6 +97,8 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
             logger.success(start_msg)
 
             try:
+                # FIXME the list tasks actually contains corouteins, not tasks. A rename would be nice.
+                tasks = [asyncio.create_task(coro) for coro in tasks]
                 done, pending = await asyncio.wait(
                     tasks, return_when=asyncio.FIRST_EXCEPTION
                 )
