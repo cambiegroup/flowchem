@@ -238,6 +238,10 @@ class FlowProcedure:
             self.pumps['activator'].is_moving()
 
             self.hplc.set_sample_name(scheduler.current_experiment.experiment_id)
+
+            while scheduler.experiment_waiting_for_analysis:
+                sleep(5)
+                self.log.warning('Previous analysis not yet finished - waiting with injection until finished')
             self.sample_loop.set_valve_position_sync(2)
 
             # timer is over, start
