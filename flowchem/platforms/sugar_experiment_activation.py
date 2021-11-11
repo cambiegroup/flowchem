@@ -197,13 +197,15 @@ class FlowProcedure:
         self.sample_loop = platform_graph['sample_loop']
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
-    def individual_procedure(self, flow_conditions: FlowConditions):
+    def individual_preparations(self, flow_conditions: FlowConditions):
         # TODO also here, for now this is a workaround for ureg.
         self.log.info(f'Setting Chiller to  {flow_conditions.temperature}')
         self.chiller.set_temperature(flow_conditions.temperature.magnitude)
         self.log.info(f'Chiller successfully set to  {flow_conditions.temperature}')
         self.chiller.start()
         self.log.info('Chiller started')
+
+    def individual_procedure(self, flow_conditions: FlowConditions):
 
         while abs(abs(self.chiller.get_process_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
             sleep(10)
@@ -309,7 +311,7 @@ class Scheduler:
 
     def __init__(self, graph: dict, experiment_name: str = "",
                  analysis_results: Path = Path('D:\\transferred_chromatograms'),
-                 experiments_results: Path = Path(f'D:/transferred_chromatograms/'), procedure = FlowProcedure):
+                 experiments_results: Path = Path(f'D:/transferred_chromatograms/'), procedure=FlowProcedure):
 
         self.graph = graph
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
@@ -444,7 +446,11 @@ class Scheduler:
                     individual_conditions = FlowConditions(self.current_experiment, self.graph)
                     self.log.info(f'New experiment {self.current_experiment.experiment_id} about to be started')
 
-                    # TODO check arguments, sounds weird (but seemed to have worked)
+                    # should set temperture directly after previous experiment finished
+                    new_preparation_thread = Thread(target=self.procedure.individual_preparations, args=(individual_conditions,))
+                    new_preparation_thread.start()
+                    new_preparation_thread.join()
+
                     new_thread = Thread(target=self.procedure.individual_procedure,
                                         args=(individual_conditions,))
 
