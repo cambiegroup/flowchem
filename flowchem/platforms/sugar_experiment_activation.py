@@ -246,7 +246,8 @@ class FlowProcedure:
                 sleep(5)
                 self.log.warning('Previous analysis not yet finished - waiting with injection until finished')
             self.sample_loop.set_valve_position_sync(2)
-
+            # this is as a safety measure - it happened once that the run did not start even though it got triggered
+            self.hplc.run()
             # timer is over, start
             self.log.info('Stop pump Donor')
             self.pumps['donor'].stop()
