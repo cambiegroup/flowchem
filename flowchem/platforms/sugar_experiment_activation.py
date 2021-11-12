@@ -231,7 +231,7 @@ class FlowProcedure:
 
         # start timer
         time_done = (datetime.datetime.now() +
-                     datetime.timedelta(0, flow_conditions.steady_state_time.magnitude)).strftime('%H:%M:%S')
+                     datetime.timedelta(0, flow_conditions.steady_state_time.m_as('s'))).strftime('%H:%M:%S')
         self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}, experiment will be done at {time_done}')
         sleep(flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
@@ -482,10 +482,11 @@ class Scheduler:
 
                     else:
                         time_difference = flowchem_ureg(
-                            self.current_experiment._analysis_time) - individual_conditions._time_start_till_end
-                        self.log.info(f'sleeping for {time_difference}, then starting next experiment. This is because '
+                            self.current_experiment._analysis_time) - individual_conditions.steady_state_time
+                        waiting_done = (datetime.datetime.now() + datetime.timedelta(0, time_difference.m_as('s'))).strftime('%H:%M:%S')
+                        self.log.info(f'sleeping for {time_difference}, until {waiting_done}, then starting next experiment. This is because '
                                       f'analysis time is {self.current_experiment._analysis_time}, and the full '
-                                      f'experiment steady state time is {individual_conditions._time_start_till_end}')
+                                      f'experiment steady state time is {individual_conditions.steady_state_time}')
                         sleep(time_difference.m_as('s'))
                         new_thread.start()
                         self.log.info(
