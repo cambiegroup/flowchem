@@ -207,7 +207,7 @@ class FlowProcedure:
 
     def individual_procedure(self, flow_conditions: FlowConditions):
 
-        while abs(abs(self.chiller.get_process_temperature()) - abs(flow_conditions.temperature.magnitude)) > 2:
+        while abs(flowchem_ureg.celsius*self.chiller.get_process_temperature() - flow_conditions.temperature) > 2:
             sleep(10)
             self.log.info(
                 f'Chiller waiting, current: {self.chiller.get_process_temperature()} set: {flow_conditions.temperature}')
