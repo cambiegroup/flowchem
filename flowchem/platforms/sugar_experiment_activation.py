@@ -470,7 +470,7 @@ class Scheduler:
                         new_thread.start()
                         self.log.info('New experiment started because none was waiting for analysis')
                         new_thread.join()
-                    elif individual_conditions._time_start_till_end > flowchem_ureg(
+                    elif individual_conditions.steady_state_time > flowchem_ureg(
                             self.current_experiment._analysis_time):
                         new_thread.start()
                         self.log.info(
