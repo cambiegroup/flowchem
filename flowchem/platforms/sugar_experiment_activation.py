@@ -452,6 +452,7 @@ class Scheduler:
                     # get raw experimental data, derive actual platform parameters, create sequence function and execute
                     # that in a thread
                     self.current_experiment: ExperimentConditions = self.experiment_queue.get()
+                    self.experiment_queue.task_done()
 
                     individual_conditions = FlowConditions(self.current_experiment, self.graph)
                     self.log.info(f'New experiment {self.current_experiment.experiment_id} about to be started')
@@ -468,8 +469,6 @@ class Scheduler:
                     if not self.experiment_waiting_for_analysis:  # avoids contests
                         new_thread.start()
                         self.log.info('New experiment started because none was waiting for analysis')
-                        # this should be called when experiment is over
-                        self.experiment_queue.task_done()
                         new_thread.join()
                     elif individual_conditions._time_start_till_end > flowchem_ureg(
                             self.current_experiment._analysis_time):
@@ -477,8 +476,6 @@ class Scheduler:
                         self.log.info(
                             'New experiment started, though one is still waiting for analysis because analysis time is '
                             'shorter than experiment time')
-                        # this should be called when experiment is over
-                        self.experiment_queue.task_done()
                         new_thread.join()
 
                     else:
@@ -493,8 +490,6 @@ class Scheduler:
                         self.log.info(
                             'New experiment started, though one is still waiting for analysis after waiting for the lag'
                             ' time')
-                        # this should be called when experiment is over
-                        self.experiment_queue.task_done()
                         new_thread.join()
 
             # TODO this is blocking the worker loop and should be moved to a separate thread
