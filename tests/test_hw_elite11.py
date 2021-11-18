@@ -7,11 +7,10 @@ import math
 
 import pytest
 
-from flowchem.devices.Harvard_Apparatus.HA_elite11 import (
+from flowchem.components.devices.Harvard_Apparatus.HA_elite11 import (
     Elite11InfuseWithdraw,
     PumpStatus
 )
-from flowchem.exceptions import DeviceError
 from flowchem.units import flowchem_ureg
 
 

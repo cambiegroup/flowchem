@@ -37,7 +37,15 @@ setuptools.setup(
         "lmfit",
         "nmrglue",
         "aioserial",
-        "jsonschema"
+        "jsonschema",
+        "loguru",
+        "networkx",
+        "ipython",
+        "altair",
+        "aiofiles",
+        "pyyaml",
+        "bokeh",
+        "graphviz"
     ],
     python_requires=">=3.8",
     entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},
