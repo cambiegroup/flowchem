@@ -1,4 +1,5 @@
 from .component import Component
+from .interface import Interface
 from .mapped_component import MappedComponentMixin
 from .active_component import ActiveComponent
 from .dummy import Dummy
