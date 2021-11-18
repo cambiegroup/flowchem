@@ -120,17 +120,17 @@ class HuberChiller:
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
     @classmethod
-    def from_config(cls, config: dict):
+    def from_config(cls, port, **serial_config):
         """
         Create instance from config dict. Used by server to initialize obj from config.
 
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
         try:
-            serial_object = aioserial.AioSerial(**config)
+            serial_object = aioserial.AioSerial(port=port, **serial_config)
         except SerialException as e:
             raise InvalidConfiguration(
-                f"Cannot connect to the HuberChiller on the port <{config.get('port')}>"
+                f"Cannot connect to the HuberChiller on the port <{port}>"
             ) from e
 
         return cls(serial_object)
@@ -173,11 +173,11 @@ class HuberChiller:
         reply = await self.send_command_and_read_reply("{M00****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_temperature_setpoint(self, temp: AnyQuantity):
+    async def set_temperature_setpoint(self, temp: str):
         """ Set the set point used by temperature controller. Internal if not probe, otherwise process temp. """
         min_t = flowchem_ureg.Quantity(await self.min_setpoint())
         max_t = flowchem_ureg.Quantity(await self.max_setpoint())
-        temp = ensure_quantity(temp, "degree_Celsius")
+        temp = flowchem_ureg.parse_expression(temp)
 
         if temp > max_t:
             temp = max_t

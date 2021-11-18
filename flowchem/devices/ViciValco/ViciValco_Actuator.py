@@ -86,15 +86,15 @@ class ViciValcoValveIO:
         self._initialized = False
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, port, **serial_config):
         """ Create ViciValcoValveIO from config. """
-        # Merge default settings, including serial, with provided ones.
-        configuration = dict(ViciValcoValveIO.DEFAULT_CONFIG, **config)
+        # Merge default serial settings with provided ones.
+        configuration = dict(ViciValcoValveIO.DEFAULT_CONFIG, **serial_config)
 
         try:
-            serial_object = aioserial.AioSerial(**configuration)
+            serial_object = aioserial.AioSerial(port=port, **configuration)
         except SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the valve on the port <{configuration.get('port')}>") from e
+            raise InvalidConfiguration(f"Cannot connect to the valve on the port <{port}>") from e
 
         return cls(serial_object)
 
@@ -217,7 +217,7 @@ class ViciValco:
         self.log = logging.getLogger(__name__).getChild("ViciValco").getChild(self.name)
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, port, address: int = 0, name: str = None, **serial_config):
         """ This class method is used to create instances via config file by the server for HTTP interface. """
         # Many valve can be present on the same serial port with different addresses.
         # This shared list of ViciValcoValveIO objects allow shared state in a borg-inspired way, avoiding singletons
@@ -226,16 +226,15 @@ class ViciValco:
         # ViciValcoValve_IO() manually instantiated are not accounted for.
         valveio = None
         for obj in ViciValco._io_instances:
-            if obj._serial.port == config.get("port"):
+            if obj._serial.port == port:
                 valveio = obj
                 break
 
         # If not existing serial object are available for the port provided, create a new one
         if valveio is None:
-            config_for_valveio = {k: v for k, v in config.items() if k not in ("address", "name")}
-            valveio = ViciValcoValveIO.from_config(config_for_valveio)
+            valveio = ViciValcoValveIO.from_config(port=port, **serial_config)
 
-        return cls(valveio, address=config.get("address"), name=config.get("name"))
+        return cls(valveio, address=address, name=name)
 
     async def initialize(self):
         """ Must be called after init before anything else. """
