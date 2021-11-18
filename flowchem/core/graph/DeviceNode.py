@@ -1,9 +1,13 @@
 """ For each device node described in the configuration [graph] instantiated it and create endpoints """
 import inspect
 import logging
+import warnings
+
+from fastapi import APIRouter
 
 from flowchem import Spinsolve
 from flowchem.core.server.routers import spinsolve_get_router
+from flowchem.exceptions import InvalidConfiguration
 
 
 class DeviceNode:
@@ -12,7 +16,7 @@ class DeviceNode:
     # Router generators for device class that do not implement self.get_router()
     # All callable take the device obj and return an APIRouter
     router_generator = {
-        Spinsolve: spinsolve_get_router,
+        Spinsolve: spinsolve_get_router
     }
 
     def __init__(self, device_name, device_config, obj_type):
@@ -54,7 +58,11 @@ class DeviceNode:
         if hasattr(self.device, "get_router"):
             router = self.device.get_router()
         else:
-            router = DeviceNode.router_generator[type(self.device)](self.device)
+            try:
+                router = DeviceNode.router_generator[type(self.device)](self.device)
+            except KeyError as e:
+                warnings.warn(f"No router available for device '{self.device.name}'")
+                router = APIRouter()
 
         router.prefix = f"/{self.safe_title}"
         router.tags = self.safe_title

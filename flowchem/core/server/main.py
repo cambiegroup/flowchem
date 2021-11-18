@@ -14,6 +14,7 @@ from flowchem.core.graph.DeviceGraph import (
     load_schema,
 )
 from flowchem.core.graph.DeviceNode import DeviceNode
+from flowchem.exceptions import InvalidConfiguration
 from mdns_server import Server_mDNS
 
 logger = logging.getLogger(__name__)
@@ -60,9 +61,12 @@ def create_server_from_config(
     # Parse list of devices and generate endpoints
     for device_name, node_config in config["devices"].items():
         # Schema validation ensures only 1 hit here
-        device_class = [
-            name for name in device_mapper.keys() if name in node_config
-        ].pop()
+        try:
+            device_class = [
+                name for name in device_mapper.keys() if name in node_config
+            ].pop()
+        except IndexError as e:
+            raise InvalidConfiguration(f"No class available for device '{device_name}'") from e
 
         # Object type
         obj_type = device_mapper[device_class]
@@ -87,7 +91,7 @@ if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
 
     app, zeroconf = create_server_from_config(
-        config_file=Path("../graph/sample_config.yml")
+        config_file=Path("../graph/owen_config.yml")
     )
 
     @app.get("/")
