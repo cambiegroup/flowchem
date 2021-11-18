@@ -14,8 +14,7 @@ import jsonschema
 import yaml
 
 import flowchem.components.devices
-from components.stdlib import Interface
-from flowchem.components.stdlib import Tube
+from flowchem.components.stdlib import Tube, Interface
 from flowchem.core.apparatus import Apparatus
 from flowchem.core.graph.DeviceNode import DeviceNode
 from flowchem.exceptions import InvalidConfiguration
