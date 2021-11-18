@@ -49,6 +49,12 @@ async def test_pumphead(pump: AzuraCompactPump):
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
+async def test_headtype(pump: AzuraCompactPump):
+    assert await pump.get_headtype() in AzuraPumpHeads
+
+
+@pytest.mark.KPump
+@pytest.mark.asyncio
 async def test_flow_rate(pump: AzuraCompactPump):
     await pump.set_flow(1.25)
     await pump.start_flow()

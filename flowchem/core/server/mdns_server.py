@@ -65,11 +65,6 @@ class Server_mDNS:
         self.server.register_service(service_info)
         self.logger.debug(f"Registered {service_name} on mDNS server!")
 
-    def __del__(self):
-        if self.server:
-            self.server.close()
-            print("Zeroconf server stopped")
-
 
 if __name__ == "__main__":
     test = Server_mDNS()

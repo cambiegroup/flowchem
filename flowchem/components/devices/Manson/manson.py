@@ -1,21 +1,17 @@
 """
 Original code from Manson website with edits.
 No license originally specified.
-
-Changes:
-    * dropped Py2 support ('cause it is 2020)
-    * Refactoring according to PEP8 and Zen of Python
 """
 
 import logging
 import re
 import warnings
-from typing import Literal, Tuple, Optional, List, Union
+from typing import Literal, Tuple, List, Union
 
 import aioserial
 
 from flowchem.exceptions import InvalidConfiguration, DeviceError
-from flowchem.units import flowchem_ureg, AnyQuantity, ensure_quantity
+from flowchem.units import flowchem_ureg
 
 
 class MansonPowerSupply:
@@ -47,45 +43,39 @@ class MansonPowerSupply:
             )
 
     @staticmethod
-    def _format_voltage(voltage: AnyQuantity) -> str:
-        """Format a voltage in the format the power supply understands"""
-        value_in_volt = ensure_quantity(voltage, "V")
+    def _format_voltage(voltage_value: str) -> str:
+        """ Format a voltage in the format the power supply understands """
+
+        voltage = flowchem_ureg(voltage_value)
         # Zero fill by left pad with zeros, up to three digits
-        return str(value_in_volt.magnitude * 10).zfill(3)
+        return str(voltage.m_as("V") * 10).zfill(3)
 
-    async def _format_amperage(self, current: AnyQuantity) -> str:
-        """Format a current intensity in the format the power supply understands"""
-        current_in_ampere = ensure_quantity(current, "A").magnitude
+    async def _format_amperage(self, amperage_value: str) -> str:
+        """ Format a current intensity in the format the power supply understands """
 
+        current = flowchem_ureg(amperage_value)
         multiplier = 100 if await self.get_info() in self.MODEL_ALT_RANGE else 10
-        return str(current_in_ampere * multiplier).zfill(3)
+        return str(current.m_as("A") * multiplier).zfill(3)
 
     async def _send_command(
         self,
         command: str,
-        multiline_reply: bool = False,
-        no_reply_expected: bool = False,
     ) -> str:
         """Internal function to send command and read reply."""
 
-        # Flush buffer, write command and read reply
-        try:
-            self._serial.reset_input_buffer()
-            await self._serial.write_async(f"{command}\r".encode("ascii"))
-            response = await self._serial.readline_async()
-        except aioserial.SerialException:
-            raise InvalidConfiguration("Connection seems closed")
-        response = response.decode("ascii").strip()
+        # Flush buffer
+        self._serial.reset_input_buffer()
 
-        if not response and not no_reply_expected:
-            warnings.warn("No reply received!")
+        # Write command
+        await self._serial.write_async(f"{command}\r".encode("ascii"))
 
-        # Get multiple lines if needed
-        if multiline_reply:
-            while additional_response := await self._serial.readline_async():
-                response += "\n" + additional_response.decode("ascii").strip()
+        # Read reply
+        reply_string = []
+        for line in await self._serial.readlines_async():
+            reply_string.append(line.decode("ascii").strip())
+            self.logger.debug(f"Received {repr(line)}!")
 
-        return response
+        return "\n".join(reply_string)
 
     async def get_info(self) -> str:
         """Returns the model name of the connected device"""
@@ -148,7 +138,7 @@ class MansonPowerSupply:
     async def get_output_power(self) -> str:
         """Returns output power in watts"""
         voltage, intensity, _ = await self.get_output_read()
-        power = flowchem_ureg.Quantity(voltage) * flowchem_ureg.Quantity(intensity)
+        power = flowchem_ureg(voltage) * flowchem_ureg(intensity)
         return str(power.to("W"))
 
     async def get_max(self) -> Tuple[str, str]:
@@ -178,14 +168,14 @@ class MansonPowerSupply:
 
         return str(v_setting), str(c_setting / 10)
 
-    async def set_voltage(self, voltage: AnyQuantity) -> bool:
+    async def set_voltage(self, voltage: str) -> bool:
         """Set target voltage"""
 
         cmd = "VOLT" + self._format_voltage(voltage)
         response = await self._send_command(cmd)
         return response == "OK"
 
-    async def set_current(self, current: AnyQuantity) -> bool:
+    async def set_current(self, current: str) -> bool:
         """Set target current"""
 
         cmd = "CURR" + await self._format_amperage(current)
@@ -203,12 +193,10 @@ class MansonPowerSupply:
             command += voltage_string + current_string
 
         # Set new values (no reply from device on this command)
-        await self._send_command(command, no_reply_expected=True)
+        await self._send_command(command)
         return True
 
-    async def set_preset(
-        self, index: int, voltage: AnyQuantity, current: AnyQuantity
-    ) -> bool:
+    async def set_preset(self, index: int, voltage: str, current: str) -> bool:
         """Set preset position index with the provided values of voltage and current"""
         preset = await self.get_all_preset()
         try:
@@ -222,7 +210,7 @@ class MansonPowerSupply:
 
     async def get_all_preset(self) -> List[Tuple[str, str]]:
         """Get voltage and current for all 3 memory preset position"""
-        response = await self._send_command("GETM", multiline_reply=True)
+        response = await self._send_command("GETM")
         response_lines = response.split("\r")
 
         voltage = []
@@ -279,8 +267,10 @@ class MansonPowerSupply:
         response = await self._send_command("SPRO1")
         return bool(response)
 
-    async def set_voltage_and_current(self, voltage: AnyQuantity, current: AnyQuantity):
-        """Convenience method to set both voltage and current"""
+    async def set_voltage_and_current(
+        self, voltage: str, current: str
+    ):
+        """ Convenience method to set both voltage and current """
         await self.set_voltage(voltage)
         await self.set_current(current)
 

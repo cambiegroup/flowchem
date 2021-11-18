@@ -42,8 +42,8 @@ def create_server_from_config(
     assert isinstance(config, dict)  # This is here just to make mypy happy.
 
     # Validate config
-    schema = load_schema()
-    jsonschema.validate(config, schema=schema)
+    # schema = load_schema()
+    # jsonschema.validate(config, schema=schema)
 
     # FastAPI server
     app = FastAPI(title="flowchem", version=flowchem.__version__)

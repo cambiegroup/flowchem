@@ -13,7 +13,7 @@ from aioserial import SerialException
 
 from flowchem.components.stdlib import TempControl
 from flowchem.exceptions import InvalidConfiguration, DeviceError
-from flowchem.units import flowchem_ureg, AnyQuantity, ensure_quantity
+from flowchem.units import flowchem_ureg
 
 
 @dataclass
@@ -59,15 +59,15 @@ class PBCommand:
         # -151 used for invalid temperatures
         if temp == -151:
             return ""
-        return str(flowchem_ureg.Quantity(temp, "degree_Celsius"))
+        return str(flowchem_ureg(f"{temp} °C"))
 
     def parse_integer(self) -> int:
         """Parse a device reply from hexadecimal string to base 10 integers."""
         return int(self.data, 16)
 
     def parse_rpm(self) -> str:
-        """Parse a device reply from hexadecimal string to rpm."""
-        return str(flowchem_ureg.Quantity(self.parse_integer(), "rpm"))
+        """ Parse a device reply from hexadecimal string to rpm. """
+        return str(flowchem_ureg(f"{self.parse_integer()} rpm"))
 
     def parse_bits(self) -> List[bool]:
         """ " Parse a device reply from hexadecimal string to 16 constituting bits."""
@@ -175,11 +175,11 @@ class HuberChiller(TempControl):
         reply = await self.send_command_and_read_reply("{M00****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_temperature_setpoint(self, temp: AnyQuantity):
-        """Set the set point used by temperature controller. Internal if not probe, otherwise process temp."""
-        min_t = flowchem_ureg.Quantity(await self.min_setpoint())
-        max_t = flowchem_ureg.Quantity(await self.max_setpoint())
-        temp = ensure_quantity(temp, "degree_Celsius")
+    async def set_temperature_setpoint(self, temp: str):
+        """ Set the set point used by temperature controller. Internal if not probe, otherwise process temp. """
+        min_t = flowchem_ureg(await self.min_setpoint())
+        max_t = flowchem_ureg(await self.max_setpoint())
+        temp = flowchem_ureg(temp)
 
         if temp > max_t:
             temp = max_t
@@ -194,7 +194,7 @@ class HuberChiller(TempControl):
                 f"Setting to {min_t} instead."
             )
 
-        await self.send_command_and_read_reply("{M00" + self.temp_to_string(temp))
+        await self.send_command_and_read_reply("{M00" + self._temp_to_string(temp))
 
     async def internal_temperature(self) -> str:
         """Returns internal temp (bath temperature)."""
@@ -214,14 +214,14 @@ class HuberChiller(TempControl):
     async def pump_pressure(self) -> str:
         """Return pump pressure in mbar (note that you probably want barg, i.e. to remove 1 bar)"""
         reply = await self.send_command_and_read_reply("{M03****")
-        mbar = PBCommand(reply).parse_integer()
-        return str(flowchem_ureg.Quantity(mbar, "mbar"))
+        pressure = PBCommand(reply).parse_integer()
+        return str(flowchem_ureg(f"{pressure} mbar"))
 
     async def current_power(self) -> str:
         """Returns the current power in Watts (negative for cooling, positive for heating)."""
         reply = await self.send_command_and_read_reply("{M04****")
         power = PBCommand(reply).parse_integer()
-        return str(flowchem_ureg.Quantity(power, "watt"))
+        return str(flowchem_ureg(f"{power} watt"))
 
     async def status(self) -> Dict[str, bool]:
         """Returns the info contained in vstatus1 as dict."""
@@ -269,12 +269,10 @@ class HuberChiller(TempControl):
         reply = await self.send_command_and_read_reply("{M48****")
         return PBCommand(reply).parse_rpm()
 
-    async def set_pump_speed(self, rpm: AnyQuantity):
+    async def set_pump_speed(self, rpm: str):
         """Set the pump speed, in rpm. See device display for range."""
-        rpm = ensure_quantity(rpm, "rpm")
-        await self.send_command_and_read_reply(
-            "{M48" + self.int_to_string(rpm.magnitude)
-        )
+        parsed_rpm = flowchem_ureg(rpm)
+        await self.send_command_and_read_reply("{M48" + self._int_to_string(parsed_rpm.m_as("rpm")))
 
     async def cooling_water_temp(self) -> str:
         """Returns the cooling water inlet temperature (in Celsius)."""
@@ -309,52 +307,52 @@ class HuberChiller(TempControl):
         reply = await self.send_command_and_read_reply("{M51****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_max_internal_temp(self, temp: AnyQuantity):
-        """Sets the max internal temp before the alarm is triggered and a fault generated."""
-        temp = ensure_quantity(temp, "celsius")
-        await self.send_command_and_read_reply("{M51" + self.temp_to_string(temp))
+    async def set_alarm_max_internal_temp(self, temp: str):
+        """ Sets the max internal temp before the alarm is triggered and a fault generated. """
+        temp = flowchem_ureg(temp)
+        await self.send_command_and_read_reply("{M51" + self._temp_to_string(temp))
 
     async def alarm_min_internal_temp(self) -> str:
         """Returns the min internal temp before the alarm is triggered and a fault generated."""
         reply = await self.send_command_and_read_reply("{M52****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_min_internal_temp(self, temp: AnyQuantity):
-        """Sets the min internal temp before the alarm is triggered and a fault generated."""
-        temp = ensure_quantity(temp, "celsius")
-        await self.send_command_and_read_reply("{M52" + self.temp_to_string(temp))
+    async def set_alarm_min_internal_temp(self, temp: str):
+        """ Sets the min internal temp before the alarm is triggered and a fault generated. """
+        temp = flowchem_ureg(temp)
+        await self.send_command_and_read_reply("{M52" + self._temp_to_string(temp))
 
     async def alarm_max_process_temp(self) -> str:
         """Returns the max process temp before the alarm is triggered and a fault generated."""
         reply = await self.send_command_and_read_reply("{M53****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_max_process_temp(self, temp: AnyQuantity):
-        """Sets the max process temp before the alarm is triggered and a fault generated."""
-        temp = ensure_quantity(temp, "celsius")
-        await self.send_command_and_read_reply("{M53" + self.temp_to_string(temp))
+    async def set_alarm_max_process_temp(self, temp: str):
+        """ Sets the max process temp before the alarm is triggered and a fault generated. """
+        temp = flowchem_ureg(temp)
+        await self.send_command_and_read_reply("{M53" + self._temp_to_string(temp))
 
     async def alarm_min_process_temp(self) -> str:
         """Returns the min process temp before the alarm is triggered and a fault generated."""
         reply = await self.send_command_and_read_reply("{M54****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_min_process_temp(self, temp: AnyQuantity):
-        """Sets the min process temp before the alarm is triggered and a fault generated."""
-        temp = ensure_quantity(temp, "celsius")
-        await self.send_command_and_read_reply("{M54" + self.temp_to_string(temp))
+    async def set_alarm_min_process_temp(self, temp: str):
+        """ Sets the min process temp before the alarm is triggered and a fault generated. """
+        temp = flowchem_ureg(temp)
+        await self.send_command_and_read_reply("{M54" + self._temp_to_string(temp))
 
-    async def set_ramp_duration(self, ramp_time: AnyQuantity):
-        """Sets the duration (in seconds) of a ramp to the temperature set by a later call to ramp_to_temperature."""
-        ramp_time = ensure_quantity(ramp_time, "second")
+    async def set_ramp_duration(self, ramp_time: str):
+        """ Sets the duration (in seconds) of a ramp to the temperature set by a later call to ramp_to_temperature. """
+        parsed_time = flowchem_ureg(ramp_time)
+        await self.send_command_and_read_reply("{M59" + self._int_to_string(parsed_time.m_as("s")))
+
+    async def ramp_to_temperature(self, temperature: str):
+        """ Sets the duration (in seconds) of a ramp to the temperature set by a later call to start_ramp(). """
+        temp = flowchem_ureg(temperature)
         await self.send_command_and_read_reply(
-            "{M59" + self.int_to_string(ramp_time.magnitude)
+            "{M5A" + self._temp_to_string(temp)
         )
-
-    async def ramp_to_temperature(self, temperature: float):
-        """Sets the duration (in seconds) of a ramp to the temperature set by a later call to start_ramp()."""
-        temp = ensure_quantity(temperature, "celsius")
-        await self.send_command_and_read_reply("{M5A" + self.temp_to_string(temp))
 
     async def is_venting(self) -> bool:
         """Whether the chiller is venting or not."""
@@ -398,17 +396,17 @@ class HuberChiller(TempControl):
         raise NotImplementedError
 
     @staticmethod
-    def temp_to_string(temp: pint.Quantity) -> str:
-        """From temperature to string for command. f^-1 of PCommand.parse_temperature."""
+    def _temp_to_string(temp: pint.Quantity) -> str:
+        """ From temperature to string for command. f^-1 of PCommand.parse_temperature. """
         minT = flowchem_ureg.Quantity(-151, "celsius")
         maxT = flowchem_ureg.Quantity(327, "celsius")
         assert minT <= temp <= maxT
         # Hexadecimal two's complement
-        return f"{int(temp.magnitude * 100) & 65535:04X}"
+        return f"{int(temp.m_as('°C') * 100) & 65535:04X}"
 
     @staticmethod
-    def int_to_string(number: int) -> str:
-        """From temperature to string for command. f^-1 of PCommand.parse_integer."""
+    def _int_to_string(number: int) -> str:
+        """ From temperature to string for command. f^-1 of PCommand.parse_integer. """
         return f"{number:04X}"
 
     async def __aenter__(self):

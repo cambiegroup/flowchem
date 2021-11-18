@@ -5,14 +5,11 @@ import asyncio
 import logging
 import warnings
 from enum import Enum
-from typing import Union
-
-import pint
 
 from flowchem.components.devices.Knauer.Knauer_common import KnauerEthernetDevice
 from flowchem.components.stdlib import Pump
 from flowchem.exceptions import DeviceError
-from flowchem.units import flowchem_ureg, ensure_quantity, AnyQuantity
+from flowchem.units import flowchem_ureg
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
@@ -222,23 +219,24 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         self.logger.debug(f"Head type set to {head_type}")
 
     async def get_flow(self) -> str:
-        """Gets flow rate."""
-        flow = await self.create_and_send_command(FLOW)
-        flow_ul_min = ensure_quantity(flow, "ul/min")
-        self.logger.debug(f"Flow rate set to {flow_ul_min}")
-        return str(flow_ul_min.to("ml/min"))
+        """ Gets flow rate. """
+        flow_value = await self.create_and_send_command(FLOW)
+        flowrate = flowchem_ureg(f"{flow_value} ul/min")
+        self.logger.debug(f"Current flow rate is {flowrate}")
+        return str(flowrate.to("ml/min"))
 
-    async def set_flow(self, setpoint: Union[pint.Quantity, str, float] = None):
-        """Sets flow rate.
+    async def set_flow(self, flowrate: str = None):
+        """ Sets flow rate.
 
-        :param setpoint: string with units or pint.Quantity or number in ul/min
+        :param flowrate: string with units
         """
+        parsed_flowrate = flowchem_ureg(flowrate)
         await self.create_and_send_command(
             FLOW,
-            setpoint=round(ensure_quantity(setpoint, "ul/min").magnitude),
-            setpoint_range=(0, self.max_allowed_flow + 1),
+            setpoint=round(parsed_flowrate.m_as("ul/min")),
+            setpoint_range=(0, self.max_flow + 1),
         )
-        self.logger.info(f"Flow set to {setpoint}")
+        self.logger.info(f"Flow set to {flowrate}")
 
     async def get_minimum_pressure(self):
         """Gets minimum pressure. The pumps stops if the measured P is lower than this."""
@@ -247,17 +245,17 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         p_min = await self.create_and_send_command(command) * flowchem_ureg.bar
         return str(p_min)
 
-    async def set_minimum_pressure(self, pressure=None):
-        """Sets minimum pressure. The pumps stops if the measured P is lower than this."""
+    async def set_minimum_pressure(self, value: str = "0 bar"):
+        """ Sets minimum pressure. The pumps stops if the measured P is lower than this. """
 
-        pressure_in_bar = ensure_quantity(pressure, "bar")
+        pressure = flowchem_ureg(value)
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
         await self.create_and_send_command(
             command,
-            setpoint=round(pressure_in_bar.magnitude),
+            setpoint=round(pressure.m_as("bar")),
             setpoint_range=(0, self.max_allowed_pressure + 1),
         )
-        logging.info(f"Minimum pressure set to {pressure_in_bar}")
+        logging.info(f"Minimum pressure set to {pressure}")
 
     async def get_maximum_pressure(self) -> str:
         """Gets maximum pressure. The pumps stops if the measured P is higher than this."""
@@ -266,17 +264,17 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         p_max = await self.create_and_send_command(command) * flowchem_ureg.bar
         return str(p_max)
 
-    async def set_maximum_pressure(self, pressure: AnyQuantity):
-        """Sets maximum pressure. The pumps stops if the measured P is higher than this."""
+    async def set_maximum_pressure(self, value: str):
+        """ Sets maximum pressure. The pumps stops if the measured P is higher than this. """
 
-        pressure_in_bar = ensure_quantity(pressure, "bar")
+        pressure = flowchem_ureg(value)
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         await self.create_and_send_command(
             command,
-            setpoint=round(pressure_in_bar.magnitude),
+            setpoint=round(pressure.m_as("bar")),
             setpoint_range=(0, self.max_allowed_pressure + 1),
         )
-        logging.info(f"Maximum pressure set to {pressure_in_bar}")
+        logging.info(f"Maximum pressure set to {pressure}")
 
     async def set_minimum_motor_current(self, setpoint=None):
         """Sets minimum motor current."""
@@ -348,10 +346,10 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         self.logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
     async def read_pressure(self) -> str:
-        """If the pump has a pressure sensor, returns pressure. Read-only property of course."""
-        p_in_bar = await self._transmit_and_parse_reply(PRESSURE) * flowchem_ureg.bar
-        self.logger.debug(f"Pressure measured = {p_in_bar}")
-        return str(p_in_bar)
+        """ If the pump has a pressure sensor, returns pressure. Read-only property of course. """
+        pressure = await self._transmit_and_parse_reply(PRESSURE) * flowchem_ureg.bar
+        self.logger.debug(f"Pressure measured = {pressure}")
+        return str(pressure)
 
     async def read_extflow(self) -> float:
         """Read the set flowrate from analog in."""

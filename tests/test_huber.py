@@ -130,19 +130,19 @@ async def test_get_temperature_setpoint(chiller):
 @pytest.mark.asyncio
 async def test_set_temperature_setpoint(chiller):
     chiller._serial.fixed_reply = None
-    await chiller.set_temperature_setpoint(20)
+    await chiller.set_temperature_setpoint("20 °C")
     print(chiller._serial.last_command)
     assert chiller._serial.last_command == b"{M0007D0\r\n"
 
-    await chiller.set_temperature_setpoint(-20)
+    await chiller.set_temperature_setpoint("-20 °C")
     assert chiller._serial.last_command == b"{M00F830\r\n"
 
     with pytest.warns(Warning):
-        await chiller.set_temperature_setpoint(-400)
+        await chiller.set_temperature_setpoint("-400 °C")
         assert chiller._serial.last_command == b"{M00EC78\r\n"
 
     with pytest.warns(Warning):
-        await chiller.set_temperature_setpoint(4000)
+        await chiller.set_temperature_setpoint("4000 °C")
         assert chiller._serial.last_command == b"{M003A98\r\n"
 
 
@@ -264,7 +264,7 @@ async def test_pump_speed_setpoint(chiller):
 @pytest.mark.asyncio
 async def test_set_pump_speed(chiller):
     chiller._serial.fixed_reply = b"{S480000"
-    await chiller.set_pump_speed(10)
+    await chiller.set_pump_speed("10 rpm")
     assert chiller._serial.last_command == b"{M48000A\r\n"
 
 
@@ -328,7 +328,7 @@ async def test_alarm_min_process_temp(chiller):
 @pytest.mark.asyncio
 async def test_set_alarm_max_internal_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
-    await chiller.set_alarm_max_internal_temp(10)
+    await chiller.set_alarm_max_internal_temp("10 °C")
     assert chiller._serial.last_command == b"{M5103E8\r\n"
 
 
@@ -336,7 +336,7 @@ async def test_set_alarm_max_internal_temp(chiller):
 @pytest.mark.asyncio
 async def test_set_alarm_min_internal_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
-    await chiller.set_alarm_min_internal_temp(10)
+    await chiller.set_alarm_min_internal_temp("10 °C")
     assert chiller._serial.last_command == b"{M5203E8\r\n"
 
 
@@ -344,7 +344,7 @@ async def test_set_alarm_min_internal_temp(chiller):
 @pytest.mark.asyncio
 async def test_set_alarm_max_process_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
-    await chiller.set_alarm_max_process_temp(10)
+    await chiller.set_alarm_max_process_temp("10 °C")
     assert chiller._serial.last_command == b"{M5303E8\r\n"
 
 
@@ -352,5 +352,5 @@ async def test_set_alarm_max_process_temp(chiller):
 @pytest.mark.asyncio
 async def test_set_alarm_min_process_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
-    await chiller.set_alarm_min_process_temp(10)
+    await chiller.set_alarm_min_process_temp("10 °C")
     assert chiller._serial.last_command == b"{M5403E8\r\n"
