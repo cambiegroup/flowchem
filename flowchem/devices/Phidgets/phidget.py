@@ -12,7 +12,7 @@ except ImportError:
 else:
     try:
         Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
-    except (OSError, FileNotFoundError) as e:
+    except (OSError, FileNotFoundError):
         warnings.warn(
             "Phidget22 package installed but Phidget library not found!\n"
             "Get it from https://www.phidgets.com/docs/Operating_System_Support"
@@ -21,7 +21,7 @@ else:
     else:
         HAS_PHIDGET = True
 
-from flowchem.units import AnyQuantity, ensure_quantity, flowchem_ureg
+from flowchem.units import flowchem_ureg
 from flowchem.exceptions import DeviceError, InvalidConfiguration
 
 
@@ -30,8 +30,8 @@ class PressureSensor:
 
     def __init__(
         self,
-        sensor_min: AnyQuantity = 0,
-        sensor_max: AnyQuantity = 10,
+        sensor_min: str = "0 bar",
+        sensor_max: str = "10 bar",
         vint_serial_number: int = None,
         vint_channel: int = None,
         phidget_is_remote: bool = False,
@@ -45,8 +45,8 @@ class PressureSensor:
         self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
 
         # Sensor range
-        self._minP = ensure_quantity(sensor_min, "bar")
-        self._maxP = ensure_quantity(sensor_max, "bar")
+        self._minP = flowchem_ureg(sensor_min)
+        self._maxP = flowchem_ureg(sensor_max)
         # current meter
         self.phidget = CurrentInput()
 
@@ -125,7 +125,7 @@ class PressureSensor:
 
 if __name__ == "__main__":
     test = PressureSensor(
-        sensor_min=0, sensor_max=25, vint_serial_number=627768, vint_channel=0
+        sensor_min="0 bar", sensor_max="25 bar", vint_serial_number=627768, vint_channel=0
     )
     while True:
         print(test.read_pressure())

@@ -16,7 +16,7 @@ import aioserial
 from pydantic import BaseModel
 
 from flowchem.exceptions import InvalidConfiguration, DeviceError
-from flowchem.units import flowchem_ureg, AnyQuantity, ensure_quantity
+from flowchem.units import flowchem_ureg
 
 
 class PumpInfo(BaseModel):
@@ -418,7 +418,7 @@ class Elite11InfuseOnly:
         )
         return await self.pump_io.write_and_read_reply(cmd, return_parsed=parse)
 
-    async def _bound_rate_to_pump_limits(self, rate: AnyQuantity) -> float:
+    async def _bound_rate_to_pump_limits(self, rate: str) -> float:
         """Bound the rate provided to pump's limit. These are function of the syringe diameter.
 
         NOTE: Infusion and withdraw limits are equal!"""
@@ -431,7 +431,7 @@ class Elite11InfuseOnly:
         lower_limit, upper_limit = map(flowchem_ureg, limits_raw.split(" to "))
 
         # Also add units to the provided rate
-        set_rate = ensure_quantity(rate, "ml/min")
+        set_rate = flowchem_ureg(rate)
 
         # Bound rate to acceptance range
         if set_rate < lower_limit:
@@ -485,14 +485,14 @@ class Elite11InfuseOnly:
             Elite11Commands.SYRINGE_VOLUME
         )  # e.g. '100 ml'
 
-    async def set_syringe_volume(self, volume: AnyQuantity = None):
+    async def set_syringe_volume(self, volume_w_units: str = None):
         """Sets the syringe volume in ml.
 
         :param volume: the volume of the syringe.
         """
-        volume_in_ml = ensure_quantity(volume, "ml")
+        volume = flowchem_ureg(volume_w_units)
         await self._send_command_and_read_reply(
-            Elite11Commands.SYRINGE_VOLUME, parameter=f"{volume_in_ml.magnitude:.15f} m"
+            Elite11Commands.SYRINGE_VOLUME, parameter=f"{volume.m_as('ml'):.15f} m"
         )
 
     async def run(self):
@@ -530,7 +530,7 @@ class Elite11InfuseOnly:
             Elite11Commands.INFUSE_RATE
         )  # e.g. '0.2 ml/min'
 
-    async def set_infusion_rate(self, rate: AnyQuantity):
+    async def set_infusion_rate(self, rate: str):
         """Sets the infusion rate"""
         set_rate = await self._bound_rate_to_pump_limits(rate=rate)
         await self._send_command_and_read_reply(
@@ -586,11 +586,11 @@ class Elite11InfuseOnly:
         """Syringe diameter in mm. This can be set in the interval 1 mm to 33 mm"""
         return await self._send_command_and_read_reply(Elite11Commands.DIAMETER)
 
-    async def set_syringe_diameter(self, diameter: AnyQuantity):
+    async def set_syringe_diameter(self, diameter_w_units: str):
         """
         Set syringe diameter. This can be set in the interval 1 mm to 33 mm
         """
-        diameter = ensure_quantity(diameter, "mm")
+        diameter = flowchem_ureg(diameter_w_units)
         if not 1 * flowchem_ureg.mm <= diameter <= 33 * flowchem_ureg.mm:
             warnings.warn(
                 f"Diameter provided ({diameter}) is not valid, ignored! [Accepted range: 1-33 mm]"
@@ -624,21 +624,21 @@ class Elite11InfuseOnly:
             return ""
         return target_vol
 
-    async def set_target_volume(self, target_volume: AnyQuantity):
+    async def set_target_volume(self, volume: str):
         """
         Sets target volume in ml. If the volume is set to 0, the target is cleared.
         """
-        target_volume_in_ml = ensure_quantity(target_volume, "ml")
-        if target_volume_in_ml == 0:
+        target_volume = flowchem_ureg(volume)
+        if target_volume.magnitude == 0:
             await self._send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME)
         else:
             set_vol = await self._send_command_and_read_reply(
                 Elite11Commands.TARGET_VOLUME,
-                parameter=f"{target_volume_in_ml.magnitude} m",
+                parameter=f"{target_volume.m_as('ml')} m",
             )
             if "Argument error" in set_vol:
                 warnings.warn(
-                    f"Cannot set target volume of {target_volume_in_ml} with a "
+                    f"Cannot set target volume of {target_volume} with a "
                     f"{self.get_syringe_volume()} syringe!"
                 )
 
@@ -758,7 +758,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
         """Returns the infusion rate as a string w/ units"""
         return await self._send_command_and_read_reply(Elite11Commands.WITHDRAW_RATE)
 
-    async def set_withdraw_rate(self, rate: AnyQuantity):
+    async def set_withdraw_rate(self, rate: str):
         """Sets the infusion rate"""
         set_rate = await self._bound_rate_to_pump_limits(rate=rate)
         await self._send_command_and_read_reply(

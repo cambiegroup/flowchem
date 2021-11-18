@@ -314,7 +314,8 @@ if __name__ == "__main__":
     asyncio.run(valve1.set_valve_position(1))
 
 
-# Control Command List for reference, don't see much of a point to implement all these, especially since most don't return anything
+# Control Command List for reference, don't see much of a point to implement all these,
+# especially since most don't return anything
 #
 # GO[nn]     - Move to nn position -> None
 #

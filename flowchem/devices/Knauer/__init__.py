@@ -6,4 +6,3 @@ from .KnauerValve import (
     Knauer6Port2PositionValve,
 )
 from .Knauer_autodiscover import autodiscover_knauer
-

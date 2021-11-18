@@ -6,7 +6,7 @@ from typing import Tuple
 import aioserial
 
 from flowchem.exceptions import DeviceError, InvalidConfiguration
-from flowchem.units import AnyQuantity, ensure_quantity
+from flowchem.units import flowchem_ureg
 
 try:
     from flowchem.devices.Vapourtec.commands import R4Command, VapourtecCommand
@@ -111,15 +111,15 @@ class R4Heater:
                 time.sleep(1)
 
     async def set_temperature(
-        self, channel, target_temperature: AnyQuantity, wait: bool = False
+        self, channel, target_temperature: str, wait: bool = False
     ):
         """ Set temperature and optionally waits for S """
         set_command = getattr(VapourtecCommand, f"SET_CH{channel}_TEMP")
 
-        set_temperature = ensure_quantity(target_temperature, "degree_Celsius")
+        set_temperature = flowchem_ureg(target_temperature)
         # Float not accepted, must cast to int
         await self.write_and_read_reply(
-            set_command.set_argument(round(set_temperature.magnitude))
+            set_command.set_argument(round(set_temperature.m_as("°C")))
         )
         # Set temperature implies channel on
         await self.write_and_read_reply(VapourtecCommand.CH_ON.set_argument(channel))

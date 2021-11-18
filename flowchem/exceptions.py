@@ -12,6 +12,7 @@ class InvalidConfiguration(DeviceError):
 
     pass
 
+
 class ActuationError(DeviceError):
     """The attepted move did not succeed"""
     pass

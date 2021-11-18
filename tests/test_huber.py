@@ -62,7 +62,7 @@ class FakeSerial(aioserial.AioSerial):
         """ Override AioSerial method """
         self.last_command = text
 
-    async def readline_async(self,  size: int = -1) -> bytes:
+    async def readline_async(self, size: int = -1) -> bytes:
         """ Override AioSerial method """
         if self.last_command == b"{MFFFFFF\r\n":
             await asyncio.sleep(999)
@@ -354,4 +354,3 @@ async def test_set_alarm_min_process_temp(chiller):
     chiller._serial.fixed_reply = b"{S000000"
     await chiller.set_alarm_min_process_temp(10)
     assert chiller._serial.last_command == b"{M5403E8\r\n"
-

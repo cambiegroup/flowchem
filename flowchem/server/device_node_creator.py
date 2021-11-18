@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter
 
 from flowchem import Spinsolve
-from flowchem.server.routers import *
+from flowchem.server.routers import spinsolve_get_router
 
 
 class DeviceNode:

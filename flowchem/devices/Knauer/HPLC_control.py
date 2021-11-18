@@ -2,7 +2,7 @@
 # what needs to be done is switch the lamps on, which works over serial.
 # the rest is just sending commands to the console, possibly also to another machine
 
-#https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
+# https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
 
 import tenacity
 import subprocess
@@ -195,10 +195,10 @@ if __name__ == "__main__":
     elif computer_w_Clarity == False:
         commander = ClarityInterface(remote=True, host='192.168.10.11', port=10014, instrument_number=2)
         commander.exit()
-        commander.switch_lamp_on() #address and port hardcoded
+        commander.switch_lamp_on()  # address and port hardcoded
         commander.open_clarity_chrom("admin", config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ", start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET")
         commander.slow_flowrate_ramp(r"D:\Data2q\sugar-optimizer\autostartup_analysis",
-                                     method_list= ("autostartup_005_Sugar-c18_shortened.MET",
+                                     method_list=("autostartup_005_Sugar-c18_shortened.MET",
                                                    "autostartup_01_Sugar-c18_shortened.MET",
                                                    "autostartup_015_Sugar-c18_shortened.MET",
                                                    "autostartup_02_Sugar-c18_shortened.MET",
@@ -209,6 +209,6 @@ if __name__ == "__main__":
                                                    "autostartup_045_Sugar-c18_shortened.MET",
                                                    "autostartup_05_Sugar-c18_shortened.MET",))
         commander.load_file(r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET")
-        #commander.load_file("opendedicatedproject") # open a project for measurements
+        # commander.load_file("opendedicatedproject") # open a project for measurements
         commander.set_sample_name("test123")
         commander.run()
