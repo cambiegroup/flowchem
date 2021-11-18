@@ -333,7 +333,7 @@ class Elite11InfuseOnly(Pump):
         "supported": True,
     }
 
-    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: AnyQuantity, syringe_volume: AnyQuantity,
+    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: str, syringe_volume: str,
                  address: Optional[int] = None, name: Optional[str] = None):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
@@ -373,8 +373,8 @@ class Elite11InfuseOnly(Pump):
     def from_config(
         cls,
         port: str,
-        diameter: AnyQuantity,
-        syringe_volume: AnyQuantity,
+        diameter: str,
+        syringe_volume: str,
         address: int = None,
         name: str = None,
         **serial_kwargs,

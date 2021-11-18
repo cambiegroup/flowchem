@@ -68,7 +68,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         "supported": True,
     }
 
-    def __init__(self, ip_address=None, mac_address=None, name=None, max_pressure: AnyQuantity = None):
+    def __init__(self, ip_address=None, mac_address=None, name=None, max_pressure: str = None):
         super().__init__(ip_address, mac_address, name)
         self.eol = b"\n\r"
 

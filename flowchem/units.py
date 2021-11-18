@@ -1,12 +1,7 @@
 """ Unit-conversion related functions """
 import os
-from typing import Union
 
 import pint
-
-# Custom type
-
-AnyQuantity = Union[pint.Quantity, str, float, int]
 
 flowchem_ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
 
