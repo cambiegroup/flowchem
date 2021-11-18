@@ -29,5 +29,4 @@ rich~=10.14.0
 aiofiles~=0.7.0
 ipywidgets~=7.6.5
 bokeh~=2.4.1
-phidgets~=2.1.8
 graphviz
