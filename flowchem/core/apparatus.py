@@ -250,7 +250,7 @@ class Apparatus(object):
         - In Jupyter, a nice HTML table. Otherwise, the output is printed to the terminal.
         """
 
-        # Components table
+        # Components tablg
         components_table = Table(title="Components")
 
         # Columns: Name, Type
@@ -272,22 +272,22 @@ class Apparatus(object):
             total_volume += connection.tube.volume
 
             tubing_table.add_row(
-                    connection.from_component.name,
-                    connection.to_component.name,
-                    round(connection.tube.length, 4),
-                    round(connection.tube.ID, 4),
-                    round(connection.tube.OD, 4),
-                    round(connection.tube.volume.to("ml"), 4),
-                    connection.tube.material)
+                connection.from_component.name,
+                connection.to_component.name,
+                round(connection.tube.length, 4),
+                round(connection.tube.ID, 4),
+                round(connection.tube.OD, 4),
+                round(connection.tube.volume.to("ml"), 4),
+                connection.tube.material)
 
         tubing_table.add_row(
-                "Total",
-                "n/a",
-                round(total_length, 4),
-                "n/a",
-                "n/a",
-                round(total_volume.to("ml"), 4),
-                "n/a")
+            "Total",
+            "n/a",
+            round(total_length, 4),
+            "n/a",
+            "n/a",
+            round(total_volume.to("ml"), 4),
+            "n/a")
 
         # Print tables
         from rich.console import Console

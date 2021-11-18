@@ -28,6 +28,7 @@ async def handle_exception(tasks_to_cancel):
         task.cancel()
     await asyncio.sleep(5)
 
+
 async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool):
     """
     The function that actually does the execution of the protocol.

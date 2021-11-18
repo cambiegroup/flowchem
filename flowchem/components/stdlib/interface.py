@@ -7,4 +7,4 @@ class Interface:
         ...
 
     def __repr__(self):
-        return f"Logical interface."
+        return "Logical interface."
