@@ -27,7 +27,7 @@ class ClarityInterface:
             self.interface = MessageSender(host, port)
             self.command_executor = self.interface.open_socket_and_send
         else:
-            self.command_executor = ClarityExecutioner.execute_command
+            self.command_executor = ClarityExecutioner.execute_command  # type:ignore
 
 # TODO would have to have some way to fail
     @classmethod
@@ -170,7 +170,7 @@ class ClarityExecutioner:
         prefix = 'claritychrom.exe'
         # sanitize input a bit
         if command.split(' ')[0] != prefix:
-            command = folder_of_executable + prefix + ' ' + command
+            command = folder_of_executable + prefix + ' ' + command  # type:ignore
             print(command)
         try:
             x = subprocess

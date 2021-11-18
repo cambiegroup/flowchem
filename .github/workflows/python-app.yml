@@ -37,7 +37,7 @@ jobs:
 
     - name: Run mypy
       run: |
-        mypy --install-types --non-interactive flowchem
+        mypy --install-types --non-interactive flowchem --python-version 3.9
 
     - name: Test with pytest
       run: |
