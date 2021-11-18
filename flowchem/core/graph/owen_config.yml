@@ -2,14 +2,14 @@ devices:
 
     donor:
         Elite11InfuseOnly:
-            port: COM1
+            port: COM11
             diameter: 4.6 mm
             syringe_volume: 1 ml
             address: 0
 
     activator:
         Elite11InfuseOnly:
-            port: COM1
+            port: COM11
             diameter: 4.6 mm
             syringe_volume: 1 ml
             address: 1
