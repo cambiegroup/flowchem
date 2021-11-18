@@ -250,7 +250,7 @@ class Apparatus(object):
         - In Jupyter, a nice HTML table. Otherwise, the output is printed to the terminal.
         """
 
-        # Components tablg
+        # Components table
         components_table = Table(title="Components")
 
         # Columns: Name, Type
