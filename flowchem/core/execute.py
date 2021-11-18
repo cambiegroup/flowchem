@@ -104,8 +104,8 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
 
             try:
                 # FIXME the list tasks actually contains coroutines, not tasks. A rename would be nice.
-                tasks = [asyncio.create_task(coro) for coro in tasks]
-                await asyncio.gather(*tasks)
+                task_list = [asyncio.create_task(coro) for coro in tasks]
+                await asyncio.gather(*task_list)
 
             except ProtocolCancelled:
                 logger.error("Stop button pressed.")

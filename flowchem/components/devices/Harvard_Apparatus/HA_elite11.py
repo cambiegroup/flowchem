@@ -748,7 +748,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
     Controls Harvard Apparatus Elite11 syringe pumps - INFUSE AND WITHDRAW.
     """
 
-    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: float, syringe_volume: float,
+    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: str, syringe_volume: str,
                  address: Optional[int] = None, name: Optional[str] = None):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
@@ -848,15 +848,15 @@ if __name__ == "__main__":
     logging.basicConfig()
     logging.getLogger("__main__").setLevel(logging.DEBUG)
 
-    pump = Elite11InfuseOnly.from_config(port="COM4", syringe_volume=10, diameter=10)
+    pump = Elite11InfuseOnly.from_config(port="COM4", syringe_volume="10 ml", diameter="10 mm")
 
     async def main():
         """Test function"""
         await pump.initialize()
         # assert await pump.get_infused_volume() == 0
-        await pump.set_syringe_diameter(30)
-        await pump.set_infusion_rate(0.1)
-        await pump.set_target_volume(0.05)
+        await pump.set_syringe_diameter("30 mm")
+        await pump.set_infusion_rate("0.1 ml/min")
+        await pump.set_target_volume("0.05 ml")
         await pump.infuse_run()
         await asyncio.sleep(2)
         await pump.pump_info()

@@ -73,7 +73,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         self.eol = b"\n\r"
 
         # All of the following are set upon initialize()
-        self.max_allowed_pressure, self.max_allowed_flow = None, None
+        self.max_allowed_pressure, self.max_allowed_flow = 0, 0
         self._headtype = None
         self._running = None
         self._pressure_limit = max_pressure
@@ -234,7 +234,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         await self.create_and_send_command(
             FLOW,
             setpoint=round(parsed_flowrate.m_as("ul/min")),
-            setpoint_range=(0, self.max_flow + 1),
+            setpoint_range=(0, self.max_allowed_flow + 1),
         )
         self.logger.info(f"Flow set to {flowrate}")
 
