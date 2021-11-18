@@ -1,20 +1,26 @@
+""" Control module for the Vapourtec R4 heater """
+import logging
 import time
 from typing import Tuple
 
 import aioserial
-import logging
 
-from flowchem.constants import DeviceError, InvalidConfiguration
+from flowchem.exceptions import DeviceError, InvalidConfiguration
+from flowchem.units import AnyQuantity, ensure_quantity
 
 try:
     from flowchem.devices.Vapourtec.commands import R4Command, VapourtecCommand
+    HAS_VAPOURTEC_COMMANDS = True
 except ImportError as e:
+    HAS_VAPOURTEC_COMMANDS = False
     raise PermissionError(
         "Cannot redistribute Vapourtec commands... Contact Vapourtec to get them!"
     ) from e
 
 
 class R4Heater:
+    """ R4 reactor heater control class. """
+
     DEFAULT_CONFIG = {
         "timeout": 0.1,
         "baudrate": 19200,
@@ -22,17 +28,26 @@ class R4Heater:
         "stopbits": aioserial.STOPBITS_ONE,
         "bytesize": aioserial.EIGHTBITS,
     }
-
     """ Virtual control of the Vapourtec R4 heating module. """
+
     def __init__(self, **config):
+
+        if not HAS_VAPOURTEC_COMMANDS:
+            raise InvalidConfiguration(
+                "R4Heater unusable: no Vapourtec Commands available.\n"
+                "Contact your distributor to get the serial API documentation."
+            )
+
         # Merge default settings, including serial, with provided ones.
         configuration = dict(R4Heater.DEFAULT_CONFIG, **config)
         try:
             self._serial = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as e:
-            raise InvalidConfiguration(f"Cannot connect to the R4Heater on the port <{config.get('port')}>") from e
+            raise InvalidConfiguration(
+                f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
+            ) from e
 
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
+        self.logger = logging.getLogger(__name__).getChild("R4Heater").getChild(self._serial.name)
 
     async def _write(self, command: str):
         """ Writes a command to the pump """
@@ -46,7 +61,8 @@ class R4Heater:
         self.logger.debug(f"Reply received: {reply_string.decode('ascii')}")
         return reply_string.decode("ascii")
 
-    def parse_response(self, response: str) -> Tuple[bool, str]:
+    @staticmethod
+    def parse_response(response: str) -> Tuple[bool, str]:
         """ Split a received line in its components: success, reply """
         try:
             if response[0:2] != "ER":
@@ -94,11 +110,17 @@ class R4Heater:
             else:
                 time.sleep(1)
 
-    async def set_temperature(self, channel, target_temperature: int, wait: bool = False):
+    async def set_temperature(
+        self, channel, target_temperature: AnyQuantity, wait: bool = False
+    ):
         """ Set temperature and optionally waits for S """
         set_command = getattr(VapourtecCommand, f"SET_CH{channel}_TEMP")
+
+        set_temperature = ensure_quantity(target_temperature, "degree_Celsius")
         # Float not accepted, must cast to int
-        await self.write_and_read_reply(set_command.set_argument(int(target_temperature)))
+        await self.write_and_read_reply(
+            set_command.set_argument(round(set_temperature.magnitude))
+        )
         # Set temperature implies channel on
         await self.write_and_read_reply(VapourtecCommand.CH_ON.set_argument(channel))
 
@@ -117,11 +139,14 @@ class R4Heater:
 
 if __name__ == "__main__":
     import asyncio
+
     heat = R4Heater(port="COM11")
 
     async def main():
+        """ test function """
+        # noinspection PyArgumentEqualDefault
         await heat.set_temperature(0, 30, wait=False)
-        print("not waiting")
+        print("not waiting - default behaviour.")
         await heat.set_temperature(0, 30, wait=True)
         print("actually I waited")
 

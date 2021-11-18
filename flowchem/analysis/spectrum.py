@@ -1,3 +1,4 @@
+""" Generic spectrum representation. Used by IRSpectrum. """
 import numpy as np
 import pandas as pd
 from scipy import integrate
@@ -5,13 +6,14 @@ from scipy import integrate
 
 class Spectrum:
     """ Generic dimensional spectrum representation. """
+
     def __init__(self, x, y):
         assert len(x) == len(y)
         self._x = np.array(x)
         self._y = np.array(y)
 
     @property
-    def empty(self) -> True:
+    def empty(self) -> bool:
         """ True if there are no data """
         return self._y.size == 0
 

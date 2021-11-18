@@ -1,8 +1,8 @@
 import asyncio
+import ctypes.wintypes
 import warnings
 from pathlib import Path
-import ctypes.wintypes
-from typing import Union
+from typing import Union, Callable, Tuple
 
 
 def get_my_docs_path():
@@ -11,16 +11,17 @@ def get_my_docs_path():
     XSD and XML schema are installed in my documents, whose location, if custom, can be obtained as follows.
     """
     # From https://stackoverflow.com/questions/6227590
-    CSIDL_PERSONAL = 5  # My Documents
-    SHGFP_TYPE_CURRENT = 0  # Get current, not default value
+
+    csidl_personal = 5  # My Documents
+    shgfp_type_current = 0  # Get current, not default value
     buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
     ctypes.windll.shell32.SHGetFolderPathW(
-        None, CSIDL_PERSONAL, None, SHGFP_TYPE_CURRENT, buf
+        None, csidl_personal, None, shgfp_type_current, buf
     )
     return Path(buf.value)
 
 
-def create_folder_mapper(remote_root: Path, local_root: Path) -> callable:
+def create_folder_mapper(remote_root: Path, local_root: Path) -> Callable[[Union[Path, str]], Path]:
     """
     Returns a function that converts path relative to remote_root to their corresponding on local_root
     Used when using spinsolve on a remote PC to share the result data via a remotely mounted network drive
@@ -36,6 +37,7 @@ def create_folder_mapper(remote_root: Path, local_root: Path) -> callable:
 
         nonlocal remote_root, local_root
         # If relative translate if not error
+        # NOTE: Path.is_relative_to() is available from Py 3.9 only. NBD as this is not often used.
         if path_to_be_translated.is_relative_to(remote_root):
             suffix = path_to_be_translated.relative_to(remote_root)
             return local_root / suffix
@@ -49,8 +51,8 @@ def create_folder_mapper(remote_root: Path, local_root: Path) -> callable:
 
 
 async def get_streams_for_connection(
-    host, port
-) -> (asyncio.StreamReader, asyncio.StreamWriter):
+        host, port
+) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
     """
     Given a target (host, port) returns the corresponding asyncio streams (I/O).
     """
@@ -62,5 +64,10 @@ async def get_streams_for_connection(
 
 
 def run_loop(loop):
+    """
+
+    Args:
+        loop:
+    """
     asyncio.set_event_loop(loop)
     loop.run_forever()

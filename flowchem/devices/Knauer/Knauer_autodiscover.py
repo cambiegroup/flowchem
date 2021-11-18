@@ -1,5 +1,6 @@
 """ Autodiscover Knauer devices on network """
 import asyncio
+import queue
 import socket
 import sys
 import time
@@ -22,17 +23,15 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
         self.loop = asyncio.get_event_loop()
         self._queue = response_queue
 
-    def connection_made(self, transport: asyncio.transports.DatagramTransport):
-        self.transport = transport
+    def connection_made(self, transport: asyncio.transports.DatagramTransport):  # type: ignore
+        """ Called upon connection. """
         sock = transport.get_extra_info("socket")  # type: socket.socket
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        self.broadcast()
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # sets to broadcast
+        transport.sendto(b"\x00\x01\x00\xf6", self.target)
 
     def datagram_received(self, data: Union[bytes, Text], addr: Address):
+        """ Called on data received """
         self._queue.put(addr[0])
-
-    def broadcast(self):
-        self.transport.sendto(b"\x00\x01\x00\xf6", self.target)
 
 
 async def get_device_type(ip_address: str) -> str:
@@ -76,9 +75,11 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
         source_ip = socket.gethostbyname(hostname)
 
     loop = asyncio.get_event_loop()
-    device_q = Queue()
+    device_q: queue.Queue = Queue()
     coro = loop.create_datagram_endpoint(
-        lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q), local_addr=(source_ip, 28688), )
+        lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
+        local_addr=(source_ip, 28688),
+    )
     loop.run_until_complete(coro)
     thread = Thread(target=loop.run_forever)
     thread.start()
@@ -101,7 +102,7 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
     return device_info
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # This is a bug of asyncio on Windows :|
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     # Autodiscover devices (dict mac as index, IP as value)
     devices = autodiscover_knauer()
 
-    for mac, ip in devices.items():
+    for mac_address, ip in devices.items():
         # Device Type
         device_type = asyncio.run(get_device_type(ip))
-        print(f"MAC: {mac} IP: {ip} DEVICE_TYPE: {device_type}")
+        print(f"MAC: {mac_address} IP: {ip} DEVICE_TYPE: {device_type}")

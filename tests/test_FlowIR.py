@@ -1,8 +1,8 @@
+""" Test FlowIR, needs actual connection to the device :( """
 import asyncio
 import datetime
 import sys
 
-import asyncua
 import pytest
 
 from flowchem.devices.MettlerToledo.iCIR_common import IRSpectrum
@@ -19,40 +19,38 @@ def check_pytest_asyncio_installed():
 
 
 @pytest.fixture()
-async def flowIR():
-    opcua_client = asyncua.Client(
-        url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
-    )
-    return FlowIR(opcua_client)
+async def flowir():
+    """ Return local FlowIR object """
+    return FlowIR(FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121"))
 
 
 @pytest.mark.asyncio
 @pytest.mark.FlowIR
-async def test_connected(flowIR):
-    async with flowIR as spectrometer:
+async def test_connected(flowir):
+    async with flowir as spectrometer:
         assert await spectrometer.is_iCIR_connected()
 
 
 @pytest.mark.asyncio
 @pytest.mark.FlowIR
-async def test_probe_info(flowIR):
-    async with flowIR as spectrometer:
+async def test_probe_info(flowir):
+    async with flowir as spectrometer:
         info = await spectrometer.probe_info()
         assert all(field in info for field in ("spectrometer", "spectrometer_SN", "probe_SN", "detector"))
 
 
 @pytest.mark.asyncio
 @pytest.mark.FlowIR
-async def test_probe_status(flowIR):
-    async with flowIR as spectrometer:
+async def test_probe_status(flowir):
+    async with flowir as spectrometer:
         status = await spectrometer.probe_status()
         assert status == "Not running"
 
 
 @pytest.mark.asyncio
 @pytest.mark.FlowIR
-async def test_is_running(flowIR):
-    async with flowIR as spectrometer:
+async def test_is_running(flowir):
+    async with flowir as spectrometer:
         # Check idle
         assert await spectrometer.is_running() is False
 
@@ -70,8 +68,8 @@ async def test_is_running(flowIR):
 
 @pytest.mark.asyncio
 @pytest.mark.FlowIR
-async def test_spectrum_acquisition(flowIR):
-    async with flowIR as spectrometer:
+async def test_spectrum_acquisition(flowir):
+    async with flowir as spectrometer:
         template_name = "15_sec_integration.iCIRTemplate"
         await spectrometer.start_experiment(template=template_name)
 
@@ -102,9 +100,9 @@ async def test_spectrum_acquisition(flowIR):
 
 @pytest.mark.asyncio
 @pytest.mark.FlowIR
-async def test_spectra(flowIR):
+async def test_spectra(flowir):
     # This implies the previous test run successfully, thus last spectrum is now
-    async with flowIR as spectrometer:
+    async with flowir as spectrometer:
         last_raw = await spectrometer.last_spectrum_raw()
         assert isinstance(last_raw, IRSpectrum)
 

@@ -6,12 +6,12 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Set
 
 import aioserial
 from aioserial import SerialException
 
-from flowchem.constants import InvalidConfiguration, ActuationError, DeviceError
+from flowchem.exceptions import InvalidConfiguration, ActuationError, DeviceError
 
 
 @dataclass
@@ -82,7 +82,7 @@ class ViciValcoValveIO:
         self._serial = aio_port
 
         # These will be set in initialize
-        self.num_valve_connected = None
+        self.num_valve_connected = 0
         self._initialized = False
 
     @classmethod
@@ -140,7 +140,7 @@ class ViciValcoValveIO:
         """ Reads the valve reply from serial communication """
         reply_string = ''
         for line in range(lines):
-            a = ''
+            a = b''
             a = await self._serial.readline_async()
             reply_string += a.decode("ascii")
 
@@ -156,15 +156,18 @@ class ViciValcoValveIO:
         Sends a command to the valve, read the replies and returns it, optionally parsed """
         self.reset_buffer()
         await self._write(command.compile())
-        if lines:
-            response = await self._read_reply(lines)
 
-            if not response:
-                raise InvalidConfiguration(
-                    f"No response received from valve, check valve address! "
-                    f"(Currently set to {command.target_valve_num})"
-                )
-            return response.rstrip()
+        if not lines:
+            return ""
+
+        response = await self._read_reply(lines)
+
+        if not response:
+            raise InvalidConfiguration(
+                f"No response received from valve, check valve address! "
+                f"(Currently set to {command.target_valve_num})"
+            )
+        return response.rstrip()
 
     @property
     def name(self) -> str:
@@ -180,7 +183,7 @@ class ViciValco:
     """
 
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
-    _io_instances = set()
+    _io_instances: Set[ViciValcoValveIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
     # When several valves are daisy chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
@@ -211,7 +214,7 @@ class ViciValco:
         # The valve name is used for logs and error messages.
         self.name = f"Valve {self.valve_io.name}:{address}" if name is None else name
 
-        self.log = logging.getLogger(__name__).getChild(__class__.__name__).getChild(self.name)
+        self.log = logging.getLogger(__name__).getChild("ViciValco").getChild(self.name)
 
     @classmethod
     def from_config(cls, config):
@@ -274,9 +277,7 @@ class ViciValco:
         return ViciValco.valve_position_name[valve_pos[-1]]
 
     async def set_valve_position(self, target_position: int):
-        """ Set valve position. Switches really quick and doesn't reply, so waiting does not make sense
-
-        """
+        """ Set valve position. Switches really quick and doesn't reply, so waiting does not make sense. """
         valve_by_name_cw = ViciProtocolCommandTemplate(command="GO")
         await self.send_command_and_read_reply(valve_by_name_cw, command_value=str(target_position), lines=0)
         self.log.debug(f"{self.name} valve position set to {target_position}")

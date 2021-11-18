@@ -5,9 +5,13 @@ import asyncio
 import logging
 import warnings
 from enum import Enum
+from typing import Union
 
-from flowchem.constants import DeviceError
+import pint
+
 from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
+from flowchem.exceptions import DeviceError
+from flowchem.units import flowchem_ureg, ensure_quantity
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
@@ -44,6 +48,7 @@ class AzuraPumpHeads(Enum):
 
 class AzuraCompactPump(KnauerEthernetDevice):
     """ Control module for Knauer Azura Compact pumps. """
+
     def __init__(self, ip_address):
         super().__init__(ip_address)
         self.eol = b"\n\r"
@@ -76,8 +81,10 @@ class AzuraCompactPump(KnauerEthernetDevice):
             warnings.warn(f"Invalid message sent to device.\n")
 
         elif "ERROR:2" in reply:
-            warnings.warn(f"Setpoint refused by device.\n"
-                          f"Refer to manual for allowed values.\n")
+            warnings.warn(
+                f"Setpoint refused by device.\n"
+                f"Refer to manual for allowed values.\n"
+            )
         else:
             warnings.warn("Unspecified error detected!")
         return True
@@ -132,11 +139,15 @@ class AzuraCompactPump(KnauerEthernetDevice):
         # SETTER with range
         if setpoint_range:
             if setpoint in range(*setpoint_range):
-                return await self._transmit_and_parse_reply(message + ":" + str(setpoint))
+                return await self._transmit_and_parse_reply(
+                    message + ":" + str(setpoint)
+                )
 
-            warnings.warn(f"The setpoint provided {setpoint} is not valid for the command "
-                          f"{message}!\n Accepted range is: {setpoint_range}.\n"
-                          f"Command ignored")
+            warnings.warn(
+                f"The setpoint provided {setpoint} is not valid for the command "
+                f"{message}!\n Accepted range is: {setpoint_range}.\n"
+                f"Command ignored"
+            )
             return ""
 
         # SETTER w/o range
@@ -158,6 +169,7 @@ class AzuraCompactPump(KnauerEthernetDevice):
             self.max_pressure, self.max_flow = 150, 50000
 
     async def get_headtype(self):
+        """ Returns pump's head type. """
         head_type_id = await self.create_and_send_command(HEADTYPE)
         try:
             headtype = AzuraPumpHeads(int(head_type_id))
@@ -173,60 +185,65 @@ class AzuraCompactPump(KnauerEthernetDevice):
         return headtype
 
     async def set_headtype(self, head_type: AzuraPumpHeads):
+        """ Sets pump's head type. """
         await self.create_and_send_command(HEADTYPE, setpoint=head_type.value)
         # Update internal property (changes max flowrate etc)
         self._headtype = head_type
         self.logger.debug(f"Head type set to {head_type}")
 
-    async def get_flow(self):
-        """Gets flow rate."""
+    async def get_flow(self) -> str:
+        """ Gets flow rate. """
         flow = await self.create_and_send_command(FLOW)
-        self.logger.debug(f"Flow rate set to {flow} ml/min")
-        return int(flow) / 1000
+        flow_ul_min = ensure_quantity(flow, "ul/min")
+        self.logger.debug(f"Flow rate set to {flow_ul_min}")
+        return str(flow_ul_min.to("ml/min"))
 
-    async def set_flow(self, setpoint_in_ml_min: float = None):
-        """
-        Sets flow rate.
+    async def set_flow(self, setpoint: Union[pint.Quantity, str, float] = None):
+        """ Sets flow rate.
 
-        :param setpoint_in_ml_min: in mL/min
+        :param setpoint: string with units or pint.Quantity or number in ul/min
         """
-        set_flowrate_ul_min = int(setpoint_in_ml_min * 1000)
-        flow = await self.create_and_send_command(
+        await self.create_and_send_command(
             FLOW,
-            setpoint=set_flowrate_ul_min,
+            setpoint=round(ensure_quantity(setpoint, "ul/min").magnitude),
             setpoint_range=(0, self.max_flow + 1),
         )
-        self.logger.info(f"Flow set to {setpoint_in_ml_min}, returns {flow}")
+        self.logger.info(f"Flow set to {setpoint}")
 
-    async def get_minimum_pressure(self, pressure_in_bar=None):
+    async def get_minimum_pressure(self):
         """ Gets minimum pressure. The pumps stops if the measured P is lower than this. """
 
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
-        return await self.create_and_send_command(command)
+        p_min = await self.create_and_send_command(command) * flowchem_ureg.bar
+        return str(p_min)
 
-    async def set_minimum_pressure(self, pressure_in_bar=None):
+    async def set_minimum_pressure(self, pressure=None):
         """ Sets minimum pressure. The pumps stops if the measured P is lower than this. """
 
+        pressure_in_bar = ensure_quantity(pressure, "bar")
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
-        await self.create_and_send_command(command,
-            setpoint=pressure_in_bar,
+        await self.create_and_send_command(
+            command,
+            setpoint=round(pressure_in_bar.magnitude),
             setpoint_range=(0, self.max_pressure + 1),
         )
         logging.info(f"Minimum pressure set to {pressure_in_bar}")
 
-    async def get_maximum_pressure(self):
+    async def get_maximum_pressure(self) -> str:
         """ Gets maximum pressure. The pumps stops if the measured P is higher than this. """
 
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
-        return await self.create_and_send_command(command)
+        p_max = await self.create_and_send_command(command) * flowchem_ureg.bar
+        return str(p_max)
 
-    async def set_maximum_pressure(self, pressure_in_bar=None):
+    async def set_maximum_pressure(self, pressure):
         """ Sets maximum pressure. The pumps stops if the measured P is higher than this. """
 
+        pressure_in_bar = ensure_quantity(pressure, "bar")
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         await self.create_and_send_command(
             command,
-            setpoint=pressure_in_bar,
+            setpoint=round(pressure_in_bar.magnitude),
             setpoint_range=(0, self.max_pressure + 1),
         )
         logging.info(f"Maximum pressure set to {pressure_in_bar}")
@@ -295,21 +312,25 @@ class AzuraCompactPump(KnauerEthernetDevice):
     async def set_correction_factor(self, setpoint=None):
         """ Sets the correction factor. Not clear what it is. """
         command = CORR10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else CORR50
-        reply = await self.create_and_send_command(command, setpoint=setpoint, setpoint_range=(0, 301))
+        reply = await self.create_and_send_command(
+            command, setpoint=setpoint, setpoint_range=(0, 301)
+        )
         self.logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
-    async def read_pressure(self) -> int:
+    async def read_pressure(self) -> str:
         """ If the pump has a pressure sensor, returns pressure. Read-only property of course. """
-        p_in_bar = await self._transmit_and_parse_reply(PRESSURE)
-        self.logger.debug(f"Pressure measured = {p_in_bar} bar")
-        return int(p_in_bar)
+        p_in_bar = await self._transmit_and_parse_reply(PRESSURE) * flowchem_ureg.bar
+        self.logger.debug(f"Pressure measured = {p_in_bar}")
+        return str(p_in_bar)
 
     async def read_extflow(self) -> float:
+        """ Read the set flowrate from analog in.  """
         ext_flow = await self._transmit_and_parse_reply(EXTFLOW)
         self.logger.debug(f"Extflow reading returns {ext_flow}")
         return float(ext_flow)
 
     async def read_errors(self):
+        """ Returns the last 5 errors.  """
         last_5_errors = await self.create_and_send_command(ERRORS)
         self.logger.debug(f"Error reading returns {last_5_errors}")
         return last_5_errors
@@ -366,9 +387,10 @@ class AzuraCompactPump(KnauerEthernetDevice):
         self.logger.debug(f"External control set to {value}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # This is a bug of asyncio on Windows :|
     import sys
+
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -377,6 +399,7 @@ if __name__ == '__main__':
     p = AzuraCompactPump(ip_address="192.168.1.126")
 
     async def main(pump: AzuraCompactPump):
+        """ Test function """
         await pump.initialize()
         init_val = await pump.get_adjusting_factor()
         await pump.set_adjusting_factor(0)
