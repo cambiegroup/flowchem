@@ -7,7 +7,6 @@ from fastapi import APIRouter
 
 from flowchem import Spinsolve
 from flowchem.core.server.routers import spinsolve_get_router
-from flowchem.exceptions import InvalidConfiguration
 
 
 class DeviceNode:
@@ -65,7 +64,7 @@ class DeviceNode:
                 router = APIRouter()
 
         router.prefix = f"/{self.safe_title}"
-        router.tags = self.safe_title
+        router.tags = [self.safe_title]
         self._router = router
         return self._router
 

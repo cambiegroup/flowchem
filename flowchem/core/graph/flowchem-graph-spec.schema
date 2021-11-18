@@ -43,8 +43,10 @@
         "$ref": "#/definitions/manson"
       }, "R4Heater": {
         "$ref": "#/definitions/r4heater"
-      }, "Elite11": {
-        "$ref": "#/definitions/elite11"
+      }, "Elite11InfuseOnly": {
+        "$ref": "#/definitions/elite11infuseonly"
+      }, "Elite11InfuseWithdraw": {
+        "$ref": "#/definitions/elite11infusewithdraw"
       }, "AzuraCompactPump": {
         "$ref": "#/definitions/azura-compact"
       }, "Knauer12PortValve": {
@@ -59,7 +61,7 @@
         "$ref": "#/definitions/clarity_interface"
       }, "ViciValco": {
         "$ref": "#/definitions/vici-valco"
-      }
+      }, "TMixer": {}
     }, "oneOf": [
       {
         "required": [
@@ -95,7 +97,11 @@
         ]
       }, {
         "required": [
-          "Elite11"
+          "Elite11InfuseOnly"
+        ]
+      }, {
+        "required": [
+          "Elite11InfuseWithdraw"
         ]
       }, {
         "required": [
@@ -124,6 +130,10 @@
       }, {
         "required": [
           "ViciValco"
+        ]
+      }, {
+        "required": [
+          "TMixer"
         ]
       }
     ], "additionalProperties": false
@@ -219,8 +229,8 @@
     }, "required": [
       "port"
     ]
-  }, "elite11": {
-    "id": "#/definitions/elite11", "type": "object", "properties": {
+  }, "elite11infuseonly": {
+    "id": "#/definitions/elite11infuseonly", "type": "object", "properties": {
       "port": {
         "type": "string"
       },
@@ -228,21 +238,45 @@
         "type": "number"
       },
       "diameter": {
-        "type": "number"
+        "type": "string"
       },
       "syringe_volume": {
-        "type": "number"
+        "type": "string"
       }
     }, "required": [
       "port", "syringe_volume", "diameter"
     ]
-  }, "azura-compact": {
-    "id": "#/definitions/azura-compact", "type": "object", "properties": {
-      "mac_address": {
+  },  "elite11infusewithdraw": {
+    "id": "#/definitions/elite11infusewithdraw", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      },
+      "address": {
+        "type": "number"
+      },
+      "diameter": {
+        "type": "string"
+      },
+      "syringe_volume": {
         "type": "string"
       }
     }, "required": [
-      "mac_address"
+      "port", "syringe_volume", "diameter"
+    ]
+  },"azura-compact": {
+    "id": "#/definitions/azura-compact", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }, "ip_address": {
+        "type": "string"
+      }
+    }, "oneOf": [
+      {
+        "required": ["mac_address"]
+      },
+      {
+        "required": ["ip_address"]
+      }
     ]
   }, "knauer-valve-12": {
     "id": "#/definitions/knauer-valve-12", "type": "object", "properties": {
@@ -279,7 +313,7 @@
   }, "clarity_interface": {
     "id": "#/definitions/clarity_interface", "type": "object", "properties": {
       "instrument_number": {
-        "type": "int"
+        "type": "number"
       }
     }, "required": [
       "instrument_number"

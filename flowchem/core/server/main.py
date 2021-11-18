@@ -6,6 +6,7 @@ from typing import Dict, Tuple
 import jsonschema
 import yaml
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 
 import flowchem
 from flowchem.core.graph.DeviceGraph import (
@@ -43,8 +44,8 @@ def create_server_from_config(
     assert isinstance(config, dict)  # This is here just to make mypy happy.
 
     # Validate config
-    # schema = load_schema()
-    # jsonschema.validate(config, schema=schema)
+    schema = load_schema()
+    jsonschema.validate(config, schema=schema)
 
     # FastAPI server
     app = FastAPI(title="flowchem", version=flowchem.__version__)
@@ -76,7 +77,7 @@ def create_server_from_config(
         logger.debug(f"Created device <{device_name}> with config: {device_config}")
 
         # Add to App
-        app.include_router(node.router, prefix=node.router.prefix)
+        app.include_router(node.router, prefix=node.router.prefix, tags=node.router.tags)
         logger.debug(f"Router for <{device_name}> added to app!")
 
         # Add to mDNS server
@@ -91,15 +92,16 @@ if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
 
     app, zeroconf = create_server_from_config(
-        config_file=Path("../graph/owen_config.yml")
+        config_file=Path("../graph/flowchem-graph.yml")
     )
 
-    @app.get("/")
+    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def root():
         """Server root"""
         # FIXME add landing page
-        return "<h1>hello world!</h1>"
+        return "<h1>Flowchem Device Server!</h1>" \
+               "<a href='./docs/'>API Reference</a>"
 
     import uvicorn
 
-    uvi = uvicorn.run(app, host="0.0.0.0")
+    uvi = uvicorn.run(app, host="127.0.0.1")
