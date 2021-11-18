@@ -242,7 +242,7 @@ class Apparatus(object):
             f.view(cleanup=True)
             return None
 
-    def summarize(self) -> Optional[Markdown]:
+    def summarize(self) -> None:
         """
         Prints a summary table of the apparatus.
 
