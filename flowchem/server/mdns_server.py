@@ -67,8 +67,11 @@ class Server_mDNS:
 
     def __del__(self):
         if self.server:
-            self.server.close()
-            print("Zeroconf server stopped")
+            try:
+                self.server.close()
+                print("Zeroconf server stopped")
+            except TimeoutError:
+                pass
 
 
 if __name__ == "__main__":
