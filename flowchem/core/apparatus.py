@@ -6,7 +6,7 @@ import networkx as nx
 from IPython import get_ipython
 from IPython.display import Markdown
 from graphviz import Digraph
-from terminaltables import AsciiTable, GithubFlavoredMarkdownTable
+from rich.table import Table
 
 from flowchem.units import flowchem_ureg
 from flowchem.components.stdlib import Component, Tube, Valve, Vessel
@@ -242,43 +242,27 @@ class Apparatus(object):
             f.view(cleanup=True)
             return None
 
-    def summarize(self, style: str = "gfm") -> Optional[Markdown]:
+    def summarize(self) -> Optional[Markdown]:
         """
         Prints a summary table of the apparatus.
-
-        Arguments:
-        - `style`: Either `gfm` for GitHub-flavored Markdown or `ascii`. If equal to `gfm` and in a Jupyter notebook, returns a rendered HTML version of the GFM table.
 
         Returns:
         - In Jupyter, a nice HTML table. Otherwise, the output is printed to the terminal.
         """
 
-        if style == "ascii":
-            tableStyle = AsciiTable
-        else:
-            tableStyle = GithubFlavoredMarkdownTable
+        # Components table
+        components_table = Table(title="Components")
 
-        # create a components table
-        summary = [["Name", "Type"]]  # header rows of components table
+        # Columns: Name, Type
+        components_table.add_column("Name")
+        components_table.add_column("Type")
+
+        # Fill rows
         for component in sorted(self.components, key=lambda x: x.__class__.__name__):
-            summary.append([component.name, component.__class__.__name__])
+            components_table.add_row(component.name, component.__class__.__name__)
 
-        # generate the components table
-        components_table = tableStyle(summary)
-        components_table.title = "Components"
-
-        # summarize the tubing
-        summary = [
-            [
-                "From",
-                "To",
-                "Length",
-                "Inner Diameter",
-                "Outer Diameter",
-                "Volume",
-                "Material",
-            ]
-        ]  # header row
+        # Tubing table
+        tubing_table = Table("From", "To", "Length", "I.D.", "O.D.", "Volume", "Material", title="Tubing")
 
         # store and calculate the computed totals for tubing
         total_length = 0 * flowchem_ureg.mm
@@ -287,49 +271,29 @@ class Apparatus(object):
             total_length += connection.tube.length
             total_volume += connection.tube.volume
 
-            summary.append(
-                [
+            tubing_table.add_row(
                     connection.from_component.name,
                     connection.to_component.name,
                     round(connection.tube.length, 4),
                     round(connection.tube.ID, 4),
                     round(connection.tube.OD, 4),
                     round(connection.tube.volume.to("ml"), 4),
-                    connection.tube.material,
-                ]
-            )
-        summary.append(
-            [
-                "**Total**" if style == "gfm" else "Total",
+                    connection.tube.material)
+
+        tubing_table.add_row(
+                "Total",
                 "n/a",
                 round(total_length, 4),
                 "n/a",
                 "n/a",
                 round(total_volume.to("ml"), 4),
-                "n/a",
-            ]
-        )  # footer row
+                "n/a")
 
-        # generate the tubing table
-        tubing_table = tableStyle(summary)
-        tubing_table.title = "Tubing"
-        tubing_table.inner_footing_row_border = "True"
-
-        if get_ipython():
-            if style == "gfm":
-                md = (
-                    f"### {components_table.title}\n\n"
-                    f"{components_table.table}\n\n"
-                    f"### {tubing_table.title} \n\n"
-                    f"{tubing_table.table}"
-                )
-                return Markdown(md)
-
-        print("Components")
-        print(components_table.table)
-        print("\nTubing")
-        print(tubing_table.table)
-        return None
+        # Print tables
+        from rich.console import Console
+        console = Console()
+        console.print(components_table)
+        console.print(tubing_table)
 
     def _validate(self) -> bool:
         """
