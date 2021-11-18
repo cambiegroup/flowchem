@@ -1,3 +1,4 @@
+from .logging import logger
 from .components import *
 from .core import *
 

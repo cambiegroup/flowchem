@@ -16,8 +16,8 @@ from bokeh.plotting import figure
 from bokeh.resources import INLINE
 from IPython import get_ipython
 from IPython.display import display
-from loguru import logger
 
+from flowchem import logger
 from flowchem.components.stdlib import ActiveComponent, Sensor
 from flowchem.core.execute import main
 
