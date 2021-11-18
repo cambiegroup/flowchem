@@ -71,8 +71,8 @@ def create_server_from_config(config: Dict = None, config_file: Path = None) -> 
     assert isinstance(config, dict)  # This is here just to make mypy happy.
 
     # Validate config
-    schema = load_schema()
-    jsonschema.validate(config, schema=schema)
+    #schema = load_schema()
+    #jsonschema.validate(config, schema=schema)
 
     # FastAPI server
     app = FastAPI(title="flowchem", version=flowchem.__version__)
@@ -115,7 +115,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logger.setLevel(logging.DEBUG)
 
-    app, zeroconf = create_server_from_config(config_file=Path("sample_config.yml"))
+    app, zeroconf = create_server_from_config(config_file=Path("owen.yml"))
 
     @app.get("/")
     def root():

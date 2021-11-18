@@ -18,11 +18,11 @@ devices:
 #
 #    ir:
 #        FlowIR: {}
-#
-    p-sensor:
+
+#    p-sensor:
         PressureSensor:
             vint_serial_number: 627768
-    # Temperature control
+     Temperature control
 
     heater:
         R4Heater:

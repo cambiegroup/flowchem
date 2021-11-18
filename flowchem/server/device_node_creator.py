@@ -25,7 +25,7 @@ class DeviceNode:
         try:
             # Special class method for initialization required for some devices
             if hasattr(obj_type, "from_config"):
-                self.device = obj_type.from_config(device_config)
+                self.device = obj_type.from_config(**device_config)
             else:
                 self.device = obj_type(**device_config)
             self.logger.debug(f"Created {self.title} instance: {self.device}")
