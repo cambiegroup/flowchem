@@ -54,6 +54,8 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
             else:
                 components = list(experiment._compiled_protocol.keys())  # type:ignore
 
+            tasks = []
+
             for component in components:
                 # Find out when each component's monitoring should end
                 procedures: Iterable = experiment._compiled_protocol[component]  # type:ignore
@@ -61,7 +63,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                 end_time: float = max(end_times)  # we only want the last end time
                 logger.trace(f"Calculated end time for {component} as {end_time}s")
 
-                tasks = [
+                procedures_to_append = [
                     wait_and_execute_procedure(
                         procedure=procedure,
                         component=component,
@@ -71,6 +73,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                     )
                     for procedure in experiment._compiled_protocol[component]  # type:ignore
                 ]
+                tasks.extend(procedures_to_append)
                 logger.trace(f"Task list generated for {component}.")
 
                 # for sensors, add the monitor task
