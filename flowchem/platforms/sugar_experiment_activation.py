@@ -400,7 +400,7 @@ class Scheduler:
                         self.started_experiments[self.experiment_waiting_for_analysis.experiment_id] = self.experiment_waiting_for_analysis
                         # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
                         with open(self.experiments_results, 'w') as f:
-                            json.dump(self.started_experiments, f, cls=EnhancedJSONEncoder)
+                            json.dump(self.started_experiments, f, cls=EnhancedJSONEncoder,indent=4)
                         self.experiment_waiting_for_analysis = None
                         sleep(1)
                         # should become MongoDB, should be possible to be updated from somewhere else, eg with current T
@@ -537,13 +537,16 @@ if __name__ == "__main__":
     # This obviously could be included into the scheduler
     results_listener = ResultListener(analysed_samples_folder, '*.txt', scheduler.analysed_samples)
 
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-40 °C"))
-    scheduler.create_experiment(ExperimentConditions(temperature="-30 °C", residence_time="300 s"))
+    scheduler.create_experiment(ExperimentConditions(temperature="10 °C", residence_time="300 s"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="0 °C"))
     scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-10 °C"))
-    scheduler.create_experiment(ExperimentConditions(temperature="-0 °C", residence_time="300 s"))
-    # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=5))
-    # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=10))
-    # scheduler.create_experiment(ExperimentConditions(residence_time_in_seconds=20))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-15 °C"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-20 °C"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-40 °C"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-50 °C"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="20 °C", activator_equivalents=0)) # TODO, flowrate can't be set to 0, so this throws error in internal validation and pump pumps with nl/min
+
+
 
     # TODO when queue empty, after some while everything should be switched off
     # TODO serialization has to be done with preserving °C -> encoding problem
