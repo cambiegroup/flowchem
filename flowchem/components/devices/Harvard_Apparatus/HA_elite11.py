@@ -36,9 +36,9 @@ class PumpInfo(BaseModel):
         for line in metrics_text:
             if line.startswith("Pump type  "):
                 pump_type = line[9:].strip()
-            if line.startswith("Pump type string"):
+            elif line.startswith("Pump type string"):
                 pump_description = line[16:].strip()
-            if line.startswith("Direction"):
+            elif line.startswith("Direction"):
                 if "withdraw" in line:
                     infuse_only = False
                 else:
