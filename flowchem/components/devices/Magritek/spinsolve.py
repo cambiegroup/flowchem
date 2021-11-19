@@ -1,9 +1,10 @@
+""" Spinsolve module """
 import asyncio
-import logging
 import pprint as pp
 import queue
 import threading
 import warnings
+from loguru import logger
 from pathlib import Path
 from typing import Optional, Union
 
@@ -50,9 +51,6 @@ class Spinsolve:
         This also simplifies testing.
         """
 
-        # Logger
-        self._log = logging.getLogger(__name__)
-
         # IOs
         self._io_writer = io_writer
         self._io_reader = io_reader
@@ -77,7 +75,7 @@ class Spinsolve:
         # If connected parse and log instrument info
         self.software_version = hw_info.find(".//SpinsolveSoftware").text
         self.hardware_type = hw_info.find(".//SpinsolveType").text
-        self._log.debug(
+        logger.debug(
             f"Connected with Spinsolve model {self.hardware_type}, SW version: {self.software_version}"
         )
 
@@ -209,7 +207,7 @@ class Spinsolve:
         """Looks in the received replies for one of type reply_type"""
         # Get reply of reply_type from the reader object that holds the StreamReader
         reply = self._reader.wait_for_reply(reply_type=reply_type, timeout=timeout)
-        self._log.debug(f"Got a reply from spectrometer: {etree.tostring(reply)}")
+        logger.debug(f"Got a reply from spectrometer: {etree.tostring(reply)}")
 
         return reply
 
@@ -228,7 +226,7 @@ class Spinsolve:
         message = etree.tostring(tree, xml_declaration=True, encoding="utf-8")
 
         # Transmit
-        self._log.debug(f"Transmitting request to spectrometer: {message}")
+        logger.debug(f"Transmitting request to spectrometer: {message}")
         self._transmit(message)
 
     def hw_request(self):
@@ -290,7 +288,7 @@ class Spinsolve:
 
         # Follow status notifications and finally get location of remote data
         remote_data_folder = await self.check_notifications()
-        self._log.info(f"Protocol over - remote data folder is {remote_data_folder}")
+        logger.info(f"Protocol over - remote data folder is {remote_data_folder}")
 
         # If a folder mapper is present use it to translate the location
         if self._folder_mapper:
@@ -310,7 +308,7 @@ class Spinsolve:
 
             # Parse them
             status, folder = parse_status_notification(status_update)
-            self._log.debug(
+            logger.debug(
                 f"Status update: Status is {status} and data folder={folder}"
             )
 

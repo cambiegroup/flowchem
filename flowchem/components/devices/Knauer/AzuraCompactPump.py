@@ -2,8 +2,8 @@
 Knauer pump control.
 """
 import asyncio
-import logging
 import warnings
+from loguru import logger
 from enum import Enum
 
 from flowchem.components.devices.Knauer.Knauer_common import KnauerEthernetDevice
@@ -255,7 +255,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
             setpoint=round(pressure.m_as("bar")),
             setpoint_range=(0, self.max_allowed_pressure + 1),
         )
-        logging.info(f"Minimum pressure set to {pressure}")
+        logger.info(f"Minimum pressure set to {pressure}")
 
     async def get_maximum_pressure(self) -> str:
         """Gets maximum pressure. The pumps stops if the measured P is higher than this."""
@@ -274,7 +274,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
             setpoint=round(pressure.m_as("bar")),
             setpoint_range=(0, self.max_allowed_pressure + 1),
         )
-        logging.info(f"Maximum pressure set to {pressure}")
+        logger.info(f"Maximum pressure set to {pressure}")
 
     async def set_minimum_motor_current(self, setpoint=None):
         """Sets minimum motor current."""
@@ -373,13 +373,13 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         """Starts flow"""
         await self._transmit_and_parse_reply(PUMP_ON)
         self._running = True
-        logging.info("Pump switched on")
+        logger.info("Pump switched on")
 
     async def stop_flow(self):
         """Stops flow"""
         await self._transmit_and_parse_reply(PUMP_OFF)
         self._running = False
-        logging.info("Pump not pumping")
+        logger.info("Pump not pumping")
 
     def is_running(self):
         """Get pump state."""
@@ -438,8 +438,6 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
     p = AzuraCompactPump(ip_address="192.168.10.113")
 
     async def main(pump: AzuraCompactPump):

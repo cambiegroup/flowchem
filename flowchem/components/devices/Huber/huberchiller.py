@@ -2,8 +2,8 @@
 Driver for Huber chillers.
 """
 import asyncio
-import logging
 import warnings
+from loguru import logger
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 
@@ -119,7 +119,6 @@ class HuberChiller(TempControl):
     def __init__(self, aio: aioserial.AioSerial, name=None):
         super().__init__(name)
         self._serial = aio
-        self.logger = logging.getLogger(__name__).getChild("HuberChiller")
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
@@ -142,7 +141,7 @@ class HuberChiller(TempControl):
         sn = await self.serial_number()
         if sn == 0:
             raise DeviceError("No reply received from Huber Chiller!")
-        self.logger.debug(f"Connected with Huber Chiller S/N {sn}")
+        logger.debug(f"Connected with Huber Chiller S/N {sn}")
 
     async def send_command_and_read_reply(self, command: str) -> str:
         """Sends a command to the chiller and reads the reply.
@@ -153,7 +152,7 @@ class HuberChiller(TempControl):
         # Send command. Using PBCommand ensure command validation, see PBCommand.to_chiller()
         pb_command = PBCommand(command.upper())
         await self._serial.write_async(pb_command.to_chiller())
-        self.logger.debug(f"Command {command[0:8]} sent to chiller!")
+        logger.debug(f"Command {command[0:8]} sent to chiller!")
 
         # Receive reply and return it after decoding
         try:
@@ -162,12 +161,12 @@ class HuberChiller(TempControl):
             warnings.warn(
                 "No reply received. Likely the command is not supported by the hardware!"
             )
-            self.logger.error("No reply received")
+            logger.error("No reply received")
             return command.replace("M", "S").replace(
                 "****", "0000"
             )  # Fake reply to keep going
 
-        self.logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
+        logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
         return reply.decode("ascii")
 
     async def get_temperature_setpoint(self) -> str:
@@ -540,8 +539,6 @@ class HuberChiller(TempControl):
 
 
 if __name__ == "__main__":
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
     chiller = HuberChiller(aioserial.AioSerial(port="COM8"))
     status = asyncio.run(chiller.status())
     print(status)

@@ -1,6 +1,6 @@
 """ Control module for the Vapourtec R4 heater """
-import logging
 import time
+from loguru import logger
 from typing import Tuple
 
 import aioserial
@@ -51,20 +51,16 @@ class R4Heater:
                 f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
             ) from e
 
-        self.logger = (
-            logging.getLogger(__name__).getChild("R4Heater").getChild(self._serial.name)
-        )
-
     async def _write(self, command: str):
         """Writes a command to the pump"""
         cmd = command + "\r\n"
         await self._serial.write_async(cmd.encode("ascii"))
-        self.logger.debug(f"Sent command: {repr(command)}")
+        logger.debug(f"Sent command: {repr(command)}")
 
     async def _read_reply(self) -> str:
         """Reads the pump reply from serial communication"""
         reply_string = await self._serial.readline_async()
-        self.logger.debug(f"Reply received: {reply_string.decode('ascii')}")
+        logger.debug(f"Reply received: {reply_string.decode('ascii')}")
         return reply_string.decode("ascii")
 
     @staticmethod
@@ -111,7 +107,7 @@ class R4Heater:
                 failure = 0
 
             if ret_code[:1] == "S":
-                self.logger.debug(f"Target temperature reached on channel {channel}!")
+                logger.debug(f"Target temperature reached on channel {channel}!")
                 t_stable = True
             else:
                 time.sleep(1)

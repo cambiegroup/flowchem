@@ -3,9 +3,9 @@ Original code from Manson website with edits.
 No license originally specified.
 """
 
-import logging
 import re
 import warnings
+from loguru import logger
 from typing import Literal, Tuple, List, Union
 
 import aioserial
@@ -20,9 +20,6 @@ class MansonPowerSupply:
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
     def __init__(self, port, baudrate=9600, **kwargs):
-
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
-
         try:
             self._serial = aioserial.Serial(
                 port, baudrate=baudrate, timeout=0.1, **kwargs
@@ -73,7 +70,7 @@ class MansonPowerSupply:
         reply_string = []
         for line in await self._serial.readlines_async():
             reply_string.append(line.decode("ascii").strip())
-            self.logger.debug(f"Received {repr(line)}!")
+            logger.debug(f"Received {repr(line)}!")
 
         return "\n".join(reply_string)
 

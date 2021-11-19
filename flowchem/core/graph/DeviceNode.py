@@ -1,8 +1,8 @@
 """ For each device node described in the configuration [graph] instantiated it and create endpoints """
 import inspect
-import logging
 import warnings
 
+from loguru import logger
 from fastapi import APIRouter
 
 from flowchem import Spinsolve
@@ -19,7 +19,6 @@ class DeviceNode:
     }
 
     def __init__(self, device_name, device_config, obj_type):
-        self.logger = logging.getLogger(__name__)
         self._title = device_name
         self._router = None
 
@@ -38,7 +37,7 @@ class DeviceNode:
                 self.device = obj_type.from_config(**device_config)
             else:
                 self.device = obj_type(**device_config)
-            self.logger.debug(f"Created {self.title} instance: {self.device}")
+            logger.debug(f"Created {self.title} instance: {self.device}")
         except TypeError as e:
             raise ConnectionError(
                 f"Wrong configuration provided for device: {self.title} of type {obj_type}!\n"

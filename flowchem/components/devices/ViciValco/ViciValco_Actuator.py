@@ -4,7 +4,7 @@ This module is used to control Vici Valco Universal Electronic Actuators.
 
 from __future__ import annotations
 
-import logging
+from loguru import logger
 from dataclasses import dataclass
 from typing import Optional, Set
 
@@ -78,7 +78,6 @@ class ViciValcoValveIO:
             aio_port: aioserial.Serial() object
         """
 
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self._serial = aio_port
 
         # These will be set in initialize
@@ -122,7 +121,7 @@ class ViciValcoValveIO:
         if n_valves == 0:
             raise InvalidConfiguration(f"No valve found on {self._serial.port}")
         else:
-            self.logger.debug(f"Found {len(reply)} valves on {self._serial.port}!")
+            logger.debug(f"Found {len(reply)} valves on {self._serial.port}!")
             return len(reply)
 
     def _hw_init(self):
@@ -138,7 +137,7 @@ class ViciValcoValveIO:
                 "Have you called `initialize()` after object creation?"
             )
         await self._serial.write_async(command)
-        self.logger.debug(f"Command {repr(command)} sent!")
+        logger.debug(f"Command {repr(command)} sent!")
 
     async def _read_reply(self, lines) -> str:
         """Reads the valve reply from serial communication"""
@@ -148,7 +147,7 @@ class ViciValcoValveIO:
             a = await self._serial.readline_async()
             reply_string += a.decode("ascii")
 
-        self.logger.debug(f"Reply received: {reply_string}")
+        logger.debug(f"Reply received: {reply_string}")
         return reply_string
 
     def reset_buffer(self):
@@ -215,8 +214,6 @@ class ViciValco(Valve):
         # valve address is the valve sequence number if in chain. Count starts at 1, default.
         self.address = int(address)
 
-        self.log = logging.getLogger(__name__).getChild("ViciValco").getChild(self.name)
-
     @classmethod
     def from_config(cls, port: str, address: int, name: str = None, **serial_kwargs):
         """This class method is used to create instances via config file by the server for HTTP interface."""
@@ -242,7 +239,7 @@ class ViciValco(Valve):
         # Test connectivity by querying the valve's firmware version
         fw_cmd = ViciProtocolCommandTemplate(command="VR").to_valve(self.address)
         firmware_version = await self.valve_io.write_and_read_reply(fw_cmd, lines=5)
-        self.log.info(
+        logger.info(
             f"Connected to Vici Valve {self.name} - FW version: {firmware_version}!"
         )
 
@@ -293,7 +290,7 @@ class ViciValco(Valve):
         await self.send_command_and_read_reply(
             valve_by_name_cw, command_value=str(target_position), lines=0
         )
-        self.log.debug(f"{self.name} valve position set to {target_position}")
+        logger.debug(f"{self.name} valve position set to {target_position}")
         new_position = await self.get_valve_position()
         if not new_position == target_position:
             raise ActuationError

@@ -1,7 +1,7 @@
 """ Knauer valve control. """
 
-import logging
 import warnings
+from loguru import logger
 from enum import Enum
 
 from flowchem.exceptions import DeviceError
@@ -119,7 +119,7 @@ class KnauerValve(KnauerEthernetDevice):
 
         # switching necessary?
         if position == self._position:
-            logging.debug("Target position == current position. No movement needed.")
+            logger.debug("Target position == current position. No movement needed.")
             return
 
         # Switch to position
@@ -194,8 +194,6 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
     v = KnauerValve(ip_address="192.168.1.176")
 
     async def main(valve: KnauerValve):
