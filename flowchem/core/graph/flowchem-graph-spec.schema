@@ -33,8 +33,6 @@
         "$ref": "#/definitions/ml600"
       }, "Spinsolve": {
         "$ref": "#/definitions/spinsolve"
-      }, "FakeDevice": {
-        "$ref": "#/definitions/fakedevice"
       }, "PressureSensor": {
         "$ref": "#/definitions/pressure-sensor"
       }, "FlowIR": {
@@ -74,10 +72,6 @@
       }, {
         "required": [
           "Spinsolve"
-        ]
-      }, {
-        "required": [
-          "FakeDevice"
         ]
       }, {
         "required": [
@@ -180,14 +174,6 @@
       }
     }, "required": [
       "host", "data_folder"
-    ]
-  }, "fakedevice": {
-    "id": "#/definitions/fakedevice", "type": "object", "properties": {
-      "port": {
-        "type": "string"
-      }
-    }, "required": [
-      "port"
     ]
   }, "pressure-sensor": {
     "id": "#/definitions/pressure-sensor", "type": "object", "properties": {
