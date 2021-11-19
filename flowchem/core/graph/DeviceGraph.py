@@ -240,8 +240,6 @@ class DeviceGraph:
 if __name__ == "__main__":
     from flowchem import Protocol
     from datetime import timedelta
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
 
     graph = DeviceGraph.from_file("owen_config.yml")
 
