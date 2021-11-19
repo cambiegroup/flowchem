@@ -104,7 +104,7 @@ class KnauerValve(KnauerEthernetDevice):
             reply = await self._send_and_receive(message)
             if reply == "?":
                 warnings.warn(f"Command failed: {message}")
-                self.logger.warn(f"Command failed: {message}")
+                logger.warning(f"Command failed: {message}")
                 return ""
 
         return reply
@@ -146,7 +146,7 @@ class KnauerValve(KnauerEthernetDevice):
                 "Only multi-pos 6, 12, 16 and 2-pos 6 port valves are supported!"
             ) from e
 
-        self.logger.info(f"Valve connected, type: {headtype}.")
+        logger.info(f"Valve connected, type: {headtype}.")
         return headtype
 
 

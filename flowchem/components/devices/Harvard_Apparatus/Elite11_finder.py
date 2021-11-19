@@ -10,6 +10,7 @@ from flowchem.components.devices.Harvard_Apparatus.HA_elite11 import (
 )
 from flowchem.exceptions import InvalidConfiguration
 
+
 # noinspection PyProtectedMember
 def elite11_finder():
     """Try to initialize an Elite11 on every available COM port."""
