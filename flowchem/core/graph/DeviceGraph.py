@@ -3,8 +3,8 @@ from __future__ import annotations
 import inspect
 import itertools
 import json
-import logging
 import os
+from loguru import logger
 from collections import namedtuple
 from pathlib import Path
 from types import ModuleType
@@ -85,9 +85,6 @@ class DeviceGraph:
         # Save config pre-parsing for debug purposes
         self._raw_config = configuration
 
-        # Logger
-        self.log = logging.getLogger(__name__).getChild("DeviceGraph")
-
         # Load graph
         # self.validate(configuration)
         self.parse(configuration)
@@ -114,7 +111,7 @@ class DeviceGraph:
 
         # Device mapper
         device_mapper = get_device_class_mapper(DEVICE_MODULES)
-        self.log.debug(
+        logger.debug(
             f"The following device classes have been found: {device_mapper.keys()}"
         )
 
@@ -135,7 +132,7 @@ class DeviceGraph:
             self.device[device_name] = DeviceNode(
                 device_name, device_config, obj_type
             ).device
-            self.log.debug(
+            logger.debug(
                 f"Created device <{device_name}> with config: {device_config}"
             )
 
@@ -243,8 +240,6 @@ class DeviceGraph:
 if __name__ == "__main__":
     from flowchem import Protocol
     from datetime import timedelta
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
 
     graph = DeviceGraph.from_file("owen_config.yml")
 

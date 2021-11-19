@@ -4,8 +4,7 @@ from flowchem.components.stdlib import Vessel
 
 class FlowchemVessel(Vessel):
     """
-    A mw.Vessel with additional properties for chemical identity
-
+    A Vessel with additional properties for chemical identity
     """
 
     metadata = {

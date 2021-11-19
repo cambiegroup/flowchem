@@ -1,6 +1,6 @@
 """" Run with uvicorn main:app """
-import logging
 from pathlib import Path
+from loguru import logger
 from typing import Dict, Tuple
 
 import jsonschema
@@ -17,8 +17,6 @@ from flowchem.core.graph.DeviceGraph import (
 from flowchem.core.graph.DeviceNode import DeviceNode
 from flowchem.exceptions import InvalidConfiguration
 from mdns_server import Server_mDNS
-
-logger = logging.getLogger(__name__)
 
 
 def create_server_from_config(
@@ -88,9 +86,6 @@ def create_server_from_config(
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    logger.setLevel(logging.DEBUG)
-
     app, zeroconf = create_server_from_config(
         config_file=Path("../graph/flowchem-graph.yml")
     )

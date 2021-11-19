@@ -4,9 +4,9 @@ This module is used to control Harvard Apparatus Elite 11 syringe pump via the 1
 
 from __future__ import annotations
 from typing import Set, Optional, List, Tuple
+from loguru import logger
 
 import asyncio
-import logging
 import warnings
 from dataclasses import dataclass
 from enum import Enum
@@ -99,8 +99,6 @@ class HarvardApparatusPumpIO:
                 f"Cannot connect to the Pump on the port <{port}>"
             ) from e
 
-        self.logger = logging.getLogger(__name__).getChild("HA_PumpIO")
-
     async def _write(self, command: Protocol11Command):
         """Writes a command to the pump"""
         command_msg = command.compile()
@@ -108,7 +106,7 @@ class HarvardApparatusPumpIO:
             await self._serial.write_async(command_msg.encode("ascii"))
         except aioserial.SerialException as e:
             raise InvalidConfiguration from e
-        self.logger.debug(f"Sent {repr(command_msg)}!")
+        logger.debug(f"Sent {repr(command_msg)}!")
 
     async def _read_reply(self) -> List[str]:
         """Reads the pump reply from serial communication"""
@@ -116,7 +114,7 @@ class HarvardApparatusPumpIO:
 
         for line in await self._serial.readlines_async():
             reply_string.append(line.decode("ascii").strip())
-            self.logger.debug(f"Received {repr(line)}!")
+            logger.debug(f"Received {repr(line)}!")
 
         # First line is usually empty, but some prompts such as T* actually leak into this line sometimes.
         reply_string.pop(0)
@@ -230,7 +228,7 @@ class HarvardApparatusPumpIO:
         self._serial.readline()
         prompt = self._serial.readline()
         address = 0 if prompt[0:2] == b":" else int(prompt[0:2])
-        self.logger.debug(f"Address autodetected as {address}")
+        logger.debug(f"Address autodetected as {address}")
         return address
 
 
@@ -367,8 +365,6 @@ class Elite11InfuseOnly(Pump):
         else:
             self._syringe_volume = syringe_volume
 
-        self.log = logging.getLogger(__name__).getChild("Elite11")
-
     @classmethod
     def from_config(
         cls,
@@ -416,7 +412,7 @@ class Elite11InfuseOnly(Pump):
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
 
-        self.log.info(
+        logger.info(
             f"Connected to pump '{self.name}' on port {self.pump_io.name}:{self.address}!"
         )
 
@@ -536,7 +532,7 @@ class Elite11InfuseOnly(Pump):
             return
 
         await self._send_command_and_read_reply(Elite11Commands.RUN)
-        self.log.info("Pump movement started! (direction unspecified)")
+        logger.info("Pump movement started! (direction unspecified)")
 
     async def infuse_run(self):
         """Activates pump, runs in infuse mode."""
@@ -545,12 +541,12 @@ class Elite11InfuseOnly(Pump):
             return
 
         await self._send_command_and_read_reply(Elite11Commands.INFUSE)
-        self.log.info("Pump movement started in infuse direction!")
+        logger.info("Pump movement started in infuse direction!")
 
     async def stop(self):
         """stops pump"""
         await self._send_command_and_read_reply(Elite11Commands.STOP)
-        self.log.info("Pump stopped")
+        logger.info("Pump stopped")
 
     async def wait_until_idle(self):
         """Wait until the pump is no more moving"""
@@ -775,7 +771,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
             return
 
         await self._send_command_and_read_reply(Elite11Commands.REVERSE_RUN)
-        self.log.info("Pump movement started in reverse direction!")
+        logger.info("Pump movement started in reverse direction!")
 
     async def withdraw_run(self):
         """Activates pump, runs in withdraw mode."""
@@ -785,7 +781,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
 
         await self._send_command_and_read_reply(Elite11Commands.WITHDRAW)
 
-        self.log.info("Pump movement started in withdraw direction!")
+        logger.info("Pump movement started in withdraw direction!")
 
     async def get_withdraw_rate(self) -> str:
         """Returns the infusion rate as a string w/ units"""
@@ -845,9 +841,6 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
 
 
 if __name__ == "__main__":
-    logging.basicConfig()
-    logging.getLogger("__main__").setLevel(logging.DEBUG)
-
     pump = Elite11InfuseOnly.from_config(port="COM4", syringe_volume="10 ml", diameter="10 mm")
 
     async def main():
