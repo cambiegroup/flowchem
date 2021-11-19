@@ -1,7 +1,7 @@
 """ Use Phidgets to control lab devices. So far, only 4..20mA interface for Swagelock Pressure-sensor """
-import logging
 import time
 import warnings
+from loguru import logger
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -41,9 +41,6 @@ class PressureSensor:
                 "Phidget unusable: library or package not installed."
             )
 
-        # Logger
-        self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
-
         # Sensor range
         self._minP = flowchem_ureg(sensor_min)
         self._maxP = flowchem_ureg(sensor_max)
@@ -66,7 +63,7 @@ class PressureSensor:
 
         try:
             self.phidget.openWaitForAttachment(1000)
-            self.log.debug("Pressure sensor connected!")
+            logger.debug("Pressure sensor connected!")
         except PhidgetException as e:
             raise DeviceError("Cannot connect to sensor! Check settings...") from e
 
@@ -96,7 +93,7 @@ class PressureSensor:
         ma = current_in_ampere * 1000
         # minP..maxP is 4..20mA
         pressure_reading = self._minP + ((ma - 4) / 16) * (self._maxP - self._minP)
-        self.log.debug(f"Read pressure {pressure_reading} barg!")
+        logger.debug(f"Read pressure {pressure_reading} barg!")
         return str(pressure_reading * flowchem_ureg.bar)
 
     def read_pressure(self) -> str:
@@ -115,7 +112,7 @@ class PressureSensor:
         """
         try:
             current = self.phidget.getCurrent()
-            self.log.debug(f"Current pressure: {current}")
+            logger.debug(f"Current pressure: {current}")
         except PhidgetException:
             warnings.warn("Cannot read pressure!")
             return ""

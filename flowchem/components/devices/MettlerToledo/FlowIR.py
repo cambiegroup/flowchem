@@ -2,7 +2,7 @@
 
 import datetime
 import warnings
-import logging
+from loguru import logger
 from typing import List, Optional
 
 from flowchem.exceptions import DeviceError
@@ -29,9 +29,6 @@ class FlowIR(iCIR_spectrometer):
         Initiate connection with OPC UA server.
         Intended to be used as context-manager!
         """
-        # Logger
-        self.log = logging.getLogger(__name__).getChild(self.__class__.__name__)
-
         # Default (local) url if none provided
         if url is None:
             url = "opc.tcp://localhost:62552/iCOpcUaServer"
@@ -48,6 +45,7 @@ class FlowIR(iCIR_spectrometer):
                 f"Could not connect to FlowIR on {self.opcua.server_url}!"
             )
         await self.check_version()
+        logger.debug("FlowIR initialized!")
 
     async def check_version(self):
         """Check if iCIR is installed and open and if the version is supported."""
@@ -160,6 +158,7 @@ class FlowIR(iCIR_spectrometer):
                 "The experiment could not be started!\n"
                 "Check iCIR status and close any open experiment."
             ) from e
+        logger.info(f"FlowIR experiment {name} started with template {template}!")
 
     async def stop_experiment(self):
         """Stops the experiment currently running (it does not imply instrument is then idle, wait for scan end)"""

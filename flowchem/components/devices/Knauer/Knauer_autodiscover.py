@@ -5,6 +5,7 @@ import queue
 import socket
 import sys
 import time
+from loguru import logger
 from queue import Queue, Empty
 from threading import Thread
 
@@ -14,9 +15,7 @@ Address = Tuple[str, int]
 
 
 class BroadcastProtocol(asyncio.DatagramProtocol):
-    """
-    From https://gist.github.com/yluthu/4f785d4546057b49b56c
-    """
+    """ From https://gist.github.com/yluthu/4f785d4546057b49b56c """
 
     def __init__(self, target: Address, response_queue: Queue):
         self.target = target

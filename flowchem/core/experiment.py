@@ -8,6 +8,7 @@ from hashlib import blake2b
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from warnings import warn
+from loguru import logger
 
 import aiofiles
 import ipywidgets as widgets
@@ -17,7 +18,6 @@ from bokeh.resources import INLINE
 from IPython import get_ipython
 from IPython.display import display
 
-from flowchem import logger
 from flowchem.components.stdlib import ActiveComponent, Sensor
 from flowchem.core.execute import main
 

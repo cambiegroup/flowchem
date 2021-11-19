@@ -3,8 +3,8 @@ from __future__ import annotations
 import inspect
 import itertools
 import json
-import logging
 import os
+from loguru import logger
 from collections import namedtuple
 from pathlib import Path
 from types import ModuleType
@@ -85,9 +85,6 @@ class DeviceGraph:
         # Save config pre-parsing for debug purposes
         self._raw_config = configuration
 
-        # Logger
-        self.log = logging.getLogger(__name__).getChild("DeviceGraph")
-
         # Load graph
         # self.validate(configuration)
         self.parse(configuration)
@@ -114,13 +111,13 @@ class DeviceGraph:
 
         # Device mapper
         device_mapper = get_device_class_mapper(DEVICE_MODULES)
-        self.log.debug(
+        logger.debug(
             f"The following device classes have been found: {device_mapper.keys()}"
         )
 
         # Parse list of devices and create nodes
         for device_name, node_config in config["devices"].items():
-            # Schema validation ensures only 1 hit here
+            # Schema validation should ensure 1 hit here
             try:
                 device_class = [
                     name for name in device_mapper.keys() if name in node_config
@@ -135,11 +132,18 @@ class DeviceGraph:
             self.device[device_name] = DeviceNode(
                 device_name, device_config, obj_type
             ).device
-            self.log.debug(
+            logger.debug(
                 f"Created device <{device_name}> with config: {device_config}"
             )
 
-        for edge in config["connections"]:
+        # Parse list of connections
+        connections = self._parse_connections(config["connections"])
+        self.edge_list.extend(connections)
+
+    def _parse_connections(self, connections: Dict) -> List[Connection]:
+        """ Parse connections from config. """
+        connection_list = []
+        for edge in connections:
             if "Tube" in edge:
                 connection = self.parse_tube_connection(edge["Tube"])
             elif "Interface" in edge:
@@ -147,7 +151,9 @@ class DeviceGraph:
             else:
                 raise InvalidConfiguration(f"Invalid connection type in {edge}")
 
-            self.edge_list.append(connection)
+            connection_list.append(connection)
+
+        return connection_list
 
     def parse_tube_connection(self, tube_config) -> Connection:
         """ Parse a dict containing the Tube connection and returns the Connection """
@@ -243,8 +249,6 @@ class DeviceGraph:
 if __name__ == "__main__":
     from flowchem import Protocol
     from datetime import timedelta
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
 
     graph = DeviceGraph.from_file("owen_config.yml")
 

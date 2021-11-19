@@ -4,7 +4,7 @@ This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO
 
 from __future__ import annotations
 
-import logging
+from loguru import logger
 import string
 import time
 import warnings
@@ -96,8 +96,6 @@ class HamiltonPumpIO:
         Args:
             aio_port: aioserial.Serial() object
         """
-
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self._serial = aio_port
 
         # These will be set by `HamiltonPumpIO.initialize()`
@@ -153,7 +151,7 @@ class HamiltonPumpIO:
                     last_pump = pump_num
                 else:
                     break
-            self.logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
+            logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
             return int(last_pump)
         else:
             raise InvalidConfiguration(f"No pump found on {self._serial.port}")
@@ -171,12 +169,12 @@ class HamiltonPumpIO:
                 "Have you called `initialize()` after object creation?"
             )
         await self._serial.write_async(command)
-        self.logger.debug(f"Command {repr(command)} sent!")
+        logger.debug(f"Command {repr(command)} sent!")
 
     async def _read_reply_async(self) -> str:
         """Reads the pump reply from serial communication"""
         reply_string = await self._serial.readline_async()
-        self.logger.debug(f"Reply received: {reply_string}")
+        logger.debug(f"Reply received: {reply_string}")
         return reply_string.decode("ascii")
 
     def parse_response(self, response: str) -> str:
@@ -188,9 +186,9 @@ class HamiltonPumpIO:
         ), "Invalid status reply!"
 
         if status == HamiltonPumpIO.ACKNOWLEDGE:
-            self.logger.debug("Positive acknowledge received")
+            logger.debug("Positive acknowledge received")
         else:
-            self.logger.warning("Negative acknowledge received")
+            logger.warning("Negative acknowledge received")
             warnings.warn(
                 "Negative acknowledge reply received from pump: check command validity!"
             )
@@ -312,8 +310,6 @@ class ML600:
             (48000 - self._offset_steps) * flowchem_ureg.step / self._steps_per_ml
         )
 
-        self.log = logging.getLogger(__name__).getChild("ML600").getChild(self.name)
-
     @classmethod
     def from_config(cls, config):
         """This class method is used to create instances via config file by the server for HTTP interface."""
@@ -351,7 +347,7 @@ class ML600:
         # Test connectivity by querying the pump's firmware version
         fw_cmd = Protocol1CommandTemplate(command="U").to_pump(self.address)
         firmware_version = await self.pump_io.write_and_read_reply_async(fw_cmd)
-        self.log.info(
+        logger.info(
             f"Connected to Hamilton ML600 {self.name} - FW version: {firmware_version}!"
         )
 
@@ -473,7 +469,7 @@ class ML600:
     async def to_volume(self, target_volume: str, speed: str = ""):
         """ Absolute move to volume provided. """
         await self._to_step_position(self._volume_to_step_position(target_volume), speed)
-        self.log.debug(
+        logger.debug(
             f"Pump {self.name} set to volume {target_volume} at speed {speed}"
         )
 
@@ -498,10 +494,10 @@ class ML600:
 
     async def wait_until_idle(self):
         """Returns when no more commands are present in the pump buffer."""
-        self.log.debug(f"ML600 pump {self.name} wait until idle...")
+        logger.debug(f"ML600 pump {self.name} wait until idle...")
         while self.is_busy:
             time.sleep(0.1)
-        self.log.debug(f"...ML600 pump {self.name} idle now!")
+        logger.debug(f"...ML600 pump {self.name} idle now!")
 
     async def version(self) -> str:
         """Returns the current firmware version reported by the pump."""
@@ -537,7 +533,7 @@ class ML600:
         await self.send_command_and_read_reply(
             valve_by_name_cw, command_value=str(int(target_position))
         )
-        self.log.debug(f"{self.name} valve position set to {target_position.name}")
+        logger.debug(f"{self.name} valve position set to {target_position.name}")
         if wait_for_movement_end:
             await self.wait_until_idle()
 
@@ -675,7 +671,7 @@ class ML600:
 #         self.daemon = True
 #         self.cancelled = threading.Event()
 #         self._flowrate = ensure_quantity(target_flowrate, "ml/min")
-#         self.log = logging.getLogger(__name__).getChild("TwoPumpAssembly")
+#         logger = logging.getLogger(__name__).getChild("TwoPumpAssembly")
 #         # How many seconds per stroke for first filling? application dependent, as fast as possible, but not too much.
 #         self.init_secs = init_seconds
 #
@@ -712,11 +708,11 @@ class ML600:
 #         """ Custom waiting method to wait a shorter time than normal (for better sync) """
 #         while await self._p1.is_busy() or await self._p2.is_busy():
 #             await asyncio.sleep(0.01)  # 10ms sounds reasonable to me
-#         self.log.debug("Both pumps are ready!")
+#         logger.debug("Both pumps are ready!")
 #
 #     def _speed(self):
 #         speed = self._p1.flowrate_to_seconds_per_stroke(self._flowrate)
-#         self.log.debug(f"Speed calculated as {speed}")
+#         logger.debug(f"Speed calculated as {speed}")
 #         return speed
 #
 #     async def execute_stroke(
@@ -728,7 +724,7 @@ class ML600:
 #
 #         # First start pumping with the full syringe already prepared
 #         pump_full.to_volume(0, speed=speed_s_per_stroke)
-#         self.log.debug("Pumping...")
+#         logger.debug("Pumping...")
 #         # Then start refilling the empty one
 #         pump_empty.set_valve_position(pump_empty.ValvePositionName.INPUT)
 #         # And do that fast so that we finish refill before the pumping is over
@@ -745,7 +741,7 @@ class ML600:
 #         self._p1.to_volume(self._p1.syringe_volume, speed=self.init_secs)
 #         self._p1.wait_until_idle()
 #         self._p1.valve_position = self._p1.ValvePositionName.OUTPUT
-#         self.log.info("Pumps initialized for continuous pumping!")
+#         logger.info("Pumps initialized for continuous pumping!")
 #
 #         while True:
 #             while not self.cancelled.is_set():
@@ -769,7 +765,7 @@ class ML600:
 #     def stop_and_return_solution_to_container(self):
 #         """ Let´s not waste our precious stock solutions ;) """
 #         self.cancel()
-#         self.log.info(
+#         logger.info(
 #             "Returning the solution currently loaded in the syringes back to the inlet.\n"
 #             "Make sure the container is not removed yet!"
 #         )
@@ -781,7 +777,7 @@ class ML600:
 #         self._p1.to_volume(0, speed=self.init_secs)
 #         self._p2.to_volume(0, speed=self.init_secs)
 #         self.wait_for_both_pumps()
-#         self.log.info("Pump flushing completed!")
+#         logger.info("Pump flushing completed!")
 
 
 if __name__ == "__main__":

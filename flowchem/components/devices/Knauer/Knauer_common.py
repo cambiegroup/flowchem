@@ -2,7 +2,7 @@
 Module for communication with Knauer pumps and valves.
 """
 import asyncio
-import logging
+from loguru import logger
 from asyncio import StreamReader, StreamWriter
 
 from flowchem.components.devices.Knauer.Knauer_autodiscover import autodiscover_knauer
@@ -46,13 +46,6 @@ class KnauerEthernetDevice:
         else:
             self.ip_address = ip_address
 
-        # Logger
-        self.logger = (
-            logging.getLogger(__name__)
-            .getChild(self.__class__.__name__)
-            .getChild(self.name)
-        )
-
         # These will be set in initialize()
         self._reader: StreamReader = None  # type: ignore
         self._writer: StreamWriter = None  # type: ignore
@@ -86,7 +79,7 @@ class KnauerEthernetDevice:
 
     async def _send_and_receive(self, message: str) -> str:
         self._writer.write(message.encode("ascii") + self.eol)
-        self.logger.debug(f"WRITE >>> '{message}' ")
+        logger.debug(f"WRITE >>> '{message}' ")
         reply = await self._reader.readuntil(separator=b"\r")
-        self.logger.debug(f"READ <<< '{reply.decode().strip()}' ")
+        logger.debug(f"READ <<< '{reply.decode().strip()}' ")
         return reply.decode("ascii").strip()
