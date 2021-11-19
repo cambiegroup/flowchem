@@ -59,7 +59,7 @@ class DeviceNode:
         else:
             try:
                 router = DeviceNode.router_generator[type(self.device)](self.device)
-            except KeyError as e:
+            except KeyError:
                 warnings.warn(f"No router available for device '{self.device.name}'")
                 router = APIRouter()
 

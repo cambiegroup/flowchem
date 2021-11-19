@@ -1,17 +1,24 @@
 additional-deps:
   python:
     # name can be included so Deadpendency can load the package details in the registry
+    - name: aiofiles
+      repo: Tinche/aiofiles
+
     - name: asyncua
       repo: FreeOpcUa/opcua-asyncio
 
-    - name: opcua
-      repo: FreeOpcUa/python-opcua
-
-    - name: nmrglue
-      repo: jjhelmus/nmrglue
+    - name: ipywidgets
+      repo: jupyter-widgets/ipywidgets
 
     - name: lmfit
       repo: lmfit/lmfit-py
 
     - name: lxml
       repo: lxml/lxml
+
+    - name: nmrglue
+      repo: jjhelmus/nmrglue
+
+    - name: opcua
+      repo: FreeOpcUa/python-opcua
+

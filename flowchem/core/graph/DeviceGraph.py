@@ -260,7 +260,5 @@ if __name__ == "__main__":
     print(type(graph["chiller"]))
     p.add(graph["chiller"], start=t0, duration=timedelta(seconds=10), temp="45 degC")
 
-
     E = p.execute(dry_run=False)
     # E.visualize()
-
