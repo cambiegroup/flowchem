@@ -6,6 +6,7 @@ from enum import Enum
 
 from flowchem.exceptions import DeviceError
 from flowchem.components.devices.Knauer.Knauer_common import KnauerEthernetDevice
+from flowchem.components.stdlib.valve import Valve
 
 
 class KnauerValveHeads(Enum):
@@ -19,7 +20,7 @@ class KnauerValveHeads(Enum):
     SIXTEEN_PORT_SIXTEEN_POSITION = "16"
 
 
-class KnauerValve(KnauerEthernetDevice):
+class KnauerValve(KnauerEthernetDevice, Valve):
     """
     Control Knauer multi position valves.
 

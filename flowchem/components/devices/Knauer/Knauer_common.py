@@ -32,13 +32,7 @@ class KnauerEthernetDevice:
             mac_address: MAC address of Knauer device
             name: name of device (optional)
         """
-        # This is actually a copy of the code in Component() because multiple inheritance of childern
-        # That is, inheriting both from KnauerEthernetDevice and Pump/Valve makes it hard to call Component.__init__()
-        if name is None:
-            self.name = self.__class__.__name__ + "_" + str(self.__class__._id_counter)
-            self.__class__._id_counter += 1
-        else:
-            self.name = str(name)
+        super().__init__(name)
 
         # MAC address
         if mac_address:
