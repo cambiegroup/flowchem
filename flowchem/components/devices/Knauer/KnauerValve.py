@@ -32,8 +32,8 @@ class KnauerValve(KnauerEthernetDevice):
     DIP switch for valve selection
     """
 
-    def __init__(self, ip_address):
-        super().__init__(ip_address)
+    def __init__(self, ip_address=None, mac_address=None, name=None):
+        super().__init__(ip_address, mac_address, name)
         self.eol = b"\r\n"
         # These are set during initialize()
         self.valve_type = None
