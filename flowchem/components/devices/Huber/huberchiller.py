@@ -9,7 +9,6 @@ from typing import List, Dict, Optional
 
 import aioserial
 import pint
-from aioserial import SerialException
 
 from flowchem.components.stdlib import TempControl
 from flowchem.exceptions import InvalidConfiguration, DeviceError
@@ -129,7 +128,7 @@ class HuberChiller(TempControl):
         """
         try:
             serial_object = aioserial.AioSerial(port, **serial_kwargs)
-        except SerialException as e:
+        except aioserial.SerialException as e:
             raise InvalidConfiguration(
                 f"Cannot connect to the HuberChiller on the port <{port}>"
             ) from e
