@@ -26,4 +26,3 @@ class DummyPump(Pump):
 
     async def _update(self):
         logger.trace(f"Set {self} rate to {self.rate}")
-        pass

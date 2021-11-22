@@ -271,8 +271,6 @@ class Experiment(object):
                     "Expected str or os.PathLike (such as a pathlib.Path object)."
                 )
 
-            self._data_file = self._data_file
-
         if get_ipython():
             self._display(verbosity=verbosity.upper(), strict=strict)
             asyncio.ensure_future(main(experiment=self, dry_run=dry_run, strict=strict))

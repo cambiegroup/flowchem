@@ -6,7 +6,6 @@ import socket
 import sys
 import time
 from loguru import logger
-from queue import Queue, Empty
 from threading import Thread
 
 from getmac import getmac
@@ -17,7 +16,7 @@ Address = Tuple[str, int]
 class BroadcastProtocol(asyncio.DatagramProtocol):
     """ From https://gist.github.com/yluthu/4f785d4546057b49b56c """
 
-    def __init__(self, target: Address, response_queue: Queue):
+    def __init__(self, target: Address, response_queue: queue.Queue):
         self.target = target
         self.loop = asyncio.get_event_loop()
         self._queue = response_queue
@@ -30,6 +29,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data: Union[bytes, Text], addr: Address):
         """Called on data received"""
+        logger.trace(f"Received data from {addr}")
         self._queue.put(addr[0])
 
 
@@ -44,12 +44,14 @@ async def get_device_type(ip_address: str) -> str:
     writer.write("HEADTYPE:?\n\r".encode())
     reply = await reader.readuntil(separator=b"\r")
     if reply.startswith(b"HEADTYPE"):
+        logger.debug(f"Device {ip_address} is a Pump")
         return "Pump"
 
     # Test Valve
     writer.write("T:?\n\r".encode())
     reply = await reader.readuntil(separator=b"\r")
     if reply.startswith(b"VALVE"):
+        logger.debug(f"Device {ip_address} is a Valve")
         return "Valve"
 
     return "Unknown"
@@ -74,7 +76,7 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
         source_ip = socket.gethostbyname(hostname)
 
     loop = asyncio.get_event_loop()
-    device_q: queue.Queue = Queue()
+    device_q: queue.Queue = queue.Queue()
     coro = loop.create_datagram_endpoint(
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
         local_addr=(source_ip, 28688),
@@ -90,7 +92,7 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
     for _ in range(40):
         try:
             device_list.append(device_q.get_nowait())
-        except Empty:
+        except queue.Empty:
             break
 
     device_info = dict()

@@ -30,3 +30,5 @@ aiofiles~=0.7.0
 ipywidgets~=7.6.5
 bokeh~=2.4.1
 graphviz
+ord-schema
+google-api-python-client

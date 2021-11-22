@@ -18,27 +18,20 @@ class Apparatus(object):
     """
     A unique network of components.
 
-    ::: tip Note
-    The same components may be organized into multiple distinct apparatuses, depending on the connections between them.
-    :::
-
     Arguments:
-    - `name`: The name of the apparatus. Defaults to "Apparatus_X" where *X* is apparatus count. This should be short and sweet.
+    - `name`: The name of the apparatus. This should be short and sweet.
     - `description`: A description of the apparatus. Can be as long and wordy as you want.
 
     Attributes:
-    - `components`: A set containing the components that make up the apparatus.
-    - `description`: A description of the apparatus. Can be as long and wordy as you want.
-    - `name`: The name of the apparatus. Defaults to "Apparatus_X" where *X* is apparatus count. This should be short and sweet.
-    - `network`: A list of tuples in the form `(from_component, to_component, tube)` describing the configuration of the apparatus.
+    - `components`: A set of components that make up the apparatus.
+    - `name`: The name of the apparatus.
+    - `description`: A description of the apparatus.
+    - `network`: Network edge list as list of Connection tuples i.e. `(from_component, to_component, tube)`.
     """
 
     _id_counter = 0
 
     def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
-        """
-        See the main docstring.
-        """
         self.network: List[Connection] = []
         self.components: Set[Component] = set()
         # if given a name, then name the apparatus, else default to a sequential name

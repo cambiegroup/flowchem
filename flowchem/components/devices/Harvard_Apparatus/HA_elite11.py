@@ -21,18 +21,16 @@ from flowchem.components.stdlib import Pump
 
 
 class PumpInfo(BaseModel):
-    """
-    Detailed pump info.
-    """
+    """ Detailed pump info. """
 
     pump_type: str
     pump_description: str
     infuse_only: bool
 
-    # noinspection PyUnboundLocalVariable
     @classmethod
     def parse_pumpstring(cls, metrics_text: List[str]):
         """Parse pump response string into model."""
+        pump_type, pump_description, infuse_only = "", "", True
         for line in metrics_text:
             if line.startswith("Pump type  "):
                 pump_type = line[9:].strip()

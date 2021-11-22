@@ -1,8 +1,10 @@
+""" A vessel with info on the chemical input contained. """
+from ord_schema.proto.reaction_pb2 import ReactionInput
 from typing import Optional
 from flowchem.components.stdlib import Vessel
 
 
-class FlowchemVessel(Vessel):
+class VesselChemicals(Vessel):
     """
     A Vessel with additional properties for chemical identity
     """
@@ -21,6 +23,11 @@ class FlowchemVessel(Vessel):
         "supported": True,
     }
 
-    def __init__(self, description: Optional[str] = None, name: Optional[str] = None):
+    def __init__(self, reaction_input: ReactionInput, description: Optional[str] = None, name: Optional[str] = None):
         super().__init__(name=name, description=description)
-        # TODO: add more properties according to ORD
+        self.chemical = reaction_input
+
+    def _validate(self, dry_run):
+        super(VesselChemicals, self)._validate(dry_run)
+
+        assert isinstance(self.chemical, ReactionInput), "VesselChemicals have a ReactionInput"
