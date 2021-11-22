@@ -6,7 +6,6 @@ import socket
 import sys
 import time
 from loguru import logger
-from queue import Queue, Empty
 from threading import Thread
 
 from getmac import getmac
@@ -17,7 +16,7 @@ Address = Tuple[str, int]
 class BroadcastProtocol(asyncio.DatagramProtocol):
     """ From https://gist.github.com/yluthu/4f785d4546057b49b56c """
 
-    def __init__(self, target: Address, response_queue: Queue):
+    def __init__(self, target: Address, response_queue: queue.Queue):
         self.target = target
         self.loop = asyncio.get_event_loop()
         self._queue = response_queue
@@ -77,7 +76,7 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
         source_ip = socket.gethostbyname(hostname)
 
     loop = asyncio.get_event_loop()
-    device_q: queue.Queue = Queue()
+    device_q = queue.Queue()
     coro = loop.create_datagram_endpoint(
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
         local_addr=(source_ip, 28688),
@@ -93,7 +92,7 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
     for _ in range(40):
         try:
             device_list.append(device_q.get_nowait())
-        except Empty:
+        except queue.Empty:
             break
 
     device_info = dict()
