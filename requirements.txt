@@ -31,4 +31,4 @@ ipywidgets~=7.6.5
 bokeh~=2.4.1
 graphviz
 ord-schema
-google
+google-api-python-client

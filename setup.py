@@ -47,7 +47,7 @@ setuptools.setup(
         "bokeh",
         "graphviz",
         "ord-schema",
-        "google"
+        "google-api-python-client"
     ],
     python_requires=">=3.8",
     entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},
