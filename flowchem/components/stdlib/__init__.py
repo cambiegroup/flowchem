@@ -18,3 +18,4 @@ from .tempcontrol import TempControl
 from .valve import Valve
 from .dummy_valve import DummyValve
 from .vessel import Vessel
+from .vessel_chemicals import VesselChemicals

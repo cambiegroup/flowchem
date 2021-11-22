@@ -1,8 +1,9 @@
+from ord_schema.proto import reaction.proto
 from typing import Optional
 from flowchem.components.stdlib import Vessel
 
 
-class FlowchemVessel(Vessel):
+class VesselChemicals(Vessel):
     """
     A Vessel with additional properties for chemical identity
     """
@@ -21,6 +22,6 @@ class FlowchemVessel(Vessel):
         "supported": True,
     }
 
-    def __init__(self, description: Optional[str] = None, name: Optional[str] = None):
+    def __init__(self, description: Optional[str] = None, name: Optional[str] = None, ):
         super().__init__(name=name, description=description)
         # TODO: add more properties according to ORD
