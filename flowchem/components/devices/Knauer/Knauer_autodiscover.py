@@ -29,7 +29,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data: Union[bytes, Text], addr: Address):
         """Called on data received"""
-        logger.trace(f"Received {data} from {addr}")
+        logger.trace(f"Received {data.decode()} from {addr}")
         self._queue.put(addr[0])
 
 
@@ -76,7 +76,7 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
         source_ip = socket.gethostbyname(hostname)
 
     loop = asyncio.get_event_loop()
-    device_q = queue.Queue()
+    device_q: queue.Queue = queue.Queue()
     coro = loop.create_datagram_endpoint(
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
         local_addr=(source_ip, 28688),
