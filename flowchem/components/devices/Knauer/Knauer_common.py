@@ -3,7 +3,6 @@ Module for communication with Knauer pumps and valves.
 """
 import asyncio
 from loguru import logger
-from asyncio import StreamReader, StreamWriter
 
 from flowchem.components.devices.Knauer.Knauer_autodiscover import autodiscover_knauer
 from flowchem.exceptions import InvalidConfiguration
@@ -41,8 +40,8 @@ class KnauerEthernetDevice:
             self.ip_address = ip_address
 
         # These will be set in initialize()
-        self._reader: StreamReader = None  # type: ignore
-        self._writer: StreamWriter = None  # type: ignore
+        self._reader: asyncio.StreamReader = None  # type: ignore
+        self._writer: asyncio.StreamWriter = None  # type: ignore
 
         # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by sublcasses
         self.eol = b""
