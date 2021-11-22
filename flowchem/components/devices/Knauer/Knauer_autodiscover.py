@@ -30,6 +30,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data: Union[bytes, Text], addr: Address):
         """Called on data received"""
+        logger.trace(f"Received {data} from {addr}")
         self._queue.put(addr[0])
 
 
@@ -44,12 +45,14 @@ async def get_device_type(ip_address: str) -> str:
     writer.write("HEADTYPE:?\n\r".encode())
     reply = await reader.readuntil(separator=b"\r")
     if reply.startswith(b"HEADTYPE"):
+        logger.debug(f"Device {ip_address} is a Pump")
         return "Pump"
 
     # Test Valve
     writer.write("T:?\n\r".encode())
     reply = await reader.readuntil(separator=b"\r")
     if reply.startswith(b"VALVE"):
+        logger.debug(f"Device {ip_address} is a Valve")
         return "Valve"
 
     return "Unknown"
