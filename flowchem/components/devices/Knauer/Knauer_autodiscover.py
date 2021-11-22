@@ -29,7 +29,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data: Union[bytes, Text], addr: Address):
         """Called on data received"""
-        logger.trace(f"Received {data.decode()} from {addr}")
+        logger.trace(f"Received data from {addr}")
         self._queue.put(addr[0])
 
 

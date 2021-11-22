@@ -31,7 +31,7 @@ class KnauerEthernetDevice:
             mac_address: MAC address of Knauer device
             name: name of device (optional)
         """
-        super().__init__(name)
+        super().__init__(name)  # type: ignore
 
         # MAC address
         if mac_address:
