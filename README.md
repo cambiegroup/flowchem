@@ -3,7 +3,7 @@ Welcome to flowchem
 
  
 ![github-actions](https://github.com/cambiegroup/flowchem/actions/workflows/python-app.yml/badge.svg)
-[![PyPI version fury.io]([![PyPI version](https://badge.fury.io/py/flowchem.svg)](https://badge.fury.io/py/flowchem))](https://pypi.org/project/flowchem/)
+[![PyPI version fury.io](https://badge.fury.io/py/flowchem.svg)](https://pypi.org/project/flowchem/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
