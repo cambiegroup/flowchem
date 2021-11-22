@@ -8,7 +8,7 @@ from typing import List, Optional
 from flowchem.exceptions import DeviceError
 
 import asyncio
-from asyncua import ua
+from asyncua import ua, Client
 
 from flowchem.components.devices.MettlerToledo.iCIR_common import (
     IRSpectrum,
@@ -31,7 +31,7 @@ class FlowIR(iCIR_spectrometer):
         if url is None:
             url = "opc.tcp://localhost:62552/iCOpcUaServer"
 
-        self.opcua = asyncua.Client(url)
+        self.opcua = Client(url)
         self.version = None
 
     async def initialize(self):
@@ -203,7 +203,7 @@ class FlowIR(iCIR_spectrometer):
 if __name__ == "__main__":
     ...
     # async def main():
-    #     opcua_client = asyncua.Client(
+    #     opcua_client = Client(
     #         url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
     #     )
     #
