@@ -2,16 +2,22 @@
 
 
 class DeviceError(BaseException):
-    """ Generic DeviceError """
+    """Generic DeviceError"""
 
     pass
 
 
 class InvalidConfiguration(DeviceError):
-    """ The configuration provided is not valid, e.g. no connection w/ device obtained """
+    """The configuration provided is not valid, e.g. no connection w/ device obtained"""
 
     pass
 
+
 class ActuationError(DeviceError):
     """The attepted move did not succeed"""
+
+    pass
+
+
+class ProtocolCancelled(Exception):
     pass

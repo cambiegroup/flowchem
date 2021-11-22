@@ -8,7 +8,7 @@ EXCHANGE_FOLDER = Path(r"W:\BS-FlowChemistry\Resources\python_packages_local")
 
 
 def install_from_folder(package: str, folder: Path):
-    """ pip-install packages locally available in a folder. """
+    """pip-install packages locally available in a folder."""
     subprocess.check_call(
         [
             sys.executable,
@@ -23,14 +23,14 @@ def install_from_folder(package: str, folder: Path):
 
 
 def download_to_folder(package: str, folder: Path):
-    """ pip-download packages to a local folder. """
+    """pip-download packages to a local folder."""
     subprocess.check_call(
         [sys.executable, "-m", "pip", "download", package, "-d", folder.as_posix()]
     )
 
 
 def get_package_list():
-    """ Return the list of packages to download/install from the requirements file """
+    """Return the list of packages to download/install from the requirements file"""
     req_file = Path("../../requirements.txt")
 
     package = []
@@ -48,14 +48,14 @@ def get_package_list():
 
 
 def download_all():
-    """ Downloads all packages in requirements. """
+    """Downloads all packages in requirements."""
     for package in get_package_list():
         download_to_folder(package, EXCHANGE_FOLDER)
         print(f"Downloaded {package} to {EXCHANGE_FOLDER.as_posix()}")
 
 
 def install_all():
-    """ Installs all packages in requirements. """
+    """Installs all packages in requirements."""
     for package in get_package_list():
         install_from_folder(package, EXCHANGE_FOLDER)
         print(f"Installed {package} from {EXCHANGE_FOLDER.as_posix()}")

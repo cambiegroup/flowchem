@@ -3,15 +3,13 @@ Welcome to flowchem
 
  
 ![github-actions](https://github.com/cambiegroup/flowchem/actions/workflows/python-app.yml/badge.svg)
-![Docs](https://readthedocs.org/projects/flowchem/badge/?version=latest)
 [![PyPI version fury.io](https://badge.fury.io/py/flowchem.svg)](https://pypi.org/project/flowchem/)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/flowchem.svg)](https://pypi.python.org/pypi/flowchem/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
-Flowchem is a python library to control a variety of instruments commonly found in chemistry labs.
+Flowchem is a python library to automated flow chemistry experiments.
 
-Currently, those include:
+Currently, the following instruments can be controlled via flowchem:
  - Pumps (Knauer P2.1, Harvard Apparatus Elite 11, Hamilton ML600)
  - Valves (ViciValco and Knauer)
  - Thermostat (Huber)

@@ -3,7 +3,7 @@ import pytest
 import asyncio
 import time
 from pathlib import Path
-from flowchem.devices.Magritek.spinsolve import Spinsolve
+from flowchem.components.devices.Magritek.spinsolve import Spinsolve
 
 
 host = "BSMC-7WP43Y1"

@@ -1,6 +1,6 @@
 """ Example file for controlling Hamilton ML600 pumps with fllowchem """
 import asyncio
-from flowchem import ML600, HamiltonPumpIO
+from flowchem import ML600
 
 conf_pump1 = {
     "port": "COM12",

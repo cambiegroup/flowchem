@@ -1,0 +1,320 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cambiegroup.github.io/flowchem/flowchem-graph-spec.json", "type": "object",
+  "title": "Flowchem hardware description", "description": "Defines a graph of devices.", "properties": {
+  "version": {
+    "type": "string", "description": "Version of the graph file; flowchem will reject versions it does not understand."
+  }, "devices": {
+    "id": "#/properties/devices", "type": "object", "description": "Devices, nodes of the graph",
+    "uniqueItems": true, "properties": {
+      "builtin": {
+        "type": "boolean"
+      }
+    }, "patternProperties": {
+      "^[a-zA-Z0-9._-]+$": {
+        "$ref": "#/definitions/device"
+      }
+    }, "additionalProperties": false
+  }, "additionalProperties": false
+}, "definitions": {
+  "device": {
+    "id": "#/definitions/device", "type": "object", "properties": {
+      "parent": {
+        "oneOf": [
+          {
+            "type": "string"
+          }, {
+            "type": "null"
+          }
+        ]
+      }, "HuberChiller": {
+        "$ref": "#/definitions/huberchiller"
+      }, "ML600": {
+        "$ref": "#/definitions/ml600"
+      }, "Spinsolve": {
+        "$ref": "#/definitions/spinsolve"
+      }, "PressureSensor": {
+        "$ref": "#/definitions/pressure-sensor"
+      }, "FlowIR": {
+        "$ref": "#/definitions/flowir"
+      }, "MansonPowerSupply": {
+        "$ref": "#/definitions/manson"
+      }, "R4Heater": {
+        "$ref": "#/definitions/r4heater"
+      }, "Elite11InfuseOnly": {
+        "$ref": "#/definitions/elite11infuseonly"
+      }, "Elite11InfuseWithdraw": {
+        "$ref": "#/definitions/elite11infusewithdraw"
+      }, "AzuraCompactPump": {
+        "$ref": "#/definitions/azura-compact"
+      }, "Knauer12PortValve": {
+        "$ref": "#/definitions/knauer-valve-12"
+      }, "Knauer16PortValve": {
+        "$ref": "#/definitions/knauer-valve-16"
+      }, "Knauer6Port6PositionValve": {
+        "$ref": "#/definitions/knauer-valve-6-6"
+      }, "Knauer6Port2PositionValve": {
+        "$ref": "#/definitions/knauer-valve-6-2"
+      }, "ClarityInterface": {
+        "$ref": "#/definitions/clarity_interface"
+      }, "ViciValco": {
+        "$ref": "#/definitions/vici-valco"
+      }, "TMixer": {}
+    }, "oneOf": [
+      {
+        "required": [
+          "HuberChiller"
+        ]
+      }, {
+        "required": [
+          "ML600"
+        ]
+      }, {
+        "required": [
+          "Spinsolve"
+        ]
+      }, {
+        "required": [
+          "PressureSensor"
+        ]
+      }, {
+        "required": [
+          "FlowIR"
+        ]
+      }, {
+        "required": [
+          "MansonPowerSupply"
+        ]
+      }, {
+        "required": [
+          "R4Heater"
+        ]
+      }, {
+        "required": [
+          "Elite11InfuseOnly"
+        ]
+      }, {
+        "required": [
+          "Elite11InfuseWithdraw"
+        ]
+      }, {
+        "required": [
+          "AzuraCompactPump"
+        ]
+      }, {
+        "required": [
+          "Knauer12PortValve"
+        ]
+      }, {
+        "required": [
+          "Knauer16PortValve"
+        ]
+      }, {
+        "required": [
+          "Knauer6Port6PositionValve"
+        ]
+      }, {
+        "required": [
+          "Knauer6Port2PositionValve"
+        ]
+      }, {
+        "required": [
+          "ClarityInterface"
+        ]
+      }, {
+        "required": [
+          "ViciValco"
+        ]
+      }, {
+        "required": [
+          "TMixer"
+        ]
+      }
+    ], "additionalProperties": false
+  }, "huberchiller": {
+    "id": "#/definitions/huberchiller", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      }, "baudrate": {
+        "type": "number"
+      }
+    }, "required": [
+      "port"
+    ]
+  }, "ml600": {
+    "id": "#/definitions/ml600", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      }, "syringe_volume": {
+        "type": "number"
+      }, "address": {
+        "type": "number"
+      }, "name": {
+        "type": "string"
+      }, "baudrate": {
+        "type": "number"
+      }
+    }, "required": [
+      "port", "syringe_volume"
+    ]
+  }, "spinsolve": {
+    "id": "#/definitions/spinsolve", "type": "object", "properties": {
+      "host": {
+        "type": "string"
+      }, "port": {
+        "type": "number"
+      }, "data_folder": {
+        "type": "string"
+      }, "xml_schema": {
+        "type": "string"
+      }, "sample_name": {
+        "type": "string"
+      }, "solvent": {
+        "type": "string"
+      }
+    }, "required": [
+      "host", "data_folder"
+    ]
+  }, "pressure-sensor": {
+    "id": "#/definitions/pressure-sensor", "type": "object", "properties": {
+      "sensor_min_bar": {
+        "type": "number"
+      }, "sensor_max_bar": {
+        "type": "number"
+      }, "vint_serial_number": {
+        "type": "number"
+      }, "vint_channel": {
+        "type": "number"
+      }, "phidget_is_remote": {
+        "type": "boolean"
+      }
+    }, "required": []
+  }, "flowir": {
+    "id": "#/definitions/flowir", "type": "object", "properties": {
+      "url": {
+        "type": "string"
+      }
+    }, "required": [
+    ]
+  }, "manson": {
+    "id": "#/definitions/manson", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      },
+      "baudrate": {
+        "type": "number"
+      }
+    }, "required": [
+      "port"
+    ]
+  }, "r4heater": {
+    "id": "#/definitions/r4heater", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      }
+    }, "required": [
+      "port"
+    ]
+  }, "elite11infuseonly": {
+    "id": "#/definitions/elite11infuseonly", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      },
+      "address": {
+        "type": "number"
+      },
+      "diameter": {
+        "type": "string"
+      },
+      "syringe_volume": {
+        "type": "string"
+      }
+    }, "required": [
+      "port", "syringe_volume", "diameter"
+    ]
+  },  "elite11infusewithdraw": {
+    "id": "#/definitions/elite11infusewithdraw", "type": "object", "properties": {
+      "port": {
+        "type": "string"
+      },
+      "address": {
+        "type": "number"
+      },
+      "diameter": {
+        "type": "string"
+      },
+      "syringe_volume": {
+        "type": "string"
+      }
+    }, "required": [
+      "port", "syringe_volume", "diameter"
+    ]
+  },"azura-compact": {
+    "id": "#/definitions/azura-compact", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }, "ip_address": {
+        "type": "string"
+      }
+    }, "oneOf": [
+      {
+        "required": ["mac_address"]
+      },
+      {
+        "required": ["ip_address"]
+      }
+    ]
+  }, "knauer-valve-12": {
+    "id": "#/definitions/knauer-valve-12", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }
+    }, "required": [
+      "mac_address"
+    ]
+  }, "knauer-valve-16": {
+    "id": "#/definitions/knauer-valve-16", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }
+    }, "required": [
+      "mac_address"
+    ]
+  }, "knauer-valve-6-6": {
+    "id": "#/definitions/knauer-valve-6-6", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }
+    }, "required": [
+      "mac_address"
+    ]
+  }, "knauer-valve-6-2": {
+    "id": "#/definitions/knauer-valve-6-2", "type": "object", "properties": {
+      "mac_address": {
+        "type": "string"
+      }
+    }, "required": [
+      "mac_address"
+    ]
+  }, "clarity_interface": {
+    "id": "#/definitions/clarity_interface", "type": "object", "properties": {
+      "instrument_number": {
+        "type": "number"
+      }
+    }, "required": [
+      "instrument_number"
+    ]
+  }, "vici-valco": {
+    "id": "#/definitions/vici-valco", "type": "object", "properties": {
+      "address": {
+        "type": "number"
+      },
+      "port": {
+        "type": "string"
+      }
+    }, "required": [
+      "port"
+    ]
+  }
+}
+}
