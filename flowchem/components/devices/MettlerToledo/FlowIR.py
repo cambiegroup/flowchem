@@ -8,9 +8,7 @@ from typing import List, Optional
 from flowchem.exceptions import DeviceError
 
 import asyncio
-import asyncua.ua.uaerrors
 from asyncua import ua
-from asyncua.ua.uaerrors import BadOutOfService, Bad
 
 from flowchem.components.devices.MettlerToledo.iCIR_common import (
     IRSpectrum,
@@ -104,7 +102,7 @@ class FlowIR(iCIR_spectrometer):
             wavenumber = await FlowIR._wavenumber_from_spectrum_node(node)
             return IRSpectrum(wavenumber=wavenumber, intensity=intensity)
 
-        except BadOutOfService:
+        except ua.uaerrors.BadOutOfService:
             return IRSpectrum(wavenumber=[], intensity=[])
 
     async def last_spectrum_treated(self) -> IRSpectrum:
@@ -153,7 +151,7 @@ class FlowIR(iCIR_spectrometer):
             # Collect_bg does not seem to work in automation, set to false and do not expose in start_experiment()!
             collect_bg = False
             await method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
-        except Bad as e:
+        except ua.uaerrors.Bad as e:
             raise DeviceError(
                 "The experiment could not be started!\n"
                 "Check iCIR status and close any open experiment."
