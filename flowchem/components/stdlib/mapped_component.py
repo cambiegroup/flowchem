@@ -5,7 +5,7 @@ class MappedComponentMixin(Component):
     """
     A Mixin to be added to component with mapping.
 
-    For more details on Mixins, see Fluen Python chapter 14 or Effective Python item 41 (links are free for MPG):
+    For more details on Mixins, see Fluent Python chapter 14 or Effective Python item 41 (links are free for MPG):
     - https://learning.oreilly.com/library/view/fluent-python-2nd/9781492056348/ch14.html#idm45517018812200
     - https://learning.oreilly.com/library/view/effective-python-90/9780134854717/ch05.xhtml#item41
 

@@ -215,23 +215,24 @@ class Experiment(object):
         protocol_hash: str = blake2b(str(self.protocol.yaml()).encode(), digest_size=3).hexdigest()
         self.experiment_id = f"{self._created_time_local}_{protocol_hash}"
 
-        # handle logging to a file
+        # handle logging to a file, not None nor False
         if log_file:
-            # automatically log to the mw directory
+            # No location provided: automatically log to the app directory
             if log_file is True:
-                mw_path = Path("~/.flowchem").expanduser()
-                try:
-                    mw_path.mkdir()
-                except FileExistsError:
-                    pass
-                log_file = mw_path / Path(self.experiment_id + ".log.jsonl")
+                app_path = Path("~/.flowchem").expanduser()
+                app_path.mkdir(exist_ok=True)
+                log_file_location = app_path / Path(self.experiment_id + ".log.jsonl")
+            elif isinstance(log_file, (str, os.PathLike)):
+                log_file_location = Path(log_file)
+            else:
+                raise TypeError(
+                    f"Invalid type {type(data_file)} for data file."
+                    "Expected str or a pathlib.Path object."
+                )
 
-            # for typing's sake
-            assert isinstance(log_file, (str, os.PathLike))
-
-            # automatically configure a logger to persist the logs
+            # Configure a logger to file
             self._file_logger_id = logger.add(
-                log_file,
+                log_file_location,
                 level=verbosity.upper()
                 if log_file_verbosity is None
                 else log_file_verbosity.upper(),
@@ -241,33 +242,27 @@ class Experiment(object):
             )
             logger.trace(f"File logger ID is {self._file_logger_id}")
 
-            # for typing's sake
-            assert isinstance(log_file, (str, os.PathLike))
-
             # determine the log file's path
             if log_file_compression is not None:
-                self._log_file = Path(log_file)
-                self._log_file = self._log_file.with_suffix(
-                    self._log_file.suffix + "." + log_file_compression
+                # No location provided: automatically log to the app directory
+                self._log_file = log_file_location.with_suffix(
+                    log_file_location.suffix + "." + log_file_compression
                 )
             else:
-                self._log_file = Path(log_file)
+                self._log_file = log_file_location
 
         if data_file:
-            # automatically log to user directory
+            # automatically log to app directory
             if data_file is True:
-                mw_path = Path("~/.flowchem").expanduser()
-                try:
-                    mw_path.mkdir()
-                except FileExistsError:
-                    pass
-                self._data_file = mw_path / Path(self.experiment_id + ".data.jsonl")
+                app_path = Path("~/.flowchem").expanduser()
+                app_path.mkdir(exist_ok=True)
+                self._data_file = app_path / Path(self.experiment_id + ".data.jsonl")
             elif isinstance(data_file, (str, os.PathLike)):
                 self._data_file = Path(data_file)
             else:
                 raise TypeError(
                     f"Invalid type {type(data_file)} for data file."
-                    "Expected str or os.PathLike (such as a pathlib.Path object)."
+                    "Expected str or a pathlib.Path object."
                 )
 
         if get_ipython():

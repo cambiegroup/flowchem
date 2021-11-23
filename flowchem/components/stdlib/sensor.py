@@ -57,7 +57,7 @@ class Sensor(ActiveComponent):
 
             # then wait for the sensor's next read
             if self.rate:
-                await asyncio.sleep(1 / self.rate.to_base_units().magnitude)
+                await asyncio.sleep(1 / self.rate.m_as("Hz"))
 
         logger.debug(f"Monitor loop for {self} has completed.")
 

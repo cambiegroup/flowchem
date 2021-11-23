@@ -1,9 +1,9 @@
 from typing import Mapping, Optional
 
-from flowchem.components.stdlib import ActiveComponent, Component
+from flowchem.components.stdlib import ActiveComponent, Component, MappedComponentMixin
 
 
-class Valve(ActiveComponent):
+class Valve(MappedComponentMixin, ActiveComponent):
     """
     A generic valve.
 
