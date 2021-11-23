@@ -54,7 +54,7 @@ def test_add():
     assert P.procedures[0] == procedure
 
     P = Protocol(A)
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError):
         P.add(Pump("not in apparatus"), rate="10 mL/min", duration="5 min")
 
     # adding a class, not an instance of it
@@ -106,27 +106,27 @@ def test_add_valve():
     A.add([pump1, pump2], [valve, bad_valve], tube)
     P = Protocol(A)
 
-    expected = [dict(start=0, stop=None, component=valve, params={"setting": 1})]
+    expected = [dict(start=0, stop=1, component=valve, params={"setting": 1})]
 
     # directly pass the pump object
-    P.add(valve, setting=pump1)
+    P.add(valve, setting=pump1, duration="1 sec")
     assert P.procedures == expected
     P.procedures = []
 
     # using its name
-    P.add(valve, setting="pump1")
+    P.add(valve, setting="pump1", duration="1 sec")
     assert P.procedures == expected
     P.procedures = []
 
     # using its port number
-    P.add(valve, setting=1)
+    P.add(valve, setting=1, duration="1 sec")
     assert P.procedures == expected
 
     with pytest.raises(ValueError):
-        P.add(valve, setting=3)
+        P.add(valve, setting=3, duration="1 sec")
 
     with pytest.raises(ValueError):
-        P.add(bad_valve, setting=3)
+        P.add(bad_valve, setting=3, duration="1 sec")
 
 
 def test_compile():
@@ -145,12 +145,6 @@ def test_compile():
             {"params": {"rate": "0 mL/min"}, "time": 300},
         ],
     }
-
-    # if no stop times are given, duration inference should fail
-    P = Protocol(A)
-    P.add([pump1, pump2], rate="10 mL/min")
-    with pytest.raises(RuntimeError):
-        P._compile()
 
 
 def test_unused_component():
@@ -189,8 +183,8 @@ def test_overlapping_procedures():
 
 def test_conflicting_continuous_procedures():
     P = Protocol(A)
-    P.add(pump1, rate="5 mL/min")
-    P.add(pump1, rate="2 mL/min")
+    P.add(pump1, rate="5 mL/min", stop="1 sec")
+    P.add(pump1, rate="2 mL/min", stop="1 sec")
     with pytest.raises(RuntimeError):
         P._compile()
 

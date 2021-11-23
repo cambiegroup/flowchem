@@ -153,7 +153,9 @@ class Protocol(object):
         # make sure the component and keywords are valid
         self._check_component_kwargs(component, **kwargs)
 
-        # parse the start time if given
+        # parse the start time
+        if start is None:
+            start = "0 secs"
         if isinstance(start, timedelta):
             start = str(start.total_seconds()) + " seconds"
         start_time = flowchem_ureg.parse_expression(start)
