@@ -156,7 +156,7 @@ class Protocol(object):
         # parse the start time if given
         if isinstance(start, timedelta):
             start = str(start.total_seconds()) + " seconds"
-        start = flowchem_ureg.parse_expression(start)
+        start_time = flowchem_ureg.parse_expression(start)
 
         # Stop or duration
         if stop is not None and duration is not None:
@@ -166,16 +166,15 @@ class Protocol(object):
         if duration is not None:
             if isinstance(duration, timedelta):
                 duration = str(duration.total_seconds()) + " seconds"
-            stop = start + flowchem_ureg.parse_expression(duration)
+            stop_time = start_time + flowchem_ureg.parse_expression(duration)
         # Parse stop
         else:
             assert stop is not None
             if isinstance(stop, timedelta):
                 stop = str(stop.total_seconds()) + " seconds"
-            if isinstance(stop, str):
-                stop = flowchem_ureg.parse_expression(stop)
+            stop_time = flowchem_ureg.parse_expression(stop)
 
-        if start > stop:
+        if start_time > stop_time:
             raise ValueError("Procedure beginning is after procedure end.")
 
         # a little magic for temperature controllers
@@ -193,8 +192,8 @@ class Protocol(object):
         # add the procedure to the procedure list
         self.procedures.append(
             dict(
-                start=start.m_as("second"),
-                stop=stop.m_as("second"),
+                start=start_time.m_as("second"),
+                stop=stop_time.m_as("second"),
                 component=component,
                 params=kwargs,
             )
