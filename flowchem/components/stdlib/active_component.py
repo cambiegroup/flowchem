@@ -1,5 +1,7 @@
 import asyncio
-from typing import Any, Dict, Optional
+import warnings
+import math
+from typing import Any, Dict, Optional, MutableMapping, List
 
 from loguru import logger
 
@@ -115,3 +117,46 @@ class ActiveComponent(Component):
             res = await self._update()
             if res is not None:
                 raise ValueError(f"Received return value {res} from update.")
+
+    def validate_procedures(self, procedures: List[MutableMapping]) -> None:
+        """ Given all the procedures the component is involved in, checks them. """
+        # skip validation if no procedure is given
+        if not procedures:
+            warnings.warn(
+                f"{self} is an active component but was not used in this protocol."
+                " If this is intentional, ignore this warning."
+            )
+            return
+
+        # check for conflicting continuous procedures
+        procedures_without_time = [x
+                                   for x in procedures
+                                   if x["start"] is None and x["stop"] is None]
+        if len(procedures_without_time) > 1:
+            raise RuntimeError(
+                f"{self} cannot have two procedures for the entire duration of the protocol. "
+                "If each procedure defines a different attribute to be set for the entire duration, "
+                "combine them into one call to add(). Otherwise, reduce ambiguity by defining start "
+                "and stop times for each procedure. "
+            )
+
+        # Unlike mw, avoid inferring stop time for procedures.
+        # Procedures will become atomic in XDL steps,
+        # avoiding multiple procedures per component per step.
+        for procedure in procedures:
+            assert procedure["start"] is not None
+            assert procedure["stop"] is not None
+
+        # For now we still have to check for conflicting procedures
+        for i, procedure in enumerate(procedures):
+            try:
+                # the start time of the next procedure
+                next_start = procedures[i + 1]["start"]
+            except IndexError:  # Last one
+                continue
+
+            # check for overlapping procedures
+            if next_start < procedure["stop"] and not math.isclose(next_start, procedure["stop"]):
+                msg = "Cannot have two overlapping procedures. "
+                msg += f"{procedure} and {procedures[i + 1]} conflict"
+                raise RuntimeError(msg)

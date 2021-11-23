@@ -318,56 +318,8 @@ class Protocol(object):
             except Exception as e:
                 raise RuntimeError(f"{component} isn't valid. Got error: '{str(e)}'.") from e
 
-            # check for conflicting continuous procedures
-            if (
-                len(
-                    [
-                        x
-                        for x in component_procedures
-                        if x["start"] is None and x["stop"] is None
-                    ]
-                )
-                > 1
-            ):
-                raise RuntimeError(
-                    f"{component} cannot have two procedures for the entire duration of the protocol. "
-                    "If each procedure defines a different attribute to be set for the entire duration, "
-                    "combine them into one call to add(). Otherwise, reduce ambiguity by defining start "
-                    "and stop times for each procedure. "
-                    ""
-                )
-
-            for i, procedure in enumerate(component_procedures):
-                # automatically infer start and stop times
-                try:
-                    # the start time of the next procedure
-                    next_start = component_procedures[i + 1]["start"]
-                    if next_start == 0:
-                        raise RuntimeError(
-                            f"Ambiguous start time for {procedure['component']}. "
-                        )
-                    elif next_start is not None and procedure["stop"] is None:
-                        warn(
-                            f"Automatically inferring stop time for {procedure['component']} "
-                            f"as beginning of {procedure['component']}'s next procedure."
-                        )
-                        procedure["stop"] = next_start
-
-                    # check for overlapping procedures
-                    elif next_start < procedure["stop"] and not isclose(
-                        next_start, procedure["stop"]
-                    ):
-                        msg = "Cannot have two overlapping procedures. "
-                        msg += f"{procedure} and {component_procedures[i + 1]} conflict"
-                        raise RuntimeError(msg)
-
-                except IndexError:
-                    if procedure["stop"] is None:
-                        warn(
-                            f"Automatically inferring stop for {procedure['component']} as the end of the protocol. "
-                            f"To override, provide stop in your call to add()."
-                        )
-                        procedure["stop"] = self._inferred_duration
+            # Validates procedures for component
+            component.validate_procedures(component_procedures)
 
             # give the component instructions at all times
             compiled = []
