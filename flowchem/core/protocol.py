@@ -1,16 +1,15 @@
 import warnings
 from typing import Union, Optional, Mapping, MutableMapping, List, Dict, Any, Iterable
 
+import yaml
 import json
-import os
+from os import PathLike
 from copy import deepcopy
 from datetime import timedelta
 from math import isclose
-from warnings import warn
 
 import altair as alt
 import pandas as pd
-import yaml
 from IPython import get_ipython
 from IPython.display import Code
 from loguru import logger
@@ -87,60 +86,6 @@ class Protocol(object):
     def __str__(self):
         return f"Protocol {self.name} defined over {repr(self.apparatus)}"
 
-    def _validate_component_mapping(self, component: MappedComponentMixin, setting) -> int:
-        """ Validate mapping. """
-        if component.mapping is None:
-            raise ValueError(f"{component} does not have a mapping.")
-
-        # A value is given that is a component to map to
-        if setting in component.mapping:
-            logger.trace(f"{setting} in {repr(component)}'s mapping.")
-            return component.mapping[setting]
-
-        # the valve's connecting component name was given
-        # in this case, we get the mapped valve with that name
-        # we don't have to worry about duplicate names since that's checked later
-        elif setting in [c.name for c in component.mapping]:
-            logger.trace(f"{setting} in {repr(component)}'s mapping.")
-            mapped_component = [c for c in component.mapping if c.name == setting]
-            return component.mapping[mapped_component[0]]
-
-        # the user gave the actual port mapping number
-        elif setting in component.mapping.values() and isinstance(setting, int):
-            warnings.warn("Mapped component should map with other components not directly to position! "
-                          "This is deprecated and will remove in future versions.", DeprecationWarning)
-            logger.trace(f"User supplied manual setting for {component}")
-            return setting
-        else:
-            raise ValueError(f"Invalid setting {setting} for {repr(component)}.")
-
-    def _check_added_valve_mapping(self, valve: Valve, **kwargs) -> dict:
-        setting = kwargs["setting"]
-
-        if valve.mapping is None:
-            raise ValueError(f"{repr(valve)} does not have a mapping.")
-
-        # the valve itself was given
-        if setting in valve.mapping:
-            logger.trace(f"{setting} in {repr(valve)}'s mapping.")
-            kwargs["setting"] = valve.mapping[setting]
-
-        # the valve's name was given
-        # in this case, we get the mapped valve with that name
-        # we don't have to worry about duplicate names since that's checked later
-        elif setting in [c.name for c in valve.mapping]:
-            logger.trace(f"{setting} in {repr(valve)}'s mapping.")
-            mapped_component = [c for c in valve.mapping if c.name == setting]
-            kwargs["setting"] = valve.mapping[mapped_component[0]]
-
-        # the user gave the actual port mapping number
-        elif setting in valve.mapping.values() and isinstance(setting, int):
-            logger.trace(f"User supplied manual setting for {valve}")
-        else:
-            raise ValueError(f"Invalid setting {setting} for {repr(valve)}.")
-
-        return kwargs
-
     def _check_component_kwargs(self, component: ActiveComponent, **kwargs) -> None:
         """Checks that the given keyword arguments are valid for a component."""
         for kwarg, value in kwargs.items():
@@ -203,7 +148,7 @@ class Protocol(object):
 
         # check mapping (valve, port, etc.)
         if isinstance(component, MappedComponentMixin):
-            kwargs["setting"] = self._validate_component_mapping(component, kwargs["setting"])
+            kwargs["setting"] = component.solve_mapping_values(kwargs["setting"])
 
         # make sure the component and keywords are valid
         self._check_component_kwargs(component, **kwargs)
@@ -514,10 +459,10 @@ class Protocol(object):
         verbosity: str = "info",
         confirm: bool = False,
         strict: bool = True,
-        log_file: Union[str, bool, os.PathLike, None] = True,
+        log_file: Union[str, bool, PathLike, None] = True,
         log_file_verbosity: Optional[str] = "trace",
         log_file_compression: Optional[str] = None,
-        data_file: Union[str, bool, os.PathLike, None] = True,
+        data_file: Union[str, bool, PathLike, None] = True,
     ) -> Experiment:
         """
         Executes the procedure.
