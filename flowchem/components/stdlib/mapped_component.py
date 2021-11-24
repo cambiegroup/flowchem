@@ -5,10 +5,10 @@ from collections import UserDict
 
 
 class distinctdict(UserDict):
-    """ Dictionary that does not accept duplicate values.
+    """ Dictionary that does not accept duplicate values except for None.
     From: Expert Python Programming: Become a master in Python by [...], 3rd Edition """
     def __setitem__(self, key, value):
-        if value in self.values():
+        if value is not None and value in self.values():
             if key not in self or (key in self and self[key] != value):
                 raise ValueError(f"Trying to assign the same value to a different key: [{key} => {value}]")
         super().__setitem__(key, value)
