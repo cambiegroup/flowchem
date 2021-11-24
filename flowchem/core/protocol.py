@@ -1,4 +1,3 @@
-import warnings
 from typing import Union, Optional, Mapping, MutableMapping, List, Dict, Any, Iterable
 
 import yaml
@@ -12,7 +11,6 @@ import altair as alt
 import pandas as pd
 from IPython import get_ipython
 from IPython.display import Code
-from loguru import logger
 
 from flowchem.units import flowchem_ureg
 from flowchem.components.stdlib import ActiveComponent, TempControl, Valve, MappedComponentMixin
