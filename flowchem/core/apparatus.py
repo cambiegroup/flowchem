@@ -9,7 +9,7 @@ from graphviz import Digraph
 from rich.table import Table
 
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import Component, Tube, Valve, Vessel
+from flowchem.components.stdlib import Component, Tube, Valve, Vessel, MappedComponentMixin
 
 Connection = namedtuple("Connection", ["from_component", "to_component", "tube"])
 
@@ -307,19 +307,20 @@ class Apparatus(object):
             warn("Not all components connected.")
             return False
 
-        # valve checking
-        for valve in self[Valve]:
+        # Mapped component checking
+        for mapped_component in self[MappedComponentMixin]:
 
-            # ensure that valve's mapping components are part of apparatus
-            if isinstance(valve.mapping, Mapping):
-                for component in valve.mapping.keys():
+            # ensure that component's mapping partners are part of apparatus
+            if isinstance(mapped_component.mapping, Mapping):
+                for component in mapped_component.mapping.keys():
                     if component not in self.components:
                         warn(
-                            f"Invalid mapping for Valve {valve}. "
+                            f"Invalid mapping for mapped component {mapped_component}. "
                             f"{component} has not been added to {self.name}"
                         )
                         return False
 
+            # FIXME this is easy after mapping reversal
             # TODO: make this check work again with SISO, SIMO, MISO, and MIMO valves.
             # # no more than one output from a valve (might have to change this)
             # if len([x for x in self.network if x.from_component is valve]) != 1:
