@@ -396,13 +396,13 @@ class Protocol(object):
                     procedure[k] = v
 
                 # show what the valve is actually connecting to
-                if isinstance(component, Valve) and type(procedure["setting"]) == int:
+                if isinstance(component, MappedComponentMixin) and type(procedure["setting"]) == int:
                     assert isinstance(component.mapping, Mapping)
                     # guess the component, c, which the valve is set to
                     mapped_component = [
-                        repr(k)
+                        repr(v)
                         for k, v in component.mapping.items()
-                        if v == procedure["setting"]
+                        if k == procedure["setting"]
                     ][0]
                     procedure["mapped component"] = mapped_component
                 # TODO: make this deterministic for color coordination

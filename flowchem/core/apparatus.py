@@ -312,34 +312,13 @@ class Apparatus(object):
 
             # ensure that component's mapping partners are part of apparatus
             if isinstance(mapped_component.mapping, Mapping):
-                for component in mapped_component.mapping.keys():
+                for component in mapped_component.mapping.values():
                     if component not in self.components:
                         warn(
                             f"Invalid mapping for mapped component {mapped_component}. "
                             f"{component} has not been added to {self.name}"
                         )
                         return False
-
-            # FIXME this is easy after mapping reversal
-            # TODO: make this check work again with SISO, SIMO, MISO, and MIMO valves.
-            # # no more than one output from a valve (might have to change this)
-            # if len([x for x in self.network if x.from_component is valve]) != 1:
-            #     warn(f"Valve {valve} has multiple outputs.")
-            #     return False
-            #
-            # make sure valve's mapping is complete
-            # non_mapped_components = [
-            #     connection.from_component
-            #     for connection in self.network
-            #     if connection.to_component == valve
-            #     and valve.mapping.get(connection.from_component.name) is None
-            # ]
-            # if non_mapped_components:
-            #     warn(
-            #         f"Valve {valve} has incomplete mapping."
-            #         f" No mapping for {non_mapped_components}"
-            #     )
-            #     return False
 
         return True
 
