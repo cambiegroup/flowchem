@@ -58,10 +58,6 @@ class Protocol(object):
                 "which is not an instance of flowchem.Apparatus."
             )
 
-        # ensure apparatus is valid
-        if not apparatus._validate():
-            raise ValueError("Apparatus is not valid.")
-
         # store the passed args
         self.apparatus = apparatus
         self.description = description
@@ -72,6 +68,10 @@ class Protocol(object):
         else:
             self.name = "Protocol_" + str(Protocol._id_counter)
             Protocol._id_counter += 1
+
+        # ensure apparatus is valid
+        if not apparatus._validate():
+            raise ValueError("Apparatus is not valid.")
 
         # default values
         self.procedures: List[

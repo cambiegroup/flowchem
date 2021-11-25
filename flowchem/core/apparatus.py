@@ -313,7 +313,7 @@ class Apparatus(object):
             # ensure that component's mapping partners are part of apparatus
             if isinstance(mapped_component.mapping, Mapping):
                 for component in mapped_component.mapping.values():
-                    if component not in self.components:
+                    if component is not None and component not in self.components:
                         warn(
                             f"Invalid mapping for mapped component {mapped_component}. "
                             f"{component} has not been added to {self.name}"

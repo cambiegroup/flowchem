@@ -69,7 +69,8 @@ class MappedComponentMixin(Component):
         # the valve's connecting component name was given
         # in this case, we get the mapped valve with that name
         # we don't have to worry about duplicate names since that's checked later
-        elif setting in [c.name for c in self.reversed_mapping]:
+
+        elif setting in [c.name for c in self.reversed_mapping if isinstance(c, Component)]:
             logger.trace(f"{setting} in {repr(self)}'s mapping.")
             mapped_component = [c for c in self.reversed_mapping if c.name == setting]
             return self.reversed_mapping[mapped_component[0]]

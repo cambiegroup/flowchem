@@ -101,8 +101,8 @@ def test_add_dummy():
 
 def test_add_valve():
     A = Apparatus()
-    valve = Valve(mapping={pump1: 1, pump2: 2})
-    bad_valve = Valve()
+    valve = Valve(mapping={1: pump1, 2: pump2})
+    bad_valve = Valve(mapping={1: None, 2: None})
     A.add([pump1, pump2], [valve, bad_valve], tube)
     P = Protocol(A)
 
