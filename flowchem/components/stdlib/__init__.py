@@ -16,6 +16,7 @@ from .dummy_pump import DummyPump
 from .dummy_sensor import DummySensor
 from .tempcontrol import TempControl
 from .valve import Valve
+from .injection_valve import InjectionValve
 from .dummy_valve import DummyValve
 from .vessel import Vessel
 from .vessel_chemicals import VesselChemicals

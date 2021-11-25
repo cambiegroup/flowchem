@@ -1,8 +1,11 @@
 import warnings
+from typing import Mapping, Union, Optional
+
 from flowchem.components.stdlib import Component
 from loguru import logger
 from collections import UserDict
 
+ComponentMapping = Mapping[Union[str, int], Optional[Component]]
 
 class distinctdict(UserDict):
     """ Dictionary that does not accept duplicate values except for None.
@@ -42,6 +45,7 @@ class MappedComponentMixin(Component):
     """
 
     def _validate(self, dry_run):
+        self.mapping: ComponentMapping
         if not self.mapping:
             raise ValueError(f"{self} requires a mapping. None provided.")
         assert any([c is not None for c in self.mapping.values()]), f"{self} has no mapped components."
