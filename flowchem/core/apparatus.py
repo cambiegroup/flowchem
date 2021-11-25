@@ -9,7 +9,7 @@ from graphviz import Digraph
 from rich.table import Table
 
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import Component, Tube, Valve, Vessel, MappedComponentMixin
+from flowchem.components.stdlib import Component, Tube, Vessel, MappedComponentMixin
 
 Connection = namedtuple("Connection", ["from_component", "to_component", "tube"])
 
