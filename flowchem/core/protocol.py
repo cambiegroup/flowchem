@@ -60,7 +60,7 @@ class Protocol(object):
 
         # ensure apparatus is valid
         if not apparatus._validate():
-            raise ValueError("Apparaus is not valid.")
+            raise ValueError("Apparatus is not valid.")
 
         # store the passed args
         self.apparatus = apparatus
