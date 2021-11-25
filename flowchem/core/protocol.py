@@ -13,7 +13,7 @@ from IPython import get_ipython
 from IPython.display import Code
 
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import ActiveComponent, TempControl, Valve, MappedComponentMixin
+from flowchem.components.stdlib import ActiveComponent, TempControl, MappedComponentMixin
 from flowchem.core.apparatus import Apparatus
 from flowchem.core.experiment import Experiment
 
