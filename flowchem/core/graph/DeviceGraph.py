@@ -175,9 +175,11 @@ class DeviceGraph:
 
         # If necessary updates mapping.
         if tube_config["from"].get("position", 0) != 0:
-            from_device.mapping[from_device.name] = tube_config["from"]["position"]
+            position = tube_config["from"]["position"]
+            from_device.mapping[position] = from_device.name
         if tube_config["to"].get("position", 0) != 0:
-            to_device.mapping[from_device.name] = tube_config["to"]["position"]
+            position = tube_config["to"]["position"]
+            to_device.mapping[position] = to_device.name
 
         return Connection(from_device, to_device, tube)
 
