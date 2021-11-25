@@ -28,7 +28,11 @@ class Valve(MappedComponentMixin, ActiveComponent):
         if not isinstance(mapping, (type(None), Mapping)):
             raise TypeError(f"Invalid mapping type {type(mapping)} for {repr(self)}.")
         self.mapping = mapping
-        self.setting = 1
+        # Base state is first position or 1 if no mapping is provided
+        if mapping:
+            self.setting = self.mapping.keys()[0]
+        else:
+            self.setting = 1
         self._visualization_shape = "parallelogram"
 
         self._base_state = {"setting": 1}
