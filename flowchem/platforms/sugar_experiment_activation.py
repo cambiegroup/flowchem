@@ -206,8 +206,7 @@ class FlowProcedure:
         self.log.info('Chiller started')
 
     def individual_procedure(self, flow_conditions: FlowConditions):
-
-        while abs(flowchem_ureg.celsius*self.chiller.get_process_temperature() - flow_conditions.temperature) > 2:
+        while abs(((flowchem_ureg.celsius*self.chiller.get_process_temperature()).m_as("K") - flow_conditions.temperature.m_as("K"))) > 2:
             sleep(10)
             self.log.info(
                 f'Chiller waiting, current: {self.chiller.get_process_temperature()} set: {flow_conditions.temperature}')
@@ -396,7 +395,7 @@ class Scheduler:
                             f'{self.experiment_waiting_for_analysis.experiment_id}, analysis set True accordingly')
 
                         self.experiment_waiting_for_analysis.chromatogram = self.analysis_results / Path(
-                            (str(self.experiment_waiting_for_analysis.experiment_id) + '.txt'))
+                            (str(self.experiment_waiting_for_analysis.experiment_id) +' - Detector 1.txt')) # TODO workaround should be more elegant
                         self.started_experiments[self.experiment_waiting_for_analysis.experiment_id] = self.experiment_waiting_for_analysis
                         # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
                         with open(self.experiments_results, 'w') as f:
@@ -496,6 +495,7 @@ class Scheduler:
             elif self.experiment_queue.empty() and self.started_experiments:
                 # start timer in separate thread. this timer should be killed by having sth in the queue again.
                 # When exceeding some time, platform should shut down
+                # TODO I think that should be in the main thread, therefore all the rest has to be in another thread?
                 user_input = Thread(target=self.create_experiments_from_user_input)
                 user_input.start()
                 user_input.join()
@@ -535,7 +535,7 @@ if __name__ == "__main__":
                           experiments_results=analysed_samples_folder / Path('experiments_test'))
 
     # This obviously could be included into the scheduler
-    results_listener = ResultListener(analysed_samples_folder, '*.txt', scheduler.analysed_samples)
+    results_listener = ResultListener(analysed_samples_folder, '*Detector 1.txt', scheduler.analysed_samples)
 
     scheduler.create_experiment(ExperimentConditions(temperature="10 °C", residence_time="300 s"))
     scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="0 °C"))
