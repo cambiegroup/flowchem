@@ -105,7 +105,7 @@ class ExperimentConditions:
                 # several times, I observed pandas.errors.EmptyDataError: No columns to parse from file. The file was
                 # checked manually and fine: therefore the sleep
                 sleep(1)
-                self._chromatogram = read_csv(Path(path), header=16, sep='\t').to_json(index=False, orient='split')
+                self._chromatogram = read_csv(Path(path), header=16, sep='\t').to_json()
             except errors.ParserError:
                 raise errors.ParserError('Please make sure your Analytical data is compliant with pandas.read_csv')
         else:
@@ -496,9 +496,7 @@ class Scheduler:
                 # start timer in separate thread. this timer should be killed by having sth in the queue again.
                 # When exceeding some time, platform should shut down
                 # TODO I think that should be in the main thread, therefore all the rest has to be in another thread?
-                user_input = Thread(target=self.create_experiments_from_user_input)
-                user_input.start()
-                user_input.join()
+                self.create_experiments_from_user_input()
 
 
 if __name__ == "__main__":
