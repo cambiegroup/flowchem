@@ -18,29 +18,68 @@ import json
 import dataclasses
 
 
-class EnhancedJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-        return super().default(o)
 
-class DecodedExperimentData:
 
-    def __init__(self, experimentdata: Path):
 
-        self.experiment_data_loaded = self.load_and_decode(experimentdata)
 
-    def load_and_decode(self, experimentdata: Path):
-        from pandas import read_json
-        with open(Path(experimentdata), 'r') as f:
-            loaded = json.load(f)
-        for keys in loaded:
-            # transfrom all dictionary chromatograms to trace
-            loaded[keys]["_chromatogram"] = read_json(loaded[keys]["_chromatogram"])
-        return loaded
+class SaveRetrieveData:
+    """
+    Class that can handle saving and loading experiment data
+    It creates a new folder of experiment name, and populates that with experiment data files
+    this files can be loaded again to objects, single or in batch
+    """
+    class EnhancedJSONEncoder(json.JSONEncoder):
+        def default(self, o):
+            if dataclasses.is_dataclass(o):
+                return dataclasses.asdict(o)
+            return super().default(o)
 
-    def plot_data(self):
-        pass
+    def __init__(self, experiment_folder_name, experiment_folder_path= r"defaultpathblabla", file_extension=".soe"):
+
+        self.experiment_folder = Path(experiment_folder_path, experiment_folder_name)
+        self.file_extension = file_extension
+
+    def make_experiment_folder(self):
+        try:
+            Path.mkdir(self.experiment_folder, parents=True, exist_ok=False)
+        except FileExistsError:
+            # load already performed experiments
+            pass
+            # instead check if any of the queue elements is already present as measured examples
+
+    def save_data(self, single_experiment_file_name, single_experiment: ExperimentConditions):
+        # save a new piece of data to the folder
+        with open(Path(self.experiment_folder, single_experiment_file_name+self.file_extension), 'w') as new_experiment_data_file:
+            json.dump(single_experiment, new_experiment_data_file, cls=self.EnhancedJSONEncoder)
+
+#td do same magic here/folderpath should always be appended
+    def load_and_decode_single(self, experiment_data_file_name: str):
+        with open(Path(self.experiment_folder, experiment_data_file_name), 'r') as f:
+            loaded: dict = json.load(f)
+        # remove the expcode as a key - actually, already saving should be done with T in filename, maybe expname_T_expcode
+        #unpack the dictionary and hand to class for reconstruction
+        return ExperimentConditions(**loaded)
+
+
+    def load_and_decode_batch(self):
+        loaded_experiments = {}
+        for files in self.experiment_folder.glob("*" + self.file_extension):
+            one_condition = self.load_and_decode_single(files)
+            if not loaded_experiments[one_condition.temperature]:
+                loaded_experiments[one_condition.temperature] = one_condition
+            else:
+                logging.warning("Could not be loaded since same temperature was already loaded - probably another "
+                                "parameter is different. Yet to be implemented")
+        return loaded_experiments
+
+#ToDo:
+# optional 1b) Check the experiments in the folder in the beginning, if experiments already performed -> take from queue and don't execute
+# 2b) do comparison if all other parameters are the same, if not, issue a warning and expand key description
+# 3) get plotting and legend setup out of the box
+# 4) determine peaks and do integration
+# 5) report integration vs T
+# 6) visualize integration
+
 
 
 
@@ -145,7 +184,6 @@ class FlowConditions:
     def __init__(self, experiment_conditions: ExperimentConditions,
                  flow_platform: dict):  # for now, the flowplatform is handed in as a manually written dict and
         # abstraction still low
-
         experiment_conditions.experiment_id = round(datetime.datetime.timestamp(datetime.datetime.now()))
 
         # better readability
@@ -197,7 +235,6 @@ class FlowConditions:
         """
         Give as many inputs as desired, output will be in same order as input and hold required flowrates
         """
-
         normalised_flow_rates = array(equivalents) / array(concentrations)
         sum_of_normalised_flowrates = sum(normalised_flow_rates)
         correction_factor = target_flow_rate / sum_of_normalised_flowrates
@@ -350,7 +387,6 @@ class Scheduler:
         # create a worker function which compares these two. For efficiency, it will just check if analysed_samples is
         # empty. If not, it will get the respective experimental conditions from started_experiments. Combine the two
         # and drop it to the sql. in future, also hand it to the optimizer
-        self.started_experiments = {}
         # noinspection PyTypeChecker
         self._current_experiment: ExperimentConditions = None
         # noinspection PyTypeChecker
@@ -362,12 +398,14 @@ class Scheduler:
         self.data_worker = Thread(target=self.data_handler)
         self.data_worker.start()
         self.log.debug('Starting the data worker')
+        self.experiment_name = experiment_name
+
+        self.experiment_saving_loading = SaveRetrieveData(self.experiment_name, experiment_folder_path=f'D:/transferred_chromatograms/sugar_optimizer_experiments')
+        self.experiment_saving_loading.make_experiment_folder()
 
         # takes necessery steps to initialise the platform
         self.procedure.get_platform_ready()
         self.log.debug('Initialising the platform')
-        self.experiments_results = experiments_results / (
-                    experiment_name + (asctime().replace(":", "-")).replace("  ", " ").replace(" ", "_"))
 
     @property
     def current_experiment(self):
@@ -419,10 +457,9 @@ class Scheduler:
 
                         self.experiment_waiting_for_analysis.chromatogram = self.analysis_results / Path(
                             (str(self.experiment_waiting_for_analysis.experiment_id) +' - Detector 1.txt')) # TODO workaround should be more elegant
-                        self.started_experiments[self.experiment_waiting_for_analysis.experiment_id] = self.experiment_waiting_for_analysis
+
                         # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
-                        with open(self.experiments_results, 'w') as f:
-                            json.dump(self.started_experiments, f, cls=EnhancedJSONEncoder)
+                        self.experiment_saving_loading.save_data(self.experiment_name+self.experiment_waiting_for_analysis.temperature, self.experiment_waiting_for_analysis)
                         self.experiment_waiting_for_analysis = None
                         sleep(1)
                         # should become MongoDB, should be possible to be updated from somewhere else, eg with current T
@@ -514,14 +551,14 @@ class Scheduler:
                             ' time')
                         new_thread.join()
 
-            # TODO this is blocking the worker loop and should be moved to a separate thread
-            elif self.experiment_queue.empty() and self.started_experiments:
-                # start timer in separate thread. this timer should be killed by having sth in the queue again.
-                # When exceeding some time, platform should shut down
-                # TODO I think that should be in the main thread, therefore all the rest has to be in another thread?
-                user_input = Thread(target=self.create_experiments_from_user_input)
-                user_input.start()
-                user_input.join()
+# somehow doesn't work anyway
+            # elif self.experiment_queue.empty() and self.started_experiments:
+            #     # start timer in separate thread. this timer should be killed by having sth in the queue again.
+            #     # When exceeding some time, platform should shut down
+
+            #     user_input = Thread(target=self.create_experiments_from_user_input)
+            #     user_input.start()
+            #     user_input.join()
 
 
 if __name__ == "__main__":
