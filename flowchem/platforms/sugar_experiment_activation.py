@@ -114,7 +114,11 @@ class ExperimentConditions:
 
     @property
     def chromatogram(self):
-        return self._chromatogram
+        from pandas import read_json
+        try:
+            return read_json(self._chromatogram)
+        except ValueError:
+            return self._chromatogram
 
     @chromatogram.setter
     def chromatogram(self, path: str):
@@ -568,6 +572,3 @@ if __name__ == "__main__":
 
 
     # TODO when queue empty, after some while everything should be switched off
-    # TODO serialization has to be done with preserving °C -> encoding problem
-
-# TODO chiller should be started for next T once previous experiment is injected
