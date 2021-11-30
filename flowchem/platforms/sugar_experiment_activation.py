@@ -24,6 +24,25 @@ class EnhancedJSONEncoder(json.JSONEncoder):
             return dataclasses.asdict(o)
         return super().default(o)
 
+class DecodedExperimentData:
+
+    def __init__(self, experimentdata: Path):
+
+        self.experiment_data_loaded = self.load_and_decode(experimentdata)
+
+    def load_and_decode(self, experimentdata: Path):
+        from pandas import read_json
+        with open(Path(experimentdata), 'r') as f:
+            loaded = json.load(f)
+        for keys in loaded:
+            # transfrom all dictionary chromatograms to trace
+            loaded[keys]["_chromatogram"] = read_json(loaded[keys]["_chromatogram"])
+        return loaded
+
+    def plot_data(self):
+        pass
+
+
 
 # TODO combining the sample name with the commit hash would make the experiment even more traceable. probably a
 #  good idea...
@@ -105,7 +124,7 @@ class ExperimentConditions:
                 # several times, I observed pandas.errors.EmptyDataError: No columns to parse from file. The file was
                 # checked manually and fine: therefore the sleep
                 sleep(1)
-                self._chromatogram = read_csv(Path(path), header=16, sep='\t').to_json(index=False, orient='split')
+                self._chromatogram = read_csv(Path(path), header=16, sep='\t').to_json()
             except errors.ParserError:
                 raise errors.ParserError('Please make sure your Analytical data is compliant with pandas.read_csv')
         else:
@@ -399,7 +418,7 @@ class Scheduler:
                         self.started_experiments[self.experiment_waiting_for_analysis.experiment_id] = self.experiment_waiting_for_analysis
                         # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
                         with open(self.experiments_results, 'w') as f:
-                            json.dump(self.started_experiments, f, cls=EnhancedJSONEncoder,indent=4)
+                            json.dump(self.started_experiments, f, cls=EnhancedJSONEncoder)
                         self.experiment_waiting_for_analysis = None
                         sleep(1)
                         # should become MongoDB, should be possible to be updated from somewhere else, eg with current T
