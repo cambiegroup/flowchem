@@ -40,6 +40,7 @@ setuptools.setup(
         "nmrglue",
         "aioserial",
         "jsonschema",
+        "pydantic",
         "loguru",
         "networkx",
         "ipython",
