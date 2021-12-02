@@ -1,6 +1,4 @@
 """ Unit-conversion related functions """
-import os
-
 import pint
 
 flowchem_ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)

@@ -99,4 +99,4 @@ if __name__ == "__main__":
 
     import uvicorn
 
-    uvi = uvicorn.run(app, host="127.0.0.1")
+    uvicorn.run(app, host="127.0.0.1")
