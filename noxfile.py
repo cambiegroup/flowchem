@@ -11,8 +11,7 @@ def tests(session):
 @nox.session
 def lint(session):
     session.install('flake8')
-    session.run('flake8', '.', '--count', '--select=E9,F63,F7,F82', '--show-source', '--statistics')
-
+    session.run('flake8', 'flowchem', '--count', '--select=E9,F63,F7,F82', '--show-source', '--statistics')
 
 @nox.session
 def type_check(session):
