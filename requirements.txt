@@ -1,4 +1,4 @@
-git+https://github.com/jjhelmus/nmrglue.git@master
+nmrglue
 pint~=0.16.1
 pytest~=6.2.1
 pytest-asyncio
