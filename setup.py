@@ -52,7 +52,8 @@ setuptools.setup(
         "graphviz",
         "ord-schema",
         "google-api-python-client",
-        "rich"
+        "rich",
+        "ipywidgets"
     ],
     python_requires=">=3.8",
     entry_points={"console_scripts": ["flowchem=flowchem.cli:main"]},
