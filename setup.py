@@ -41,6 +41,7 @@ setuptools.setup(
         "aioserial",
         "jsonschema",
         "pydantic",
+        "lxml",
         "loguru",
         "networkx",
         "ipython",
