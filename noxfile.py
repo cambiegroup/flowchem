@@ -10,11 +10,11 @@ def lint(session):
 @nox.session(python=['3.9', '3.10'])
 def type_check(session):
     session.install('mypy')
-    session.run('mypy', '--install-types', '--non-interactive', '--python-version 3.9', 'flowchem')
+    session.run('mypy', '--install-types', '--non-interactive', '--python-version', '3.9', 'flowchem')
 
 
 @nox.session(python=['3.9', '3.10'])
 def tests(session):
     session.install('pytest', 'pytest-asyncio', 'pytest-cov')
     session.install('.')
-    session.run('pytest', '--cov flowchem', '--cov-fail-under=40')
+    session.run('pytest --cov flowchem --cov-fail-under=40')
