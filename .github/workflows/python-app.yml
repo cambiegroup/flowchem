@@ -25,6 +25,8 @@ jobs:
 
       - name: Setup nox
         uses: excitedleigh/setup-nox@v2.0.0
+
+      - name: Run nox
         run: nox
 
       - name: Upload coverage data
