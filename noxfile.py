@@ -17,4 +17,4 @@ def type_check(session):
 def tests(session):
     session.install('pytest', 'pytest-asyncio', 'pytest-cov')
     session.install('.')
-    session.run('pytest --cov flowchem --cov-fail-under=40')
+    session.run('pytest', '--cov', 'flowchem' '--cov-fail-under=40')
