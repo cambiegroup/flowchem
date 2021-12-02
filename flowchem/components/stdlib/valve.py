@@ -1,9 +1,9 @@
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Union, Dict, Any
 
-from flowchem.components.stdlib import ActiveComponent, Component
+from flowchem.components.stdlib import ActiveComponent, Component, MappedComponentMixin
 
 
-class Valve(ActiveComponent):
+class Valve(MappedComponentMixin, ActiveComponent):
     """
     A generic valve.
 
@@ -12,14 +12,14 @@ class Valve(ActiveComponent):
     - `name`: The name of the valve.
 
     Attributes:
-    - `mapping`: The mapping from components to their integer port numbers.
+    - `mapping`: The mapping from position name/numbers to components.
     - `name`: The name of the valve.
-    - `setting`: The position of the valve as an int (mapped via `mapping`).
+    - `setting`: The position of the valve as an int or string (mapped via `mapping`).
     """
 
     def __init__(
         self,
-        mapping: Optional[Mapping[Component, int]] = None,
+        mapping: Mapping[Union[int, str], Optional[Component]],
         name: Optional[str] = None,
     ):
         super().__init__(name=name)
@@ -28,10 +28,14 @@ class Valve(ActiveComponent):
         if not isinstance(mapping, (type(None), Mapping)):
             raise TypeError(f"Invalid mapping type {type(mapping)} for {repr(self)}.")
         self.mapping = mapping
-        self.setting = 1
+        # Base state is first position or 1 if no mapping is provided
+        if mapping:
+            self.setting = list(self.mapping.keys())[0]
+        else:
+            self.setting = 1
         self._visualization_shape = "parallelogram"
 
-        self._base_state = {"setting": 1}
+        self._base_state: Dict[str, Any] = {"setting": 1}
 
     async def _update(self):
         raise NotImplementedError

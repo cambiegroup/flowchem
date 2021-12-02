@@ -11,6 +11,15 @@ from threading import Thread
 from typing import Union
 from time import sleep
 from pathlib import Path
+from flowchem.exceptions import InvalidConfiguration
+
+try:
+    from flowchem.components.devices.Knauer.Knauer_HPLC_NDA import Lamp_Command
+
+    HAS_KNAUER_COMMANDS = True
+except ModuleNotFoundError:
+    HAS_KNAUER_COMMANDS = False
+    raise ModuleNotFoundError("You need to get the NDA communication from Knauer.")
 
 # Todo should have a command constructor dataclass, would be more neat. For now, will do without to get it running asap
 
@@ -19,6 +28,11 @@ from pathlib import Path
 class ClarityInterface:
     def __init__(self, remote: bool = False, host: str = None, port: int = None, path_to_executable: str = None,
                  instrument_number: int = 1):
+        if not HAS_KNAUER_COMMANDS:
+            raise InvalidConfiguration(
+                "Knauer Lamps unusable: no Knauer Commands available.\n"
+                "Contact your distributor to get the serial API documentation."
+            )
         # just determine path to executable, and open socket if for remote usage
         self.remote = remote
         self.instrument = instrument_number
@@ -46,7 +60,7 @@ class ClarityInterface:
         else:
             self.command_executor(command_string, self.path_to_executable)
 
-    #bit displaced convenience function to switch on the lamps of hplc detector. Careful, NDA
+    #bit displaced convenience function to switch on the lamps of hplc detector.
     # TODO remove if published
     def switch_lamp_on(self, address='192.168.10.111', port=10001):
         """
@@ -58,11 +72,12 @@ class ClarityInterface:
         Returns:
 
         """
+
         # send the  respective two commands and check return. Send to socket
         message_sender=MessageSender(address, port)
-        message_sender.open_socket_and_send('LAMP_D2 1\n\r')
+        message_sender.open_socket_and_send(Lamp_Command.deut_lamp_on)
         sleep(1)
-        message_sender.open_socket_and_send('LAMP_HAL 1\n\r')
+        message_sender.open_socket_and_send(Lamp_Command.hal_lamp_on)
         sleep(15)
 
     # define relevant strings

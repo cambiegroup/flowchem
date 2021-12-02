@@ -3,6 +3,8 @@ Knauer pump control.
 """
 import asyncio
 import warnings
+from typing import List
+
 from loguru import logger
 from enum import Enum
 
@@ -101,7 +103,8 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
     def error_present(reply: str) -> bool:
         """True if there are errors, False otherwise. Warns for errors."""
 
-        if not reply.startswith("ERROR"):
+        # ERRORS: is the expected answer to read_errors()
+        if not reply.startswith("ERROR") or reply.startswith("ERRORS:"):
             return False
 
         if "ERROR:1" in reply:
@@ -357,11 +360,12 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         logger.debug(f"Extflow reading returns {ext_flow}")
         return float(ext_flow)
 
-    async def read_errors(self):
+    async def read_errors(self) -> List[int]:
         """Returns the last 5 errors."""
         last_5_errors = await self.create_and_send_command(ERRORS)
         logger.debug(f"Error reading returns {last_5_errors}")
-        return last_5_errors
+        parsed_errors = [int(err_code) for err_code in last_5_errors.split(",")]
+        return parsed_errors
 
     async def read_motor_current(self):
         """Returns motor current, relative in percent 0-100."""

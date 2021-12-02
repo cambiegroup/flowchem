@@ -9,10 +9,10 @@ chiller = HuberChiller(aioserial.AioSerial(port='COM1'))
 
 async def main():
     # Set target temperature
-    await chiller.set_temperature_setpoint(35)
+    await chiller.set_temperature_setpoint("35 °C")
     # Start temperature control
     await chiller.start_temperature_control()
-    # Start recircul/ation
+    # Start recirculation
     await chiller.start_circulation()
 
     for _ in range(6):
