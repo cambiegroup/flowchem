@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump'"
+markers = [
+    "HApump: tests requiring a local HA Elite11 connected.",
+    "Spinsolve: tests requiring a connection to Spinsolve.",
+    "FlowIR: tests requiring a connection to a FlowIR.",
+    "KPump: tests for Azura compact" ]
+
+[tool.mypy]
+ignore_missing_imports = true
