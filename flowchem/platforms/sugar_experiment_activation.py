@@ -17,7 +17,8 @@ from pathlib import Path
 import json
 import dataclasses
 
-
+class UnderDefinedError(AttributeError):
+    pass
 
 
 
@@ -110,6 +111,8 @@ class ExperimentConditions:
     _quencher_equivalents = _quencher_eq_to_activator * activator_equivalents
     temperature: str = "25  °C"
 
+    building_block_smiles = None
+
     _experiment_finished: bool = False
 
     _experiment_failed: bool = False
@@ -118,6 +121,14 @@ class ExperimentConditions:
     # when fully analysed, hold a dataframe of the chromatogram. Once automatic analysis/assignment works,
     # this should also go in
     _chromatogram: dict = None
+
+    def check_experiment_conditions_completeness(self):
+        if not self.building_block_smiles:
+            raise UnderDefinedError('Please provide SMILES for your BB. Draw your BB in Chemdraw, select, press Alt+Ctrl+C'
+                                    'and paste the smiles here')
+        if type(self.building_block_smiles) != str:
+            raise TypeError()
+        # with RDkit it could also be checked if it is a valid smiles and if the molecule makes sense
 
     @property
     def experiment_id(self):
@@ -392,13 +403,14 @@ class Scheduler:
         # noinspection PyTypeChecker
         self._experiment_waiting_for_analysis: ExperimentConditions = None
 
-        # for now it only holds analysed samples, but later it should be used to add the analysis results and spectrum to experiment conditions
         self.analysed_samples = []
 
         self.data_worker = Thread(target=self.data_handler)
         self.data_worker.start()
         self.log.debug('Starting the data worker')
         self.experiment_name = experiment_name
+
+        self.current_building_block = None
 
         self.experiment_saving_loading = SaveRetrieveData(self.experiment_name, experiment_folder_path=f'D:/transferred_chromatograms/sugar_optimizer_experiments')
         self.experiment_saving_loading.make_experiment_folder()
@@ -468,6 +480,8 @@ class Scheduler:
     # just puts minimal conditions to the queue. Initially, this can be done manually/iterating over parameter space
     def create_experiment(self, conditions: ExperimentConditions) -> None:
         self.log.debug('New conditions put to queue')
+        # Do a sanity check on experiment conditions, smiles has to be provided
+        conditions.check_experiment_conditions_completeness()
         self.experiment_queue.put(conditions)
 
     def experiment_handler(self):
@@ -511,6 +525,19 @@ class Scheduler:
                     # get raw experimental data, derive actual platform parameters, create sequence function and execute
                     # that in a thread
                     self.current_experiment: ExperimentConditions = self.experiment_queue.get()
+                    if self.current_building_block == self.current_experiment.building_block_smiles:
+                        self.log.info("Measuring another data point for the building block that already was measured")
+                    elif not self.current_building_block:
+                        self.current_building_block = self.current_experiment.building_block_smiles
+                        self.log.info("Platform is starting, first building block in sequence of building blocks to screen is loaded")
+                    elif self.current_building_block != self.current_experiment.building_block_smiles:
+                        self.log.info("You want to measure a new building block, different from the one before."
+                                      "Therefore, please load new BB syringe and exchange activator. Type GO once done")
+                        # here needs to block and allow for user feedback
+                        while input() != "GO":
+                            self.log.info("please try again. Type GO")
+
+                    # here, check if the smiles of previous experiment is the same as of experiment now
                     self.experiment_queue.task_done()
 
                     individual_conditions = FlowConditions(self.current_experiment, self.graph)
@@ -609,3 +636,4 @@ if __name__ == "__main__":
 
 
     # TODO when queue empty, after some while everything should be switched off
+# TODO
