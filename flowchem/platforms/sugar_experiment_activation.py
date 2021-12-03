@@ -330,6 +330,7 @@ class FlowProcedure:
 
             self.log.info(f'setting experiment {scheduler.current_experiment.experiment_id} as finished')
             scheduler.current_experiment._experiment_finished = True
+            self.pumps['quencher'].stop_flow()
 
         except PumpStalled:
             # this indicates that a syringe pump blocked. there will be no further handling
@@ -337,6 +338,7 @@ class FlowProcedure:
             self.pumps['donor'].stop()
             self.pumps['activator'].stop()
             self.log.warning('One syringe pump stopped, likely due to stalling. Please resolve.')
+            self.pumps['quencher'].stop_flow()
 
     def get_platform_ready(self):
         """Here, code is defined that runs once to prepare the platform. These are things like switching on HPLC lamps,
