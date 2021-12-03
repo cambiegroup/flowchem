@@ -10,6 +10,7 @@ from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump
 from flowchem.miscellaneous_helpers.folder_listener import FileReceiver, ResultListener
 from flowchem.devices.ViciValco.ViciValco_Actuator import ViciValco
 import logging
+from typing import Union
 from flowchem.constants import flowchem_ureg
 from numpy import array, sum
 from pandas import read_csv, errors
@@ -48,13 +49,13 @@ class SaveRetrieveData:
             pass
             # instead check if any of the queue elements is already present as measured examples
 
-    def save_data(self, single_experiment_file_name, single_experiment: ExperimentConditions):
+    def save_data(self, single_experiment_file_name, single_experiment):
         # save a new piece of data to the folder
         with open(Path(self.experiment_folder, single_experiment_file_name+self.file_extension), 'w') as new_experiment_data_file:
             json.dump(single_experiment, new_experiment_data_file, cls=self.EnhancedJSONEncoder)
 
 #td do same magic here/folderpath should always be appended
-    def load_and_decode_single(self, experiment_data_file_name: str):
+    def load_and_decode_single(self, experiment_data_file_name: Union[str, Path]):
         with open(Path(self.experiment_folder, experiment_data_file_name), 'r') as f:
             loaded: dict = json.load(f)
         # remove the expcode as a key - actually, already saving should be done with T in filename, maybe expname_T_expcode
@@ -381,7 +382,7 @@ class Scheduler:
     """put together procedures and conditions, assign ID, put this to experiment Queue"""
 
     def __init__(self, graph: dict, experiment_name: str = "",
-                 analysis_results: Path = Path('D:\\transferred_chromatograms'),
+                 analysis_results: Path = Path(r'D:/transferred_chromatograms'),
                  experiments_results: Path = Path(f'D:/transferred_chromatograms/'), procedure=FlowProcedure):
 
         self.graph = graph
