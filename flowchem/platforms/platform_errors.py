@@ -1,0 +1,2 @@
+class UnderDefinedError(AttributeError):
+    pass
