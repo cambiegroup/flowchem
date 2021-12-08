@@ -445,14 +445,14 @@ class Scheduler:
                             ' time')
                         new_thread.join()
 
-# somehow doesn't work anyway
-            # elif self.experiment_queue.empty() and self.started_experiments:
-            #     # start timer in separate thread. this timer should be killed by having sth in the queue again.
-            #     # When exceeding some time, platform should shut down
 
-            #     user_input = Thread(target=self.create_experiments_from_user_input)
-            #     user_input.start()
-            #     user_input.join()
+            elif self.experiment_queue.empty() and not self.current_experiment:
+                # start timer in separate thread. this timer should be killed by having sth in the queue again.
+                # When exceeding some time, platform should shut down
+
+                user_input = Thread(target=self.create_experiments_from_user_input)
+                user_input.start()
+                user_input.join()
 
 
 if __name__ == "__main__":
