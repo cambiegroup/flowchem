@@ -58,10 +58,9 @@ if __name__ == "__main__":
     fr = FileReceiver('192.168.10.20', 10339, allowed_address='192.168.10.11')
     analysed_samples_folder = Path(r'D:/transferred_chromatograms')
     scheduler = Scheduler(SugarPlatform, experiment_name='fullcharacterisationyuntao',
-                          analysis_results=analysed_samples_folder,
-                          experiments_results=analysed_samples_folder / Path('experiments_test'))
-
+                          analysis_results=analysed_samples_folder)
     # This obviously could be included into the scheduler
+
     results_listener = ResultListener(analysed_samples_folder, '*Detector 1.txt', scheduler.analysed_samples)
 
 #    scheduler.create_experiment(ExperimentConditions(temperature="10 °C", residence_time="300 s", building_block_smiles = "[STol][C@H]1[C@H](OC(C2=CC=CC=C2)=O)[C@@H](OCC3=CC=CC=C3)[C@H](OC(OCC4C(C=CC=C5)=C5C6=C4C=CC=C6)=O)[C@@H](COCC7=CC=CC=C7)O1"))
