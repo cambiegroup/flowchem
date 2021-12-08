@@ -1,5 +1,5 @@
-from flowchem.constants.constants import flowchem_ureg
-from flowchem.platforms.sugar_experiment import FlowConditions, ExperimentConditions
+from flowchem.constants import flowchem_ureg
+from flowchem.platforms.legacy_code_unused.sugar_experiment import FlowConditions, ExperimentConditions
 
 
 
