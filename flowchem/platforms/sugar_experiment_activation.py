@@ -1,20 +1,15 @@
-from time import sleep
-from flowchem.devices.Petite_Fleur_chiller import Huber
-import queue
-from threading import Thread
-import datetime
-import asyncio
-from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO, PumpStalled
+import logging
+from pathlib import Path
+
+from flowchem.devices.Harvard_Apparatus.HA_elite11 import Elite11, PumpIO
 from flowchem.devices.Knauer.HPLC_control import ClarityInterface
 from flowchem.devices.Knauer.KnauerPumpValveAPI import KnauerPump
 from flowchem.miscellaneous_helpers.folder_listener import FileReceiver, ResultListener
 from flowchem.devices.ViciValco.ViciValco_Actuator import ViciValco
-import logging
+from flowchem.devices.Petite_Fleur_chiller import Huber
 from flowchem.constants import flowchem_ureg
-from numpy import array, sum
-from pathlib import Path
 from flowchem.platforms.experiment_conditions import ExperimentConditions
-from flowchem.platforms.Saving_Retrieving import SaveRetrieveData
+from flowchem.platforms.platform_scheduler import Scheduler
 
 #ToDo:
 # optional 1b) Check the experiments in the folder in the beginning, if experiments already performed -> take from queue and don't execute
