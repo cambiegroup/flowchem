@@ -29,10 +29,12 @@ class FlowProcedure:
         self.log.info('Chiller started')
 
     def individual_procedure(self, flow_conditions: FlowConditions):
-        while abs(((flowchem_ureg.celsius*self.chiller.get_process_temperature()).m_as("K") - flow_conditions.temperature.m_as("K"))) > 2:
+        while abs(((flowchem_ureg.celsius*self.chiller.get_process_temperature()).m_as("K") -
+                   flow_conditions.temperature.m_as("K"))) > 2:
             sleep(10)
             self.log.info(
-                f'Chiller waiting, current: {self.chiller.get_process_temperature()} set: {flow_conditions.temperature}')
+                f'Chiller waiting, current: {self.chiller.get_process_temperature()} set: '
+                f'{flow_conditions.temperature}')
 
         # set all flow rates
         self.log.info(f'Setting donor flow rate to  {flow_conditions.donor_flow_rate}')
@@ -46,10 +48,10 @@ class FlowProcedure:
         self.log.info('Starting donor pump')
         self.pumps['donor'].run()
 
-        if flow_conditions.activator == True:
+        if flow_conditions.activator:
             self.log.info('Starting activator pump')
             self.pumps['activator'].run()
-        elif flow_conditions.activator == False:
+        elif not flow_conditions.activator:
             self.pumps['pure_DCM'].infusion_rate = flow_conditions.activator_flow_rate.m_as('mL/min')
             self.log.info('Starting pure solvent pump')
             self.pumps['pure_DCM'].run()
@@ -62,7 +64,8 @@ class FlowProcedure:
         # start timer
         time_done = (datetime.datetime.now() +
                      datetime.timedelta(0, flow_conditions.steady_state_time.m_as('s'))).strftime('%H:%M:%S')
-        self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}, experiment will be done at {time_done}')
+        self.log.info(f'Timer starting, sleep for {flow_conditions.steady_state_time}, experiment will be done at '
+                      f'{time_done}')
         sleep(flow_conditions.steady_state_time.magnitude)
         self.log.info('Timer over, now take measurement}')
 
@@ -138,5 +141,4 @@ class FlowProcedure:
         self.log.info('getting the platform ready: setting HPLC max pressure')
         self.pumps['quencher'].set_maximum_pressure(13)
         asyncio.run(self.sample_loop.valve_io.initialize())
-
 

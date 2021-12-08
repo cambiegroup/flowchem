@@ -4,6 +4,7 @@ from flowchem.platforms.platform_errors import UnderDefinedError
 from pathlib import Path
 from time import sleep
 
+
 @dataclasses.dataclass
 class ExperimentConditions:
     """This is actively changed, either by human or by optimizer. Goes into the queue.
@@ -43,8 +44,8 @@ class ExperimentConditions:
 
     def check_experiment_conditions_completeness(self):
         if not self.building_block_smiles:
-            raise UnderDefinedError('Please provide SMILES for your BB. Draw your BB in Chemdraw, select, press Alt+Ctrl+C'
-                                    'and paste the smiles here')
+            raise UnderDefinedError('Please provide SMILES for your BB. Draw your BB in Chemdraw, select, press'
+                                    'Alt+Ctrl+C and paste the smiles here')
         if type(self.building_block_smiles) != str:
             raise TypeError()
         # with RDkit it could also be checked if it is a valid smiles and if the molecule makes sense

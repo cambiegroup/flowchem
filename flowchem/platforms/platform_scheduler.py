@@ -10,6 +10,7 @@ import datetime
 from flowchem.platforms.flow_conditions import FlowConditions
 from flowchem.platforms.sugar_activation_procedure import FlowProcedure
 
+
 class Scheduler:
     """put together procedures and conditions, assign ID, put this to experiment Queue"""
 
@@ -101,10 +102,16 @@ class Scheduler:
                             f'{self.experiment_waiting_for_analysis.experiment_id}, analysis set True accordingly')
 
                         self.experiment_waiting_for_analysis.chromatogram = self.analysis_results / Path(
-                            (str(self.experiment_waiting_for_analysis.experiment_id) +' - Detector 1.txt')) # TODO workaround should be more elegant
+                            (str(self.experiment_waiting_for_analysis.experiment_id) + ' - Detector 1.txt'))
+                        # TODO workaround should be more elegant
 
                         # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
-                        self.experiment_saving_loading.save_data(f"{self.experiment_name}_{self.experiment_waiting_for_analysis.experiment_id}_{self.experiment_waiting_for_analysis.temperature}", self.experiment_waiting_for_analysis)
+                        self.experiment_saving_loading.save_data(f"{self.experiment_name}"
+                                                                 f"_"
+                                                                 f"{self.experiment_waiting_for_analysis.experiment_id}"
+                                                                 f"_"
+                                                                 f"{self.experiment_waiting_for_analysis.temperature}",
+                                                                 self.experiment_waiting_for_analysis)
                         self.experiment_waiting_for_analysis = None
                         sleep(1)
                         # should become MongoDB, should be possible to be updated from somewhere else, eg with current T
@@ -156,7 +163,8 @@ class Scheduler:
                     # makes sure that performed experiment is safed. If transmission of chromatogram fails or platform
                     # needs to be stopped, it is thereby still possible to retrieve data
                     self.experiment_saving_loading.save_data(
-                        f"{self.experiment_name}_{self.experiment_waiting_for_analysis.experiment_id}_{self.experiment_waiting_for_analysis.temperature}",
+                        f"{self.experiment_name}_{self.experiment_waiting_for_analysis.experiment_id}_"
+                        f"{self.experiment_waiting_for_analysis.temperature}",
                         self.experiment_waiting_for_analysis)
 
             elif not self.current_experiment:
@@ -168,7 +176,8 @@ class Scheduler:
                         self.log.info("Measuring another data point for the building block that already was measured")
                     elif not self.current_building_block:
                         self.current_building_block = self.current_experiment.building_block_smiles
-                        self.log.info("Platform is starting, first building block in sequence of building blocks to screen is loaded")
+                        self.log.info("Platform is starting, first building block in sequence of building blocks to "
+                                      "screen is loaded")
                     elif self.current_building_block != self.current_experiment.building_block_smiles:
                         self.log.info("You want to measure a new building block, different from the one before."
                                       "Therefore, please load new BB syringe and exchange activator. Type GO once done")
@@ -183,7 +192,8 @@ class Scheduler:
                     self.log.info(f'New experiment {self.current_experiment.experiment_id} about to be started')
 
                     # should set temperture directly after previous experiment finished
-                    new_preparation_thread = Thread(target=self.procedure.individual_preparations, args=(individual_conditions,))
+                    new_preparation_thread = Thread(target=self.procedure.individual_preparations,
+                                                    args=(individual_conditions,))
                     new_preparation_thread.start()
                     new_preparation_thread.join()
 
@@ -206,8 +216,10 @@ class Scheduler:
                     else:
                         time_difference = flowchem_ureg(
                             self.current_experiment._analysis_time) - individual_conditions.steady_state_time
-                        waiting_done = (datetime.datetime.now() + datetime.timedelta(0, time_difference.m_as('s'))).strftime('%H:%M:%S')
-                        self.log.info(f'sleeping for {time_difference}, until {waiting_done}, then starting next experiment. This is because '
+                        waiting_done = (datetime.datetime.now() + datetime.timedelta(0, time_difference.m_as('s'))).\
+                            strftime('%H:%M:%S')
+                        self.log.info(f'sleeping for {time_difference}, until {waiting_done}'
+                                      f', then starting next experiment. This is because '
                                       f'analysis time is {self.current_experiment._analysis_time}, and the full '
                                       f'experiment steady state time is {individual_conditions.steady_state_time}')
                         sleep(time_difference.m_as('s'))
@@ -216,7 +228,6 @@ class Scheduler:
                             'New experiment started, though one is still waiting for analysis after waiting for the lag'
                             ' time')
                         new_thread.join()
-
 
             elif self.experiment_queue.empty() and not self.current_experiment:
                 # start timer in separate thread. this timer should be killed by having sth in the queue again.

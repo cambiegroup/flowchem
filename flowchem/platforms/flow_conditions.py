@@ -3,6 +3,7 @@ from flowchem.platforms.experiment_conditions import ExperimentConditions
 import datetime
 from numpy import array, sum
 
+
 class FlowConditions:
     """From  experiment conditions, flow conditions can be derived, which happens right before each experiment.
     Basically, just to separate off redundant data.
@@ -72,7 +73,8 @@ class FlowConditions:
 
     def get_flowrate_added_stream(self, concentration_reference_stream: float, flowrate_reference_stream: float,
                                   concentration_added_stream: float, equivalents_added_stream: float):
-        return (concentration_reference_stream*flowrate_reference_stream*equivalents_added_stream)/concentration_added_stream
+        return (concentration_reference_stream*flowrate_reference_stream*equivalents_added_stream)/\
+               concentration_added_stream
 
     def wait_for_steady_state(self, steady_state_time):
         pass
