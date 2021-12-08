@@ -228,6 +228,8 @@ class FlowConditions:
 
         self.temperature = flowchem_ureg(experiment_conditions.temperature)
 
+        self.activator = experiment_conditions.activator
+
         # Todo in theory not that simple anymore if different flowrates
         self._time_start_till_end = ((self.platform_volumes['dead_volume_before_reactor'] +
                                       self.platform_volumes['volume_reactor']) / self._total_flow_rate +
@@ -294,8 +296,16 @@ class FlowProcedure:
 
         self.log.info('Starting donor pump')
         self.pumps['donor'].run()
-        self.log.info('Starting activator pump')
-        self.pumps['activator'].run()
+
+        if flow_conditions.activator == True:
+            self.log.info('Starting activator pump')
+            self.pumps['activator'].run()
+        elif flow_conditions.activator == False:
+            self.pumps['pure_DCM'].infusion_rate = flow_conditions.activator_flow_rate.m_as('mL/min')
+            self.log.info('Starting pure solvent pump')
+            self.pumps['pure_DCM'].run()
+        else:
+            raise ValueError('ExperimentConditions.Activator can only be boolean, you supplied sth else')
 
         self.log.info('Starting quencher pump')
         self.pumps['quencher'].start_flow()
@@ -325,6 +335,7 @@ class FlowProcedure:
 
             self.log.info('Stop pump Activator')
             self.pumps['activator'].stop()
+            self.pumps['pure_DCM'].stop()
 
             self.sample_loop.set_valve_position_sync(1)
 
@@ -474,7 +485,7 @@ class Scheduler:
                             (str(self.experiment_waiting_for_analysis.experiment_id) +' - Detector 1.txt')) # TODO workaround should be more elegant
 
                         # here, drop the results dictionary to json. In case sth goes wrong, it can be reloaded.
-                        self.experiment_saving_loading.save_data(self.experiment_name+self.experiment_waiting_for_analysis.temperature, self.experiment_waiting_for_analysis)
+                        self.experiment_saving_loading.save_data(f"{self.experiment_name}_{self.experiment_waiting_for_analysis.experiment_id}_{self.experiment_waiting_for_analysis.temperature}", self.experiment_waiting_for_analysis)
                         self.experiment_waiting_for_analysis = None
                         sleep(1)
                         # should become MongoDB, should be possible to be updated from somewhere else, eg with current T
@@ -522,6 +533,12 @@ class Scheduler:
                 elif self.current_experiment._experiment_finished:
                     self.experiment_waiting_for_analysis = self.current_experiment
                     self.current_experiment = None
+
+                    # makes sure that performed experiment is safed. If transmission of chromatogram fails or platform
+                    # needs to be stopped, it is thereby still possible to retrieve data
+                    self.experiment_saving_loading.save_data(
+                        f"{self.experiment_name}_{self.experiment_waiting_for_analysis.experiment_id}_{self.experiment_waiting_for_analysis.temperature}",
+                        self.experiment_waiting_for_analysis)
 
             elif not self.current_experiment:
                 if not self.experiment_queue.empty():
@@ -601,9 +618,11 @@ if __name__ == "__main__":
     SugarPlatform = {
         # try to combine two pumps to one. flow rate with ratio gives individual flow rate
         'pumps': {
-            'donor': Elite11(elite_port, address=0, diameter=4.606, volume_syringe=1),
+            'donor': Elite11(elite_port, address=1, diameter=4.606, volume_syringe=1),
 
-            'activator': Elite11(elite_port, address=1, diameter=4.606, volume_syringe=1),
+            'activator': Elite11(elite_port, address=0, diameter=4.606, volume_syringe=1),
+
+            'pure_DCM': Elite11(elite_port, address=2, diameter=4.608, volume_syringe=1),
 
             'quencher': KnauerPump("192.168.10.113"),
         },
@@ -627,14 +646,16 @@ if __name__ == "__main__":
     # This obviously could be included into the scheduler
     results_listener = ResultListener(analysed_samples_folder, '*Detector 1.txt', scheduler.analysed_samples)
 
-    scheduler.create_experiment(ExperimentConditions(temperature="10 °C", residence_time="300 s"))
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="0 °C"))
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-10 °C"))
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-15 °C"))
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-20 °C"))
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-40 °C"))
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-50 °C"))
-    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="20 °C", activator_equivalents=0)) # TODO, flowrate can't be set to 0, so this throws error in internal validation and pump pumps with nl/min
+#    scheduler.create_experiment(ExperimentConditions(temperature="10 °C", residence_time="300 s", building_block_smiles = "[STol][C@H]1[C@H](OC(C2=CC=CC=C2)=O)[C@@H](OCC3=CC=CC=C3)[C@H](OC(OCC4C(C=CC=C5)=C5C6=C4C=CC=C6)=O)[C@@H](COCC7=CC=CC=C7)O1"))
+
+    scheduler.create_experiment(ExperimentConditions(temperature="0 °C", residence_time="300 s", activator=False, building_block_smiles = "[STol][C@H]1[C@H](OC(C2=CC=CC=C2)=O)[C@@H](OCC3=CC=CC=C3)[C@H](OC(OCC4C(C=CC=C5)=C5C6=C4C=CC=C6)=O)[C@@H](COCC7=CC=CC=C7)O1"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="0 °C", building_block_smiles = "[STol][C@H]1[C@H](OC(C2=CC=CC=C2)=O)[C@@H](OCC3=CC=CC=C3)[C@H](OC(OCC4C(C=CC=C5)=C5C6=C4C=CC=C6)=O)[C@@H](COCC7=CC=CC=C7)O1"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-5 °C", building_block_smiles = "[STol][C@H]1[C@H](OC(C2=CC=CC=C2)=O)[C@@H](OCC3=CC=CC=C3)[C@H](OC(OCC4C(C=CC=C5)=C5C6=C4C=CC=C6)=O)[C@@H](COCC7=CC=CC=C7)O1"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-10 °C", building_block_smiles = "[STol][C@H]1[C@H](OC(C2=CC=CC=C2)=O)[C@@H](OCC3=CC=CC=C3)[C@H](OC(OCC4C(C=CC=C5)=C5C6=C4C=CC=C6)=O)[C@@H](COCC7=CC=CC=C7)O1"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-20 °C", building_block_smiles = "[STol][C@H]1[C@H](OC(C2=CC=CC=C2)=O)[C@@H](OCC3=CC=CC=C3)[C@H](OC(OCC4C(C=CC=C5)=C5C6=C4C=CC=C6)=O)[C@@H](COCC7=CC=CC=C7)O1"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-40 °C", building_block_smiles = "[STol][C@H]1[C@H](OC(C2=CC=CC=C2)=O)[C@@H](OCC3=CC=CC=C3)[C@H](OC(OCC4C(C=CC=C5)=C5C6=C4C=CC=C6)=O)[C@@H](COCC7=CC=CC=C7)O1"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="-50 °C", building_block_smiles = "[STol][C@H]1[C@H](OC(C2=CC=CC=C2)=O)[C@@H](OCC3=CC=CC=C3)[C@H](OC(OCC4C(C=CC=C5)=C5C6=C4C=CC=C6)=O)[C@@H](COCC7=CC=CC=C7)O1"))
+    scheduler.create_experiment(ExperimentConditions(residence_time="300 s", temperature="20 °C", building_block_smiles = "test"))
 
 
 
