@@ -1,7 +1,5 @@
 import queue
-import sqlite3
 from threading import Thread
-from enum import Enum
 from time import sleep
 
 # graph: every node has a abstract node name. This should be something descriptive, like Acceptor or chiller
@@ -106,7 +104,7 @@ class Scheduler:
         # and meaningful name, resulting code should be easily readable and understandable
         pass
 
-    def create_experiment(self, procedure) -> object: # return function object and put that to experiment_queue
+    def create_experiment(self, procedure): # return function object and put that to experiment_queue
         self.experiment_queue.put(procedure)
 
     def experiment_handler(self):

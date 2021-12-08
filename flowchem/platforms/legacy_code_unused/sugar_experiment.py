@@ -112,8 +112,8 @@ class FlowConditions:
 
         self._time_start_till_end = ((self.platform_volumes['dead_volume_before_reactor'] +
                                      self.platform_volumes['volume_mixing'] +
-                                     self.platform_volumes['volume_reactor']) / self._total_flow_rate + \
-                                    (self.platform_volumes['dead_volume_to_HPLC'] / (self._total_flow_rate +
+                                     self.platform_volumes['volume_reactor']) / self._total_flow_rate +
+                                     (self.platform_volumes['dead_volume_to_HPLC'] / (self._total_flow_rate +
                                                                                      self.quencher_flow_rate))).to(
                                         flowchem_ureg.second)
 

@@ -1,7 +1,9 @@
-from flowchem.platforms.sugar_experiment_activation import ExperimentConditions, Scheduler, FlowConditions
+from flowchem.platforms.sugar_experiment_activation import ExperimentConditions, Scheduler
+from flowchem.platforms.flow_conditions import FlowConditions
 from flowchem.constants import flowchem_ureg
 import logging
 from time import sleep
+
 
 SugarPlatform = {
     # try to combine two pumps to one. flow rate with ratio gives individual flow rate
