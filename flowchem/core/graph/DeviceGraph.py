@@ -147,9 +147,9 @@ class DeviceGraph:
         connection_list = []
         for edge in connections:
             if "Tube" in edge:
-                connection = self.parse_tube_connection(edge["Tube"])
+                connection = self._parse_tube_connection(edge["Tube"])
             elif "Interface" in edge:
-                connection = self.parse_interface_connection(edge["Interface"])
+                connection = self._parse_interface_connection(edge["Interface"])
             else:
                 raise InvalidConfiguration(f"Invalid connection type in {edge}")
 
@@ -157,7 +157,7 @@ class DeviceGraph:
 
         return connection_list
 
-    def parse_tube_connection(self, tube_config) -> Connection:
+    def _parse_tube_connection(self, tube_config) -> Connection:
         """ Parse a dict containing the Tube connection and returns the Connection """
         tube = Tube(
             length=tube_config["length"],
@@ -187,7 +187,7 @@ class DeviceGraph:
 
         return Connection(from_device, to_device, tube)
 
-    def parse_interface_connection(self, iface_config) -> Connection:
+    def _parse_interface_connection(self, iface_config) -> Connection:
         """ Parse a dict containing the Tube connection and returns the Connection """
         interface = Interface()
 
@@ -205,7 +205,7 @@ class DeviceGraph:
 
     def to_apparatus(self) -> Apparatus:
         """
-        Convert the graph to an mw.Apparatus object.
+        Convert the graph to Apparatus object.
         """
 
         appa = Apparatus(
@@ -240,6 +240,7 @@ class DeviceGraph:
             return [
                 device for device in self.device.values() if isinstance(device, item)
             ]
+
         # If a string is passed return the device with that name
         elif isinstance(item, str):
             try:
@@ -258,7 +259,7 @@ if __name__ == "__main__":
     from flowchem import Protocol
     from datetime import timedelta
 
-    graph = DeviceGraph.from_file("owen_config.yml")
+    graph = DeviceGraph.from_file("owen_config2.yml")
 
     a = graph.to_apparatus()
     print(a)
