@@ -8,13 +8,12 @@ from pathlib import Path
 from types import ModuleType
 from typing import Iterable, Dict, Optional, Any, List, Union
 
-import jsonschema
 import yaml
+import networkx as nx
 
 import flowchem.components.devices
-from core.graph.validation import load_graph_schema, validate_graph
-from flowchem.components.stdlib import Tube, Interface
-from flowchem.core.apparatus import Apparatus
+from core.graph.validation import validate_graph
+from flowchem.components.stdlib import Tube
 from flowchem.core.graph.DeviceNode import DeviceNode
 from flowchem.exceptions import InvalidConfiguration
 
@@ -67,10 +66,8 @@ class DeviceGraph:
             self.name = "DeviceGraph" + str(DeviceGraph._id_counter)
             DeviceGraph._id_counter += 1
 
-        # dict of components with names as keys
-        self.components: Dict[str, Any] = {}
-        # Edge list represents the network topology
-        self.edge_list: List[Connection] = []
+        # NetworkX Multi directed graph object
+        self.graph: nx.MultiDiGraph = nx.MultiDiGraph()
 
         # Save config pre-parsing for debug purposes
         self._raw_config = configuration
@@ -104,6 +101,8 @@ class DeviceGraph:
         if "logical_connections" in config:
             self._parse_logical_connections(config["logical_connections"])
 
+        logger.info(f"Parsed graph {self.name}")
+
     def _parse_devices(self, devices: Dict):
         """ Parse the devices' section of the graph file """
 
@@ -127,26 +126,21 @@ class DeviceGraph:
             obj_type = device_mapper[device_class]
             device_config = node_config[device_class]
 
-            self.components[device_name] = DeviceNode(
+            device = DeviceNode(
                 device_name, device_config, obj_type
             ).device
-            logger.debug(f"Created device <{device_name}> with config: {device_config}")
-
-    def _parse_logical_connections(self, param):
-        """ Parse logical connections from the graph file """
-        pass
+            self.graph.add_node(device)
+            logger.debug(f"Added device <{device_name}> as node")
 
     def _parse_physical_connections(self, connections: Dict):
         """ Parse physical connections from the graph file """
         for edge in connections:
             if "Tube" in edge:
-                connection = self._parse_tube_connection(edge["Tube"])
+                self._parse_tube_connection(edge["Tube"])
             else:
                 raise InvalidConfiguration(f"Invalid connection type in {edge}")
 
-            self.edge_list.append(connection)
-
-    def _parse_tube_connection(self, tube_config) -> Connection:
+    def _parse_tube_connection(self, tube_config):
         """
         The Tube object is a convenience object for connecting devices without explicitly creating the
         in-between tube node.
@@ -157,35 +151,39 @@ class DeviceGraph:
             OD=tube_config["outer-diameter"],
             material=tube_config["material"],
         )
+        self.graph.add_node(tube)
+        logger.debug(f"Added tube <{tube.name}> as node")
 
-        # Devices
-        try:
-            from_device = self.components[tube_config["from"]["device"]]
-            to_device = self.components[tube_config["to"]["device"]]
-        except KeyError as ke:
-            raise InvalidConfiguration(
-                "A Tube refers to a non existing node!\n"
-                f"Missing node: {ke}\n"
-                f"Tube config: {tube_config}"
-            ) from ke
+        # Create logic connections for newly created tube
+        inlet = {
+            "Interface": {
+                "from": dict(device=tube_config["from"]["device"],
+                             position=tube_config["from"].get("position", 0)),
+                "to": dict(device=tube.name),
+            }
+        }
+        outlet = {
+            "Interface": {
+                "from": dict(device=tube.name),
+                "to": dict(device=tube_config["to"]["device"],
+                           position=tube_config["to"].get("position", 0)),
+            }
+        }
+        self._parse_logical_connections([inlet, outlet])
 
-        # If necessary updates mapping.
-        if tube_config["from"].get("position", 0) != 0:
-            position = tube_config["from"]["position"]
-            from_device.mapping[position] = from_device.name
-        if tube_config["to"].get("position", 0) != 0:
-            position = tube_config["to"]["position"]
-            to_device.mapping[position] = to_device.name
+    def _parse_logical_connections(self, connections):
+        """ Parse logical connections from the graph file """
+        for edge in connections:
+            if "Interface" in edge:
+                self._parse_interface_connection(edge["Interface"])
+            else:
+                raise InvalidConfiguration(f"Invalid connection type in {edge}")
 
-        return Connection(from_device, to_device, tube)
-
-    def _parse_interface_connection(self, iface_config) -> Connection:
+    def _parse_interface_connection(self, iface_config):
         """ Parse a dict containing the Tube connection and returns the Connection """
-        interface = Interface()
-
         try:
-            from_device = self.components[iface_config["from"]["device"]]
-            to_device = self.components[iface_config["to"]["device"]]
+            from_device = self[iface_config["from"]["device"]]
+            to_device = self[iface_config["to"]["device"]]
         except KeyError as ke:
             raise InvalidConfiguration(
                 "An Interface refers to a non existing node!\n"
@@ -193,24 +191,15 @@ class DeviceGraph:
                 f"Interface config: {iface_config}"
             ) from ke
 
-        return Connection(from_device, to_device, interface)
+        self.graph.add_edge(from_device, to_device)
 
-    def to_apparatus(self) -> Apparatus:
-        """
-        Convert the graph to Apparatus object.
-        """
-
-        appa = Apparatus(
-            self.name, "Apparatus auto-generated from flowchem DeviceGraph."
-        )
-        for edge in self.edge_list:
-            print(edge)
-            print(edge.from_device)
-            print(edge.to_device)
-            print(edge.tube)
-
-            appa.add(edge.from_device, edge.to_device, edge.tube)
-        return appa
+        # If necessary updates mapping.
+        if iface_config["from"].get("position", 0) != 0:
+            position = iface_config["from"]["position"]
+            from_device.mapping[position] = to_device.name
+        if iface_config["to"].get("position", 0) != 0:
+            position = iface_config["to"]["position"]
+            to_device.mapping[position] = from_device.name
 
     def __repr__(self):
         return f"<DeviceGraph {self.name}>"
@@ -230,18 +219,18 @@ class DeviceGraph:
         # If a type is passed return devices with that type
         if isinstance(item, type):
             return [
-                device for device in self.components.values() if isinstance(device, item)
+                device for device in self.graph.nodes if isinstance(device, item)
             ]
 
         # If a string is passed return the device with that name
         elif isinstance(item, str):
-            try:
-                return self.components[item]
-            except IndexError:
-                raise KeyError(f"No component named '{item}' in {repr(self)}.")
+            for node in self.graph.nodes:
+                if node.name == item:
+                    return node
+            raise KeyError(f"No component named '{item}' in {repr(self)}.")
 
         # a shorthand way to check if a component is in the apparatus
-        elif item in self.components.values():
+        elif item in self.graph.nodes:
             return item
         else:
             raise KeyError(f"{repr(item)} is not in {repr(self)}.")
@@ -252,20 +241,28 @@ if __name__ == "__main__":
     from datetime import timedelta
 
     graph = DeviceGraph.from_file("owen_config2.yml")
+    print(graph.graph)
 
-    a = graph.to_apparatus()
-    print(a)
-    p = Protocol(a)
+    import networkx as nx
+    import matplotlib.pyplot as plt
 
-    t0 = timedelta(seconds=0)
+    nx.draw(graph.graph, with_labels=True)
+    plt.show()
 
-    # p.add(graph["quencher"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min")
-    p.add(
-        graph["activator"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min"
-    )
-    print(graph["chiller"])
-    print(type(graph["chiller"]))
-    p.add(graph["chiller"], start=t0, duration=timedelta(seconds=10), temp="45 degC")
-
-    E = p.execute(dry_run=False)
-    # E.visualize()
+    #
+    # a = graph.to_apparatus()
+    # print(a)
+    # p = Protocol(a)
+    #
+    # t0 = timedelta(seconds=0)
+    #
+    # # p.add(graph["quencher"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min")
+    # p.add(
+    #     graph["activator"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min"
+    # )
+    # print(graph["chiller"])
+    # print(type(graph["chiller"]))
+    # p.add(graph["chiller"], start=t0, duration=timedelta(seconds=10), temp="45 degC")
+    #
+    # E = p.execute(dry_run=False)
+    # # E.visualize()

@@ -24,6 +24,7 @@ class Tube:
     Raises:
         - ValueError: When the outer diameter is less than the inner diameter of the tube.
     """
+    tube_counter = 0
 
     def __init__(self, length: str, ID: str, OD: str, material: str):
         """
@@ -57,6 +58,11 @@ class Tube:
 
         self.material = material
         self.volume = pi * ((self.ID / 2) ** 2) * self.length
+
+        _id_counter = 0
+
+        Tube.tube_counter += 1
+        self.name = f"Tube_{Tube.tube_counter}"
 
     def __repr__(self):
         return f"Tube of length {self.length}, ID {self.ID}, OD {self.OD}"
