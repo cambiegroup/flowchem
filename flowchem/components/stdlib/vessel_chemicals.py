@@ -25,12 +25,11 @@ class VesselChemicals(Vessel):
 
     def __init__(
         self,
-        reaction_input: ReactionInput,
         description: Optional[str] = None,
         name: Optional[str] = None,
     ):
         super().__init__(name=name, description=description)
-        self.chemical = reaction_input
+        self.chemical = None
 
     def _validate(self, dry_run):
         super(VesselChemicals, self)._validate(dry_run)
