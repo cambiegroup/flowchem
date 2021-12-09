@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import inspect
 import itertools
-import json
-import os
 from loguru import logger
 from collections import namedtuple
 from pathlib import Path
@@ -14,6 +12,7 @@ import jsonschema
 import yaml
 
 import flowchem.components.devices
+from core.graph.validation import load_graph_schema, validate_graph
 from flowchem.components.stdlib import Tube, Interface
 from flowchem.core.apparatus import Apparatus
 from flowchem.core.graph.DeviceNode import DeviceNode
@@ -25,11 +24,6 @@ DEVICE_MODULES = [
     flowchem.components.stdlib,
     flowchem.components.reactors,
 ]
-
-# Validation schema for graph file
-SCHEMA = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "../graph/flowchem-graph-spec.schema"
-)
 
 
 def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
@@ -53,14 +47,6 @@ def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
     return {k: v for (k, v) in itertools.chain.from_iterable(objects_in_modules)}
 
 
-def load_schema():
-    """loads the schema defining valid config file."""
-    with open(SCHEMA, "r") as fp:
-        schema = json.load(fp)
-        jsonschema.Draft7Validator.check_schema(schema)
-        return schema
-
-
 Connection = namedtuple("Connection", ["from_device", "to_device", "tube"])
 
 
@@ -73,7 +59,7 @@ class DeviceGraph:
 
     _id_counter = 0
 
-    def __init__(self, configuration, name: Optional[str] = None):
+    def __init__(self, configuration: Dict, name: Optional[str] = None):
         # if given a name, then name the apparatus, else default to a sequential name
         if name is not None:
             self.name = name
@@ -81,8 +67,8 @@ class DeviceGraph:
             self.name = "DeviceGraph" + str(DeviceGraph._id_counter)
             DeviceGraph._id_counter += 1
 
-        # dict of devices with names as keys
-        self.device: Dict[str, Any] = {}
+        # dict of components with names as keys
+        self.components: Dict[str, Any] = {}
         # Edge list represents the network topology
         self.edge_list: List[Connection] = []
 
@@ -90,8 +76,8 @@ class DeviceGraph:
         self._raw_config = configuration
 
         # Load graph
-        # self.validate(configuration)
-        self.parse(configuration)
+        validate_graph(configuration)
+        self.parse_graph_file(configuration)
 
     @classmethod
     def from_file(cls, file: Union[Path, str]):
@@ -105,23 +91,31 @@ class DeviceGraph:
 
         return cls(config, name)
 
-    def validate(self, config):
-        """Validates config syntax."""
-        schema = load_schema()
-        jsonschema.validate(config, schema=schema)
-
-    def parse(self, config: Dict):
+    def parse_graph_file(self, config: Dict):
         """Parse config and generate graph."""
 
-        # Device mapper
+        # Parse devices
+        self._parse_devices(config["devices"])
+
+        # Parse physical connections
+        self._parse_physical_connections(config["physical_connections"])
+
+        # Parse logical connections
+        if "logical_connections" in config:
+            self._parse_logical_connections(config["logical_connections"])
+
+    def _parse_devices(self, devices: Dict):
+        """ Parse the devices' section of the graph file """
+
+        # Device mapper needed for device instantiation
         device_mapper = get_device_class_mapper(DEVICE_MODULES)
         logger.debug(
             f"The following device classes have been found: {device_mapper.keys()}"
         )
 
-        # Parse list of devices and create nodes
-        for device_name, node_config in config["devices"].items():
-            # Schema validation should ensure 1 hit here
+        # Parse devices
+        for device_name, node_config in devices.items():
+            # Schema validation ensures 1 hit here
             try:
                 device_class = [
                     name for name in device_mapper.keys() if name in node_config
@@ -133,32 +127,30 @@ class DeviceGraph:
             obj_type = device_mapper[device_class]
             device_config = node_config[device_class]
 
-            self.device[device_name] = DeviceNode(
+            self.components[device_name] = DeviceNode(
                 device_name, device_config, obj_type
             ).device
             logger.debug(f"Created device <{device_name}> with config: {device_config}")
 
-        # Parse list of connections
-        connections = self._parse_connections(config["connections"])
-        self.edge_list.extend(connections)
+    def _parse_logical_connections(self, param):
+        """ Parse logical connections from the graph file """
+        pass
 
-    def _parse_connections(self, connections: Dict) -> List[Connection]:
-        """ Parse connections from config. """
-        connection_list = []
+    def _parse_physical_connections(self, connections: Dict):
+        """ Parse physical connections from the graph file """
         for edge in connections:
             if "Tube" in edge:
                 connection = self._parse_tube_connection(edge["Tube"])
-            elif "Interface" in edge:
-                connection = self._parse_interface_connection(edge["Interface"])
             else:
                 raise InvalidConfiguration(f"Invalid connection type in {edge}")
 
-            connection_list.append(connection)
-
-        return connection_list
+            self.edge_list.append(connection)
 
     def _parse_tube_connection(self, tube_config) -> Connection:
-        """ Parse a dict containing the Tube connection and returns the Connection """
+        """
+        The Tube object is a convenience object for connecting devices without explicitly creating the
+        in-between tube node.
+        """
         tube = Tube(
             length=tube_config["length"],
             ID=tube_config["inner-diameter"],
@@ -168,8 +160,8 @@ class DeviceGraph:
 
         # Devices
         try:
-            from_device = self.device[tube_config["from"]["device"]]
-            to_device = self.device[tube_config["to"]["device"]]
+            from_device = self.components[tube_config["from"]["device"]]
+            to_device = self.components[tube_config["to"]["device"]]
         except KeyError as ke:
             raise InvalidConfiguration(
                 "A Tube refers to a non existing node!\n"
@@ -192,8 +184,8 @@ class DeviceGraph:
         interface = Interface()
 
         try:
-            from_device = self.device[iface_config["from"]["device"]]
-            to_device = self.device[iface_config["to"]["device"]]
+            from_device = self.components[iface_config["from"]["device"]]
+            to_device = self.components[iface_config["to"]["device"]]
         except KeyError as ke:
             raise InvalidConfiguration(
                 "An Interface refers to a non existing node!\n"
@@ -224,7 +216,7 @@ class DeviceGraph:
         return f"<DeviceGraph {self.name}>"
 
     def __str__(self):
-        return f"DeviceGraph {self.name} with {len(self.device)} devices."
+        return f"DeviceGraph {self.name} with {len(self.components)} devices."
 
     def __getitem__(self, item):
         """
@@ -238,18 +230,18 @@ class DeviceGraph:
         # If a type is passed return devices with that type
         if isinstance(item, type):
             return [
-                device for device in self.device.values() if isinstance(device, item)
+                device for device in self.components.values() if isinstance(device, item)
             ]
 
         # If a string is passed return the device with that name
         elif isinstance(item, str):
             try:
-                return self.device[item]
+                return self.components[item]
             except IndexError:
                 raise KeyError(f"No component named '{item}' in {repr(self)}.")
 
         # a shorthand way to check if a component is in the apparatus
-        elif item in self.device.values():
+        elif item in self.components.values():
             return item
         else:
             raise KeyError(f"{repr(item)} is not in {repr(self)}.")

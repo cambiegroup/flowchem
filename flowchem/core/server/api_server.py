@@ -3,7 +3,6 @@ from pathlib import Path
 from loguru import logger
 from typing import Dict
 
-import jsonschema
 import yaml
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -12,8 +11,8 @@ import flowchem
 from flowchem.core.graph.DeviceGraph import (
     DEVICE_MODULES,
     get_device_class_mapper,
-    load_schema,
 )
+from core.graph.validation import validate_graph
 from flowchem.core.graph.DeviceNode import DeviceNode
 from flowchem.exceptions import InvalidConfiguration
 
@@ -41,8 +40,7 @@ def create_server_from_config(
     assert isinstance(config, dict)  # This is here just to make mypy happy.
 
     # Validate config
-    schema = load_schema()
-    jsonschema.validate(config, schema=schema)
+    validate_graph(config)
 
     # FastAPI server
     app = FastAPI(title="flowchem", version=flowchem.__version__)
