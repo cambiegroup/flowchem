@@ -49,7 +49,7 @@ def create_server_from_config(
     app = FastAPI(title="flowchem", version=flowchem.__version__)
 
     # Zeroconf server
-    zeroconf = Server_mDNS()
+    # zeroconf = Server_mDNS()
 
     # Device mapper
     device_mapper = get_device_class_mapper(DEVICE_MODULES)
@@ -79,8 +79,8 @@ def create_server_from_config(
         logger.debug(f"Router for <{device_name}> added to app!")
 
         # Add to mDNS server
-        zeroconf.include_device(node.safe_title, node.router.prefix)
-        logger.debug(f"Router for <{device_name}> added to app!")
+        # zeroconf.include_device(node.safe_title, node.router.prefix)
+        # logger.debug(f"Zeroconf service for <{device_name}> added!")
 
     return app, zeroconf
 
