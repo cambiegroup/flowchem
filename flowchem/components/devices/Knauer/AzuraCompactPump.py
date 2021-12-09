@@ -434,6 +434,18 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
             await self.set_flow(self.rate)
             await self.start_flow()
 
+    def get_router(self):
+        """Creates an APIRouter for this object."""
+        from fastapi import APIRouter
+
+        router = APIRouter()
+        router.add_api_route("/flow", self.get_flow, methods=["GET"])
+        router.add_api_route("/flow", self.set_flow, methods=["PUT"])
+        router.add_api_route("/pressure", self.read_pressure, methods=["GET"])
+        router.add_api_route("/start", self.start_flow, methods=["PUT"])
+        router.add_api_route("/stop", self.stop_flow, methods=["PUT"])
+        return router
+
 
 if __name__ == "__main__":
     # This is a bug of asyncio on Windows :|
