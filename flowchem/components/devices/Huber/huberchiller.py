@@ -398,8 +398,11 @@ class HuberChiller(TempControl):
     @staticmethod
     def _temp_to_string(temp: pint.Quantity) -> str:
         """ From temperature to string for command. f^-1 of PCommand.parse_temperature. """
-        minT = flowchem_ureg.Quantity(-151, "celsius")
-        maxT = flowchem_ureg.Quantity(327, "celsius")
+        minT = flowchem_ureg("-151 °C")
+        maxT = flowchem_ureg("327 °C")
+        if not isinstance(temp, pint.Quantity):
+            logger.warning(f"Implicit assumption that the temperature provided [{temp}] is in Celsius. Add units pls!")
+            temp = flowchem_ureg(f"{temp} °C")
         assert minT <= temp <= maxT
         # Hexadecimal two's complement
         return f"{int(temp.m_as('°C') * 100) & 65535:04X}"
@@ -411,18 +414,19 @@ class HuberChiller(TempControl):
 
     async def __aenter__(self):
         await self.initialize()
-        await self.set_temperature_setpoint(temp="20 degC")
+        await self.set_temperature_setpoint(temp="20 °C")
+        await self.set_temperature_setpoint(temp="20 °C")
         await self.start_temperature_control()
         await self.start_circulation()
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.set_temperature_setpoint("20 C")
+        await self.set_temperature_setpoint("20 °C")
 
         # Wait until close to room temperature before turning off chiller
         while flowchem_ureg.parse_expression(
             await self.process_temperature()
-        ) > flowchem_ureg.parse_expression("40 degC"):
+        ) > flowchem_ureg.parse_expression("40 °C"):
             await asyncio.sleep(5)
 
         # Actually turn off chiller
