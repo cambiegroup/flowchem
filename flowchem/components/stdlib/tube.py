@@ -59,8 +59,6 @@ class Tube:
         self.material = material
         self.volume = pi * ((self.ID / 2) ** 2) * self.length
 
-        _id_counter = 0
-
         Tube.tube_counter += 1
         self.name = f"Tube_{Tube.tube_counter}"
 

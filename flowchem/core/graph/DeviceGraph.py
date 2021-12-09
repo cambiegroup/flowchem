@@ -246,7 +246,7 @@ class DeviceGraph:
         components_table.add_column("Name")
         components_table.add_column("Type")
 
-        # Fill rows
+        # Fill rows with all devices while skipping tubes (saving them for the second table)
         tubes: List[Tube] = []
         for component in sorted(self.graph.nodes, key=lambda x: x.__class__.__name__):
             if component.__class__.__name__ != "Tube":
@@ -303,23 +303,15 @@ class DeviceGraph:
 
 
 if __name__ == "__main__":
-    from flowchem import Protocol
-    from datetime import timedelta
-
     graph = DeviceGraph.from_file("owen_config2.yml")
-    # print(graph.graph)
-    #
-    # import matplotlib.pyplot as plt
-    #
-    # nx.draw(graph.graph, with_labels=True)
-    # plt.show()
     graph.summarize()
 
-    #
+    # from flowchem import Protocol
     # a = graph.to_apparatus()
     # print(a)
     # p = Protocol(a)
     #
+    # from datetime import timedelta
     # t0 = timedelta(seconds=0)
     #
     # # p.add(graph["quencher"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min")
