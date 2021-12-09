@@ -11,9 +11,8 @@ import yaml
 import networkx as nx
 
 import flowchem.components.devices
-from components.stdlib import MappedComponentMixin
 from flowchem.core.graph.validation import validate_graph
-from flowchem.components.stdlib import Tube
+from flowchem.components.stdlib import Tube, MappedComponentMixin
 from flowchem.core.graph.DeviceNode import DeviceNode
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.units import flowchem_ureg
@@ -77,7 +76,7 @@ class DeviceGraph:
 
     @classmethod
     def from_file(cls, file: Union[Path, str]):
-        """Creates DeviceGraph from config file"""
+        """Creates DeviceGraph from config file."""
 
         file_path = Path(file)
         name = file_path.stem
@@ -244,7 +243,7 @@ class DeviceGraph:
         """ Validates the graph. This is called by Protocol when the DeviceGraph is used."""
 
         # Make sure that all the components are connected
-        if not nx.is_connected(self.graph):
+        if not nx.is_weakly_connected(self.graph):
             logger.warning("Not all components connected.")
             return False
 

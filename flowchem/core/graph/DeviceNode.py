@@ -1,11 +1,10 @@
 """ For each device node described in the configuration [graph] instantiated it and create endpoints """
 import inspect
-import warnings
 
 from loguru import logger
 from fastapi import APIRouter
 
-from components.stdlib import ActiveComponent
+from flowchem.components.stdlib import ActiveComponent
 from flowchem import Spinsolve
 from flowchem.core.server.routers import spinsolve_get_router
 
