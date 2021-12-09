@@ -1,7 +1,7 @@
 """" Run with uvicorn main:app """
 from pathlib import Path
 from loguru import logger
-from typing import Dict, Tuple
+from typing import Dict
 
 import jsonschema
 import yaml
@@ -16,12 +16,11 @@ from flowchem.core.graph.DeviceGraph import (
 )
 from flowchem.core.graph.DeviceNode import DeviceNode
 from flowchem.exceptions import InvalidConfiguration
-from mdns_server import Server_mDNS
 
 
 def create_server_from_config(
     config: Dict = None, config_file: Path = None
-) -> Tuple[FastAPI, Server_mDNS]:
+) -> FastAPI:
     """
     Based on the yaml device graph provided, creates device objects and connect to them + .
 
@@ -47,9 +46,6 @@ def create_server_from_config(
 
     # FastAPI server
     app = FastAPI(title="flowchem", version=flowchem.__version__)
-
-    # Zeroconf server
-    # zeroconf = Server_mDNS()
 
     # Device mapper
     device_mapper = get_device_class_mapper(DEVICE_MODULES)
@@ -82,15 +78,11 @@ def create_server_from_config(
         )
         logger.debug(f"Router for <{device_name}> added to app!")
 
-        # Add to mDNS server
-        # zeroconf.include_device(node.safe_title, node.router.prefix)
-        # logger.debug(f"Zeroconf service for <{device_name}> added!")
-
-    return app, zeroconf
+    return app
 
 
 if __name__ == "__main__":
-    app, zeroconf = create_server_from_config(
+    app = create_server_from_config(
         config_file=Path("../graph/owen_config2.yml")
     )
 
