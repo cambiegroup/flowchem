@@ -3,21 +3,22 @@ from __future__ import annotations
 import inspect
 import itertools
 from loguru import logger
-from collections import namedtuple
 from pathlib import Path
 from types import ModuleType
-from typing import Iterable, Dict, Optional, Any, List, Union
+from typing import Iterable, Dict, Optional, Union, List
 
 import yaml
 import networkx as nx
 
 import flowchem.components.devices
-from core.graph.validation import validate_graph
+from flowchem.core.graph.validation import validate_graph
 from flowchem.components.stdlib import Tube
 from flowchem.core.graph.DeviceNode import DeviceNode
 from flowchem.exceptions import InvalidConfiguration
+from flowchem.units import flowchem_ureg
 
-# packages containing the device class definitions. Target classes should be available in the module top level.
+# Packages containing the device class definitions.
+# Devices' classes must be in the module top level to be found.
 DEVICE_MODULES = [
     flowchem.components.devices,
     flowchem.components.stdlib,
@@ -44,9 +45,6 @@ def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
 
     # Return them as dict (itertools to flatten the nested, per module, lists)
     return {k: v for (k, v) in itertools.chain.from_iterable(objects_in_modules)}
-
-
-Connection = namedtuple("Connection", ["from_device", "to_device", "tube"])
 
 
 class DeviceGraph:
@@ -108,9 +106,7 @@ class DeviceGraph:
 
         # Device mapper needed for device instantiation
         device_mapper = get_device_class_mapper(DEVICE_MODULES)
-        logger.debug(
-            f"The following device classes have been found: {device_mapper.keys()}"
-        )
+        logger.debug(f"Device classes found: {device_mapper.keys()}")
 
         # Parse devices
         for device_name, node_config in devices.items():
@@ -122,10 +118,11 @@ class DeviceGraph:
             except IndexError as e:
                 raise InvalidConfiguration(f"Node config invalid: {node_config}") from e
 
-            # Object type
+            # Object type and config
             obj_type = device_mapper[device_class]
             device_config = node_config[device_class]
 
+            # Create device object and add it to the graph
             device = DeviceNode(
                 device_name, device_config, obj_type
             ).device
@@ -235,19 +232,88 @@ class DeviceGraph:
         else:
             raise KeyError(f"{repr(item)} is not in {repr(self)}.")
 
+    def summarize(self):
+        """
+        Prints a summary table of the DeviceGraph.
+        Rich takes care of the formatting both in console and jupyter cells.
+        """
+        from rich.table import Table
+
+        # Components table
+        components_table = Table(title=f"Components")
+
+        # Columns: Name, Type
+        components_table.add_column("Name")
+        components_table.add_column("Type")
+
+        # Fill rows
+        tubes: List[Tube] = []
+        for component in sorted(self.graph.nodes, key=lambda x: x.__class__.__name__):
+            if component.__class__.__name__ != "Tube":
+                components_table.add_row(component.name, component.__class__.__name__)
+            else:
+                tubes.append(component)
+
+        # Tubing table
+        tubing_table = Table(
+            "From", "To", "Length", "I.D.", "O.D.", "Volume", "Material", title="Tubing"
+        )
+
+        # store and calculate the computed totals for tubing
+        total_length = 0 * flowchem_ureg.mm
+        total_volume = 0 * flowchem_ureg.ml
+
+        last_tube = tubes[-1]
+        for tube in tubes:
+            total_length += tube.length
+            total_volume += tube.volume
+            from_component = next(self.graph.predecessors(tube))
+            to_component = next(self.graph.successors(tube))
+
+            end_section = True if tube is last_tube else False
+            print(end_section)
+
+            tubing_table.add_row(
+                from_component.name,
+                to_component.name,
+                f"{tube.length:~H}",
+                f"{tube.ID:~H}",
+                f"{tube.OD:~H}",
+                f"{tube.volume.to('ml'):.4f~H}",
+                tube.material,
+                end_section=end_section
+            )
+
+        tubing_table.add_row(
+            "Total",
+            "n/a",
+            f"{total_length:~H}",
+            "n/a",
+            "n/a",
+            f"{total_volume.to('ml'):.4f~H}",
+            "n/a",
+        )
+
+        # Print tables
+        from rich.console import Console
+
+        console = Console()
+        console.print(components_table)
+        console.print(tubing_table)
+
 
 if __name__ == "__main__":
     from flowchem import Protocol
     from datetime import timedelta
 
     graph = DeviceGraph.from_file("owen_config2.yml")
-    print(graph.graph)
-
-    import networkx as nx
-    import matplotlib.pyplot as plt
-
-    nx.draw(graph.graph, with_labels=True)
-    plt.show()
+    # print(graph.graph)
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # nx.draw(graph.graph, with_labels=True)
+    # plt.show()
+    graph.summarize()
 
     #
     # a = graph.to_apparatus()
