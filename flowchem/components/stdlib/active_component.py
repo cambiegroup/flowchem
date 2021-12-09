@@ -129,9 +129,9 @@ class ActiveComponent(Component):
             return
 
         # check for conflicting continuous procedures
-        procedures_without_time = [x
-                                   for x in procedures
-                                   if x["start"] is None and x["stop"] is None]
+        procedures_without_time = [
+            x for x in procedures if x["start"] is None and x["stop"] is None
+        ]
         if len(procedures_without_time) > 1:
             raise RuntimeError(
                 f"{self} cannot have two procedures for the entire duration of the protocol. "
@@ -156,7 +156,9 @@ class ActiveComponent(Component):
                 continue
 
             # check for overlapping procedures
-            if next_start < procedure["stop"] and not math.isclose(next_start, procedure["stop"]):
+            if next_start < procedure["stop"] and not math.isclose(
+                next_start, procedure["stop"]
+            ):
                 msg = "Cannot have two overlapping procedures. "
                 msg += f"{procedure} and {procedures[i + 1]} conflict"
                 raise RuntimeError(msg)

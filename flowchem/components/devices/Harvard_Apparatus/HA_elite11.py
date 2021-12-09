@@ -330,8 +330,14 @@ class Elite11InfuseOnly(Pump):
         "supported": True,
     }
 
-    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: str, syringe_volume: str,
-                 address: Optional[int] = None, name: Optional[str] = None):
+    def __init__(
+        self,
+        pump_io: HarvardApparatusPumpIO,
+        diameter: str,
+        syringe_volume: str,
+        address: Optional[int] = None,
+        name: Optional[str] = None,
+    ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
         are the prompt XXY, where XX is the address and Y is pump status.
@@ -743,8 +749,14 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
     Controls Harvard Apparatus Elite11 syringe pumps - INFUSE AND WITHDRAW.
     """
 
-    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: str, syringe_volume: str,
-                 address: Optional[int] = None, name: Optional[str] = None):
+    def __init__(
+        self,
+        pump_io: HarvardApparatusPumpIO,
+        diameter: str,
+        syringe_volume: str,
+        address: Optional[int] = None,
+        name: Optional[str] = None,
+    ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
         are the prompt XXY, where XX is the address and Y is pump status.
@@ -840,7 +852,9 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
 
 
 if __name__ == "__main__":
-    pump = Elite11InfuseOnly.from_config(port="COM4", syringe_volume="10 ml", diameter="10 mm")
+    pump = Elite11InfuseOnly.from_config(
+        port="COM4", syringe_volume="10 ml", diameter="10 mm"
+    )
 
     async def main():
         """Test function"""

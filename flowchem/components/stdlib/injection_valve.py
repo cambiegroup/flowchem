@@ -10,9 +10,7 @@ class InjectionValve(Valve):
     """
 
     def __init__(
-        self,
-        mapping: ComponentMapping = None,
-        name: Optional[str] = None,
+        self, mapping: ComponentMapping = None, name: Optional[str] = None,
     ):
         # Ensure that the mapping is a mapping with 'load' and 'ínject' positions
         if mapping is None:

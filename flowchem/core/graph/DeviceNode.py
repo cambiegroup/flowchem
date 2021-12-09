@@ -14,9 +14,7 @@ class DeviceNode:
 
     # Router generators for device class that do not implement self.get_router()
     # All callable take the device obj and return an APIRouter
-    router_generator = {
-        Spinsolve: spinsolve_get_router
-    }
+    router_generator = {Spinsolve: spinsolve_get_router}
 
     def __init__(self, device_name, device_config, obj_type):
         self._title = device_name
@@ -45,8 +43,6 @@ class DeviceNode:
                 f"Accepted parameters: {inspect.getfullargspec(obj_type).args}"
             ) from e
 
-        # self.service_info = None
-
     @property
     def router(self):
         """Returns an APIRouter associated with the device"""
@@ -59,7 +55,10 @@ class DeviceNode:
             try:
                 router = DeviceNode.router_generator[type(self.device)](self.device)
             except KeyError:
-                warnings.warn(f"No router available for device '{self.device.name}'")
+                warnings.warn(
+                    f"No router available for device '{self.device.name}'"
+                    f"[Class: {type(self.device).__name__}]"
+                )
                 router = APIRouter()
 
         router.prefix = f"/{self.safe_title}"

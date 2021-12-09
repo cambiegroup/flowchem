@@ -20,7 +20,11 @@ from flowchem.core.graph.DeviceNode import DeviceNode
 from flowchem.exceptions import InvalidConfiguration
 
 # packages containing the device class definitions. Target classes should be available in the module top level.
-DEVICE_MODULES = [flowchem.components.devices, flowchem.components.stdlib, flowchem.components.reactors]
+DEVICE_MODULES = [
+    flowchem.components.devices,
+    flowchem.components.stdlib,
+    flowchem.components.reactors,
+]
 
 # Validation schema for graph file
 SCHEMA = os.path.join(
@@ -132,9 +136,7 @@ class DeviceGraph:
             self.device[device_name] = DeviceNode(
                 device_name, device_config, obj_type
             ).device
-            logger.debug(
-                f"Created device <{device_name}> with config: {device_config}"
-            )
+            logger.debug(f"Created device <{device_name}> with config: {device_config}")
 
         # Parse list of connections
         connections = self._parse_connections(config["connections"])
@@ -169,9 +171,11 @@ class DeviceGraph:
             from_device = self.device[tube_config["from"]["device"]]
             to_device = self.device[tube_config["to"]["device"]]
         except KeyError as ke:
-            raise InvalidConfiguration("A Tube refers to a non existing node!\n"
-                                       f"Missing node: {ke}\n"
-                                       f"Tube config: {tube_config}") from ke
+            raise InvalidConfiguration(
+                "A Tube refers to a non existing node!\n"
+                f"Missing node: {ke}\n"
+                f"Tube config: {tube_config}"
+            ) from ke
 
         # If necessary updates mapping.
         if tube_config["from"].get("position", 0) != 0:
@@ -191,9 +195,11 @@ class DeviceGraph:
             from_device = self.device[iface_config["from"]["device"]]
             to_device = self.device[iface_config["to"]["device"]]
         except KeyError as ke:
-            raise InvalidConfiguration("An Interface refers to a non existing node!\n"
-                                       f"Missing node: {ke}\n"
-                                       f"Interface config: {iface_config}") from ke
+            raise InvalidConfiguration(
+                "An Interface refers to a non existing node!\n"
+                f"Missing node: {ke}\n"
+                f"Interface config: {iface_config}"
+            ) from ke
 
         return Connection(from_device, to_device, interface)
 
@@ -261,7 +267,9 @@ if __name__ == "__main__":
     t0 = timedelta(seconds=0)
 
     # p.add(graph["quencher"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min")
-    p.add(graph["activator"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min")
+    p.add(
+        graph["activator"], start=t0, duration=timedelta(seconds=10), rate="0.1 ml/min"
+    )
     print(graph["chiller"])
     print(type(graph["chiller"]))
     p.add(graph["chiller"], start=t0, duration=timedelta(seconds=10), temp="45 degC")

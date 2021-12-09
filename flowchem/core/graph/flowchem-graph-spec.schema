@@ -59,7 +59,7 @@
         "$ref": "#/definitions/clarity_interface"
       }, "ViciValco": {
         "$ref": "#/definitions/vici-valco"
-      }, "TMixer": {}
+      }, "TMixer": {}, "LTF_HTM_ST_3_1": {}
     }, "oneOf": [
       {
         "required": [
@@ -128,6 +128,10 @@
       }, {
         "required": [
           "TMixer"
+        ]
+      }, {
+        "required": [
+          "LTF_HTM_ST_3_1"
         ]
       }
     ], "additionalProperties": false

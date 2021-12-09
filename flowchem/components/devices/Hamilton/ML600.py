@@ -11,6 +11,7 @@ import warnings
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Optional, Set, TYPE_CHECKING
+
 if TYPE_CHECKING:
     import pint
 
@@ -439,7 +440,9 @@ class ML600:
 
         return self._validate_speed(str(seconds_per_stroke))
 
-    def _seconds_per_stroke_to_flowrate(self, second_per_stroke: pint.Quantity) -> float:
+    def _seconds_per_stroke_to_flowrate(
+        self, second_per_stroke: pint.Quantity
+    ) -> float:
         """ The inverse of flowrate_to_seconds_per_stroke(). Only internal use. """
         flowrate = 1 / (second_per_stroke * self._steps_per_ml)
         return flowrate.to("ml/min")
@@ -468,10 +471,10 @@ class ML600:
 
     async def to_volume(self, target_volume: str, speed: str = ""):
         """ Absolute move to volume provided. """
-        await self._to_step_position(self._volume_to_step_position(target_volume), speed)
-        logger.debug(
-            f"Pump {self.name} set to volume {target_volume} at speed {speed}"
+        await self._to_step_position(
+            self._volume_to_step_position(target_volume), speed
         )
+        logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {speed}")
 
     async def pause(self):
         """Pause any running command."""
@@ -571,8 +574,7 @@ class ML600:
         await self.set_valve_position(from_valve, wait_for_movement_end=True)
         # Move up to target volume
         await self.to_volume(
-            str(cur_vol + volume),
-            speed=self.flowrate_to_seconds_per_stroke(flowrate),
+            str(cur_vol + volume), speed=self.flowrate_to_seconds_per_stroke(flowrate),
         )
 
         if wait:
@@ -597,15 +599,21 @@ class ML600:
         await self.set_valve_position(to_valve, wait_for_movement_end=True)
         # Move up to target volume
         await self.to_volume(
-            str(cur_vol - volume),
-            speed=self.flowrate_to_seconds_per_stroke(flowrate),
+            str(cur_vol - volume), speed=self.flowrate_to_seconds_per_stroke(flowrate),
         )
 
         if wait:
             await self.wait_until_idle()
 
-    async def transfer(self, volume: str, from_valve: ValvePositionName, to_valve: ValvePositionName,
-                       flowrate_in: str = "1 ml/min", flowrate_out: str = "1 ml/min", wait: bool = False):
+    async def transfer(
+        self,
+        volume: str,
+        from_valve: ValvePositionName,
+        to_valve: ValvePositionName,
+        flowrate_in: str = "1 ml/min",
+        flowrate_out: str = "1 ml/min",
+        wait: bool = False,
+    ):
         """Move liquid from place to place."""
         await self.pickup(volume, from_valve, flowrate_in, wait=True)
         await self.deliver(volume, to_valve, flowrate_out, wait=wait)

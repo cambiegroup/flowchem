@@ -78,8 +78,12 @@ class Apparatus(object):
 
         For args, see add().
         """
-        assert isinstance(from_component, Component), "From component must be an instance of Component"
-        assert isinstance(to_component, Component), "To component must be an instance of Component"
+        assert isinstance(
+            from_component, Component
+        ), "From component must be an instance of Component"
+        assert isinstance(
+            to_component, Component
+        ), "To component must be an instance of Component"
         assert isinstance(tube, Tube), "Tube must be an instance of Tube"
 
         # check for duplicate names
@@ -255,7 +259,9 @@ class Apparatus(object):
             components_table.add_row(component.name, component.__class__.__name__)
 
         # Tubing table
-        tubing_table = Table("From", "To", "Length", "I.D.", "O.D.", "Volume", "Material", title="Tubing")
+        tubing_table = Table(
+            "From", "To", "Length", "I.D.", "O.D.", "Volume", "Material", title="Tubing"
+        )
 
         # store and calculate the computed totals for tubing
         total_length = 0 * flowchem_ureg.mm
@@ -271,7 +277,8 @@ class Apparatus(object):
                 round(connection.tube.ID, 4),
                 round(connection.tube.OD, 4),
                 round(connection.tube.volume.to("ml"), 4),
-                connection.tube.material)
+                connection.tube.material,
+            )
 
         tubing_table.add_row(
             "Total",
@@ -280,10 +287,12 @@ class Apparatus(object):
             "n/a",
             "n/a",
             round(total_volume.to("ml"), 4),
-            "n/a")
+            "n/a",
+        )
 
         # Print tables
         from rich.console import Console
+
         console = Console()
         console.print(components_table)
         console.print(tubing_table)

@@ -308,9 +308,7 @@ class Spinsolve:
 
             # Parse them
             status, folder = parse_status_notification(status_update)
-            logger.debug(
-                f"Status update: Status is {status} and data folder={folder}"
-            )
+            logger.debug(f"Status update: Status is {status} and data folder={folder}")
 
             # When I get a response with folder, save the location!
             if folder:

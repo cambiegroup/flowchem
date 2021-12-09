@@ -65,7 +65,9 @@ def create_server_from_config(
                 name for name in device_mapper.keys() if name in node_config
             ].pop()
         except IndexError as e:
-            raise InvalidConfiguration(f"No class available for device '{device_name}'") from e
+            raise InvalidConfiguration(
+                f"No class available for device '{device_name}'"
+            ) from e
 
         # Object type
         obj_type = device_mapper[device_class]
@@ -75,7 +77,9 @@ def create_server_from_config(
         logger.debug(f"Created device <{device_name}> with config: {device_config}")
 
         # Add to App
-        app.include_router(node.router, prefix=node.router.prefix, tags=node.router.tags)
+        app.include_router(
+            node.router, prefix=node.router.prefix, tags=node.router.tags
+        )
         logger.debug(f"Router for <{device_name}> added to app!")
 
         # Add to mDNS server
@@ -87,15 +91,14 @@ def create_server_from_config(
 
 if __name__ == "__main__":
     app, zeroconf = create_server_from_config(
-        config_file=Path("../graph/flowchem-graph.yml")
+        config_file=Path("../graph/owen_config2.yml")
     )
 
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def root():
         """Server root"""
         # FIXME add landing page
-        return "<h1>Flowchem Device Server!</h1>" \
-               "<a href='./docs/'>API Reference</a>"
+        return "<h1>Flowchem Device Server!</h1>" "<a href='./docs/'>API Reference</a>"
 
     import uvicorn
 

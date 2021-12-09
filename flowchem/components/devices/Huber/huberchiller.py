@@ -270,7 +270,9 @@ class HuberChiller(TempControl):
     async def set_pump_speed(self, rpm: str):
         """Set the pump speed, in rpm. See device display for range."""
         parsed_rpm = flowchem_ureg(rpm)
-        await self.send_command_and_read_reply("{M48" + self._int_to_string(parsed_rpm.m_as("rpm")))
+        await self.send_command_and_read_reply(
+            "{M48" + self._int_to_string(parsed_rpm.m_as("rpm"))
+        )
 
     async def cooling_water_temp(self) -> str:
         """Returns the cooling water inlet temperature (in Celsius)."""
@@ -343,14 +345,14 @@ class HuberChiller(TempControl):
     async def set_ramp_duration(self, ramp_time: str):
         """ Sets the duration (in seconds) of a ramp to the temperature set by a later call to ramp_to_temperature. """
         parsed_time = flowchem_ureg(ramp_time)
-        await self.send_command_and_read_reply("{M59" + self._int_to_string(parsed_time.m_as("s")))
+        await self.send_command_and_read_reply(
+            "{M59" + self._int_to_string(parsed_time.m_as("s"))
+        )
 
     async def ramp_to_temperature(self, temperature: str):
         """ Sets the duration (in seconds) of a ramp to the temperature set by a later call to start_ramp(). """
         temp = flowchem_ureg(temperature)
-        await self.send_command_and_read_reply(
-            "{M5A" + self._temp_to_string(temp)
-        )
+        await self.send_command_and_read_reply("{M5A" + self._temp_to_string(temp))
 
     async def is_venting(self) -> bool:
         """Whether the chiller is venting or not."""
@@ -418,7 +420,9 @@ class HuberChiller(TempControl):
         await self.set_temperature_setpoint("20 C")
 
         # Wait until close to room temperature before turning off chiller
-        while flowchem_ureg.parse_expression(await self.process_temperature()) > flowchem_ureg.parse_expression("40 degC"):
+        while flowchem_ureg.parse_expression(
+            await self.process_temperature()
+        ) > flowchem_ureg.parse_expression("40 degC"):
             await asyncio.sleep(5)
 
         # Actually turn off chiller

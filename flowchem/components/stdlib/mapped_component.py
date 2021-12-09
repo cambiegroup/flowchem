@@ -7,13 +7,17 @@ from collections import UserDict
 
 ComponentMapping = Mapping[Union[str, int], Optional[Component]]
 
+
 class distinctdict(UserDict):
     """ Dictionary that does not accept duplicate values except for None.
     From: Expert Python Programming: Become a master in Python by [...], 3rd Edition """
+
     def __setitem__(self, key, value):
         if value is not None and value in self.values():
             if key not in self or (key in self and self[key] != value):
-                raise ValueError(f"Trying to assign the same value to a different key: [{key} => {value}]")
+                raise ValueError(
+                    f"Trying to assign the same value to a different key: [{key} => {value}]"
+                )
         super().__setitem__(key, value)
 
 
@@ -48,7 +52,9 @@ class MappedComponentMixin(Component):
         self.mapping: ComponentMapping
         if not self.mapping:
             raise ValueError(f"{self} requires a mapping. None provided.")
-        assert any([c is not None for c in self.mapping.values()]), f"{self} has no mapped components."
+        assert any(
+            [c is not None for c in self.mapping.values()]
+        ), f"{self} has no mapped components."
         return super()._validate(dry_run)
 
     @property
@@ -70,15 +76,20 @@ class MappedComponentMixin(Component):
         # in this case, we get the mapped valve with that name
         # we don't have to worry about duplicate names since that's checked later
 
-        elif setting in [c.name for c in self.reversed_mapping if isinstance(c, Component)]:
+        elif setting in [
+            c.name for c in self.reversed_mapping if isinstance(c, Component)
+        ]:
             logger.trace(f"{setting} in {repr(self)}'s mapping.")
             mapped_component = [c for c in self.reversed_mapping if c.name == setting]
             return self.reversed_mapping[mapped_component[0]]
 
         # the user gave the actual port mapping number
         elif setting in self.mapping and isinstance(setting, (int, str)):
-            warnings.warn("Mapped component should map with other components not directly to position! "
-                          "This is deprecated and will remove in future versions.", DeprecationWarning)
+            warnings.warn(
+                "Mapped component should map with other components not directly to position! "
+                "This is deprecated and will remove in future versions.",
+                DeprecationWarning,
+            )
             logger.trace(f"User supplied manual setting for {self}")
             return setting
         else:

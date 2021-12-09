@@ -15,7 +15,7 @@ class LTF_HTM_ST_3_1(MappedComponentMixin, Component):
             "INLET_1": None,
             "INLET_2": None,
             "QUENCHER": None,
-            "OUTLET": None
+            "OUTLET": None,
         }
         self._visualization_shape = "cds"
 

@@ -70,7 +70,9 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         "supported": True,
     }
 
-    def __init__(self, ip_address=None, mac_address=None, name=None, max_pressure: str = None):
+    def __init__(
+        self, ip_address=None, mac_address=None, name=None, max_pressure: str = None
+    ):
         super().__init__(ip_address, mac_address, name)
         self.eol = b"\n\r"
 
@@ -112,8 +114,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
 
         elif "ERROR:2" in reply:
             warnings.warn(
-                "Setpoint refused by device.\n"
-                "Refer to manual for allowed values.\n"
+                "Setpoint refused by device.\n" "Refer to manual for allowed values.\n"
             )
         else:
             warnings.warn("Unspecified error detected!")
@@ -198,7 +199,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         elif htype == AzuraPumpHeads.FLOWRATE_FIFTY_ML:
             self.max_allowed_pressure, self.max_allowed_flow = 150, 50000
 
-    async def get_headtype(self):
+    async def get_headtype(self) -> AzuraPumpHeads:
         """Returns pump's head type."""
         head_type_id = await self.create_and_send_command(HEADTYPE)
         try:

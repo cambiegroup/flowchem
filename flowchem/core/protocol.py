@@ -13,7 +13,11 @@ from IPython import get_ipython
 from IPython.display import Code
 
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import ActiveComponent, TempControl, MappedComponentMixin
+from flowchem.components.stdlib import (
+    ActiveComponent,
+    TempControl,
+    MappedComponentMixin,
+)
 from flowchem.core.apparatus import Apparatus
 from flowchem.core.experiment import Experiment
 
@@ -123,7 +127,12 @@ class Protocol(object):
                 raise ValueError(msg)
 
     def _add_single(
-        self, component: ActiveComponent, start: Union[str, timedelta], stop=None, duration=None, **kwargs
+        self,
+        component: ActiveComponent,
+        start: Union[str, timedelta],
+        stop=None,
+        duration=None,
+        **kwargs,
     ) -> None:
         """Adds a single procedure to the protocol.
 
@@ -280,7 +289,9 @@ class Protocol(object):
             try:
                 component._validate(dry_run=dry_run)
             except Exception as e:
-                raise RuntimeError(f"{component} isn't valid. Got error: '{str(e)}'.") from e
+                raise RuntimeError(
+                    f"{component} isn't valid. Got error: '{str(e)}'."
+                ) from e
 
             # Validates procedures for component
             component.validate_procedures(component_procedures)
@@ -396,7 +407,10 @@ class Protocol(object):
                     procedure[k] = v
 
                 # show what the valve is actually connecting to
-                if isinstance(component, MappedComponentMixin) and type(procedure["setting"]) == int:
+                if (
+                    isinstance(component, MappedComponentMixin)
+                    and type(procedure["setting"]) == int
+                ):
                     assert isinstance(component.mapping, Mapping)
                     # guess the component, c, which the valve is set to
                     mapped_component = [

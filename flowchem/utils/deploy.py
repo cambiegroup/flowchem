@@ -33,7 +33,9 @@ def get_package_list():
     """Return the list of packages to download/install from the requirements file"""
     req_file = Path("../../requirements.txt")
     if not req_file.exists():
-        print("run pip-compile first to create a requirements.txt file [pip install pip-tools to install pip-compile]")
+        print(
+            "run pip-compile first to create a requirements.txt file [pip install pip-tools to install pip-compile]"
+        )
 
     package = []
 

@@ -122,7 +122,10 @@ class PressureSensor:
 
 if __name__ == "__main__":
     test = PressureSensor(
-        sensor_min="0 bar", sensor_max="25 bar", vint_serial_number=627768, vint_channel=0
+        sensor_min="0 bar",
+        sensor_max="25 bar",
+        vint_serial_number=627768,
+        vint_channel=0,
     )
     while True:
         print(test.read_pressure())
