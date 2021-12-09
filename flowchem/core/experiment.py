@@ -51,7 +51,7 @@ class Experiment(object):
 
     def __init__(self, protocol: "Protocol"):
         # args
-        self.apparatus = protocol.apparatus
+        self.graph = protocol.graph
         self.protocol = protocol
 
         # computed values
@@ -111,7 +111,7 @@ class Experiment(object):
                     "timestamp": datapoint.timestamp,
                     "experiment_elapsed_time": datapoint.experiment_elapsed_time,
                     "data": datapoint.data,
-                    "unit": self.protocol.apparatus[device]._unit,
+                    "unit": self.protocol.graph[device]._unit,
                 }
             )
             async with aiofiles.open(self._data_file, "a+") as f:
