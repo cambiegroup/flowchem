@@ -16,4 +16,4 @@ def type_check(session):
 @nox.session(python=['3.9', '3.10'])
 def tests(session):
     session.install('.[test]')
-    session.run('pytest', '--cov', 'flowchem' '--cov-fail-under=40')
+    session.run('pytest', '--cov', 'flowchem', '--cov-fail-under=40')
