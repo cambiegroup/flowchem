@@ -14,7 +14,7 @@ from flowchem.components.stdlib import Component, Tube, Vessel, MappedComponentM
 Connection = namedtuple("Connection", ["from_component", "to_component", "tube"])
 
 
-class Apparatus(object):
+class Apparatus:
     """
     A unique network of components.
 
@@ -34,12 +34,14 @@ class Apparatus(object):
     def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
         self.network: List[Connection] = []
         self.components: Set[Component] = set()
+
         # if given a name, then name the apparatus, else default to a sequential name
         if name is not None:
             self.name = name
         else:
             self.name = "Apparatus_" + str(Apparatus._id_counter)
             Apparatus._id_counter += 1
+
         self.description = description
 
     def __repr__(self):
