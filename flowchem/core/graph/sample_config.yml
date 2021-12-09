@@ -88,7 +88,7 @@ devices:
 #            mac_address: 00:12:a2:b4:33:11
 
     myreagent:
-        FlowchemVessel:
+        VesselChemicals:
             description: Long description
 
 connections:
