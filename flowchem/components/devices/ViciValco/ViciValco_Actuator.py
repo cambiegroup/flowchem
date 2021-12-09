@@ -90,7 +90,7 @@ class ViciValcoValveIO:
         configuration = dict(ViciValcoValveIO.DEFAULT_CONFIG, **serial_kwargs)
 
         try:
-            serial_object = aioserial.AioSerial(port, **configuration)
+            serial_object = aioserial.serial_for_url(port, **configuration)
         except aioserial.SerialException as e:
             raise InvalidConfiguration(
                 f"Cannot connect to the valve on the port <{port}>"

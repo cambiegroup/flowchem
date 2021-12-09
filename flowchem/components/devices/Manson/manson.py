@@ -21,8 +21,8 @@ class MansonPowerSupply:
 
     def __init__(self, port, baudrate=9600, **kwargs):
         try:
-            self._serial = aioserial.Serial(
-                port, baudrate=baudrate, timeout=0.1, **kwargs
+            self._serial = aioserial.serial_for_url(
+                url=port, baudrate=baudrate, timeout=0.1, **kwargs
             )  # type: aioserial.Serial
         except aioserial.SerialException as e:
             raise InvalidConfiguration(

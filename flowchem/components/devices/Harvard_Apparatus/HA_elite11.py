@@ -91,8 +91,9 @@ class HarvardApparatusPumpIO:
         configuration = dict(HarvardApparatusPumpIO.DEFAULT_CONFIG, **kwargs)
 
         try:
-            self._serial = aioserial.AioSerial(port, **configuration)
+            self._serial = aioserial.serial_for_url(port, **configuration)
         except aioserial.SerialException as e:
+            logger.error(f"Cannot connect to the Pump on the port <{port}>")
             raise InvalidConfiguration(
                 f"Cannot connect to the Pump on the port <{port}>"
             ) from e
