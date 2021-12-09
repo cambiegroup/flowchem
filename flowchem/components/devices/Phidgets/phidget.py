@@ -18,6 +18,11 @@ else:
             "Get it from https://www.phidgets.com/docs/Operating_System_Support"
         )
         HAS_PHIDGET = False
+    except PhidgetException as e:
+        if "Logging already enabled" in e.description:
+            HAS_PHIDGET = True
+        else:
+            HAS_PHIDGET = False
     else:
         HAS_PHIDGET = True
 
