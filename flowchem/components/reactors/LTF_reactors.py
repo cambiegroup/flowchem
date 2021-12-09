@@ -17,7 +17,6 @@ class LTF_HTM_ST_3_1(MappedComponentMixin, Component):
             "QUENCHER": None,
             "OUTLET": None,
         }
-        self._visualization_shape = "cds"
 
     def _validate(self, dry_run):
         if not self.mapping:

@@ -33,7 +33,6 @@ class Valve(MappedComponentMixin, ActiveComponent):
             self.setting = list(self.mapping.keys())[0]
         else:
             self.setting = 1
-        self._visualization_shape = "parallelogram"
 
         self._base_state: Dict[str, Any] = {"setting": 1}
 

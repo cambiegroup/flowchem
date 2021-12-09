@@ -83,7 +83,6 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         self._pressure_limit = max_pressure
 
         self.rate = flowchem_ureg.parse_expression("0 ml/min")
-        self._visualization_shape = "box3d"
         self._base_state = dict(rate="0 mL/min")
 
     async def initialize(self):

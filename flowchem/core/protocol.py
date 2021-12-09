@@ -18,27 +18,23 @@ from flowchem.components.stdlib import (
     TempControl,
     MappedComponentMixin,
 )
-from flowchem.core.apparatus import Apparatus
+from flowchem.core.graph.DeviceGraph import DeviceGraph
 from flowchem.core.experiment import Experiment
 
 
-class Protocol(object):
+class Protocol:
     """
-    A set of procedures for an apparatus.
+    A set of procedures for a DeviceGraph.
 
-    A protocol is defined as a list of procedures, atomic steps for the individual active components of an apparatus.
-
-    ::: tip
-    The same `Apparatus` object can create multiple distinct `Protocol` objects.
-    :::
+    A protocol is defined as a list of procedures, atomic steps for the individual active components of a DeviceGraph.
 
     Arguments:
-    - `apparatus`: The apparatus for which the protocol is being defined.
+    - `graph`: The DeviceGraph object for which the protocol is being defined.
     - `name`: The name of the protocol. Defaults to "Protocol_X" where *X* is protocol count.
     - `description`: A longer description of the protocol.
 
     Attributes:
-    - `apparatus`: The apparatus for which the protocol is being defined.
+    - `graph`: The apparatus for which the protocol is being defined.
     - `description`: A longer description of the protocol.
     - `is_executing`: Whether the protocol is executing.
     - `name`: The name of the protocol. Defaults to "Protocol_X" where *X* is protocol count.
@@ -50,20 +46,20 @@ class Protocol(object):
 
     def __init__(
         self,
-        apparatus: Apparatus,
+        graph: DeviceGraph,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
         """See main docstring."""
         # type checking
-        if not isinstance(apparatus, Apparatus):
+        if not isinstance(graph, DeviceGraph):
             raise TypeError(
-                f"Must pass an Apparatus object. Got {type(apparatus)}, "
-                "which is not an instance of flowchem.Apparatus."
+                f"Must pass an Apparatus object. Got {type(graph)}, "
+                "which is not an instance of flowchem.DeviceGraph."
             )
 
         # store the passed args
-        self.apparatus = apparatus
+        self.graph = graph
         self.description = description
 
         # generate the name
@@ -74,8 +70,8 @@ class Protocol(object):
             Protocol._id_counter += 1
 
         # ensure apparatus is valid
-        if not apparatus._validate():
-            raise ValueError("Apparatus is not valid.")
+        if not graph.validate():
+            raise ValueError("DeviceGraph is not valid.")
 
         # default values
         self.procedures: List[
@@ -86,7 +82,7 @@ class Protocol(object):
         return f"<{self.__str__()}>"
 
     def __str__(self):
-        return f"Protocol {self.name} defined over {repr(self.apparatus)}"
+        return f"Protocol {self.name} defined over {repr(self.graph)}"
 
     def _check_component_kwargs(self, component: ActiveComponent, **kwargs) -> None:
         """Checks that the given keyword arguments are valid for a component."""
@@ -141,7 +137,7 @@ class Protocol(object):
 
         # make sure that the component being added is part of the apparatus
         try:
-            self.apparatus[component]
+            self.graph[component]
         except KeyError:
             raise ValueError(f"{component} is not part of the apparatus.")
 
@@ -278,7 +274,7 @@ class Protocol(object):
         output = {}
 
         # Only compile active components
-        for component in self.apparatus[ActiveComponent]:
+        for component in self.graph[ActiveComponent]:
             # determine the procedures for each component
             component_procedures: List[MutableMapping] = sorted(
                 [x for x in self.procedures if x["component"] == component],

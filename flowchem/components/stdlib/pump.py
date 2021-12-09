@@ -19,5 +19,4 @@ class Pump(ActiveComponent):
     def __init__(self, name: Optional[str] = None):
         super().__init__(name=name)
         self.rate = flowchem_ureg.parse_expression("0 ml/min")
-        self._visualization_shape = "box3d"
         self._base_state = dict(rate="0 mL/min")

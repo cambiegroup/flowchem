@@ -25,7 +25,6 @@ class Sensor(ActiveComponent):
     def __init__(self, name: Optional[str] = None):
         super().__init__(name=name)
         self.rate = flowchem_ureg.parse_expression("0 Hz")
-        self._visualization_shape = "ellipse"
         self._unit: str = ""
         self._base_state = {"rate": "0 Hz"}
 

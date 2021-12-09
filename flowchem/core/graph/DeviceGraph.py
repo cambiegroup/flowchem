@@ -11,6 +11,7 @@ import yaml
 import networkx as nx
 
 import flowchem.components.devices
+from components.stdlib import MappedComponentMixin
 from flowchem.core.graph.validation import validate_graph
 from flowchem.components.stdlib import Tube
 from flowchem.core.graph.DeviceNode import DeviceNode
@@ -231,6 +232,34 @@ class DeviceGraph:
             return item
         else:
             raise KeyError(f"{repr(item)} is not in {repr(self)}.")
+
+    def visualize(self):
+        """ Visualize the graph """
+        import matplotlib.pyplot as plt
+
+        nx.draw(self.graph, with_labels=True)
+        plt.show()
+
+    def validate(self) -> bool:
+        """ Validates the graph. This is called by Protocol when the DeviceGraph is used."""
+
+        # Make sure that all the components are connected
+        if not nx.is_connected(self.graph):
+            logger.warning("Not all components connected.")
+            return False
+
+        # Check validity of mappings in mapped components
+        for mapped_component in self[MappedComponentMixin]:
+
+            # ensure that component's mapping partners are part of the DeviceGraph
+            for component in mapped_component.mapping.values():
+                if component is not None and component not in self.graph.nodes:
+                    logger.warning(
+                        f"Invalid mapping for mapped component {mapped_component}. "
+                        f"{component} has not been added to {self.name}!"
+                    )
+                    return False
+        return True
 
     def summarize(self):
         """

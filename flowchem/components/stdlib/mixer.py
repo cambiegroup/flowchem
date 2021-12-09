@@ -18,4 +18,3 @@ class Mixer(Component):
 
     def __init__(self, name: Optional[str] = None):
         super().__init__(name=name)
-        self._visualization_shape = "cds"

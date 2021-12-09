@@ -19,4 +19,3 @@ class Vessel(Component):
     def __init__(self, description: Optional[str] = None, name: Optional[str] = None):
         super().__init__(name=name)
         self.description = description
-        self._visualization_shape = "cylinder"
