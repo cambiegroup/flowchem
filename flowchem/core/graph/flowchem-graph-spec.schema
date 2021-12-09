@@ -59,7 +59,13 @@
         "$ref": "#/definitions/clarity_interface"
       }, "ViciValco": {
         "$ref": "#/definitions/vici-valco"
-      }, "TMixer": {}, "LTF_HTM_ST_3_1": {}
+      }, "TMixer": {
+
+      }, "LTF_HTM_ST_3_1": {
+
+      }, "VesselChemicals": {
+
+      }
     }, "oneOf": [
       {
         "required": [
@@ -132,6 +138,10 @@
       }, {
         "required": [
           "LTF_HTM_ST_3_1"
+        ]
+      },  {
+        "required": [
+          "VesselChemicals"
         ]
       }
     ], "additionalProperties": false
