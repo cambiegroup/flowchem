@@ -5,6 +5,7 @@ import warnings
 from loguru import logger
 from fastapi import APIRouter
 
+from components.stdlib import ActiveComponent
 from flowchem import Spinsolve
 from flowchem.core.server.routers import spinsolve_get_router
 
@@ -55,29 +56,18 @@ class DeviceNode:
             try:
                 router = DeviceNode.router_generator[type(self.device)](self.device)
             except KeyError:
-                warnings.warn(
-                    f"No router available for device '{self.device.name}'"
-                    f"[Class: {type(self.device).__name__}]"
-                )
+                # Only warn no router for active components
+                if isinstance(self.device, ActiveComponent):
+                    logger.warning(
+                        f"No router available for device '{self.device.name}'"
+                        f"[Class: {type(self.device).__name__}]"
+                    )
                 router = APIRouter()
 
         router.prefix = f"/{self.safe_title}"
         router.tags = [self.safe_title]
         self._router = router
         return self._router
-
-    # @property
-    # def description(self) -> str:
-    #     """ Human-readable description of the Node """
-    #     return self._description
-    #
-    # @description.setter
-    # def description(self, description: str):
-    #     """
-    #     Human-readable description of the Node
-    #     :param description: str:
-    #     """
-    #     self._description = description
 
     @property
     def title(self) -> str:
