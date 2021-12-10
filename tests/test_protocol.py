@@ -1,25 +1,29 @@
-import json
 from datetime import timedelta
 
 import pytest
-import yaml
+
 
 from flowchem import DeviceGraph, Protocol
-from flowchem.components.stdlib import Pump, Tube, Dummy, Vessel, Valve
-from flowchem.units import flowchem_ureg
+from flowchem.components.stdlib import Pump, Tube, Dummy, Vessel, Valve, Component
 
-D = DeviceGraph()
+@pytest.fixture
+def device_graph():
+    D = DeviceGraph()
+    a, b = [Component() for _ in range(2)]
+    D.add_device([a, b])
+    D.add_connection(a, b)
+    return D
 
 
-def test_create_protocol():
+def test_create_protocol(device_graph):
     # test naming
-    assert Protocol(D, name="testing").name == "testing"
-    assert Protocol(D).name == "Protocol_0"
-    assert Protocol(D).name == "Protocol_1"
+    assert Protocol(device_graph, name="testing").name == "testing"
+    assert Protocol(device_graph).name == "Protocol_0"
+    assert Protocol(device_graph).name == "Protocol_1"
 
 
-def test_add():
-    P = Protocol(D)
+def test_add(device_graph):
+    P = Protocol(device_graph)
 
     procedure = {
         "component": D["pump"],
