@@ -1,11 +1,11 @@
 import warnings
-from typing import Mapping, Union, Optional
+from typing import MutableMapping, Union, Optional
 
 from flowchem.components.stdlib import Component
 from loguru import logger
 from collections import UserDict
 
-ComponentMapping = Mapping[Union[str, int], Optional[Component]]
+ComponentMapping = MutableMapping[Union[str, int], Optional[Component]]
 
 
 class distinctdict(UserDict):

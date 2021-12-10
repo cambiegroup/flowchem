@@ -8,25 +8,7 @@ from flowchem import DeviceGraph, Protocol
 from flowchem.components.stdlib import Pump, Tube, Dummy, Vessel, Valve
 from flowchem.units import flowchem_ureg
 
-test_conf = {
-    "version": "1.0",
-    "devices": {
-        "pump": {"DummyPump": {}},
-        "sensor": {"DummySensor": {}},
-    },
-    "physical_connections": [
-        {"Tube": {
-            "from": {"device": "pump"},
-            "to": {"device": "sensor"},
-            "length": "0.1 m",
-            "inner-diameter": "0.760 mm",
-            "outer-diameter": "1.6 mm",
-            "material": "PFA"}
-        },
-    ]
-}
-
-D = DeviceGraph(configuration=test_conf, name="test graph")
+D = DeviceGraph()
 
 
 def test_create_protocol():
