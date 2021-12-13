@@ -1,5 +1,5 @@
 """ All devices should inherit from this class. """
-from typing import Set, Optional
+from typing import Optional
 
 
 class Component:

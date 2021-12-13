@@ -1,4 +1,5 @@
 from .tube import Tube
+from .channel import Channel
 from .cross_mixer import CrossMixer
 from .t_mixer import TMixer
 from .y_mixer import YMixer

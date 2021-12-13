@@ -132,6 +132,13 @@ class DeviceGraph:
         nx.draw(self.graph, with_labels=True)
         plt.show()
 
+    def explode_all(self):
+        """Explode all devices in the graph"""
+        for device in self.graph.nodes:
+            if hasattr(device, "explode"):
+                logger.debug(f"Exploding {device.name}")
+                device.explode(self)
+
     def validate(self) -> bool:
         """Validates the graph. This is called by Protocol when the DeviceGraph is used."""
 

@@ -11,7 +11,7 @@ from flowchem.core.graph.devicenode import DeviceNode
 from flowchem.core.graph.validation import validate_graph
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.core.graph.devicegraph import DeviceGraph
-import flowchem.components.devices
+import flowchem.assemblies
 
 
 # Packages containing the device class definitions.
@@ -19,7 +19,8 @@ import flowchem.components.devices
 DEVICE_MODULES = [
     flowchem.components.devices,
     flowchem.components.stdlib,
-    flowchem.components.assemblies,
+    flowchem.components.dummy,
+    flowchem.assemblies,
 ]
 
 

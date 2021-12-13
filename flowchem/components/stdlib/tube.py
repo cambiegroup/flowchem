@@ -1,5 +1,5 @@
 from math import pi
-from warnings import warn
+from loguru import logger
 
 from flowchem.units import flowchem_ureg
 
@@ -42,19 +42,21 @@ class Tube:
         # check to make sure units are valid
         for measurement in [self.length, self.ID, self.OD]:
             if measurement.dimensionality != flowchem_ureg.mm.dimensionality:
+                logger.exception("Invalid units for tube length, ID, or OD")
                 raise ValueError(
                     f"{measurement.units} is an invalid unit of measurement for length."
                 )
 
         # ensure diameters are valid
         if self.OD <= self.ID:
+            logger.exception("Invalid tube dimensions")
             raise ValueError(
                 f"Outer diameter {OD} must be greater than inner diameter {ID}"
             )
         if self.length < self.OD or self.length < self.ID:
-            warn(
+            logger.warning(
                 f"Tube length ({self.length}) is less than diameter."
-                " Make sure that this is not in error."
+                "Make sure that this is not an error."
             )
 
         self.material = material
