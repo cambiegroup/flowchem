@@ -1,7 +1,7 @@
 from .base_component import Component
 from .active_component import ActiveComponent
 from .passive_component import PassiveComponent
-from .mapped_component import MappedComponentMixin, ComponentMapping
+from .mapped_component import MappedComponentMixin
 from .sensor import Sensor
 from .valve import Valve
 from .injection_valve import InjectionValve

@@ -405,16 +405,10 @@ class Protocol:
                 # show what the valve is actually connecting to
                 if (
                     isinstance(component, MappedComponentMixin)
-                    and type(procedure["setting"]) == int
+                    and "setting" in procedure.keys()
                 ):
-                    assert isinstance(component.mapping, Mapping)
-                    # guess the component, c, which the valve is set to
-                    mapped_component = [
-                        repr(v)
-                        for k, v in component.mapping.items()
-                        if k == procedure["setting"]
-                    ][0]
-                    procedure["mapped component"] = mapped_component
+                    procedure["mapped component"] = self.graph.component_from_origin_and_port(component,
+                                                                                              procedure["setting"])
                 # TODO: make this deterministic for color coordination
                 procedure["params"] = json.dumps(procedure["params"])
 

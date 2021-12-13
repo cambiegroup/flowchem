@@ -1,4 +1,4 @@
-from typing import List, Tuple, Sequence
+from typing import Tuple, Sequence
 
 from components.properties import MappedComponentMixin
 from flowchem.core.graph import DeviceGraph
@@ -12,7 +12,7 @@ class Assembly(MappedComponentMixin, Component):
     nodes = Sequence[Component]
     edges = Sequence[Tuple[Component, Component]]
 
-    def _subcomponent_by_name(self, name:str) -> Component:
+    def _subcomponent_by_name(self, name: str) -> Component:
         """ Returns a component in self.nodes by its name. """
         for node in self.nodes:
             if node.name == name:
@@ -28,25 +28,27 @@ class Assembly(MappedComponentMixin, Component):
         assert self in graph.graph.nodes, "Assembly must be in the graph to explode it."
 
         # Convert edges to self into edges to self's components.
-        in_edges = list(graph.graph.in_edges(self))
-        out_edges = list(graph.graph.out_edges(self))
-        assert len(in_edges) + len(out_edges) == len(self.mapping), "Assembly has invalid edges."
+        for from_component, to_component, attributes in graph.graph.in_edges(self, data=True):
+            assert to_component is self, "Getting the edges pointing to the assembly."
 
-        for from_component, to_component in in_edges:
-            assert to_component is self, "In edges are edges pointing to the current node!"
-            # Find edge position in assembly mapping
-            position = self.reversed_mapping[from_component]
-            # Add edge to assembly's component
-            self.edges.append((from_component, self._subcomponent_by_name(position)))
+            # New destination is the component with name matching the edge port on the assembly
+            new_to_component = self._subcomponent_by_name(attributes["to_port"])
 
-        for from_component, to_component in out_edges:
-            assert from_component is self, "Out edges are edges pointing from the current node!"
-            # Find edge position in assembly mapping
-            position = self.reversed_mapping[to_component]
-            # Add edge to assembly's component
-            self.edges.append((self._subcomponent_by_name(position), to_component))
+            # Update edge - just add a new one, the old one will be implicitly removed with graph.remove_node(self)
+            graph.add_connection(origin=from_component, destination=new_to_component,
+                                 origin_port=attributes.get("from_port", None))
 
-        # Updates component names. This ensures unique names in the graph.
+        for from_component, to_component, attributes in graph.graph.out_edges(self, data=True):
+            assert from_component is self, "Getting the edges pointing from the assembly."
+
+            # New origin is the component with name matching the edge port on the assembly
+            new_from_component = self._subcomponent_by_name(attributes["from_port"])
+
+            # Update edge - just add a new one, the old one will be implicitly removed with graph.remove_node(self)
+            graph.add_connection(origin=new_from_component, destination=to_component,
+                                 destination_port=attributes.get("to_port", None))
+
+        # Updates component names. Ensures unique names in the graph. (Note: do not update those earlier: see above!)
         for component in self.nodes:
             component.name = f"{self.name}_{component.name}"
 

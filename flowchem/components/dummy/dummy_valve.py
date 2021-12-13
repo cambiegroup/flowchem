@@ -22,7 +22,9 @@ class DummyValve(Valve):
     - `setting`: The position of the valve as an int (mapped via `mapping`).
     """
 
-    def __init__(self, name: Optional[str] = None, mapping: dict = {}):
+    def __init__(self, name: Optional[str] = None, mapping: set = None):
+        if mapping is None:
+            mapping = {"position_1", "position_2", "position_3"}
         super().__init__(name=name, mapping=mapping)
 
     async def _update(self) -> None:
