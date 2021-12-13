@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import MutableMapping, Optional, Union, Dict, Any
+from typing import MutableMapping, Optional, Union, Dict, Any, Set
 
 from flowchem.components.properties import (
     ActiveComponent,
@@ -24,20 +24,17 @@ class Valve(MappedComponentMixin, ActiveComponent, ABC):
 
     def __init__(
         self,
-        mapping: MutableMapping[Union[int, str], Optional[Component]],
+        mapping: Set[Union[int, str]],
         name: Optional[str] = None,
     ):
         super().__init__(name=name)
 
-        # check the mapping's type
-        if not isinstance(mapping, (type(None), MutableMapping)):
-            raise TypeError(f"Invalid mapping type {type(mapping)} for {repr(self)}.")
         self.mapping = mapping
         # Base state is first position or 1 if no mapping is provided
         if mapping:
-            self.setting = list(self.mapping.keys())[0]
+            self.setting = next(iter(mapping))
         else:
-            self.setting = 1
+            self.setting = "1"
 
         self._base_state: Dict[str, Any] = {"setting": 1}
 

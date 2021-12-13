@@ -1,24 +1,16 @@
 """ LTF reactors """
 from typing import Optional
-from loguru import logger
 
 from components.stdlib import Channel, YMixer
 from flowchem.components.properties import Component, MappedComponentMixin
 
 
 class LTF_HTM_ST_3_1(MappedComponentMixin, Component):
-    """
-    An LTF HTM ST 3 1 reactor.
-    """
+    """ An LTF HTM ST 3 1 reactor. """
 
     def __init__(self, name: Optional[str] = None):
         super().__init__(name=name)
-        self.mapping = {
-            "INLET_1": None,
-            "INLET_2": None,
-            "QUENCHER": None,
-            "OUTLET": None,
-        }
+        self.mapping = {"INLET_1", "INLET_2", "QUENCHER", "OUTLET"}
 
         inlet1 = Channel(name="INLET_1", length="10 mm", volume="8 ul", material="glass")
         inlet2 = Channel(name="INLET_2", length="10 mm", volume="8 ul", material="glass")
@@ -39,9 +31,3 @@ class LTF_HTM_ST_3_1(MappedComponentMixin, Component):
             (mixer_quencher, reactor2),
             (reactor2, outlet)
         ]
-
-    def _validate(self, dry_run):
-        if any(connection is None for connection in self.mapping.values()):
-            logger.exception(f"{self} requires all connections to be set.")
-            raise ValueError(f"Missing connection in {self}.")
-        return super()._validate(dry_run)

@@ -53,7 +53,14 @@ class DeviceGraph:
         origin_port: Optional[Union[str, int]] = None,
         destination_port: Optional[Union[str, int]] = None,
     ):
-        """Add a connection to the graph, given either names or objects to be linked"""
+        """
+        Add a connection to the graph, given either names or objects to be linked.
+
+        Note: if strings are passed for origin/destination, the corresponding node MUST already be part of the graph!
+        Note: if the origin or destination are Component instances that are not yet part of the graph,
+              they will be added to the graph.
+        """
+
         # If device names are passed, get the device objects
         try:
             if isinstance(origin, str):
@@ -64,25 +71,21 @@ class DeviceGraph:
                 assert isinstance(destination, Component), "Destination must be a Component!"
         except KeyError as ke:
             logger.exception(
-                "A connection was attempted with nodes that are not part of the graph!"
+                "A connection was attempted by node name with nodes that are not part of the graph!"
             )
             raise InvalidConfiguration("Invalid nodes for connection!") from ke
 
-        # Add the connection
-        self.graph.add_edge(origin, destination)
-
-        # If ports position are provided, updates mapping.
+        # If ports are specified, ensure the values are valid with the respective component
         if origin_port is not None:
-            assert isinstance(
-                origin, MappedComponentMixin
-            ), "Only MappedComponents can have ports!"
-            origin.mapping[origin_port] = destination
+            assert isinstance(origin, MappedComponentMixin), "Only MappedComponents have ports!"
+            assert origin_port in origin.mapping, "The port specified was not found!"
 
         if destination_port is not None:
-            assert isinstance(
-                destination, MappedComponentMixin
-            ), "Only MappedComponents can have ports!"
-            destination.mapping[destination_port] = origin
+            assert isinstance(destination, MappedComponentMixin), "Only MappedComponents have ports!"
+            assert destination_port in destination.mapping, "The port specified was not found!"
+
+        # Add the connection
+        self.graph.add_edge(origin, destination, from_port=origin_port, to_port=destination_port)
 
     def __repr__(self):
         return f"<DeviceGraph {self.name}>"
@@ -124,6 +127,17 @@ class DeviceGraph:
             return item
         else:
             raise KeyError(f"{repr(item)} is not in {repr(self)}.")
+
+    def component_from_origin_and_port(self, origin: Component, port: Union[str, int]) -> Component:
+        """ Returns the component that is connected to the origin component in the port provided. """
+
+        assert origin in self, "The origin component is not part of the graph!"
+        assert isinstance(origin, MappedComponentMixin), "Only MappedComponents have ports!"
+
+        for _, to_component, data in self.graph.out_edges(origin, data=True):
+            if data["from_port"] == port:
+                return to_component
+        raise KeyError(f"No component connected to port {port}")
 
     def visualize(self):
         """Visualize the graph"""
