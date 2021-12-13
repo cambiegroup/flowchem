@@ -1,7 +1,6 @@
 from typing import Optional
 
-from flowchem.components.stdlib import Valve
-from flowchem.components.stdlib.mapped_component import ComponentMapping
+from flowchem.components.properties import ComponentMapping, Valve
 
 
 class InjectionValve(Valve):
@@ -10,7 +9,9 @@ class InjectionValve(Valve):
     """
 
     def __init__(
-        self, mapping: ComponentMapping = None, name: Optional[str] = None,
+        self,
+        mapping: ComponentMapping = None,
+        name: Optional[str] = None,
     ):
         # Ensure that the mapping is a mapping with 'load' and 'ínject' positions
         if mapping is None:

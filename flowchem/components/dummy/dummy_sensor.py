@@ -1,6 +1,6 @@
 import random
 from typing import Optional
-from flowchem.components.stdlib import Sensor
+from flowchem.components.properties import Sensor
 
 
 class DummySensor(Sensor):

@@ -18,7 +18,7 @@ from bokeh.resources import INLINE
 from IPython import get_ipython
 from IPython.display import display
 
-from flowchem.components.stdlib import ActiveComponent, Sensor
+from flowchem.components.properties import ActiveComponent, Sensor
 from flowchem.core.execute import main
 
 if TYPE_CHECKING:
@@ -52,7 +52,7 @@ class Experiment(object):
     def __init__(self, protocol: "Protocol"):
         # args
         self.graph = protocol.graph
-        self.protocol = protocol
+        self.protocol: Protocol = protocol
 
         # computed values
         self.experiment_id: Optional[str] = None
@@ -186,7 +186,7 @@ class Experiment(object):
         return duration
 
     def get_confirmation(self):
-        """ Ensure user input is present before starting procedure. """
+        """Ensure user input is present before starting procedure."""
         confirmation = input("Execute? [y/N]: ").lower()
         if not confirmation or confirmation[0] != "y":
             logger.critical("Aborting execution...")

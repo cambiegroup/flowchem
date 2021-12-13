@@ -10,7 +10,7 @@ from typing import Optional, Set
 
 import aioserial
 
-from flowchem.components.stdlib import InjectionValve
+from flowchem.components.properties import InjectionValve
 from flowchem.exceptions import InvalidConfiguration, ActuationError, DeviceError
 
 
@@ -302,7 +302,7 @@ class ViciValco(InjectionValve):
         pass
 
     async def _update(self):
-        """ Used in automation. """
+        """Used in automation."""
         await self.set_valve_position(self.setting)
 
     def get_router(self):

@@ -222,14 +222,14 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         logger.debug(f"Head type set to {head_type}")
 
     async def get_flow(self) -> str:
-        """ Gets flow rate. """
+        """Gets flow rate."""
         flow_value = await self.create_and_send_command(FLOW)
         flowrate = flowchem_ureg(f"{flow_value} ul/min")
         logger.debug(f"Current flow rate is {flowrate}")
         return str(flowrate.to("ml/min"))
 
     async def set_flow(self, flowrate: str = None):
-        """ Sets flow rate.
+        """Sets flow rate.
 
         :param flowrate: string with units
         """
@@ -249,7 +249,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         return str(p_min)
 
     async def set_minimum_pressure(self, value: str = "0 bar"):
-        """ Sets minimum pressure. The pumps stops if the measured P is lower than this. """
+        """Sets minimum pressure. The pumps stops if the measured P is lower than this."""
 
         pressure = flowchem_ureg(value)
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
@@ -268,7 +268,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         return str(p_max)
 
     async def set_maximum_pressure(self, value: str):
-        """ Sets maximum pressure. The pumps stops if the measured P is higher than this. """
+        """Sets maximum pressure. The pumps stops if the measured P is higher than this."""
 
         pressure = flowchem_ureg(value)
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
@@ -349,7 +349,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
     async def read_pressure(self) -> str:
-        """ If the pump has a pressure sensor, returns pressure. Read-only property of course. """
+        """If the pump has a pressure sensor, returns pressure. Read-only property of course."""
         pressure = await self._transmit_and_parse_reply(PRESSURE) * flowchem_ureg.bar
         logger.debug(f"Pressure measured = {pressure}")
         return str(pressure)

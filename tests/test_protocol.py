@@ -4,14 +4,19 @@ import pytest
 
 
 from flowchem import DeviceGraph, Protocol
-from flowchem.components.stdlib import Pump, Tube, Dummy, Vessel, Valve, Component
+from flowchem.components.properties import Valve, Component
+from flowchem.components.dummy import Dummy
+from flowchem.components.stdlib import Pump, Tube, Vessel
+
 
 @pytest.fixture
 def device_graph():
     D = DeviceGraph()
     a, b = [Component() for _ in range(2)]
-    D.add_device([a, b])
+    pump = Pump("pump")
+    D.add_device([a, b, pump])
     D.add_connection(a, b)
+    D.add_connection(b, pump)
     return D
 
 
@@ -26,34 +31,34 @@ def test_add(device_graph):
     P = Protocol(device_graph)
 
     procedure = {
-        "component": D["pump"],
+        "component": device_graph["pump"],
         "params": {"rate": "10 mL/min"},
         "start": 0,
         "stop": 300,
     }
 
     # test using duration
-    P.add( D["pump"], rate="10 mL/min", duration="5 min")
+    P.add(device_graph["pump"], rate="10 mL/min", duration="5 min")
     assert P.procedures[0] == procedure
 
     # test adding with start and stop
     P.procedures = []
-    P.add( D["pump"], rate="10 mL/min", start="0 min", stop="5 min")
+    P.add(device_graph["pump"], rate="10 mL/min", start="0 min", stop="5 min")
     assert P.procedures[0] == procedure
 
     # test adding with start and stop as timedeltas
     P.procedures = []
     P.add(
-        D["pump"], rate="10 mL/min", start=timedelta(seconds=0), stop=timedelta(minutes=5)
+        device_graph["pump"], rate="10 mL/min", start=timedelta(seconds=0), stop=timedelta(minutes=5)
     )
     assert P.procedures[0] == procedure
 
     # test adding with duration as timedelta
     P.procedures = []
-    P.add( D["pump"], rate="10 mL/min", duration=timedelta(minutes=5))
+    P.add( device_graph["pump"], rate="10 mL/min", duration=timedelta(minutes=5))
     assert P.procedures[0] == procedure
 
-    P = Protocol(D)
+    P = Protocol(device_graph)
     with pytest.raises(ValueError):
         P.add(Pump("not in apparatus"), rate="10 mL/min", duration="5 min")
 
@@ -63,31 +68,31 @@ def test_add(device_graph):
 
     # Not adding keyword args
     with pytest.raises(RuntimeError):
-        P.add(D["pump"], duration="5 min")
+        P.add(device_graph["pump"], duration="5 min")
 
     # Invalid keyword for component
     with pytest.raises(ValueError):
-        P.add( D["pump"], active=False, duration="5 min")
+        P.add(device_graph["pump"], active=False, duration="5 min")
 
     # Invalid dimensionality for kwarg
     with pytest.raises(ValueError):
-        P.add( D["pump"], rate="5 mL", duration="5 min")
+        P.add(device_graph["pump"], rate="5 mL", duration="5 min")
 
     # No unit
     with pytest.raises(ValueError):
-        P.add( D["pump"], rate="5", duration="5 min")
+        P.add(device_graph["pump"], rate="5", duration="5 min")
 
     # Just the raw value without a unit
     with pytest.raises(ValueError):
-        P.add( D["pump"], rate=5, duration="5 min")
+        P.add(device_graph["pump"], rate=5, duration="5 min")
 
     # Providing stop and duration should raise error
     with pytest.raises(RuntimeError):
-        P.add( D["pump"], rate="5 mL/min", stop="5 min", duration="5 min")
+        P.add(device_graph["pump"], rate="5 mL/min", stop="5 min", duration="5 min")
 
     # stop time before start time
     with pytest.raises(ValueError):
-        P.add([ D["pump"],  D["pump"]], rate="10 mL/min", start="5 min", stop="4 min")
+        P.add([device_graph["pump"],  device_graph["pump"]], rate="10 mL/min", start="5 min", stop="4 min")
 
 
 # def test_add_dummy():

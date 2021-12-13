@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from loguru import logger
-from typing import Optional, Union, List, Iterable
+from typing import Optional, Union, List, Iterable, Any
 
 import networkx as nx
 
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.components.stdlib import Component
-from flowchem.components.stdlib import Tube, MappedComponentMixin
+from flowchem.components.properties import Component, MappedComponentMixin
+from flowchem.components.stdlib import Tube
 from flowchem.units import flowchem_ureg
 
 
@@ -31,8 +31,8 @@ class DeviceGraph:
         # NetworkX Multi directed graph object
         self.graph: nx.MultiDiGraph = nx.MultiDiGraph()
 
-    def add_device(self, device: Union[Component, Iterable[Component]]):
-        """ Add a device or list of devices to the graph """
+    def add_device(self, device: Any):
+        """Add a device or list of devices to the graph"""
 
         if isinstance(device, Iterable):
             for component in device:
@@ -41,23 +41,31 @@ class DeviceGraph:
             self._add_device(device)
 
     def _add_device(self, device: Component):
-        """ Adds a single device to the graph """
+        """Adds a single device to the graph"""
         assert isinstance(device, Component), "Device must be a Component!"
         self.graph.add_node(device)
         logger.debug(f"Added device <{device.name}> to the device graph {self.name}")
 
-    def add_connection(self, origin: Union[str, Component], destination: Union[str, Component],
-                       origin_port: Optional[Union[str, int]] = None,
-                       destination_port: Optional[Union[str, int]] = None):
-        """ Add a connection to the graph, given either names or objects to be linked """
+    def add_connection(
+        self,
+        origin: Union[str, Component],
+        destination: Union[str, Component],
+        origin_port: Optional[Union[str, int]] = None,
+        destination_port: Optional[Union[str, int]] = None,
+    ):
+        """Add a connection to the graph, given either names or objects to be linked"""
         # If device names are passed, get the device objects
         try:
             if isinstance(origin, str):
-                origin: Component = self[origin]
+                origin = self[origin]
+                assert isinstance(origin, Component), "Origin must be a Component!"
             if isinstance(destination, str):
-                destination: Component = self[destination]
+                destination = self[destination]
+                assert isinstance(destination, Component), "Destination must be a Component!"
         except KeyError as ke:
-            logger.exception("A connection was attempted with nodes that are not part of the graph!")
+            logger.exception(
+                "A connection was attempted with nodes that are not part of the graph!"
+            )
             raise InvalidConfiguration("Invalid nodes for connection!") from ke
 
         # Add the connection
@@ -65,11 +73,15 @@ class DeviceGraph:
 
         # If ports position are provided, updates mapping.
         if origin_port is not None:
-            assert isinstance(origin, MappedComponentMixin), "Only MappedComponents can have ports!"
+            assert isinstance(
+                origin, MappedComponentMixin
+            ), "Only MappedComponents can have ports!"
             origin.mapping[origin_port] = destination
 
         if destination_port is not None:
-            assert isinstance(destination, MappedComponentMixin), "Only MappedComponents can have ports!"
+            assert isinstance(
+                destination, MappedComponentMixin
+            ), "Only MappedComponents can have ports!"
             destination.mapping[destination_port] = origin
 
     def __repr__(self):
@@ -98,9 +110,7 @@ class DeviceGraph:
         """
         # If a type is passed return devices with that type
         if isinstance(item, type):
-            return [
-                device for device in self.graph.nodes if isinstance(device, item)
-            ]
+            return [device for device in self.graph.nodes if isinstance(device, item)]
 
         # If a string is passed return the device with that name
         elif isinstance(item, str):
@@ -116,14 +126,14 @@ class DeviceGraph:
             raise KeyError(f"{repr(item)} is not in {repr(self)}.")
 
     def visualize(self):
-        """ Visualize the graph """
+        """Visualize the graph"""
         import matplotlib.pyplot as plt
 
         nx.draw(self.graph, with_labels=True)
         plt.show()
 
     def validate(self) -> bool:
-        """ Validates the graph. This is called by Protocol when the DeviceGraph is used."""
+        """Validates the graph. This is called by Protocol when the DeviceGraph is used."""
 
         # Make sure that all the components are connected
         if not nx.is_weakly_connected(self.graph):
@@ -192,7 +202,7 @@ class DeviceGraph:
                 f"{tube.OD:~H}",
                 f"{tube.volume.to('ml'):.4f~H}",
                 tube.material,
-                end_section=end_section
+                end_section=end_section,
             )
 
         tubing_table.add_row(
@@ -214,7 +224,8 @@ class DeviceGraph:
 
 
 if __name__ == "__main__":
-    graph = DeviceGraph.from_file("owen_config2.yml")
+    from .parser import parse_graph_file
+    graph = parse_graph_file("owen_config2.yml")
     graph.summarize()
 
     # from flowchem import Protocol

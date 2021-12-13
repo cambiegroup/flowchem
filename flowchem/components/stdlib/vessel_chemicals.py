@@ -1,4 +1,3 @@
-""" A vessel with info on the chemical input contained. """
 from ord_schema.proto.reaction_pb2 import ReactionInput
 from typing import Optional
 from flowchem.components.stdlib import Vessel

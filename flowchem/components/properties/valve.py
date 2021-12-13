@@ -1,9 +1,14 @@
-from typing import Mapping, Optional, Union, Dict, Any
+from abc import ABC
+from typing import MutableMapping, Optional, Union, Dict, Any
 
-from flowchem.components.stdlib import ActiveComponent, Component, MappedComponentMixin
+from flowchem.components.properties import (
+    ActiveComponent,
+    Component,
+    MappedComponentMixin,
+)
 
 
-class Valve(MappedComponentMixin, ActiveComponent):
+class Valve(MappedComponentMixin, ActiveComponent, ABC):
     """
     A generic valve.
 
@@ -19,13 +24,13 @@ class Valve(MappedComponentMixin, ActiveComponent):
 
     def __init__(
         self,
-        mapping: Mapping[Union[int, str], Optional[Component]],
+        mapping: MutableMapping[Union[int, str], Optional[Component]],
         name: Optional[str] = None,
     ):
         super().__init__(name=name)
 
         # check the mapping's type
-        if not isinstance(mapping, (type(None), Mapping)):
+        if not isinstance(mapping, (type(None), MutableMapping)):
             raise TypeError(f"Invalid mapping type {type(mapping)} for {repr(self)}.")
         self.mapping = mapping
         # Base state is first position or 1 if no mapping is provided
@@ -35,9 +40,6 @@ class Valve(MappedComponentMixin, ActiveComponent):
             self.setting = 1
 
         self._base_state: Dict[str, Any] = {"setting": 1}
-
-    async def _update(self):
-        raise NotImplementedError
 
     def _validate(self, dry_run):
         if not self.mapping:

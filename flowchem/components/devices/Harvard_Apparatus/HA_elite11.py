@@ -21,7 +21,7 @@ from flowchem.components.stdlib import Pump
 
 
 class PumpInfo(BaseModel):
-    """ Detailed pump info. """
+    """Detailed pump info."""
 
     pump_type: str
     pump_description: str

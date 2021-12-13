@@ -14,7 +14,7 @@ Address = Tuple[str, int]
 
 
 class BroadcastProtocol(asyncio.DatagramProtocol):
-    """ From https://gist.github.com/yluthu/4f785d4546057b49b56c """
+    """From https://gist.github.com/yluthu/4f785d4546057b49b56c"""
 
     def __init__(self, target: Address, response_queue: queue.Queue):
         self.target = target

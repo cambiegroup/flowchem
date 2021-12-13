@@ -1,6 +1,6 @@
 import pytest
 
-from flowchem.components.stdlib import Component, ActiveComponent, Sensor
+from flowchem.components.properties import Component, ActiveComponent, Sensor
 from flowchem.units import flowchem_ureg
 
 

@@ -1,1 +1,1 @@
-from .DeviceGraph import DeviceGraph
+from .devicegraph import DeviceGraph

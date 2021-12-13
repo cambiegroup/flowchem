@@ -1,9 +1,9 @@
 from typing import Optional
 
-from flowchem.components.stdlib import Mixer
+from flowchem.components.properties import PassiveMixer
 
 
-class CrossMixer(Mixer):
+class CrossMixer(PassiveMixer):
     """
     A cross mixer.
 

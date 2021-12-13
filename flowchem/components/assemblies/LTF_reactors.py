@@ -1,7 +1,7 @@
 """ LTF reactors """
 from typing import Optional
 
-from flowchem.components.stdlib import Component, MappedComponentMixin
+from flowchem.components.properties import Component, MappedComponentMixin
 
 
 class LTF_HTM_ST_3_1(MappedComponentMixin, Component):

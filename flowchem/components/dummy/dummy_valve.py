@@ -1,7 +1,7 @@
 from typing import Optional
 
 from loguru import logger
-from flowchem.components.stdlib import Valve
+from flowchem.components.properties import Valve
 
 
 class DummyValve(Valve):

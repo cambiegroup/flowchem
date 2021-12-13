@@ -8,18 +8,16 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
 import flowchem
-from flowchem.core.graph.DeviceGraph import (
+from flowchem.core.graph.parser import (
     DEVICE_MODULES,
     get_device_class_mapper,
 )
 from core.graph.validation import validate_graph
-from flowchem.core.graph.DeviceNode import DeviceNode
+from flowchem.core.graph.devicenode import DeviceNode
 from flowchem.exceptions import InvalidConfiguration
 
 
-def create_server_from_config(
-    config: Dict = None, config_file: Path = None
-) -> FastAPI:
+def create_server_from_config(config: Dict = None, config_file: Path = None) -> FastAPI:
     """
     Based on the yaml device graph provided, creates device objects and connect to them + .
 
@@ -80,9 +78,7 @@ def create_server_from_config(
 
 
 if __name__ == "__main__":
-    app = create_server_from_config(
-        config_file=Path("../graph/sample_config.yml")
-    )
+    app = create_server_from_config(config_file=Path("../graph/sample_config.yml"))
 
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def root():
@@ -90,4 +86,5 @@ if __name__ == "__main__":
         return "<h1>Flowchem Device Server!</h1>" "<a href='./docs/'>API Reference</a>"
 
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1")

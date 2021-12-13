@@ -13,12 +13,12 @@ from IPython import get_ipython
 from IPython.display import Code
 
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import (
+from flowchem.components.properties import (
     ActiveComponent,
-    TempControl,
     MappedComponentMixin,
+    TempControl,
 )
-from flowchem.core.graph.DeviceGraph import DeviceGraph
+from flowchem.core.graph.devicegraph import DeviceGraph
 from flowchem.core.experiment import Experiment
 
 

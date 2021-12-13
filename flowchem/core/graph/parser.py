@@ -7,10 +7,10 @@ import inspect
 import itertools
 
 from flowchem.components.stdlib import Tube
-from flowchem.core.graph.DeviceNode import DeviceNode
+from flowchem.core.graph.devicenode import DeviceNode
 from flowchem.core.graph.validation import validate_graph
 from flowchem.exceptions import InvalidConfiguration
-from flowchem import DeviceGraph
+from flowchem.core.graph.devicegraph import DeviceGraph
 import flowchem.components.devices
 
 
@@ -19,7 +19,7 @@ import flowchem.components.devices
 DEVICE_MODULES = [
     flowchem.components.devices,
     flowchem.components.stdlib,
-    flowchem.components.reactors,
+    flowchem.components.assemblies,
 ]
 
 
@@ -45,7 +45,7 @@ def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
 
 
 def parse_device_section(devices: Dict, graph: DeviceGraph):
-    """ Parse the devices' section of the graph config """
+    """Parse the devices' section of the graph config"""
 
     # Device mapper needed for device instantiation
     device_mapper = get_device_class_mapper(DEVICE_MODULES)
@@ -60,21 +60,21 @@ def parse_device_section(devices: Dict, graph: DeviceGraph):
             ].pop()
         except IndexError as e:
             logger.exception(f"Invalid device configuration: {node_config}")
-            raise InvalidConfiguration(f"Invalid device configuration: {node_config}") from e
+            raise InvalidConfiguration(
+                f"Invalid device configuration: {node_config}"
+            ) from e
 
         # Object type and config
         obj_type = device_mapper[device_class]
         device_config = node_config[device_class]
 
         # Create device object and add it to the graph
-        device = DeviceNode(
-            device_name, device_config, obj_type
-        ).device
+        device = DeviceNode(device_name, device_config, obj_type).device
         graph.add_device(device)
 
 
 def parse_physical_connections(connections: Dict, graph: DeviceGraph):
-    """ Parse physical connections from the graph config """
+    """Parse physical connections from the graph config"""
     for edge in connections:
         if "Tube" in edge:
             _parse_tube_connection(edge["Tube"], graph)
@@ -98,23 +98,27 @@ def _parse_tube_connection(tube_config, graph: DeviceGraph):
     # Create logic connections for newly created tube
     inlet = {
         "Interface": {
-            "from": dict(device=tube_config["from"]["device"],
-                         position=tube_config["from"].get("position", 0)),
+            "from": dict(
+                device=tube_config["from"]["device"],
+                position=tube_config["from"].get("position", 0),
+            ),
             "to": dict(device=tube.name),
         }
     }
     outlet = {
         "Interface": {
             "from": dict(device=tube.name),
-            "to": dict(device=tube_config["to"]["device"],
-                       position=tube_config["to"].get("position", 0)),
+            "to": dict(
+                device=tube_config["to"]["device"],
+                position=tube_config["to"].get("position", 0),
+            ),
         }
     }
     parse_logical_connections([inlet, outlet], graph)
 
 
 def parse_logical_connections(connections, graph: DeviceGraph):
-    """ Parse logical connections from the graph config """
+    """Parse logical connections from the graph config"""
     for edge in connections:
         if "Interface" in edge:
             _parse_interface_connection(edge["Interface"], graph)
@@ -123,15 +127,17 @@ def parse_logical_connections(connections, graph: DeviceGraph):
 
 
 def _parse_interface_connection(iface_config, graph: DeviceGraph):
-    """ Parse a dict containing the Tube connection and returns the Connection """
-    graph.add_connection(origin=iface_config["from"]["device"],
-                         destination=iface_config["to"]["device"],
-                         origin_port=iface_config["from"].get("position", None),
-                         destination_port=iface_config["to"].get("position", None))
+    """Parse a dict containing the Tube connection and returns the Connection"""
+    graph.add_connection(
+        origin=iface_config["from"]["device"],
+        destination=iface_config["to"]["device"],
+        origin_port=iface_config["from"].get("position", None),
+        destination_port=iface_config["to"].get("position", None),
+    )
 
 
 def parse_graph_config(graph_config: Dict, name: str = None) -> DeviceGraph:
-    """ Parse a graph config and returns a DeviceGraph object. """
+    """Parse a graph config and returns a DeviceGraph object."""
 
     # Validate graph
     validate_graph(graph_config)
@@ -154,7 +160,7 @@ def parse_graph_config(graph_config: Dict, name: str = None) -> DeviceGraph:
 
 
 def parse_graph_file(file: Union[str, Path]):
-    """ Parse a graph config file and returns a DeviceGraph object. """
+    """Parse a graph config file and returns a DeviceGraph object."""
     file_path = Path(file)
     name = file_path.stem
 

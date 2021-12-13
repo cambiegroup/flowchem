@@ -117,7 +117,7 @@ class ClarityInterface:
 
     def load_file(self, path_to_file: str):
         """has to be done to open project, then method. Take care to select 'Send Method to Instrument' option in Method
-         Sending Options dialog in System Configuration."""
+        Sending Options dialog in System Configuration."""
         self.execute_command(f"i={self.instrument} {path_to_file}")
         sleep(10)
 
@@ -128,7 +128,7 @@ class ClarityInterface:
 
     def run(self):
         """Runs the instrument. Care should be taken to activate automatic data export on HPLC. (can be done via command,
-         but that only makes it more complicated). Takes at least 2 sec until run starts"""
+        but that only makes it more complicated). Takes at least 2 sec until run starts"""
         self.execute_command(f"run={self.instrument}")
 
     def exit(self):
@@ -155,7 +155,7 @@ class MessageSender:
 
 
 class ClarityExecutioner:
-    """ This needs to run on the computer having claritychrom installed, except for one uses the same PC. However,
+    """This needs to run on the computer having claritychrom installed, except for one uses the same PC. However,
     going via socket and localhost would also work, but seems a bit cumbersome.
     open up server socket. Everything coming in will be prepended with claritychrom.exe (if it is not already)"""
 

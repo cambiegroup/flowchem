@@ -7,7 +7,7 @@ from warnings import warn
 from loguru import logger
 
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import ActiveComponent
+from flowchem.components.properties import ActiveComponent
 
 if TYPE_CHECKING:
     from flowchem import Experiment

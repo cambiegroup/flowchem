@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Union
 
 from loguru import logger
 
-from flowchem.components.stdlib import ActiveComponent, Sensor
+from flowchem.components.properties import ActiveComponent, Sensor
 from flowchem.exceptions import ProtocolCancelled
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ Datapoint = namedtuple("Datapoint", ["data", "timestamp", "experiment_elapsed_ti
 
 
 async def handle_exception(tasks_to_cancel):
-    """ Called upon exception in main loop. """
+    """Called upon exception in main loop."""
     logger.error("Protocol execution is stopping NOW!")
     for task in tasks_to_cancel:
         task.cancel()
@@ -60,7 +60,9 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
             # For each component get the relevant coroutines
             for component in components:
                 # Find out when each component's monitoring should end
-                procedures: Iterable = experiment._compiled_protocol[component]  # type:ignore
+                procedures: Iterable = experiment._compiled_protocol[
+                    component
+                ]  # type:ignore
                 end_times: List[float] = [p["time"] for p in procedures]
                 end_time: float = max(end_times)  # we only want the last end time
                 logger.trace(f"Calculated end time for {component} as {end_time}s")
@@ -74,7 +76,9 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                             dry_run=dry_run,
                             strict=strict,
                         )
-                        for procedure in experiment._compiled_protocol[component]  # type:ignore
+                        for procedure in experiment._compiled_protocol[
+                            component
+                        ]  # type:ignore
                     ]
                 )
                 logger.trace(f"Task list generated for {component}.")
@@ -139,7 +143,9 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                 logger.debug("Resetting all components")
 
                 # reset object
-                for component in list(experiment._compiled_protocol.keys()):  # type:ignore
+                for component in list(
+                    experiment._compiled_protocol.keys()
+                ):  # type:ignore
                     # reset object
                     logger.debug(f"Resetting {component} to base state")
                     component._update_from_params(component._base_state)
@@ -225,7 +231,9 @@ async def _monitor(
 
 
 async def end_loop(experiment: "Experiment"):
-    await wait(experiment.protocol._inferred_duration, experiment, "End loop")  # type:ignore
+    await wait(
+        experiment.protocol._inferred_duration, experiment, "End loop"
+    )  # type:ignore
     experiment._end_loop = True  # type:ignore
 
 

@@ -1,7 +1,7 @@
 import warnings
 from typing import MutableMapping, Union, Optional
 
-from flowchem.components.stdlib import Component
+from flowchem.components.properties import Component
 from loguru import logger
 from collections import UserDict
 
@@ -9,8 +9,8 @@ ComponentMapping = MutableMapping[Union[str, int], Optional[Component]]
 
 
 class distinctdict(UserDict):
-    """ Dictionary that does not accept duplicate values except for None.
-    From: Expert Python Programming: Become a master in Python by [...], 3rd Edition """
+    """Dictionary that does not accept duplicate values except for None.
+    From: Expert Python Programming: Become a master in Python by [...], 3rd Edition"""
 
     def __setitem__(self, key, value):
         if value is not None and value in self.values():
@@ -59,11 +59,11 @@ class MappedComponentMixin(Component):
 
     @property
     def reversed_mapping(self):
-        """ Return a dictionary of the component's mapping, but with the keys and values swapped. """
+        """Return a dictionary of the component's mapping, but with the keys and values swapped."""
         return {v: k for k, v in self.mapping.items()}
 
     def solve_mapping_values(self, setting):
-        """ Test the values provided for the component mapping and resolve them """
+        """Test the values provided for the component mapping and resolve them"""
         if self.mapping is None:
             raise ValueError(f"{self} requires a mapping. None provided.")
 

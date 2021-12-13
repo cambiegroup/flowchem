@@ -1,6 +1,6 @@
 from typing import Optional
 
-from flowchem.components.stdlib import ActiveComponent
+from flowchem.components.properties import ActiveComponent
 
 
 class Dummy(ActiveComponent):

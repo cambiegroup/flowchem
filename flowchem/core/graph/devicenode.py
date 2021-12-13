@@ -4,7 +4,7 @@ import inspect
 from loguru import logger
 from fastapi import APIRouter
 
-from flowchem.components.stdlib import ActiveComponent
+from flowchem.components.properties import ActiveComponent
 from flowchem import Spinsolve
 from flowchem.core.server.routers import spinsolve_get_router
 

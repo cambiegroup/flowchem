@@ -1,8 +1,7 @@
 import pytest
-from flowchem.components.stdlib import Component, Tube, Vessel
+from flowchem.components.properties import Component
 from flowchem import DeviceGraph
 a, b, c, d = [Component() for _ in range(4)]
-# t = Tube(length="1 foot", ID="1 in", OD="2 in", material="PVC")
 
 
 @pytest.fixture

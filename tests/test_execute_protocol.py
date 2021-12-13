@@ -1,5 +1,6 @@
 
-from flowchem.components.stdlib import DummyPump, DummySensor, Vessel, BrokenDummySensor, Tube
+from flowchem.components.dummy import DummyPump, DummySensor, BrokenDummySensor
+from flowchem.components.stdlib import Vessel, Tube
 from flowchem import Protocol, DeviceGraph
 
 # create components
