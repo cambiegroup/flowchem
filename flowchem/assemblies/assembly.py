@@ -1,4 +1,4 @@
-from typing import List, Tuple, Sequence
+from typing import Tuple, Sequence
 
 from components.properties import MappedComponentMixin
 from flowchem.core.graph import DeviceGraph
