@@ -1,4 +1,4 @@
-from typing import Union, Optional, Mapping, MutableMapping, List, Dict, Any, Iterable
+from typing import Union, Optional, MutableMapping, List, Dict, Any, Iterable
 
 import yaml
 import json

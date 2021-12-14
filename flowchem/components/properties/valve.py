@@ -1,9 +1,8 @@
 from abc import ABC
-from typing import MutableMapping, Optional, Union, Dict, Any, Set
+from typing import Optional, Union, Dict, Any, Set
 
 from flowchem.components.properties import (
     ActiveComponent,
-    Component,
     MappedComponentMixin,
 )
 

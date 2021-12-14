@@ -1,7 +1,6 @@
-from typing import Set
+from typing import Optional
 
 from flowchem.components.properties import Component
-from loguru import logger
 
 
 class MappedComponentMixin(Component):
@@ -11,7 +10,7 @@ class MappedComponentMixin(Component):
     All components with mapping should derive from this, both active (e.g. valves) and passive (reactors).
 
     The mapping has to be provided as follows (e.g. w/ dict):
-    - self.mapping = {'mapped_position': 'component_name'}
+    - self.mapping = {'position_name_1', 'position_name_2'}
     where 'mapped_position' can be an int (e.g. multipos. valves) or a string (e.g. 'inject', 'load') for 2-pos valves.
     Values (i.e. components) should be unique, this intrinsically true as the same tubing cannot be connected to two
     different ports, and tubing should be added as node in the graph (thus being a component) anyway.
@@ -30,8 +29,8 @@ class MappedComponentMixin(Component):
     - `name`: The name of the component.
 
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, name: Optional[str] = None):
+        super().__init__(name=name)
         self.mapping = set()
 
     def _validate(self, dry_run):

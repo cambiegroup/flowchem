@@ -1,10 +1,10 @@
 from abc import ABC
 from typing import Optional
 
-from flowchem.components.properties import Valve
+from components.properties import MappedComponentMixin, ActiveComponent
 
 
-class InjectionValve(Valve, ABC):
+class InjectionValve(MappedComponentMixin, ActiveComponent, ABC):
     """
     A generic injection valve, i.e. a valve with positions 'inject' and 'load'.
     """
@@ -13,11 +13,12 @@ class InjectionValve(Valve, ABC):
         self,
         name: Optional[str] = None,
     ):
-        # Ensure that the mapping is a mapping with 'load' and 'ínject' positions
-        mapping = {"inject", "load"}
+        # Ensure that the mapping is a mapping with 'load' and 'inject' positions
+        self.mapping = {"inject", "load"}
+        self.setting = "load"
 
         # Call Valve init
-        super().__init__(mapping=mapping, name=name)
+        super().__init__(name=name)
 
         # Ensure base state is loading.
         self._base_state = {"setting": "load"}
