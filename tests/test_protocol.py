@@ -6,7 +6,7 @@ import pytest
 from flowchem import DeviceGraph, Protocol
 from flowchem.components.properties import Valve, Component
 from flowchem.components.dummy import Dummy
-from flowchem.components.stdlib import Pump, Tube, Vessel
+from flowchem.components.stdlib import Pump, Vessel
 
 
 @pytest.fixture
@@ -95,21 +95,25 @@ def test_add(device_graph):
         P.add([device_graph["pump"],  device_graph["pump"]], rate="10 mL/min", start="5 min", stop="4 min")
 
 
-# def test_add_dummy():
-#     A = Apparatus()
-#     dummy = Dummy(name="dummy")
-#     A.add(dummy, Vessel(), tube)
-#     P = Protocol(A)
-#     with pytest.raises(ValueError):
-#         P.add(dummy, active=1)  # should be a bool!
-#
-#
-# def test_add_valve():
-#     A = Apparatus()
+def test_add_dummy(device_graph):
+    dummy = Dummy(name="dummy")
+    device_graph.add_connection(dummy, "pump")
+    P = Protocol(device_graph)
+    with pytest.raises(ValueError):
+        P.add(dummy, active=1)  # should be a bool!
+
+
+# def test_add_valve(device_graph):
 #     valve = Valve(port={1, 2})
-#     bad_valve = Valve(mapping={1, 2})
-#     A.add([pump1, pump2], [valve, bad_valve], tube)
-#     P = Protocol(A)
+#     bad_valve = Valve(port={1, 2})
+#     pump1 = Pump("pump1")
+#     pump2 = Pump("pump2")
+#
+#     device_graph.add_connection(valve, "pump", 2)
+#     device_graph.add_connection(valve, pump1, 1)
+#     device_graph.add_connection(bad_valve, "pump", 1)
+#     device_graph.add_connection(bad_valve, pump2, 2)
+#     P = Protocol(device_graph)
 #
 #     expected = [dict(start=0, stop=1, component=valve, params={"setting": 1})]
 #
@@ -132,8 +136,8 @@ def test_add(device_graph):
 #
 #     with pytest.raises(ValueError):
 #         P.add(bad_valve, setting=3, duration="1 sec")
-#
-#
+
+
 # def test_compile():
 #     P = Protocol(A)
 #     P.add([pump1, pump2], rate="10 mL/min", duration="5 min")

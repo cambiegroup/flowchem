@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence, TYPE_CHECKING, List
+from typing import Tuple, Sequence, TYPE_CHECKING
 
 from flowchem.components.properties import MultiportComponentMixin
 from flowchem.components.properties import Component
