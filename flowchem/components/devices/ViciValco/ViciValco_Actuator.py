@@ -208,7 +208,7 @@ class ViciValco(InjectionValve):
         # The valve name is used for logs and error messages.
         self.name = f"Valve {self.valve_io.name}:{address}" if name is None else name
 
-        super().__init__(None, name)
+        super().__init__(name)
 
         # valve address is the valve sequence number if in chain. Count starts at 1, default.
         self.address = int(address)

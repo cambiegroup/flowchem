@@ -106,7 +106,7 @@ def test_add(device_graph):
 #
 # def test_add_valve():
 #     A = Apparatus()
-#     valve = Valve(mapping={1, 2})
+#     valve = Valve(port={1, 2})
 #     bad_valve = Valve(mapping={1, 2})
 #     A.add([pump1, pump2], [valve, bad_valve], tube)
 #     P = Protocol(A)

@@ -1,14 +1,15 @@
-from typing import Tuple, Sequence
+from typing import Tuple, Sequence, TYPE_CHECKING
+from loguru import logger
 
-from components.properties import MappedComponentMixin
-from flowchem.core.graph import DeviceGraph
+from components.properties import MultiportComponentMixin
 from flowchem.components.properties import Component
 
+if TYPE_CHECKING:
+    from flowchem.core.graph import DeviceGraph
 
-class Assembly(MappedComponentMixin, Component):
-    """
-    A class representing a collection of components.
-    """
+
+class Assembly(MultiportComponentMixin, Component):
+    """ A class representing a collection of components. """
     nodes = Sequence[Component]
     edges = Sequence[Tuple[Component, Component]]
 
@@ -19,7 +20,7 @@ class Assembly(MappedComponentMixin, Component):
                 return node
         raise ValueError(f"No component named {name} in {self}")
 
-    def _explode(self, graph: DeviceGraph):
+    def explode(self, graph: "DeviceGraph"):
         """
         Explode the assembly into its components in the provided graph.
         The graph must already include the assembly as a node with all the connections defined.
@@ -30,6 +31,13 @@ class Assembly(MappedComponentMixin, Component):
         # Convert edges to self into edges to self's components.
         for from_component, to_component, attributes in graph.graph.in_edges(self, data=True):
             assert to_component is self, "Getting the edges pointing to the assembly."
+
+            # If unspecified, the connection is assumed to all the assembly subcomponents.
+            # This should only happen for logical connections (e.g. temp control).
+            if attributes["to_port"] is None:
+                for to_component in self.nodes:
+                    graph.graph.add_edge(from_component, to_component)
+                continue
 
             # New destination is the component with name matching the edge port on the assembly
             new_to_component = self._subcomponent_by_name(attributes["to_port"])

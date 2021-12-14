@@ -15,7 +15,7 @@ from IPython.display import Code
 from flowchem.units import flowchem_ureg
 from flowchem.components.properties import (
     ActiveComponent,
-    MappedComponentMixin,
+    MultiportComponentMixin,
     TempControl,
 )
 from flowchem.core.graph.devicegraph import DeviceGraph
@@ -150,7 +150,7 @@ class Protocol:
             )
 
         # check mapping (valve, port, etc.)
-        if isinstance(component, MappedComponentMixin):
+        if isinstance(component, MultiportComponentMixin):
             kwargs["setting"] = component.solve_mapping_values(kwargs["setting"])
 
         # make sure the component and keywords are valid
@@ -404,7 +404,7 @@ class Protocol:
 
                 # show what the valve is actually connecting to
                 if (
-                    isinstance(component, MappedComponentMixin)
+                    isinstance(component, MultiportComponentMixin)
                     and "setting" in procedure.keys()
                 ):
                     procedure["mapped component"] = self.graph.component_from_origin_and_port(component,

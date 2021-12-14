@@ -2,15 +2,16 @@
 from typing import Optional
 
 from components.stdlib import Channel, YMixer
-from flowchem.components.properties import Component, MappedComponentMixin
+from flowchem.assemblies import Assembly
+from flowchem.components.properties import MultiportComponentMixin
 
 
-class LTF_HTM_ST_3_1(MappedComponentMixin, Component):
+class LTF_HTM_ST_3_1(MultiportComponentMixin, Assembly):
     """ An LTF HTM ST 3 1 reactor. """
 
     def __init__(self, name: Optional[str] = None):
         super().__init__(name=name)
-        self.mapping = {"INLET_1", "INLET_2", "QUENCHER", "OUTLET"}
+        self.port = {"INLET_1", "INLET_2", "QUENCHER", "OUTLET"}
 
         inlet1 = Channel(name="INLET_1", length="10 mm", volume="8 ul", material="glass")
         inlet2 = Channel(name="INLET_2", length="10 mm", volume="8 ul", material="glass")

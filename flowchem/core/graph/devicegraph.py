@@ -6,8 +6,9 @@ from typing import Optional, Union, List, Iterable, Any
 import networkx as nx
 
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.components.properties import Component, MappedComponentMixin
+from flowchem.components.properties import Component, MultiportComponentMixin
 from flowchem.components.stdlib import Tube
+from flowchem.assemblies import Assembly
 from flowchem.units import flowchem_ureg
 
 
@@ -40,9 +41,9 @@ class DeviceGraph:
         else:
             self._add_device(device)
 
-    def _add_device(self, device: Component):
+    def _add_device(self, device: Union[Component, Assembly]):
         """Adds a single device to the graph"""
-        assert isinstance(device, Component), "Device must be a Component!"
+        assert isinstance(device, (Component, Assembly)), "Device must be a Component or a component assembly!"
         self.graph.add_node(device)
         logger.debug(f"Added device <{device.name}> to the device graph {self.name}")
 
@@ -77,12 +78,13 @@ class DeviceGraph:
 
         # If ports are specified, ensure the values are valid with the respective component
         if origin_port is not None:
-            assert isinstance(origin, MappedComponentMixin), "Only MappedComponents have ports!"
-            assert origin_port in origin.mapping, "The port specified was not found!"
+            assert isinstance(origin, MultiportComponentMixin), "Only MappedComponents have ports!"
+            assert origin_port in origin.port, "The port specified was not found!"
 
         if destination_port is not None:
-            assert isinstance(destination, MappedComponentMixin), "Only MappedComponents have ports!"
-            assert destination_port in destination.mapping, "The port specified was not found!"
+            assert isinstance(destination, MultiportComponentMixin), "Only MappedComponents have ports!"
+            assert destination_port in destination.port, f"The port {destination_port} was not found in {destination}" \
+                                                         f"[ports available are: {destination.port}]!"
 
         # Add the connection
         self.graph.add_edge(origin, destination, from_port=origin_port, to_port=destination_port)
@@ -132,7 +134,7 @@ class DeviceGraph:
         """ Returns the component that is connected to the origin component in the port provided. """
 
         assert origin in self, "The origin component is not part of the graph!"
-        assert isinstance(origin, MappedComponentMixin), "Only MappedComponents have ports!"
+        assert isinstance(origin, MultiportComponentMixin), "Only MappedComponents have ports!"
 
         for _, to_component, data in self.graph.out_edges(origin, data=True):
             if data["from_port"] == port:
@@ -146,9 +148,12 @@ class DeviceGraph:
         nx.draw(self.graph, with_labels=True)
         plt.show()
 
+    @logger.catch(reraise=True)
     def explode_all(self):
         """Explode all devices in the graph"""
-        for device in self.graph.nodes:
+        # Copy list of nodes to prevent change during iteration
+        original_nodes = list(self.graph.nodes)
+        for device in original_nodes:
             if hasattr(device, "explode"):
                 logger.debug(f"Exploding {device.name}")
                 device.explode(self)
@@ -162,7 +167,7 @@ class DeviceGraph:
             return False
 
         # Check validity of mappings in mapped components
-        for mapped_component in self[MappedComponentMixin]:
+        for mapped_component in self[MultiportComponentMixin]:
 
             # ensure that component's mapping partners are part of the DeviceGraph
             for component in mapped_component.mapping.values():
@@ -212,8 +217,8 @@ class DeviceGraph:
             from_component = next(self.graph.predecessors(tube))
             to_component = next(self.graph.successors(tube))
 
+            # Draw a line after the last tube
             end_section = True if tube is last_tube else False
-            print(end_section)
 
             tubing_table.add_row(
                 from_component.name,
@@ -245,8 +250,11 @@ class DeviceGraph:
 
 
 if __name__ == "__main__":
-    from .parser import parse_graph_file
+    from flowchem.core.graph.parser import parse_graph_file
     graph = parse_graph_file("owen_config2.yml")
+    graph.summarize()
+
+    graph.explode_all()
     graph.summarize()
 
     # from flowchem import Protocol

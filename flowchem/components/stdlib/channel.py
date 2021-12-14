@@ -1,7 +1,8 @@
+from flowchem.components.properties import Component
 from flowchem.units import flowchem_ureg
 
 
-class Channel:
+class Channel(Component):
     """
     A reaction channel.
 

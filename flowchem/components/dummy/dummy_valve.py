@@ -13,19 +13,14 @@ class DummyValve(Valve):
     :::
 
     Arguments:
-    - `mapping`: The mapping from components to their integer port numbers.
+    - `port`: The available port names.
     - `name`: The name of the valve.
-
-    Attributes:
-    - `mapping`: The mapping from components to their integer port numbers.
-    - `name`: The name of the valve.
-    - `setting`: The position of the valve as an int (mapped via `mapping`).
     """
 
-    def __init__(self, name: Optional[str] = None, mapping: set = None):
-        if mapping is None:
-            mapping = {"position_1", "position_2", "position_3"}
-        super().__init__(name=name, mapping=mapping)
+    def __init__(self, name: Optional[str] = None, port: set = None):
+        if port is None:
+            port = {"position_1", "position_2", "position_3"}
+        super().__init__(name=name, port=port)
 
     async def _update(self) -> None:
-        logger.trace(f"Switching {self.name} to position {self.setting}")
+        logger.trace(f"Switching {self.name} to port {self.setting}")
