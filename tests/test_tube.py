@@ -16,6 +16,6 @@ def test_length_units():
 
 def test_repr():
     assert (
-        str(Tube(length="5 cm", ID="1 cm", OD="2 cm", material="boyfriend material"))
+        repr(Tube(length="5 cm", ID="1 cm", OD="2 cm", material="boyfriend material"))
         == "Tube of length 5 centimeter, ID 1 centimeter, OD 2 centimeter"
     )
