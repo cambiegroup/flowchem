@@ -136,10 +136,7 @@ class Protocol:
         """
 
         # make sure that the component being added is part of the apparatus
-        try:
-            self.graph[component]
-        except KeyError:
-            raise ValueError(f"{component} is not part of the apparatus.")
+        assert component in self.graph, f"{component} must be part of the apparatus."
 
         # don't let users give empty procedures
         if not kwargs:
@@ -149,9 +146,9 @@ class Protocol:
                 "Ensure your call to add() is valid."
             )
 
-        # check mapping (valve, port, etc.)
-        if isinstance(component, MultiportComponentMixin):
-            kwargs["setting"] = component.solve_mapping_values(kwargs["setting"])
+        # If a MultiportComponentMixin component is passed together with a new port position, check validity
+        if isinstance(component, MultiportComponentMixin) and "setting" in kwargs:
+            assert kwargs["setting"] in component.port
 
         # make sure the component and keywords are valid
         self._check_component_kwargs(component, **kwargs)
@@ -407,8 +404,8 @@ class Protocol:
                     isinstance(component, MultiportComponentMixin)
                     and "setting" in procedure.keys()
                 ):
-                    procedure["mapped component"] = self.graph.component_from_origin_and_port(component,
-                                                                                              procedure["setting"])
+                    mapped_component = self.graph.component_from_origin_and_port(component, procedure["setting"])  # type: ignore
+                    procedure["mapped component"] = mapped_component.name
                 # TODO: make this deterministic for color coordination
                 procedure["params"] = json.dumps(procedure["params"])
 

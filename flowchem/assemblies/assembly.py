@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence, TYPE_CHECKING
+from typing import Tuple, Sequence, TYPE_CHECKING, List
 
 from flowchem.components.properties import MultiportComponentMixin
 from flowchem.components.properties import Component
@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 class Assembly(MultiportComponentMixin, Component):
     """ A class representing a collection of components. """
-    nodes = Sequence[Component]
-    edges = Sequence[Tuple[Component, Component]]
+    nodes: Sequence[Component]
+    edges: Sequence[Tuple[Component, Component]]
 
     def _subcomponent_by_name(self, name: str) -> Component:
         """ Returns a component in self.nodes by its name. """

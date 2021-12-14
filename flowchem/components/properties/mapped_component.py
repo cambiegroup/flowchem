@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Set, Union
 
 from flowchem.components.properties import Component
 
@@ -26,7 +26,7 @@ class MultiportComponentMixin(Component):
     """
     def __init__(self, name: Optional[str] = None):
         super().__init__(name=name)
-        self.port = set()
+        self.port: Set[Union[str, int]] = set()
 
     def _validate(self, dry_run):
         if not self.port:
