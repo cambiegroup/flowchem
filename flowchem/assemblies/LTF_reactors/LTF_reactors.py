@@ -1,12 +1,12 @@
 """ LTF reactors """
 from typing import Optional
 
-from components.stdlib import Channel, YMixer
+from flowchem.components.stdlib import Channel, YMixer
 from flowchem.assemblies import Assembly
 from flowchem.components.properties import MultiportComponentMixin
 
 
-class LTF_HTM_ST_3_1(MultiportComponentMixin, Assembly):
+class LTF_HTM_ST_3_1(Assembly):
     """ An LTF HTM ST 3 1 reactor. """
 
     def __init__(self, name: Optional[str] = None):
