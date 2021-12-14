@@ -148,7 +148,6 @@ class DeviceGraph:
         nx.draw(self.graph, with_labels=True)
         plt.show()
 
-    @logger.catch(reraise=True)
     def explode_all(self):
         """Explode all devices in the graph"""
         # Copy list of nodes to prevent change during iteration

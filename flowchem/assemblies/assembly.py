@@ -1,7 +1,6 @@
 from typing import Tuple, Sequence, TYPE_CHECKING
-from loguru import logger
 
-from components.properties import MultiportComponentMixin
+from flowchem.components.properties import MultiportComponentMixin
 from flowchem.components.properties import Component
 
 if TYPE_CHECKING:
