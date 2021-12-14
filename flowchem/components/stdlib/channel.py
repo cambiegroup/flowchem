@@ -13,7 +13,7 @@ class Channel(Component):
 
     """
 
-    channel_counter = 0
+    _id_counter = 0
 
     def __init__(self, length: str, volume: str, material: str, name: str = None):
         """
@@ -24,11 +24,7 @@ class Channel(Component):
 
         self.material = material
 
-        if name is None:
-            Channel.channel_counter += 1
-            self.name = f"Tube_{Channel.channel_counter}"
-        else:
-            self.name = name
+        super().__init__(name)
 
     def __repr__(self):
         return f"Channel of length {self.length} and volume {self.volume}"

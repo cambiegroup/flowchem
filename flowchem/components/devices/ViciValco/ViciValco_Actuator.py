@@ -142,7 +142,6 @@ class ViciValcoValveIO:
         """Reads the valve reply from serial communication"""
         reply_string = ""
         for line in range(lines):
-            a = b""
             a = await self._serial.readline_async()
             reply_string += a.decode("ascii")
 

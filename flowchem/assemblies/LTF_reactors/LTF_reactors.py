@@ -9,6 +9,9 @@ from flowchem.components.properties import MultiportComponentMixin
 class LTF_HTM_ST_3_1(Assembly):
     """ An LTF HTM ST 3 1 reactor. """
 
+    def _validate(self, dry_run):
+        return True
+
     def __init__(self, name: Optional[str] = None):
         super().__init__(name=name)
         self.port = {"INLET_1", "INLET_2", "QUENCHER", "OUTLET"}
