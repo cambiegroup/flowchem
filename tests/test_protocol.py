@@ -59,7 +59,7 @@ def test_add(device_graph):
     assert P.procedures[0] == procedure
 
     P = Protocol(device_graph)
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         P.add(Pump("not in apparatus"), rate="10 mL/min", duration="5 min")
 
     # adding a class, not an instance of it
