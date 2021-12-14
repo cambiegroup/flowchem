@@ -101,7 +101,7 @@ def _parse_tube_connection(tube_config, graph: DeviceGraph):
         "Interface": {
             "from": dict(
                 device=tube_config["from"]["device"],
-                position=tube_config["from"].get("position", 0),
+                port=tube_config["from"].get("port", None),
             ),
             "to": dict(device=tube.name),
         }
@@ -111,7 +111,7 @@ def _parse_tube_connection(tube_config, graph: DeviceGraph):
             "from": dict(device=tube.name),
             "to": dict(
                 device=tube_config["to"]["device"],
-                position=tube_config["to"].get("position", 0),
+                port=tube_config["to"].get("port", None),
             ),
         }
     }
@@ -132,8 +132,8 @@ def _parse_interface_connection(iface_config, graph: DeviceGraph):
     graph.add_connection(
         origin=iface_config["from"]["device"],
         destination=iface_config["to"]["device"],
-        origin_port=iface_config["from"].get("position", None),
-        destination_port=iface_config["to"].get("position", None),
+        origin_port=iface_config["from"].get("port", None),
+        destination_port=iface_config["to"].get("port", None),
     )
 
 

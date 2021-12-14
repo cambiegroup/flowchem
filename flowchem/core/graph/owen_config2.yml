@@ -40,7 +40,7 @@ physical_connections:
             device: donor
         to:
             device: reactor
-            position: 1
+            port: INLET_1
 
         length: 0.1 m
         inner-diameter: 0.760 mm
@@ -52,7 +52,7 @@ physical_connections:
             device: activator
         to:
             device: reactor
-            position: 2
+            port: INLET_2
 
         length: 0.1 m
         inner-diameter: 0.760 mm
@@ -64,7 +64,7 @@ physical_connections:
               device: quencher
           to:
               device: reactor
-              position: 3
+              port: QUENCHER
 
           length: 0.1 m
           inner-diameter: 0.760 mm
@@ -74,7 +74,7 @@ physical_connections:
     - Tube:
           from:
               device: reactor
-              position: 4
+              port: OUTLET
           to:
               device: sample_loop
 

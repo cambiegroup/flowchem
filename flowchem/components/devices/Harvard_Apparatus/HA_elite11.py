@@ -522,7 +522,7 @@ class Elite11InfuseOnly(Pump):
     async def set_syringe_volume(self, volume_w_units: str = None):
         """Sets the syringe volume in ml.
 
-        :param volume: the volume of the syringe.
+        :param volume_w_units: the volume of the syringe.
         """
         volume = flowchem_ureg(volume_w_units)
         await self._send_command_and_read_reply(
@@ -595,7 +595,7 @@ class Elite11InfuseOnly(Pump):
 
     async def clear_volumes(self):
         """Set all pump volumes to 0"""
-        await self.set_target_volume(0)
+        await self.set_target_volume('0 ml')
         await self.clear_infused_volume()
 
     async def get_force(self):
@@ -815,7 +815,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
 
     async def clear_volumes(self):
         """Set all pump volumes to 0"""
-        await self.set_target_volume(0)
+        await self.set_target_volume("0 ml")
         await self.clear_infused_volume()
         await self.clear_withdrawn_volume()
 

@@ -1,10 +1,11 @@
 from math import pi
 from loguru import logger
 
+from flowchem.components.properties import Component
 from flowchem.units import flowchem_ureg
 
 
-class Tube:
+class Tube(Component):
     """
     A tube.
 
@@ -64,6 +65,7 @@ class Tube:
 
         Tube.tube_counter += 1
         self.name = f"Tube_{Tube.tube_counter}"
+        super(Tube, self).__init__(name=self.name)
 
     def __repr__(self):
         return f"Tube of length {self.length}, ID {self.ID}, OD {self.OD}"

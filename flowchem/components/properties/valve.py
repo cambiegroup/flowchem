@@ -3,41 +3,36 @@ from typing import Optional, Union, Dict, Any, Set
 
 from flowchem.components.properties import (
     ActiveComponent,
-    MappedComponentMixin,
+    MultiportComponentMixin,
 )
 
 
-class Valve(MappedComponentMixin, ActiveComponent, ABC):
+class Valve(MultiportComponentMixin, ActiveComponent, ABC):
     """
     A generic valve.
 
     Arguments:
-    - `mapping`: The mapping from components to their integer port numbers.
+    - `port`: The port numbers.
     - `name`: The name of the valve.
-
-    Attributes:
-    - `mapping`: The mapping from position name/numbers to components.
-    - `name`: The name of the valve.
-    - `setting`: The position of the valve as an int or string (mapped via `mapping`).
     """
 
     def __init__(
         self,
-        mapping: Set[Union[int, str]],
+        port: Set[Union[int, str]],
         name: Optional[str] = None,
     ):
         super().__init__(name=name)
 
-        self.mapping = mapping
-        # Base state is first position or 1 if no mapping is provided
-        if mapping:
-            self.setting = next(iter(mapping))
+        self.port = port
+        # Base state is first port or 1 if no port is provided
+        if port:
+            self.setting = next(iter(port))
         else:
-            self.setting = "1"
+            self.setting = 1
 
         self._base_state: Dict[str, Any] = {"setting": 1}
 
     def _validate(self, dry_run):
-        if not self.mapping:
-            raise ValueError(f"{self} requires a mapping. None provided.")
+        if not self.port:
+            raise ValueError(f"The port names for valve {self} are not valid.")
         return super()._validate(dry_run)

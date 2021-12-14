@@ -46,10 +46,10 @@ class R4Heater:
         configuration = dict(R4Heater.DEFAULT_CONFIG, **config)
         try:
             self._serial = aioserial.AioSerial(**configuration)
-        except aioserial.SerialException as e:
+        except aioserial.SerialException as ex:
             raise InvalidConfiguration(
                 f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
-            ) from e
+            ) from ex
 
     async def _write(self, command: str):
         """Writes a command to the pump"""
@@ -98,11 +98,11 @@ class R4Heater:
                 ret_code = await self.write_and_read_reply(
                     VapourtecCommand.TEMP.set_argument(channel)
                 )
-            except InvalidConfiguration as e:
+            except InvalidConfiguration as ex:
                 ret_code = "N"
                 failure += 1
                 if failure > 3:
-                    raise e
+                    raise ex
             else:
                 failure = 0
 
@@ -147,9 +147,9 @@ if __name__ == "__main__":
     async def main():
         """test function"""
         # noinspection PyArgumentEqualDefault
-        await heat.set_temperature(0, 30, wait=False)
+        await heat.set_temperature(0, "30 °C", wait=False)
         print("not waiting - default behaviour.")
-        await heat.set_temperature(0, 30, wait=True)
+        await heat.set_temperature(0, "30 °C", wait=True)
         print("actually I waited")
 
     asyncio.run(main())

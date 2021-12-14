@@ -1,10 +1,11 @@
+""" Represent a generic injection valve. """
 from abc import ABC
 from typing import Optional
 
-from components.properties import MappedComponentMixin, ActiveComponent
+from flowchem.components.properties import MultiportComponentMixin, ActiveComponent
 
 
-class InjectionValve(MappedComponentMixin, ActiveComponent, ABC):
+class InjectionValve(MultiportComponentMixin, ActiveComponent, ABC):
     """
     A generic injection valve, i.e. a valve with positions 'inject' and 'load'.
     """
@@ -13,8 +14,8 @@ class InjectionValve(MappedComponentMixin, ActiveComponent, ABC):
         self,
         name: Optional[str] = None,
     ):
-        # Ensure that the mapping is a mapping with 'load' and 'inject' positions
-        self.mapping = {"inject", "load"}
+        # For injection valves, the positions are 'load' and 'inject'
+        self.position = {"inject", "load"}
         self.setting = "load"
 
         # Call Valve init
@@ -23,3 +24,4 @@ class InjectionValve(MappedComponentMixin, ActiveComponent, ABC):
         # Ensure base state is loading.
         self._base_state = {"setting": "load"}
 
+        # TODO add injection loop volume
