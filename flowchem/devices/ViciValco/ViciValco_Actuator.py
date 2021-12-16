@@ -172,7 +172,7 @@ class ViciValcoValveIO:
         self.reset_buffer()
         self._serial.write(command.compile())
         x = self._serial.readline()
-        return x
+        return x.decode().strip("\r")
 
     @property
     def name(self) -> str:
@@ -299,6 +299,36 @@ class ViciValco:
         valve_by_name_cw = ViciProtocolCommandTemplate(command="GO")
         self.send_command_and_read_reply_sync(valve_by_name_cw, command_value=str(target_position), lines=0)
         self.log.debug(f"{self.name} valve position set to {target_position}")
+
+    def set_switch_delay_sync(self, delay: float):
+        """ Set valve toggle delay - valve
+            delay in ms
+        """
+        try:
+            assert 0 <= delay <= 65535
+        except AssertionError:
+            raise InvalidConfiguration(f"Please set delay Time between 0 and 65535 ms, you set {delay} ms")
+        valve_by_name_cw = ViciProtocolCommandTemplate(command="DT")
+        self.send_command_and_read_reply_sync(valve_by_name_cw, command_value=str(delay), lines=0)
+        self.log.debug(f"{self.name} valve delay set to {delay}")
+
+    def read_switch_delay_sync(self):
+        """ read valve toggle delay - valve
+            delay in ms
+        """
+        valve_by_name_cw = ViciProtocolCommandTemplate(command="DT")
+        reply = self.send_command_and_read_reply_sync(valve_by_name_cw, command_value='', lines=1)
+        self.log.info(f"{self.name} valve delay set to {reply}")
+        print(reply)
+
+
+    def switch_valve_for_defined_delay(self):
+        """
+        Toogle the valve for the time defined in set_switch_delay_sync
+        """
+        valve_by_name_cw = ViciProtocolCommandTemplate(command="TT")
+        self.send_command_and_read_reply_sync(valve_by_name_cw, command_value= '', lines=0)
+        self.log.debug(f"{self.name} valve will switch for defined amount of time")
 
     async def set_valve_position(self, target_position: int):
         """ Set valve position. Switches really quick and doesn't reply, so waiting does not make sense
