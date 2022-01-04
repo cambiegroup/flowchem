@@ -29,7 +29,7 @@ class MansonPowerSupply:
                 f"Could not connect to power supply on port <{port}>"
             ) from e
 
-    def initialize(self):
+    async def initialize(self):
         """Ensure the connection w/ device is working."""
         model_info = await self.get_info()
         if model_info == "":
