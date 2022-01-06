@@ -536,11 +536,13 @@ class ML600:
         pass
 
     # convenience function
-    def refill_syringe(self, volume: float = 0, flow_rate: float = 0, invert_input_output = False):
+    def refill_syringe(self, volume: float = None, flow_rate: float = 0, invert_input_output = False):
         self.log.debug('refilling syringe')
         # inverting input and output allows for initialization and correct finding of the 0 position when the desired
         # path has backpressure. additionally, solution that would normally go to waste (via reactor) is put back to
         # storage
+        if not volume:
+            volume = self.syringe_volume
         if invert_input_output:
             self.valve_position=self.ValvePositionName.OUTPUT
         else:
