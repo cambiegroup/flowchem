@@ -536,15 +536,27 @@ class ML600:
         pass
 
     # convenience function
-    def refill_syringe(self, volume: float, flow_rate: float):
+    def refill_syringe(self, volume: float = 0, flow_rate: float = 0, invert_input_output = False):
         self.log.debug('refilling syringe')
-        self.valve_position=self.ValvePositionName.INPUT
+        # inverting input and output allows for initialization and correct finding of the 0 position when the desired
+        # path has backpressure. additionally, solution that would normally go to waste (via reactor) is put back to
+        # storage
+        if invert_input_output:
+            self.valve_position=self.ValvePositionName.OUTPUT
+        else:
+            self.valve_position=self.ValvePositionName.INPUT
         self.to_volume(volume, self.flowrate_to_seconds_per_stroke(flow_rate))
 
     # convenience function
-    def deliver_from_syringe(self, flow_rate: float, volume: float = 0):
+    def deliver_from_syringe(self, flow_rate: float, volume: float = 0, invert_input_output = False):
+        # inverting input and output allows for initialization and correct finding of the 0 position when the desired
+        # path has backpressure. additionally, solution that would normally go to waste (via reactor) is put back to
+        # storage
         self.log.debug('pumping from syringe')
-        self.valve_position=self.ValvePositionName.OUTPUT
+        if invert_input_output:
+            self.valve_position=self.ValvePositionName.INPUT
+        else:
+            self.valve_position=self.ValvePositionName.OUTPUT
         self.to_volume(volume, self.flowrate_to_seconds_per_stroke(flow_rate))
 
 
