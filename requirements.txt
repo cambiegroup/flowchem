@@ -219,7 +219,7 @@ parso==0.8.3
     # via jedi
 pickleshare==0.7.5
     # via ipython
-pillow==8.4.0
+pillow==9.0.0
     # via
     #   bokeh
     #   matplotlib
