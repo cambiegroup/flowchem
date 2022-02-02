@@ -153,6 +153,8 @@ class DeviceGraph:
         # Copy list of nodes to prevent change during iteration
         original_nodes = list(self.graph.nodes)
         for device in original_nodes:
+            # if a device has an explode method it means it is a device group.
+            # Note: this naive approach would fail on nested groups
             if hasattr(device, "explode"):
                 logger.debug(f"Exploding {device.name}")
                 device.explode(self)

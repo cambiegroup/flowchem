@@ -29,13 +29,11 @@ class Assembly(MultiportComponentMixin, Component):
 
         # Convert edges to self into edges to self's components.
         for from_component, to_component, attributes in graph.graph.in_edges(self, data=True):
-            assert to_component is self, "Getting the edges pointing to the assembly."
-
-            # If unspecified, the connection is assumed to all the assembly subcomponents.
+            # If port attribute is unspecified, the connection is assumed to all the assembly's subcomponents.
             # This should only happen for logical connections (e.g. temp control).
             if attributes["to_port"] is None:
-                for to_component in self.nodes:
-                    graph.graph.add_edge(from_component, to_component)
+                for subcomponent in self.nodes:
+                    graph.graph.add_edge(from_component, subcomponent)
                 continue
 
             # New destination is the component with name matching the edge port on the assembly
