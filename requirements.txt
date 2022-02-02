@@ -110,7 +110,7 @@ ipykernel==6.6.0
     # via
     #   ipywidgets
     #   notebook
-ipython==7.30.1
+ipython==7.31.1
     # via
     #   flowchem (setup.py)
     #   ipykernel
