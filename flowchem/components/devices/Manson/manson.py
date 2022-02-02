@@ -41,20 +41,23 @@ class MansonPowerSupply:
 
     @staticmethod
     def _format_voltage(voltage_value: str) -> str:
-        """ Format a voltage in the format the power supply understands """
+        """Format a voltage in the format the power supply understands"""
 
         voltage = flowchem_ureg(voltage_value)
         # Zero fill by left pad with zeros, up to three digits
         return str(voltage.m_as("V") * 10).zfill(3)
 
     async def _format_amperage(self, amperage_value: str) -> str:
-        """ Format a current intensity in the format the power supply understands """
+        """Format a current intensity in the format the power supply understands"""
 
         current = flowchem_ureg(amperage_value)
         multiplier = 100 if await self.get_info() in self.MODEL_ALT_RANGE else 10
         return str(current.m_as("A") * multiplier).zfill(3)
 
-    async def _send_command(self, command: str,) -> str:
+    async def _send_command(
+        self,
+        command: str,
+    ) -> str:
         """Internal function to send command and read reply."""
 
         # Flush buffer
@@ -262,7 +265,7 @@ class MansonPowerSupply:
         return bool(response)
 
     async def set_voltage_and_current(self, voltage: str, current: str):
-        """ Convenience method to set both voltage and current """
+        """Convenience method to set both voltage and current"""
         await self.set_voltage(voltage)
         await self.set_current(current)
 

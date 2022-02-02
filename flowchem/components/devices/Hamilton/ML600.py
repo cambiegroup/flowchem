@@ -443,19 +443,19 @@ class ML600:
     def _seconds_per_stroke_to_flowrate(
         self, second_per_stroke: pint.Quantity
     ) -> float:
-        """ The inverse of flowrate_to_seconds_per_stroke(). Only internal use. """
+        """The inverse of flowrate_to_seconds_per_stroke(). Only internal use."""
         flowrate = 1 / (second_per_stroke * self._steps_per_ml)
         return flowrate.to("ml/min")
 
     def _volume_to_step_position(self, volume_w_units: str) -> int:
-        """ Converts a volume to a step position. """
+        """Converts a volume to a step position."""
         # noinspection PyArgumentEqualDefault
         volume = flowchem_ureg(volume_w_units)
         steps = volume * self._steps_per_ml
         return round(steps.m_as("steps")) + self._offset_steps
 
     async def _to_step_position(self, position: int, speed: str = ""):
-        """ Absolute move to step position. """
+        """Absolute move to step position."""
         abs_move_cmd = Protocol1CommandTemplate(command="M", optional_parameter="S")
         return await self.send_command_and_read_reply(
             abs_move_cmd, str(position), self._validate_speed(speed)
@@ -470,7 +470,7 @@ class ML600:
         return str(current_steps / self._steps_per_ml)
 
     async def to_volume(self, target_volume: str, speed: str = ""):
-        """ Absolute move to volume provided. """
+        """Absolute move to volume provided."""
         await self._to_step_position(
             self._volume_to_step_position(target_volume), speed
         )
@@ -574,7 +574,8 @@ class ML600:
         await self.set_valve_position(from_valve, wait_for_movement_end=True)
         # Move up to target volume
         await self.to_volume(
-            str(cur_vol + volume), speed=self.flowrate_to_seconds_per_stroke(flowrate),
+            str(cur_vol + volume),
+            speed=self.flowrate_to_seconds_per_stroke(flowrate),
         )
 
         if wait:
@@ -599,7 +600,8 @@ class ML600:
         await self.set_valve_position(to_valve, wait_for_movement_end=True)
         # Move up to target volume
         await self.to_volume(
-            str(cur_vol - volume), speed=self.flowrate_to_seconds_per_stroke(flowrate),
+            str(cur_vol - volume),
+            speed=self.flowrate_to_seconds_per_stroke(flowrate),
         )
 
         if wait:

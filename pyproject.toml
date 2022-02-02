@@ -4,7 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 testpaths = "tests"
-addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump'"
+asyncio_mode = "auto"
+addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=30"
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",
@@ -13,3 +14,4 @@ markers = [
 
 [tool.mypy]
 ignore_missing_imports = true
+python_version = 3.9

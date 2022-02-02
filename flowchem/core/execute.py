@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Union
 
 from loguru import logger
 
-from flowchem.components.stdlib import ActiveComponent, Sensor
+from flowchem.components.properties import ActiveComponent, Sensor
 from flowchem.exceptions import ProtocolCancelled
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ Datapoint = namedtuple("Datapoint", ["data", "timestamp", "experiment_elapsed_ti
 
 
 async def handle_exception(tasks_to_cancel):
-    """ Called upon exception in main loop. """
+    """Called upon exception in main loop."""
     logger.error("Protocol execution is stopping NOW!")
     for task in tasks_to_cancel:
         task.cancel()

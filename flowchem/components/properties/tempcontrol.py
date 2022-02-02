@@ -1,10 +1,11 @@
+from abc import ABC
 from typing import Optional
 
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import ActiveComponent
+from flowchem.components.properties import ActiveComponent
 
 
-class TempControl(ActiveComponent):
+class TempControl(ActiveComponent, ABC):
     """
     A generic temperature controller.
 
@@ -25,6 +26,3 @@ class TempControl(ActiveComponent):
         self.active = False
 
         self._base_state = dict(temp="0 degC", active=False)
-
-    async def _update(self):
-        raise NotImplementedError

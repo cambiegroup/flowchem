@@ -1,10 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://cambiegroup.github.io/flowchem/flowchem-graph-spec.json", "type": "object",
-  "title": "Flowchem hardware description", "description": "Defines a graph of devices.", "properties": {
-  "version": {
-    "type": "string", "description": "Version of the graph file; flowchem will reject versions it does not understand."
-  }, "devices": {
+  "title": "Flowchem hardware description", "description": "Defines a graph of devices.",
+  "properties": {
+    "version": {
+      "type": "string", "description": "Version of the graph file; flowchem will reject versions it does not understand."
+    },
+    "devices": {
     "id": "#/properties/devices", "type": "object", "description": "Devices, nodes of the graph",
     "uniqueItems": true, "properties": {
       "builtin": {
@@ -15,8 +17,13 @@
         "$ref": "#/definitions/device"
       }
     }, "additionalProperties": false
-  }, "additionalProperties": false
-}, "definitions": {
+  },
+    "physical_connections": {},
+    "logical_connections": {}
+  },
+  "required": ["devices", "physical_connections"],
+  "additionalProperties": false,
+  "definitions": {
   "device": {
     "id": "#/definitions/device", "type": "object", "properties": {
       "parent": {
@@ -65,7 +72,7 @@
 
       }, "VesselChemicals": {
 
-      }
+      }, "DummyPump": {}, "DummySensor": {}
     }, "oneOf": [
       {
         "required": [
@@ -142,6 +149,14 @@
       },  {
         "required": [
           "VesselChemicals"
+        ]
+      },  {
+        "required": [
+          "DummyPump"
+        ]
+      },  {
+        "required": [
+          "DummySensor"
         ]
       }
     ], "additionalProperties": false

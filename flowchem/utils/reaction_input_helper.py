@@ -5,7 +5,7 @@ from flowchem.units import flowchem_ureg
 
 
 def add_flowrate_to_input(reaction: ReactionInput, flowrate_text: str):
-    """ Add a flowrate to a reaction. """
+    """Add a flowrate to a reaction."""
 
     # Parse the flowrate
     flowrate = flowchem_ureg(flowrate_text)

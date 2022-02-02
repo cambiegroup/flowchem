@@ -1,7 +1,8 @@
-from typing import Set, Optional
+""" All devices should inherit from this class. """
+from typing import Optional
 
 
-class Component(object):
+class Component:
     """
     One of the individual, irreducible parts of a flow chemistry setup.
 
@@ -16,7 +17,6 @@ class Component(object):
     """
 
     _id_counter = 0
-    _used_names: Set[str] = set()
 
     def __init__(self, name: Optional[str] = None):
         # name the object, either sequentially or with a given name
@@ -25,7 +25,6 @@ class Component(object):
             self.__class__._id_counter += 1
         else:
             self.name = str(name)
-        self._visualization_shape = "box"
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {self.name}>"

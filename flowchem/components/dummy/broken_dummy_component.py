@@ -1,4 +1,4 @@
-from flowchem.components.stdlib import Dummy
+from flowchem.components.dummy import Dummy
 
 
 class BrokenDummyComponent(Dummy):

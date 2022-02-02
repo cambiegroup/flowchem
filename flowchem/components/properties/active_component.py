@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, MutableMapping, List
 from loguru import logger
 
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import Component
+from flowchem.components.properties import Component
 
 
 class ActiveComponent(Component):
@@ -119,7 +119,7 @@ class ActiveComponent(Component):
                 raise ValueError(f"Received return value {res} from update.")
 
     def validate_procedures(self, procedures: List[MutableMapping]) -> None:
-        """ Given all the procedures the component is involved in, checks them. """
+        """Given all the procedures the component is involved in, checks them."""
         # skip validation if no procedure is given
         if not procedures:
             warnings.warn(

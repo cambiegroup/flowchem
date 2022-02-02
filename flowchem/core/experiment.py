@@ -18,7 +18,7 @@ from bokeh.resources import INLINE
 from IPython import get_ipython
 from IPython.display import display
 
-from flowchem.components.stdlib import ActiveComponent, Sensor
+from flowchem.components.properties import ActiveComponent, Sensor
 from flowchem.core.execute import main
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ class Experiment(object):
     - `dry_run`: Whether the experiment is a dry run and, if so, by what factor it is sped up by.
 
     Attributes:
-    - `apparatus`: The apparatus upon which the experiment is conducted.
+    - `graph`: The DeviceGraph upon which the experiment is conducted.
     - `cancelled`: Whether the experiment is cancelled.
     - `compiled_protocol`: The results of `protocol._compile()`.
     - `data`: A list of `Datapoint` namedtuples from the experiment's sensors.
@@ -51,8 +51,8 @@ class Experiment(object):
 
     def __init__(self, protocol: "Protocol"):
         # args
-        self.apparatus = protocol.apparatus
-        self.protocol = protocol
+        self.graph = protocol.graph
+        self.protocol: Protocol = protocol
 
         # computed values
         self.experiment_id: Optional[str] = None
@@ -74,7 +74,7 @@ class Experiment(object):
         self._created_time_local: str = time.strftime("%Y_%m_%d_%H_%M_%S", _local_time)
         self._charts = {}  # type: ignore
         self._graphs_shown = False
-        self._sensors = self.apparatus[Sensor]
+        self._sensors = self.graph[Sensor]
         self._sensors.reverse()
         self._device_name_to_unit = {c.name: c._unit for c in self._sensors}
         self._sensor_names: List[str] = [s.name for s in self._sensors]
@@ -111,7 +111,7 @@ class Experiment(object):
                     "timestamp": datapoint.timestamp,
                     "experiment_elapsed_time": datapoint.experiment_elapsed_time,
                     "data": datapoint.data,
-                    "unit": self.protocol.apparatus[device]._unit,
+                    "unit": self.protocol.graph[device]._unit,
                 }
             )
             async with aiofiles.open(self._data_file, "a+") as f:
@@ -186,7 +186,7 @@ class Experiment(object):
         return duration
 
     def get_confirmation(self):
-        """ Ensure user input is present before starting procedure. """
+        """Ensure user input is present before starting procedure."""
         confirmation = input("Execute? [y/N]: ").lower()
         if not confirmation or confirmation[0] != "y":
             logger.critical("Aborting execution...")
@@ -288,7 +288,7 @@ class Experiment(object):
         # create a nice, pretty HTML string wth the metadata
         metadata = "<ul>"
         for k, v in {
-            "Apparatus": self.apparatus.name,
+            "Graph": self.graph.name,
             "Protocol": self.protocol.name,
             "Description": self.protocol.description,
             "Start time": time.ctime(self.created_time),

@@ -1,4 +1,4 @@
-from typing import Union, Optional, Mapping, MutableMapping, List, Dict, Any, Iterable
+from typing import Union, Optional, MutableMapping, List, Dict, Any, Iterable
 
 import yaml
 import json
@@ -12,33 +12,30 @@ import pandas as pd
 from IPython import get_ipython
 from IPython.display import Code
 
+from flowchem.components.properties import Component
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import (
+from flowchem.components.properties import (
     ActiveComponent,
+    MultiportComponentMixin,
     TempControl,
-    MappedComponentMixin,
 )
-from flowchem.core.apparatus import Apparatus
+from flowchem.core.graph.devicegraph import DeviceGraph
 from flowchem.core.experiment import Experiment
 
 
-class Protocol(object):
+class Protocol:
     """
-    A set of procedures for an apparatus.
+    A set of procedures for a DeviceGraph.
 
-    A protocol is defined as a list of procedures, atomic steps for the individual active components of an apparatus.
-
-    ::: tip
-    The same `Apparatus` object can create multiple distinct `Protocol` objects.
-    :::
+    A protocol is defined as a list of procedures, atomic steps for the individual active components of a DeviceGraph.
 
     Arguments:
-    - `apparatus`: The apparatus for which the protocol is being defined.
+    - `graph`: The DeviceGraph object for which the protocol is being defined.
     - `name`: The name of the protocol. Defaults to "Protocol_X" where *X* is protocol count.
     - `description`: A longer description of the protocol.
 
     Attributes:
-    - `apparatus`: The apparatus for which the protocol is being defined.
+    - `graph`: The apparatus for which the protocol is being defined.
     - `description`: A longer description of the protocol.
     - `is_executing`: Whether the protocol is executing.
     - `name`: The name of the protocol. Defaults to "Protocol_X" where *X* is protocol count.
@@ -50,20 +47,20 @@ class Protocol(object):
 
     def __init__(
         self,
-        apparatus: Apparatus,
+        graph: DeviceGraph,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
         """See main docstring."""
         # type checking
-        if not isinstance(apparatus, Apparatus):
+        if not isinstance(graph, DeviceGraph):
             raise TypeError(
-                f"Must pass an Apparatus object. Got {type(apparatus)}, "
-                "which is not an instance of flowchem.Apparatus."
+                f"Must pass an Apparatus object. Got {type(graph)}, "
+                "which is not an instance of flowchem.DeviceGraph."
             )
 
         # store the passed args
-        self.apparatus = apparatus
+        self.graph = graph
         self.description = description
 
         # generate the name
@@ -74,8 +71,8 @@ class Protocol(object):
             Protocol._id_counter += 1
 
         # ensure apparatus is valid
-        if not apparatus._validate():
-            raise ValueError("Apparatus is not valid.")
+        if not graph.validate():
+            raise ValueError("DeviceGraph is not valid.")
 
         # default values
         self.procedures: List[
@@ -86,7 +83,7 @@ class Protocol(object):
         return f"<{self.__str__()}>"
 
     def __str__(self):
-        return f"Protocol {self.name} defined over {repr(self.apparatus)}"
+        return f"Protocol {self.name} defined over {repr(self.graph)}"
 
     def _check_component_kwargs(self, component: ActiveComponent, **kwargs) -> None:
         """Checks that the given keyword arguments are valid for a component."""
@@ -140,10 +137,7 @@ class Protocol(object):
         """
 
         # make sure that the component being added is part of the apparatus
-        try:
-            self.apparatus[component]
-        except KeyError:
-            raise ValueError(f"{component} is not part of the apparatus.")
+        assert component in self.graph, f"{component} must be part of the apparatus."
 
         # don't let users give empty procedures
         if not kwargs:
@@ -153,9 +147,17 @@ class Protocol(object):
                 "Ensure your call to add() is valid."
             )
 
-        # check mapping (valve, port, etc.)
-        if isinstance(component, MappedComponentMixin):
-            kwargs["setting"] = component.solve_mapping_values(kwargs["setting"])
+        # If a MultiportComponentMixin component is passed together with a new port position, check validity
+        if isinstance(component, MultiportComponentMixin) and "setting" in kwargs:
+            if isinstance(kwargs["setting"], Component):
+                assert self.graph.graph.has_edge(component, kwargs["setting"])
+                assert self.graph.graph[component][kwargs["setting"]][0]["from_port"] in component.port
+            if isinstance(kwargs["setting"], str):
+                to_component = self.graph[kwargs["setting"]]
+                assert self.graph.graph.has_edge(component, to_component)
+                assert self.graph.graph[component][to_component]["from_port"] in component.port
+            if isinstance(kwargs["setting"], int):
+                assert kwargs["setting"] in component.port
 
         # make sure the component and keywords are valid
         self._check_component_kwargs(component, **kwargs)
@@ -278,7 +280,7 @@ class Protocol(object):
         output = {}
 
         # Only compile active components
-        for component in self.apparatus[ActiveComponent]:
+        for component in self.graph[ActiveComponent]:
             # determine the procedures for each component
             component_procedures: List[MutableMapping] = sorted(
                 [x for x in self.procedures if x["component"] == component],
@@ -408,17 +410,11 @@ class Protocol(object):
 
                 # show what the valve is actually connecting to
                 if (
-                    isinstance(component, MappedComponentMixin)
-                    and type(procedure["setting"]) == int
+                    isinstance(component, MultiportComponentMixin)
+                    and "setting" in procedure.keys()
                 ):
-                    assert isinstance(component.mapping, Mapping)
-                    # guess the component, c, which the valve is set to
-                    mapped_component = [
-                        repr(v)
-                        for k, v in component.mapping.items()
-                        if k == procedure["setting"]
-                    ][0]
-                    procedure["mapped component"] = mapped_component
+                    mapped_component = self.graph.component_from_origin_and_port(component, procedure["setting"])  # type: ignore
+                    procedure["mapped component"] = mapped_component.name
                 # TODO: make this deterministic for color coordination
                 procedure["params"] = json.dumps(procedure["params"])
 
