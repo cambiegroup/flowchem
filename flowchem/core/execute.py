@@ -196,8 +196,8 @@ async def wait_and_execute_procedure(
         "params": params,
         "type": "executed_procedure" if not dry_run else "simulated_procedure",
         "component": component,
+        "experiment_elapsed_time": time.time() - experiment.start_time,
     }
-    record["experiment_elapsed_time"] = record["timestamp"] - experiment.start_time
 
     experiment.executed_procedures.append(record)
 

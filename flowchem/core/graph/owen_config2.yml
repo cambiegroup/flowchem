@@ -1,19 +1,19 @@
 version: "1.0"
 devices:
 
-    donor:
-        Elite11InfuseOnly:
-            port: loop://
-            diameter: 4.6 mm
-            syringe_volume: 1 ml
-            address: 0
-
-    activator:
-        Elite11InfuseOnly:
-            port: loop://
-            diameter: 4.6 mm
-            syringe_volume: 1 ml
-            address: 1
+#    donor:
+#        Elite11InfuseOnly:
+#            port: COM1
+#            diameter: 4.6 mm
+#            syringe_volume: 1 ml
+#            address: 0
+#
+#    activator:
+#        Elite11InfuseOnly:
+#            port: COM2
+#            diameter: 4.6 mm
+#            syringe_volume: 1 ml
+#            address: 1
 
     quencher:
         AzuraCompactPump:
@@ -21,14 +21,14 @@ devices:
             ip_address: 192.168.10.113
             max_pressure: 13 bar
 
-    sample_loop:
-        ViciValco:
-            port: loop://
-            address: 0
-
-    chiller:
-        HuberChiller:
-            port: loop://
+#    sample_loop:
+#        ViciValco:
+#            port: COM4
+#            address: 0
+#
+#    chiller:
+#        HuberChiller:
+#            port: COM5
 
     reactor:
         LTF_HTM_ST_3_1:
