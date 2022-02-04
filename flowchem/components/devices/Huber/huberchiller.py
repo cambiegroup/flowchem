@@ -127,7 +127,7 @@ class HuberChiller(TempControl):
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
         try:
-            serial_object = aioserial.serial_for_url(port, **serial_kwargs)
+            serial_object = aioserial.AioSerial(port, **serial_kwargs)
         except aioserial.SerialException as e:
             raise InvalidConfiguration(
                 f"Cannot connect to the HuberChiller on the port <{port}>"

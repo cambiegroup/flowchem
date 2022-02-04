@@ -4,7 +4,7 @@ import time
 import aioserial
 from flowchem import HuberChiller
 
-chiller = HuberChiller(aioserial.serial_for_url(url='COM1'))
+chiller = HuberChiller(aioserial.AioSerial(url='COM1'))
 
 
 async def main():

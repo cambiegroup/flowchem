@@ -147,6 +147,7 @@ class Protocol:
                 "Ensure your call to add() is valid."
             )
 
+        # FIXME procedures are XDLexe like, the actual valve position should be passed directly, resolve before!
         # If a MultiportComponentMixin component is passed together with a new port position, check validity
         if isinstance(component, MultiportComponentMixin) and "setting" in kwargs:
             if isinstance(kwargs["setting"], Component):
