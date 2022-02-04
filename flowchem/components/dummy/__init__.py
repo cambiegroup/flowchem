@@ -4,3 +4,4 @@ from .broken_dummy_sensor import BrokenDummySensor
 from .dummy_pump import DummyPump
 from .dummy_valve import DummyValve
 from .dummy_sensor import DummySensor
+from .dummy_tempcontrol import DummyTempControl

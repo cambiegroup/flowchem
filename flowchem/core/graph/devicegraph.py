@@ -237,7 +237,7 @@ class DeviceGraph:
 
 if __name__ == "__main__":
     from flowchem.core.graph.parser import parse_graph_file
-    graph = parse_graph_file("owen_config2.yml")
+    graph = parse_graph_file("dummy_config.yml")
     graph.summarize()
 
     graph.explode_all()

@@ -72,7 +72,7 @@
 
       }, "VesselChemicals": {
 
-      }, "DummyPump": {}, "DummySensor": {}
+      }, "DummyPump": {}, "DummySensor": {}, "DummyValve": {},  "DummyTempControl": {}
     }, "oneOf": [
       {
         "required": [
@@ -157,6 +157,14 @@
       },  {
         "required": [
           "DummySensor"
+        ]
+      },  {
+        "required": [
+          "DummyValve"
+        ]
+      },  {
+        "required": [
+          "DummyTempControl"
         ]
       }
     ], "additionalProperties": false
