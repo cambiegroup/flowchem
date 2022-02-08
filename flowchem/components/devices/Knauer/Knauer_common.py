@@ -54,6 +54,7 @@ class KnauerEthernetDevice:
         ip_address = available_devices.get(mac_address)
         if ip_address is None:
             raise InvalidConfiguration(
+                f"{self.__class__.__name__}:{self.name}\n"  # type: ignore
                 f"Device with MAC address={mac_address} not found!\n"
                 f"[Available: {available_devices}]"
             )

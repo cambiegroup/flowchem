@@ -32,6 +32,17 @@ class DeviceGraph:
         # NetworkX Multi directed graph object
         self.graph: nx.MultiDiGraph = nx.MultiDiGraph()
 
+    def to_yml(self):
+        """Convert the graph to a YAML string"""
+        import yaml
+
+        exported_graph = dict()
+        exported_graph["version"] = 1.0
+        exported_graph["devices"] = {device.name: device.to_yml() for device in self.graph.nodes}
+        exported_graph["physical_connections"] = {device.name: device.to_yml() for device in self.graph.edges}
+        # FIXME
+        return yaml.dump(exported_graph)
+
     def add_device(self, device: Any):
         """Add a device or list of devices to the graph"""
 
@@ -237,7 +248,7 @@ class DeviceGraph:
 
 if __name__ == "__main__":
     from flowchem.core.graph.parser import parse_graph_file
-    graph = parse_graph_file("dummy_config.yml")
+    graph = parse_graph_file("sample_config.yml")
     graph.summarize()
 
     graph.explode_all()

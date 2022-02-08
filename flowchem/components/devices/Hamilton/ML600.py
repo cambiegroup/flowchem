@@ -4,6 +4,7 @@ This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO
 
 from __future__ import annotations
 
+from flowchem.components.stdlib import Pump
 from loguru import logger
 import string
 import time
@@ -224,8 +225,8 @@ class HamiltonPumpIO:
             return ""
 
 
-class ML600:
-    """ " ML600 implementation according to docs. Tested on 61501-01 (single syringe).
+class ML600(Pump):
+    """ ML600 implementation according to docs. Tested on 61501-01 (single syringe).
 
     From docs:
     To determine the volume dispensed per step the total syringe volume is divided by
@@ -273,7 +274,7 @@ class ML600:
         pump_io: HamiltonPumpIO,
         syringe_volume: str,
         address: int = 1,
-        name: str = None,
+        name: Optional[str] = None,
     ):
         """
         Default constructor, needs an HamiltonPumpIO object. See from_config() class method for config-based init.
@@ -284,6 +285,7 @@ class ML600:
             address: number of pump in array, 1 for first one, auto-assigned on init based on position.
             name: 'cause naming stuff is important.
         """
+        super().__init__(name)
         # HamiltonPumpIO
         self.pump_io = pump_io
         ML600._io_instances.add(self.pump_io)  # See above for details.
@@ -295,7 +297,13 @@ class ML600:
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
 
         # Syringe pumps only perform linear movement, and the volume displaced is function of the syringe loaded.
-        self.syringe_volume = flowchem_ureg(syringe_volume)
+        try:
+            self.syringe_volume = flowchem_ureg(syringe_volume)
+        except AttributeError as e:
+            raise InvalidConfiguration(f"{self.__class__.__name__}:{self.name} "
+                                       f"Syringe volume must be a string parsable as pint.Quantity!\n"
+                                       f"It is now a {type(syringe_volume)}: {syringe_volume} ") from e
+
 
         if self.syringe_volume.m_as("ml") not in ML600.VALID_SYRINGE_VOLUME:
             raise InvalidConfiguration(
@@ -312,7 +320,7 @@ class ML600:
         )
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, **config):
         """This class method is used to create instances via config file by the server for HTTP interface."""
         # Many pump can be present on the same serial port with different addresses.
         # This shared list of HamiltonPumpIO objects allow shared state in a borg-inspired way, avoiding singletons
@@ -799,5 +807,5 @@ if __name__ == "__main__":
         "name": "test1",
         "syringe_volume": 5,
     }
-    pump1 = ML600.from_config(conf)
+    pump1 = ML600.from_config(**conf)
     asyncio.run(pump1.initialize_pump())

@@ -23,4 +23,4 @@ def load_graph_schema():
 def validate_graph(graph: Dict):
     schema = load_graph_schema()
     jsonschema.validate(graph, schema=schema)
-    assert graph["version"] == "1.0"
+    assert graph["version"] == "1.1"

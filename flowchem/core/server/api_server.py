@@ -65,7 +65,7 @@ def create_server_from_config(config: Dict = None, config_file: Path = None) -> 
         obj_type = device_mapper[device_class]
         device_config = node_config[device_class]
 
-        node = DeviceNode(device_name, device_config, obj_type)
+        node = DeviceNode(device_config, obj_type)
         logger.debug(f"Created device <{device_name}> with config: {device_config}")
 
         # Add to App

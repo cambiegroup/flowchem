@@ -1,5 +1,6 @@
 """ For each device node described in the configuration [graph] instantiated it and create endpoints """
 import inspect
+import warnings
 
 from loguru import logger
 from fastapi import APIRouter
@@ -16,17 +17,17 @@ class DeviceNode:
     # All callable take the device obj and return an APIRouter
     router_generator = {Spinsolve: spinsolve_get_router}
 
-    def __init__(self, device_name, device_config, obj_type):
-        self._title = device_name
+    def __init__(self, device_config, obj_type):
         self._router = None
 
         # No configuration for t-mixer et al.
         if device_config is None:
             device_config = {}
 
-        # Add name to initialization args
+        # Ensure the name is set
         if "name" not in device_config:
-            device_config["name"] = device_name
+            warnings.warn("Device name not set, using class name")
+            device_config["name"] = obj_type.__name__
 
         # DEVICE INSTANTIATION
         try:
@@ -35,10 +36,10 @@ class DeviceNode:
                 self.device = obj_type.from_config(**device_config)
             else:
                 self.device = obj_type(**device_config)
-            logger.debug(f"Created {self.title} instance: {self.device}")
+            logger.debug(f"Created {self.device.name} instance: {self.device}")
         except TypeError as e:
             raise ConnectionError(
-                f"Wrong configuration provided for device: {self.title} of type {obj_type}!\n"
+                f"Wrong configuration provided for device: {device_config.get('name')} of type {obj_type}!\n"
                 f"Configuration: {device_config}\n"
                 f"Accepted parameters: {inspect.getfullargspec(obj_type).args}"
             ) from e
@@ -67,26 +68,3 @@ class DeviceNode:
         router.tags = [self.safe_title]
         self._router = router
         return self._router
-
-    @property
-    def title(self) -> str:
-        """Human-readable title of the Node"""
-        return self._title
-
-    @title.setter
-    def title(self, title: str):
-        """
-        Human-readable title of the Node
-        :param title: str:
-        """
-        self._title = title
-
-    @property
-    def safe_title(self) -> str:
-        """Lowercase title with no whitespace"""
-        title = self.title
-        if not title:
-            title = "unknown"
-        title = title.replace(" ", "")
-        title = title.lower()
-        return title

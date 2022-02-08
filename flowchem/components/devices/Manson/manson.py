@@ -5,6 +5,8 @@ No license originally specified.
 
 import re
 import warnings
+
+from flowchem.components.properties import ActiveComponent
 from loguru import logger
 from typing import Literal, Tuple, List, Union
 
@@ -14,20 +16,34 @@ from flowchem.exceptions import InvalidConfiguration, DeviceError
 from flowchem.units import flowchem_ureg
 
 
-class MansonPowerSupply:
+class MansonPowerSupply(ActiveComponent):
     """Control module for Manson Power Supply (e.g. used to power LEDs in the photo-rector or as potentiostat)"""
 
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
-    def __init__(self, port, baudrate=9600, **kwargs):
+    def __init__(self, aio: aioserial.AioSerial, name=None):
+        """
+        Control class for Manson Power Supply.
+        """
+
+        super().__init__(name)
+        self._serial = aio
+
+    @classmethod
+    def from_config(cls, port, name=None, **serial_kwargs):
+        """
+        Create instance from config dict. Used by server to initialize obj from config.
+
+        Only required parameter is 'port'.
+        """
         try:
-            self._serial = aioserial.AioSerial(
-                url=port, baudrate=baudrate, timeout=0.1, **kwargs
-            )  # type: aioserial.Serial
+            serial_object = aioserial.AioSerial(port, **serial_kwargs)
         except aioserial.SerialException as e:
             raise InvalidConfiguration(
-                f"Could not connect to power supply on port <{port}>"
+                f"Cannot connect to the MansonPowerSupply on the port <{port}>"
             ) from e
+
+        return cls(serial_object, name)
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
