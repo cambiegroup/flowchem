@@ -807,5 +807,5 @@ if __name__ == "__main__":
         "name": "test1",
         "syringe_volume": 5,
     }
-    pump1 = ML600.from_config(conf)
+    pump1 = ML600.from_config(**conf)
     asyncio.run(pump1.initialize_pump())

@@ -53,7 +53,7 @@ class Spinsolve(ActiveComponent):
         This also simplifies testing.
         """
 
-        super.__init__(kwargs.get("name"))
+        super().__init__(kwargs.get("name"))
         # IOs
         self._io_writer = io_writer
         self._io_reader = io_reader
