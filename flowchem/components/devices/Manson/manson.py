@@ -8,7 +8,7 @@ import warnings
 
 from flowchem.components.properties import ActiveComponent
 from loguru import logger
-from typing import Literal, Tuple, List, Union, Optional
+from typing import Literal, Tuple, List, Union
 
 import aioserial
 

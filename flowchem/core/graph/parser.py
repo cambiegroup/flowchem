@@ -54,29 +54,30 @@ def parse_device_section(devices: Dict, graph: DeviceGraph):
 
     # Parse devices
     for device_node in devices:
-        for device_class, device_config in device_node.items():
-            try:
-                obj_type = device_mapper[device_class]
-            except KeyError as e:
-                logger.exception(f"Device of type {device_class} unknown! [Known devices: {device_mapper.keys()}]")
-                raise InvalidConfiguration(f"Device of type {device_class} unknown! \n"
-                                           f"[Known devices: {list(device_mapper.keys())}]") from e
+        device_class, device_config = next(iter(device_node.items()))
+        try:
+            obj_type = device_mapper[device_class]
+        except KeyError as e:
+            logger.exception(f"Device of type {device_class} unknown! [Known devices: {device_mapper.keys()}]")
+            raise InvalidConfiguration(f"Device of type {device_class} unknown! \n"
+                                       f"[Known devices: {list(device_mapper.keys())}]") from e
 
-            # Create device object and add it to the graph
-            device = DeviceNode(device_config, obj_type).device
-            graph.add_device(device)
+        # Create device object and add it to the graph
+        device = DeviceNode(device_config, obj_type).device
+        graph.add_device(device)
 
 
-def parse_connections(connections: Dict, graph: DeviceGraph):
+def parse_connection_section(connections: Dict, graph: DeviceGraph):
     """Parse connections from the graph config"""
     for edge in connections:
-        for edge_class, edge_config in edge.items():
-            if "Tube" in edge_class:
-                _parse_tube_connection(edge_config, graph)
-            elif "Interface" in edge_class:
-                _parse_interface_connection(edge_config, graph)
-            else:
-                raise InvalidConfiguration(f"Invalid connection type in {edge}")
+        edge_class, edge_config = next(iter(edge.items()))
+
+        if "Tube" in edge_class:
+            _parse_tube_connection(edge_config, graph)
+        elif "Interface" in edge_class:
+            _parse_interface_connection(edge_config, graph)
+        else:
+            raise InvalidConfiguration(f"Invalid connection type in {edge}")
 
 
 def _parse_tube_connection(tube_config, graph: DeviceGraph):
@@ -124,7 +125,7 @@ def parse_graph_config(graph_config: Dict, name: str = None) -> DeviceGraph:
     """Parse a graph config and returns a DeviceGraph object."""
 
     # Validate graph
-    # validate_graph(graph_config)
+    validate_graph(graph_config)
 
     # Create DeviceGraph object
     device_graph = DeviceGraph(name)
@@ -133,7 +134,7 @@ def parse_graph_config(graph_config: Dict, name: str = None) -> DeviceGraph:
     parse_device_section(graph_config["devices"], device_graph)
 
     # Parse connections
-    parse_connections(graph_config["connections"], device_graph)
+    parse_connection_section(graph_config["connections"], device_graph)
 
     logger.info(f"Parsed graph {name}")
     return device_graph
