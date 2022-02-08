@@ -1,7 +1,9 @@
 """ Control module for the Vapourtec R4 heater """
 import time
+
+from flowchem.components.properties import ActiveComponent
 from loguru import logger
-from typing import Tuple
+from typing import Tuple, Optional
 
 import aioserial
 
@@ -22,7 +24,7 @@ except ImportError as e:
     ) from e
 
 
-class R4Heater:
+class R4Heater(ActiveComponent):
     """R4 reactor heater control class."""
 
     DEFAULT_CONFIG = {
@@ -34,8 +36,8 @@ class R4Heater:
     }
     """ Virtual control of the Vapourtec R4 heating module. """
 
-    def __init__(self, **config):
-
+    def __init__(self, name: Optional[str] = None, **config):
+        super().__init__(name)
         if not HAS_VAPOURTEC_COMMANDS:
             raise InvalidConfiguration(
                 "R4Heater unusable: no Vapourtec Commands available.\n"

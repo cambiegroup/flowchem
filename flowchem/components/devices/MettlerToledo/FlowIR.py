@@ -2,6 +2,8 @@
 
 import datetime
 import warnings
+
+from flowchem.components.properties import ActiveComponent
 from loguru import logger
 from typing import List, Optional
 
@@ -17,16 +19,24 @@ from flowchem.components.devices.MettlerToledo.iCIR_common import (
 )
 
 
-class FlowIR(iCIR_spectrometer):
+class FlowIR(iCIR_spectrometer, ActiveComponent):
     """
     Object to interact with the iCIR software controlling the FlowIR and ReactIR.
     """
+    counter = 0
 
-    def __init__(self, url: str = None):
+    def __init__(self, url: str = None, name: str = None):
         """
         Initiate connection with OPC UA server.
         Intended to be used as context-manager!
         """
+        ActiveComponent.__init__(self, name)
+
+        if name is None:
+            self.name = f"FlowIR_{self.counter}"
+        else:
+            self.name = name
+
         # Default (local) url if none provided
         if url is None:
             url = "opc.tcp://localhost:62552/iCOpcUaServer"

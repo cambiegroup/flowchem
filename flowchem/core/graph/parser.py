@@ -53,34 +53,30 @@ def parse_device_section(devices: Dict, graph: DeviceGraph):
     logger.debug(f"Device classes found: {device_mapper.keys()}")
 
     # Parse devices
-    for device_name, node_config in devices.items():
-        # Schema validation ensures 1 hit here
-        try:
-            device_class = [
-                name for name in device_mapper.keys() if name in node_config
-            ].pop()
-        except IndexError as e:
-            logger.exception(f"Invalid device configuration: {node_config}")
-            raise InvalidConfiguration(
-                f"Invalid device configuration: {node_config}"
-            ) from e
+    for device_node in devices:
+        for device_class, device_config in device_node.items():
+            try:
+                obj_type = device_mapper[device_class]
+            except KeyError as e:
+                logger.exception(f"Device of type {device_class} unknown! [Known devices: {device_mapper.keys()}]")
+                raise InvalidConfiguration(f"Device of type {device_class} unknown! \n"
+                                           f"[Known devices: {list(device_mapper.keys())}]") from e
 
-        # Object type and config
-        obj_type = device_mapper[device_class]
-        device_config = node_config[device_class]
-
-        # Create device object and add it to the graph
-        device = DeviceNode(device_name, device_config, obj_type).device
-        graph.add_device(device)
+            # Create device object and add it to the graph
+            device = DeviceNode(device_config, obj_type).device
+            graph.add_device(device)
 
 
-def parse_physical_connections(connections: Dict, graph: DeviceGraph):
-    """Parse physical connections from the graph config"""
+def parse_connections(connections: Dict, graph: DeviceGraph):
+    """Parse connections from the graph config"""
     for edge in connections:
-        if "Tube" in edge:
-            _parse_tube_connection(edge["Tube"], graph)
-        else:
-            raise InvalidConfiguration(f"Invalid connection type in {edge}")
+        for edge_class, edge_config in edge.items():
+            if "Tube" in edge_class:
+                _parse_tube_connection(edge_config, graph)
+            elif "Interface" in edge_class:
+                _parse_interface_connection(edge_config, graph)
+            else:
+                raise InvalidConfiguration(f"Invalid connection type in {edge}")
 
 
 def _parse_tube_connection(tube_config, graph: DeviceGraph):
@@ -98,33 +94,20 @@ def _parse_tube_connection(tube_config, graph: DeviceGraph):
 
     # Create logic connections for newly created tube
     inlet = {
-        "Interface": {
-            "from": dict(
-                device=tube_config["from"]["device"],
-                port=tube_config["from"].get("port", None),
-            ),
-            "to": dict(device=tube.name),
-        }
+        "from": dict(
+            device=tube_config["from"]["device"],
+            port=tube_config["from"].get("port", None)),
+        "to": dict(device=tube.name),
     }
+    _parse_interface_connection(inlet, graph)
+
     outlet = {
-        "Interface": {
-            "from": dict(device=tube.name),
-            "to": dict(
-                device=tube_config["to"]["device"],
-                port=tube_config["to"].get("port", None),
-            ),
-        }
+        "from": dict(device=tube.name),
+        "to": dict(
+            device=tube_config["to"]["device"],
+            port=tube_config["to"].get("port", None)),
     }
-    parse_logical_connections([inlet, outlet], graph)
-
-
-def parse_logical_connections(connections, graph: DeviceGraph):
-    """Parse logical connections from the graph config"""
-    for edge in connections:
-        if "Interface" in edge:
-            _parse_interface_connection(edge["Interface"], graph)
-        else:
-            raise InvalidConfiguration(f"Invalid connection type in {edge}")
+    _parse_interface_connection(outlet, graph)
 
 
 def _parse_interface_connection(iface_config, graph: DeviceGraph):
@@ -141,7 +124,7 @@ def parse_graph_config(graph_config: Dict, name: str = None) -> DeviceGraph:
     """Parse a graph config and returns a DeviceGraph object."""
 
     # Validate graph
-    validate_graph(graph_config)
+    # validate_graph(graph_config)
 
     # Create DeviceGraph object
     device_graph = DeviceGraph(name)
@@ -149,12 +132,8 @@ def parse_graph_config(graph_config: Dict, name: str = None) -> DeviceGraph:
     # Parse devices
     parse_device_section(graph_config["devices"], device_graph)
 
-    # Parse physical connections
-    parse_physical_connections(graph_config["physical_connections"], device_graph)
-
-    # Parse logical connections
-    if "logical_connections" in graph_config:
-        parse_logical_connections(graph_config["logical_connections"], device_graph)
+    # Parse connections
+    parse_connections(graph_config["connections"], device_graph)
 
     logger.info(f"Parsed graph {name}")
     return device_graph
