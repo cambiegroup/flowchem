@@ -18,7 +18,7 @@ from bokeh.resources import INLINE
 from IPython import get_ipython
 from IPython.display import display
 
-from flowchem.components.stdlib import ActiveComponent, Sensor
+from flowchem.components.properties import ActiveComponent, Sensor
 from flowchem.core.execute import main
 
 if TYPE_CHECKING:
@@ -36,7 +36,7 @@ class Experiment(object):
     - `dry_run`: Whether the experiment is a dry run and, if so, by what factor it is sped up by.
 
     Attributes:
-    - `apparatus`: The apparatus upon which the experiment is conducted.
+    - `graph`: The DeviceGraph upon which the experiment is conducted.
     - `cancelled`: Whether the experiment is cancelled.
     - `compiled_protocol`: The results of `protocol._compile()`.
     - `data`: A list of `Datapoint` namedtuples from the experiment's sensors.
@@ -51,8 +51,8 @@ class Experiment(object):
 
     def __init__(self, protocol: "Protocol"):
         # args
-        self.apparatus = protocol.apparatus
-        self.protocol = protocol
+        self.graph = protocol.graph
+        self.protocol: Protocol = protocol
 
         # computed values
         self.experiment_id: Optional[str] = None
@@ -74,7 +74,7 @@ class Experiment(object):
         self._created_time_local: str = time.strftime("%Y_%m_%d_%H_%M_%S", _local_time)
         self._charts = {}  # type: ignore
         self._graphs_shown = False
-        self._sensors = self.apparatus[Sensor]
+        self._sensors = self.graph[Sensor]
         self._sensors.reverse()
         self._device_name_to_unit = {c.name: c._unit for c in self._sensors}
         self._sensor_names: List[str] = [s.name for s in self._sensors]
@@ -111,7 +111,7 @@ class Experiment(object):
                     "timestamp": datapoint.timestamp,
                     "experiment_elapsed_time": datapoint.experiment_elapsed_time,
                     "data": datapoint.data,
-                    "unit": self.protocol.apparatus[device]._unit,
+                    "unit": self.protocol.graph[device]._unit,
                 }
             )
             async with aiofiles.open(self._data_file, "a+") as f:
@@ -186,7 +186,7 @@ class Experiment(object):
         return duration
 
     def get_confirmation(self):
-        """ Ensure user input is present before starting procedure. """
+        """Ensure user input is present before starting procedure."""
         confirmation = input("Execute? [y/N]: ").lower()
         if not confirmation or confirmation[0] != "y":
             logger.critical("Aborting execution...")
@@ -212,27 +212,29 @@ class Experiment(object):
         self._compiled_protocol = self.protocol._compile(dry_run=bool(dry_run))
 
         # now that we're ready to start, create the time and ID attributes
-        # protocol_hash: str = blake2b(str(self.protocol.yaml()).encode(), digest_size=3).hexdigest()
-        protocol_hash = "329472389fhsd"
+        protocol_hash: str = blake2b(
+            str(self.protocol.yaml()).encode(), digest_size=3
+        ).hexdigest()
         self.experiment_id = f"{self._created_time_local}_{protocol_hash}"
 
-        # handle logging to a file
+        # handle logging to a file, not None nor False
         if log_file:
-            # automatically log to the mw directory
+            # No location provided: automatically log to the app directory
             if log_file is True:
-                mw_path = Path("~/.flowchem").expanduser()
-                try:
-                    mw_path.mkdir()
-                except FileExistsError:
-                    pass
-                log_file = mw_path / Path(self.experiment_id + ".log.jsonl")
+                app_path = Path("~/.flowchem").expanduser()
+                app_path.mkdir(exist_ok=True)
+                log_file_location = app_path / Path(self.experiment_id + ".log.jsonl")
+            elif isinstance(log_file, (str, os.PathLike)):
+                log_file_location = Path(log_file)
+            else:
+                raise TypeError(
+                    f"Invalid type {type(data_file)} for data file."
+                    "Expected str or a pathlib.Path object."
+                )
 
-            # for typing's sake
-            assert isinstance(log_file, (str, os.PathLike))
-
-            # automatically configure a logger to persist the logs
+            # Configure a logger to file
             self._file_logger_id = logger.add(
-                log_file,
+                log_file_location,
                 level=verbosity.upper()
                 if log_file_verbosity is None
                 else log_file_verbosity.upper(),
@@ -242,33 +244,27 @@ class Experiment(object):
             )
             logger.trace(f"File logger ID is {self._file_logger_id}")
 
-            # for typing's sake
-            assert isinstance(log_file, (str, os.PathLike))
-
             # determine the log file's path
             if log_file_compression is not None:
-                self._log_file = Path(log_file)
-                self._log_file = self._log_file.with_suffix(
-                    self._log_file.suffix + "." + log_file_compression
+                # No location provided: automatically log to the app directory
+                self._log_file = log_file_location.with_suffix(
+                    log_file_location.suffix + "." + log_file_compression
                 )
             else:
-                self._log_file = Path(log_file)
+                self._log_file = log_file_location
 
         if data_file:
-            # automatically log to user directory
+            # automatically log to app directory
             if data_file is True:
-                mw_path = Path("~/.flowchem").expanduser()
-                try:
-                    mw_path.mkdir()
-                except FileExistsError:
-                    pass
-                self._data_file = mw_path / Path(self.experiment_id + ".data.jsonl")
+                app_path = Path("~/.flowchem").expanduser()
+                app_path.mkdir(exist_ok=True)
+                self._data_file = app_path / Path(self.experiment_id + ".data.jsonl")
             elif isinstance(data_file, (str, os.PathLike)):
                 self._data_file = Path(data_file)
             else:
                 raise TypeError(
                     f"Invalid type {type(data_file)} for data file."
-                    "Expected str or os.PathLike (such as a pathlib.Path object)."
+                    "Expected str or a pathlib.Path object."
                 )
 
         if get_ipython():
@@ -292,7 +288,7 @@ class Experiment(object):
         # create a nice, pretty HTML string wth the metadata
         metadata = "<ul>"
         for k, v in {
-            "Apparatus": self.apparatus.name,
+            "Graph": self.graph.name,
             "Protocol": self.protocol.name,
             "Description": self.protocol.description,
             "Start time": time.ctime(self.created_time),

@@ -4,6 +4,8 @@ import pprint as pp
 import queue
 import threading
 import warnings
+
+from flowchem.components.properties import ActiveComponent
 from loguru import logger
 from pathlib import Path
 from typing import Optional, Union
@@ -30,7 +32,7 @@ from flowchem.components.devices.Magritek.utils import (
 )
 
 
-class Spinsolve:
+class Spinsolve(ActiveComponent):
     """
     Spinsolve class, gives access to the spectrometer remote control API
     """
@@ -51,6 +53,7 @@ class Spinsolve:
         This also simplifies testing.
         """
 
+        super().__init__(kwargs.get("name"))
         # IOs
         self._io_writer = io_writer
         self._io_reader = io_reader
@@ -103,7 +106,7 @@ class Spinsolve:
             )
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, **config):
         """Create instance from config dict"""
         # Get loop if passed or existing
         loop = config.get("loop", asyncio.get_event_loop())
@@ -308,9 +311,7 @@ class Spinsolve:
 
             # Parse them
             status, folder = parse_status_notification(status_update)
-            logger.debug(
-                f"Status update: Status is {status} and data folder={folder}"
-            )
+            logger.debug(f"Status update: Status is {status} and data folder={folder}")
 
             # When I get a response with folder, save the location!
             if folder:

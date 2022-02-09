@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Union
 
 from loguru import logger
 
-from flowchem.components.stdlib import ActiveComponent, Sensor
+from flowchem.components.properties import ActiveComponent, Sensor
 from flowchem.exceptions import ProtocolCancelled
 
 if TYPE_CHECKING:
@@ -22,6 +22,7 @@ Datapoint = namedtuple("Datapoint", ["data", "timestamp", "experiment_elapsed_ti
 
 
 async def handle_exception(tasks_to_cancel):
+    """Called upon exception in main loop."""
     logger.error("Protocol execution is stopping NOW!")
     for task in tasks_to_cancel:
         task.cancel()
@@ -38,7 +39,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
     - `strict`: Whether to stop execution upon any errors.
     """
 
-    logger.info(f"Using Flowchem ⚗️👩‍👨🧪")
+    logger.info("Using Flowchem ⚗️👩‍👨🧪")
     logger.info("Performing final launch status check...")
 
     # Run protocol
@@ -56,6 +57,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
 
             tasks = []
 
+            # For each component get the relevant coroutines
             for component in components:
                 # Find out when each component's monitoring should end
                 procedures: Iterable = experiment._compiled_protocol[component]  # type:ignore
@@ -63,17 +65,18 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                 end_time: float = max(end_times)  # we only want the last end time
                 logger.trace(f"Calculated end time for {component} as {end_time}s")
 
-                procedures_to_append = [
-                    wait_and_execute_procedure(
-                        procedure=procedure,
-                        component=component,
-                        experiment=experiment,
-                        dry_run=dry_run,
-                        strict=strict,
-                    )
-                    for procedure in experiment._compiled_protocol[component]  # type:ignore
-                ]
-                tasks.extend(procedures_to_append)
+                tasks.extend(
+                    [
+                        wait_and_execute_procedure(
+                            procedure=procedure,
+                            component=component,
+                            experiment=experiment,
+                            dry_run=dry_run,
+                            strict=strict,
+                        )
+                        for procedure in experiment._compiled_protocol[component]  # type:ignore
+                    ]
+                )
                 logger.trace(f"Task list generated for {component}.")
 
                 # for sensors, add the monitor task
@@ -86,7 +89,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
 
             # Add a task to monitor the stop button
             tasks.append(check_if_cancelled(experiment))
-            tasks.append(pause_handler(experiment, end_time, components))
+            tasks.append(pause_handler(experiment, components))
             tasks.append(end_loop(experiment))
             logger.debug("All tasks are GO!")
 
@@ -193,8 +196,8 @@ async def wait_and_execute_procedure(
         "params": params,
         "type": "executed_procedure" if not dry_run else "simulated_procedure",
         "component": component,
+        "experiment_elapsed_time": time.time() - experiment.start_time,
     }
-    record["experiment_elapsed_time"] = record["timestamp"] - experiment.start_time
 
     experiment.executed_procedures.append(record)
 
@@ -234,7 +237,7 @@ async def check_if_cancelled(experiment: "Experiment") -> None:
 
 
 async def pause_handler(
-    experiment: "Experiment", end_time: float, components: List[ActiveComponent]
+    experiment: "Experiment", components: List[ActiveComponent]
 ) -> None:
     was_paused = False
     states: Dict[ActiveComponent, dict] = {}
@@ -277,7 +280,7 @@ async def wait(duration: float, experiment: "Experiment", name: str):
     while True:
         # if, at the end of sleeping, the experiment is paused, wait for it to resume
         while experiment.paused:
-            await asyncio.sleep(0)
+            await asyncio.sleep(0.1)
         assert not experiment.paused
 
         # figure out how long we've been paused for

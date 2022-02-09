@@ -21,7 +21,7 @@ from flowchem.components.stdlib import Pump
 
 
 class PumpInfo(BaseModel):
-    """ Detailed pump info. """
+    """Detailed pump info."""
 
     pump_type: str
     pump_description: str
@@ -93,6 +93,7 @@ class HarvardApparatusPumpIO:
         try:
             self._serial = aioserial.AioSerial(port, **configuration)
         except aioserial.SerialException as e:
+            logger.error(f"Cannot connect to the Pump on the port <{port}>")
             raise InvalidConfiguration(
                 f"Cannot connect to the Pump on the port <{port}>"
             ) from e
@@ -329,8 +330,14 @@ class Elite11InfuseOnly(Pump):
         "supported": True,
     }
 
-    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: str, syringe_volume: str,
-                 address: Optional[int] = None, name: Optional[str] = None):
+    def __init__(
+        self,
+        pump_io: HarvardApparatusPumpIO,
+        diameter: str,
+        syringe_volume: str,
+        address: Optional[int] = None,
+        name: Optional[str] = None,
+    ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
         are the prompt XXY, where XX is the address and Y is pump status.
@@ -515,7 +522,7 @@ class Elite11InfuseOnly(Pump):
     async def set_syringe_volume(self, volume_w_units: str = None):
         """Sets the syringe volume in ml.
 
-        :param volume: the volume of the syringe.
+        :param volume_w_units: the volume of the syringe.
         """
         volume = flowchem_ureg(volume_w_units)
         await self._send_command_and_read_reply(
@@ -588,7 +595,7 @@ class Elite11InfuseOnly(Pump):
 
     async def clear_volumes(self):
         """Set all pump volumes to 0"""
-        await self.set_target_volume(0)
+        await self.set_target_volume('0 ml')
         await self.clear_infused_volume()
 
     async def get_force(self):
@@ -742,8 +749,14 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
     Controls Harvard Apparatus Elite11 syringe pumps - INFUSE AND WITHDRAW.
     """
 
-    def __init__(self, pump_io: HarvardApparatusPumpIO, diameter: str, syringe_volume: str,
-                 address: Optional[int] = None, name: Optional[str] = None):
+    def __init__(
+        self,
+        pump_io: HarvardApparatusPumpIO,
+        diameter: str,
+        syringe_volume: str,
+        address: Optional[int] = None,
+        name: Optional[str] = None,
+    ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
         are the prompt XXY, where XX is the address and Y is pump status.
@@ -802,7 +815,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
 
     async def clear_volumes(self):
         """Set all pump volumes to 0"""
-        await self.set_target_volume(0)
+        await self.set_target_volume("0 ml")
         await self.clear_infused_volume()
         await self.clear_withdrawn_volume()
 
@@ -839,7 +852,9 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
 
 
 if __name__ == "__main__":
-    pump = Elite11InfuseOnly.from_config(port="COM4", syringe_volume="10 ml", diameter="10 mm")
+    pump = Elite11InfuseOnly.from_config(
+        port="COM4", syringe_volume="10 ml", diameter="10 mm"
+    )
 
     async def main():
         """Test function"""

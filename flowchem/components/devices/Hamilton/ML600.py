@@ -4,6 +4,7 @@ This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO
 
 from __future__ import annotations
 
+from flowchem.components.stdlib import Pump
 from loguru import logger
 import string
 import time
@@ -11,6 +12,7 @@ import warnings
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Optional, Set, TYPE_CHECKING
+
 if TYPE_CHECKING:
     import pint
 
@@ -223,8 +225,8 @@ class HamiltonPumpIO:
             return ""
 
 
-class ML600:
-    """ " ML600 implementation according to docs. Tested on 61501-01 (single syringe).
+class ML600(Pump):
+    """ ML600 implementation according to docs. Tested on 61501-01 (single syringe).
 
     From docs:
     To determine the volume dispensed per step the total syringe volume is divided by
@@ -272,7 +274,7 @@ class ML600:
         pump_io: HamiltonPumpIO,
         syringe_volume: str,
         address: int = 1,
-        name: str = None,
+        name: Optional[str] = None,
     ):
         """
         Default constructor, needs an HamiltonPumpIO object. See from_config() class method for config-based init.
@@ -283,6 +285,7 @@ class ML600:
             address: number of pump in array, 1 for first one, auto-assigned on init based on position.
             name: 'cause naming stuff is important.
         """
+        super().__init__(name)
         # HamiltonPumpIO
         self.pump_io = pump_io
         ML600._io_instances.add(self.pump_io)  # See above for details.
@@ -294,7 +297,13 @@ class ML600:
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
 
         # Syringe pumps only perform linear movement, and the volume displaced is function of the syringe loaded.
-        self.syringe_volume = flowchem_ureg(syringe_volume)
+        try:
+            self.syringe_volume = flowchem_ureg(syringe_volume)
+        except AttributeError as e:
+            raise InvalidConfiguration(f"{self.__class__.__name__}:{self.name} "
+                                       f"Syringe volume must be a string parsable as pint.Quantity!\n"
+                                       f"It is now a {type(syringe_volume)}: {syringe_volume} ") from e
+
 
         if self.syringe_volume.m_as("ml") not in ML600.VALID_SYRINGE_VOLUME:
             raise InvalidConfiguration(
@@ -311,7 +320,7 @@ class ML600:
         )
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, **config):
         """This class method is used to create instances via config file by the server for HTTP interface."""
         # Many pump can be present on the same serial port with different addresses.
         # This shared list of HamiltonPumpIO objects allow shared state in a borg-inspired way, avoiding singletons
@@ -439,20 +448,22 @@ class ML600:
 
         return self._validate_speed(str(seconds_per_stroke))
 
-    def _seconds_per_stroke_to_flowrate(self, second_per_stroke: pint.Quantity) -> float:
-        """ The inverse of flowrate_to_seconds_per_stroke(). Only internal use. """
+    def _seconds_per_stroke_to_flowrate(
+        self, second_per_stroke: pint.Quantity
+    ) -> float:
+        """The inverse of flowrate_to_seconds_per_stroke(). Only internal use."""
         flowrate = 1 / (second_per_stroke * self._steps_per_ml)
         return flowrate.to("ml/min")
 
     def _volume_to_step_position(self, volume_w_units: str) -> int:
-        """ Converts a volume to a step position. """
+        """Converts a volume to a step position."""
         # noinspection PyArgumentEqualDefault
         volume = flowchem_ureg(volume_w_units)
         steps = volume * self._steps_per_ml
         return round(steps.m_as("steps")) + self._offset_steps
 
     async def _to_step_position(self, position: int, speed: str = ""):
-        """ Absolute move to step position. """
+        """Absolute move to step position."""
         abs_move_cmd = Protocol1CommandTemplate(command="M", optional_parameter="S")
         return await self.send_command_and_read_reply(
             abs_move_cmd, str(position), self._validate_speed(speed)
@@ -467,11 +478,11 @@ class ML600:
         return str(current_steps / self._steps_per_ml)
 
     async def to_volume(self, target_volume: str, speed: str = ""):
-        """ Absolute move to volume provided. """
-        await self._to_step_position(self._volume_to_step_position(target_volume), speed)
-        logger.debug(
-            f"Pump {self.name} set to volume {target_volume} at speed {speed}"
+        """Absolute move to volume provided."""
+        await self._to_step_position(
+            self._volume_to_step_position(target_volume), speed
         )
+        logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {speed}")
 
     async def pause(self):
         """Pause any running command."""
@@ -604,8 +615,15 @@ class ML600:
         if wait:
             await self.wait_until_idle()
 
-    async def transfer(self, volume: str, from_valve: ValvePositionName, to_valve: ValvePositionName,
-                       flowrate_in: str = "1 ml/min", flowrate_out: str = "1 ml/min", wait: bool = False):
+    async def transfer(
+        self,
+        volume: str,
+        from_valve: ValvePositionName,
+        to_valve: ValvePositionName,
+        flowrate_in: str = "1 ml/min",
+        flowrate_out: str = "1 ml/min",
+        wait: bool = False,
+    ):
         """Move liquid from place to place."""
         await self.pickup(volume, from_valve, flowrate_in, wait=True)
         await self.deliver(volume, to_valve, flowrate_out, wait=wait)
@@ -789,5 +807,5 @@ if __name__ == "__main__":
         "name": "test1",
         "syringe_volume": 5,
     }
-    pump1 = ML600.from_config(conf)
+    pump1 = ML600.from_config(**conf)
     asyncio.run(pump1.initialize_pump())

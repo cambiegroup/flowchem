@@ -5,6 +5,8 @@ No license originally specified.
 
 import re
 import warnings
+
+from flowchem.components.properties import ActiveComponent
 from loguru import logger
 from typing import Literal, Tuple, List, Union
 
@@ -14,22 +16,36 @@ from flowchem.exceptions import InvalidConfiguration, DeviceError
 from flowchem.units import flowchem_ureg
 
 
-class MansonPowerSupply:
+class MansonPowerSupply(ActiveComponent):
     """Control module for Manson Power Supply (e.g. used to power LEDs in the photo-rector or as potentiostat)"""
 
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
-    def __init__(self, port, baudrate=9600, **kwargs):
+    def __init__(self, aio: aioserial.AioSerial, name=None):
+        """
+        Control class for Manson Power Supply.
+        """
+
+        super().__init__(name)
+        self._serial = aio
+
+    @classmethod
+    def from_config(cls, port, name=None, **serial_kwargs):
+        """
+        Create instance from config dict. Used by server to initialize obj from config.
+
+        Only required parameter is 'port'.
+        """
         try:
-            self._serial = aioserial.Serial(
-                port, baudrate=baudrate, timeout=0.1, **kwargs
-            )  # type: aioserial.Serial
+            serial_object = aioserial.AioSerial(port, **serial_kwargs)
         except aioserial.SerialException as e:
             raise InvalidConfiguration(
-                f"Could not connect to power supply on port <{port}>"
+                f"Cannot connect to the MansonPowerSupply on the port <{port}>"
             ) from e
 
-    def initialize(self):
+        return cls(serial_object, name)
+
+    async def initialize(self):
         """Ensure the connection w/ device is working."""
         model_info = await self.get_info()
         if model_info == "":
@@ -41,14 +57,14 @@ class MansonPowerSupply:
 
     @staticmethod
     def _format_voltage(voltage_value: str) -> str:
-        """ Format a voltage in the format the power supply understands """
+        """Format a voltage in the format the power supply understands"""
 
         voltage = flowchem_ureg(voltage_value)
         # Zero fill by left pad with zeros, up to three digits
         return str(voltage.m_as("V") * 10).zfill(3)
 
     async def _format_amperage(self, amperage_value: str) -> str:
-        """ Format a current intensity in the format the power supply understands """
+        """Format a current intensity in the format the power supply understands"""
 
         current = flowchem_ureg(amperage_value)
         multiplier = 100 if await self.get_info() in self.MODEL_ALT_RANGE else 10
@@ -264,10 +280,8 @@ class MansonPowerSupply:
         response = await self._send_command("SPRO1")
         return bool(response)
 
-    async def set_voltage_and_current(
-        self, voltage: str, current: str
-    ):
-        """ Convenience method to set both voltage and current """
+    async def set_voltage_and_current(self, voltage: str, current: str):
+        """Convenience method to set both voltage and current"""
         await self.set_voltage(voltage)
         await self.set_current(current)
 

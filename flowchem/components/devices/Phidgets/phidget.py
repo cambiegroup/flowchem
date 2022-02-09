@@ -1,6 +1,9 @@
 """ Use Phidgets to control lab devices. So far, only 4..20mA interface for Swagelock Pressure-sensor """
 import time
 import warnings
+from typing import Optional
+
+from flowchem.components.properties import Sensor
 from loguru import logger
 
 try:
@@ -18,6 +21,11 @@ else:
             "Get it from https://www.phidgets.com/docs/Operating_System_Support"
         )
         HAS_PHIDGET = False
+    except PhidgetException as e:
+        if "Logging already enabled" in e.description:
+            HAS_PHIDGET = True
+        else:
+            HAS_PHIDGET = False
     else:
         HAS_PHIDGET = True
 
@@ -25,7 +33,7 @@ from flowchem.units import flowchem_ureg
 from flowchem.exceptions import DeviceError, InvalidConfiguration
 
 
-class PressureSensor:
+class PressureSensor(Sensor):
     """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value"""
 
     def __init__(
@@ -35,11 +43,15 @@ class PressureSensor:
         vint_serial_number: int = None,
         vint_channel: int = None,
         phidget_is_remote: bool = False,
+        name: Optional[str] = None
     ):
+        super().__init__(name=name)
         if not HAS_PHIDGET:
             raise InvalidConfiguration(
                 "Phidget unusable: library or package not installed."
             )
+
+
 
         # Sensor range
         self._minP = flowchem_ureg(sensor_min)
@@ -122,7 +134,10 @@ class PressureSensor:
 
 if __name__ == "__main__":
     test = PressureSensor(
-        sensor_min="0 bar", sensor_max="25 bar", vint_serial_number=627768, vint_channel=0
+        sensor_min="0 bar",
+        sensor_max="25 bar",
+        vint_serial_number=627768,
+        vint_channel=0,
     )
     while True:
         print(test.read_pressure())

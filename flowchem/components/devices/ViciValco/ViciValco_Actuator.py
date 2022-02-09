@@ -10,7 +10,7 @@ from typing import Optional, Set
 
 import aioserial
 
-from flowchem.components.stdlib import Valve
+from flowchem.components.properties import InjectionValve
 from flowchem.exceptions import InvalidConfiguration, ActuationError, DeviceError
 
 
@@ -142,7 +142,6 @@ class ViciValcoValveIO:
         """Reads the valve reply from serial communication"""
         reply_string = ""
         for line in range(lines):
-            a = b""
             a = await self._serial.readline_async()
             reply_string += a.decode("ascii")
 
@@ -180,7 +179,7 @@ class ViciValcoValveIO:
             return ""
 
 
-class ViciValco(Valve):
+class ViciValco(InjectionValve):
     """ " """
 
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
@@ -190,7 +189,7 @@ class ViciValco(Valve):
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
 
-    valve_position_name = {"A": 1, "B": 2}
+    valve_position_name = {"load": 1, "inject": 2}
 
     def __init__(self, valve_io: ViciValcoValveIO, address: int = 0, name: str = None):
         """
@@ -208,7 +207,7 @@ class ViciValco(Valve):
         # The valve name is used for logs and error messages.
         self.name = f"Valve {self.valve_io.name}:{address}" if name is None else name
 
-        super().__init__(None, name)
+        super().__init__(name)
 
         # valve address is the valve sequence number if in chain. Count starts at 1, default.
         self.address = int(address)
@@ -302,7 +301,7 @@ class ViciValco(Valve):
         pass
 
     async def _update(self):
-        """ Used in automation. """
+        """Used in automation."""
         await self.set_valve_position(self.setting)
 
     def get_router(self):

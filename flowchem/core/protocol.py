@@ -1,42 +1,41 @@
-from typing import Union, Optional, Mapping, MutableMapping, List, Dict, Any, Iterable
+from typing import Union, Optional, MutableMapping, List, Dict, Any, Iterable
 
+import yaml
 import json
-import os
+from os import PathLike
 from copy import deepcopy
 from datetime import timedelta
 from math import isclose
-from warnings import warn
 
 import altair as alt
 import pandas as pd
-import yaml
 from IPython import get_ipython
 from IPython.display import Code
-from loguru import logger
 
+from flowchem.components.properties import Component
 from flowchem.units import flowchem_ureg
-from flowchem.components.stdlib import ActiveComponent, TempControl, Valve
-from flowchem.core.apparatus import Apparatus
+from flowchem.components.properties import (
+    ActiveComponent,
+    MultiportComponentMixin,
+    TempControl,
+)
+from flowchem.core.graph.devicegraph import DeviceGraph
 from flowchem.core.experiment import Experiment
 
 
-class Protocol(object):
+class Protocol:
     """
-    A set of procedures for an apparatus.
+    A set of procedures for a DeviceGraph.
 
-    A protocol is defined as a list of procedures, atomic steps for the individual active components of an apparatus.
-
-    ::: tip
-    The same `Apparatus` object can create multiple distinct `Protocol` objects.
-    :::
+    A protocol is defined as a list of procedures, atomic steps for the individual active components of a DeviceGraph.
 
     Arguments:
-    - `apparatus`: The apparatus for which the protocol is being defined.
+    - `graph`: The DeviceGraph object for which the protocol is being defined.
     - `name`: The name of the protocol. Defaults to "Protocol_X" where *X* is protocol count.
     - `description`: A longer description of the protocol.
 
     Attributes:
-    - `apparatus`: The apparatus for which the protocol is being defined.
+    - `graph`: The apparatus for which the protocol is being defined.
     - `description`: A longer description of the protocol.
     - `is_executing`: Whether the protocol is executing.
     - `name`: The name of the protocol. Defaults to "Protocol_X" where *X* is protocol count.
@@ -48,24 +47,20 @@ class Protocol(object):
 
     def __init__(
         self,
-        apparatus: Apparatus,
+        graph: DeviceGraph,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
         """See main docstring."""
         # type checking
-        if not isinstance(apparatus, Apparatus):
+        if not isinstance(graph, DeviceGraph):
             raise TypeError(
-                f"Must pass an Apparatus object. Got {type(apparatus)}, "
-                "which is not an instance of flowchem.Apparatus."
+                f"Must pass an Apparatus object. Got {type(graph)}, "
+                "which is not an instance of flowchem.DeviceGraph."
             )
 
-        # ensure apparatus is valid
-        if not apparatus._validate():
-            raise ValueError("Apparaus is not valid.")
-
         # store the passed args
-        self.apparatus = apparatus
+        self.graph = graph
         self.description = description
 
         # generate the name
@@ -74,6 +69,10 @@ class Protocol(object):
         else:
             self.name = "Protocol_" + str(Protocol._id_counter)
             Protocol._id_counter += 1
+
+        # ensure apparatus is valid
+        if not graph.validate():
+            raise ValueError("DeviceGraph is not valid.")
 
         # default values
         self.procedures: List[
@@ -84,34 +83,7 @@ class Protocol(object):
         return f"<{self.__str__()}>"
 
     def __str__(self):
-        return f"Protocol {self.name} defined over {repr(self.apparatus)}"
-
-    def _check_added_valve_mapping(self, valve: Valve, **kwargs) -> dict:
-        setting = kwargs["setting"]
-
-        if valve.mapping is None:
-            raise ValueError(f"{repr(valve)} does not have a mapping.")
-
-        # the valve itself was given
-        if setting in valve.mapping:
-            logger.trace(f"{setting} in {repr(valve)}'s mapping.")
-            kwargs["setting"] = valve.mapping[setting]
-
-        # the valve's name was given
-        # in this case, we get the mapped valve with that name
-        # we don't have to worry about duplicate names since that's checked later
-        elif setting in [c.name for c in valve.mapping]:
-            logger.trace(f"{setting} in {repr(valve)}'s mapping.")
-            mapped_component = [c for c in valve.mapping if c.name == setting]
-            kwargs["setting"] = valve.mapping[mapped_component[0]]
-
-        # the user gave the actual port mapping number
-        elif setting in valve.mapping.values() and isinstance(setting, int):
-            logger.trace(f"User supplied manual setting for {valve}")
-        else:
-            raise ValueError(f"Invalid setting {setting} for {repr(valve)}.")
-
-        return kwargs
+        return f"Protocol {self.name} defined over {repr(self.graph)}"
 
     def _check_component_kwargs(self, component: ActiveComponent, **kwargs) -> None:
         """Checks that the given keyword arguments are valid for a component."""
@@ -152,7 +124,12 @@ class Protocol(object):
                 raise ValueError(msg)
 
     def _add_single(
-        self, component: ActiveComponent, start=None, stop=None, duration=None, **kwargs
+        self,
+        component: ActiveComponent,
+        start: Union[str, timedelta],
+        stop=None,
+        duration=None,
+        **kwargs,
     ) -> None:
         """Adds a single procedure to the protocol.
 
@@ -160,45 +137,56 @@ class Protocol(object):
         """
 
         # make sure that the component being added is part of the apparatus
-        self.apparatus[component]
+        assert component in self.graph, f"{component} must be part of the apparatus."
 
         # don't let users give empty procedures
         if not kwargs:
             raise RuntimeError(
                 "No kwargs supplied. "
-                "This will not manipulate the state of your sythesizer. "
+                "This will not manipulate the state of your synthesizer. "
                 "Ensure your call to add() is valid."
             )
 
-        # perform the mapping for valves
-        if isinstance(component, Valve):
-            kwargs = self._check_added_valve_mapping(component, **kwargs)
+        # FIXME procedures are XDLexe like, the actual valve position should be passed directly, resolve before!
+        # If a MultiportComponentMixin component is passed together with a new port position, check validity
+        if isinstance(component, MultiportComponentMixin) and "setting" in kwargs:
+            if isinstance(kwargs["setting"], Component):
+                assert self.graph.graph.has_edge(component, kwargs["setting"])
+                assert self.graph.graph[component][kwargs["setting"]][0]["from_port"] in component.port
+            if isinstance(kwargs["setting"], str):
+                to_component = self.graph[kwargs["setting"]]
+                assert self.graph.graph.has_edge(component, to_component)
+                assert self.graph.graph[component][to_component]["from_port"] in component.port
+            if isinstance(kwargs["setting"], int):
+                assert kwargs["setting"] in component.port
 
         # make sure the component and keywords are valid
         self._check_component_kwargs(component, **kwargs)
 
+        # parse the start time
+        if start is None:
+            start = "0 secs"
+        if isinstance(start, timedelta):
+            start = str(start.total_seconds()) + " seconds"
+        start_time = flowchem_ureg.parse_expression(start)
+
+        # Stop or duration
         if stop is not None and duration is not None:
             raise RuntimeError("Must provide one of stop and duration, not both.")
 
-        # parse the start time if given
-        if isinstance(start, timedelta):
-            start = str(start.total_seconds()) + " seconds"
-        elif start is None:  # default to the beginning of the protocol
-            start = "0 seconds"
-        start = flowchem_ureg.parse_expression(start)
-
-        # parse duration if given
+        # Parse duration
         if duration is not None:
             if isinstance(duration, timedelta):
                 duration = str(duration.total_seconds()) + " seconds"
-            stop = start + flowchem_ureg.parse_expression(duration)
-        elif stop is not None:
+            stop_time = start_time + flowchem_ureg.parse_expression(duration)
+        # Parse stop
+        else:
+            assert stop is not None
             if isinstance(stop, timedelta):
                 stop = str(stop.total_seconds()) + " seconds"
-            if isinstance(stop, str):
-                stop = flowchem_ureg.parse_expression(stop)
+            stop_time = flowchem_ureg.parse_expression(stop)
 
-        if stop is not None and start > stop:
+        if start_time > stop_time:
             raise ValueError("Procedure beginning is after procedure end.")
 
         # a little magic for temperature controllers
@@ -216,12 +204,8 @@ class Protocol(object):
         # add the procedure to the procedure list
         self.procedures.append(
             dict(
-                start=float(start.to_base_units().magnitude)
-                if start is not None
-                else start,
-                stop=float(stop.to_base_units().magnitude)
-                if stop is not None
-                else stop,
+                start=start_time.m_as("second"),
+                stop=stop_time.m_as("second"),
                 component=component,
                 params=kwargs,
             )
@@ -286,7 +270,7 @@ class Protocol(object):
         Compile the protocol into a dict of devices and their procedures.
 
         Returns:
-        - A dict with components as the values and lists of their procedures as the value.
+        - A dict with components as keys and lists of their procedures as the value.
         The elements of the list of procedures are dicts with two keys:
             "time" in seconds
             "params", whose value is a dict of parameters for the procedure.
@@ -296,78 +280,24 @@ class Protocol(object):
         """
         output = {}
 
-        # deal only with compiling active components
-        for component in self.apparatus[ActiveComponent]:
+        # Only compile active components
+        for component in self.graph[ActiveComponent]:
             # determine the procedures for each component
             component_procedures: List[MutableMapping] = sorted(
                 [x for x in self.procedures if x["component"] == component],
                 key=lambda x: x["start"],
             )
 
-            # skip compiling components without procedures
-            if not len(component_procedures):
-                warn(
-                    f"{component} is an active component but was not used in this procedure."
-                    " If this is intentional, ignore this warning."
-                )
-                continue
-
-            # validate each component
+            # validate component
             try:
                 component._validate(dry_run=dry_run)
             except Exception as e:
-                raise RuntimeError(f"{component} isn't valid. Got error: '{str(e)}'.") from e
-
-            # check for conflicting continuous procedures
-            if (
-                len(
-                    [
-                        x
-                        for x in component_procedures
-                        if x["start"] is None and x["stop"] is None
-                    ]
-                )
-                > 1
-            ):
                 raise RuntimeError(
-                    f"{component} cannot have two procedures for the entire duration of the protocol. "
-                    "If each procedure defines a different attribute to be set for the entire duration, "
-                    "combine them into one call to add(). Otherwise, reduce ambiguity by defining start "
-                    "and stop times for each procedure. "
-                    ""
-                )
+                    f"{component} isn't valid. Got error: '{str(e)}'."
+                ) from e
 
-            for i, procedure in enumerate(component_procedures):
-                # automatically infer start and stop times
-                try:
-                    # the start time of the next procedure
-                    next_start = component_procedures[i + 1]["start"]
-                    if next_start == 0:
-                        raise RuntimeError(
-                            f"Ambiguous start time for {procedure['component']}. "
-                        )
-                    elif next_start is not None and procedure["stop"] is None:
-                        warn(
-                            f"Automatically inferring stop time for {procedure['component']} "
-                            f"as beginning of {procedure['component']}'s next procedure."
-                        )
-                        procedure["stop"] = next_start
-
-                    # check for overlapping procedures
-                    elif next_start < procedure["stop"] and not isclose(
-                        next_start, procedure["stop"]
-                    ):
-                        msg = "Cannot have two overlapping procedures. "
-                        msg += f"{procedure} and {component_procedures[i + 1]} conflict"
-                        raise RuntimeError(msg)
-
-                except IndexError:
-                    if procedure["stop"] is None:
-                        warn(
-                            f"Automatically inferring stop for {procedure['component']} as the end of the protocol. "
-                            f"To override, provide stop in your call to add()."
-                        )
-                        procedure["stop"] = self._inferred_duration
+            # Validates procedures for component
+            component.validate_procedures(component_procedures)
 
             # give the component instructions at all times
             compiled = []
@@ -480,19 +410,16 @@ class Protocol(object):
                     procedure[k] = v
 
                 # show what the valve is actually connecting to
-                if isinstance(component, Valve) and type(procedure["setting"]) == int:
-                    assert isinstance(component.mapping, Mapping)
-                    # guess the component, c, which the valve is set to
-                    mapped_component = [
-                        repr(k)
-                        for k, v in component.mapping.items()
-                        if v == procedure["setting"]
-                    ][0]
-                    procedure["mapped component"] = mapped_component
+                if (
+                    isinstance(component, MultiportComponentMixin)
+                    and "setting" in procedure.keys()
+                ):
+                    mapped_component = self.graph.component_from_origin_and_port(component, procedure["setting"])  # type: ignore
+                    procedure["mapped component"] = mapped_component.name
                 # TODO: make this deterministic for color coordination
                 procedure["params"] = json.dumps(procedure["params"])
 
-            # prettyify the tooltips
+            # prettify the tooltips
             tooltips = [
                 alt.Tooltip("utchoursminutesseconds(start):T", title="start (h:m:s)"),
                 alt.Tooltip("utchoursminutesseconds(stop):T", title="stop (h:m:s)"),
@@ -542,10 +469,10 @@ class Protocol(object):
         verbosity: str = "info",
         confirm: bool = False,
         strict: bool = True,
-        log_file: Union[str, bool, os.PathLike, None] = True,
+        log_file: Union[str, bool, PathLike, None] = True,
         log_file_verbosity: Optional[str] = "trace",
         log_file_compression: Optional[str] = None,
-        data_file: Union[str, bool, os.PathLike, None] = True,
+        data_file: Union[str, bool, PathLike, None] = True,
     ) -> Experiment:
         """
         Executes the procedure.

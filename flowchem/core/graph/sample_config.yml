@@ -1,103 +1,97 @@
-## Nodes
-#
+version: "1.1"
+
+# Nodes
 devices:
-#
-#    # Test device
-#
-#    fakedevice1:
-#        FakeDevice:
-#            port: COM2
-#
-#    # Analytics and sensors
-#
-#    nmr:
-#        Spinsolve:
-#            host: BSMC-7WP43Y1
-#            port: 13000
-#            data_folder: W:\BS-FlowChemistry\Equipment\Magritek_NMR\data_exchange
-#
-#    ir:
-#        FlowIR: {}
-#
-#    p-sensor:
-#        PressureSensor:
-#            vint_serial_number: 627768
-    # Temperature control
 
-#    heater:
-#        R4Heater:
-#            port: COM4
+    # Test device
+    - Dummy:
+        name: dummydevice1
 
-#    chiller:
-#        HuberChiller:
-#            port: COM1
+    # Analytics and sensors
+#    - Spinsolve:
+#        name: nmr
+#        host: BSMC-7WP43Y1
+#        port: 13000
+#        data_folder: W:\BS-FlowChemistry\Equipment\Magritek_NMR\data_exchange
+
+#    - FlowIR:
+#        name: ir
+
+#    - PressureSensor:
+#        name: p_sensor
+#        vint_serial_number: 627768
+
+    # Temperature controller
+    - R4Heater:
+        name: heater
+        port: COM4
+
+    - HuberChiller:
+        name: chiller
+        port: COM1
+
+    # Pumps
+    - ML600:
+        name: pump1
+        port: COM5
+        address: 1
+        syringe_volume: 5 ml
+
+    - ML600:
+        name: pump2
+        port: COM5
+        address: 2
+        syringe_volume: 5 ml
+
+#    - Elite11InfuseOnly:
+#        name: pump3
+#        port: COM6
+#        address: 1
+#        syringe_volume: 5 ml
+#        diameter: 12.23 mm
+
+#    - AzuraCompactPump:
+#        name: pump4
+#        mac_address: 00:12:a2:b4:33:11
+
+    # Valves
+#    - Knauer16PortValve:
+#        name: valve1
+#        mac_address: 00:00:00:00:1a:ff
 #
-#    # Pumps
+#    - Knauer12PortValve:
+#        name: valve2
+#        mac_address: 00:00:00:00:1a:fe
 #
-#    pump1:
-#        ML600:
-#            port: COM5
-#            address: 1
-#            syringe_volume: 5
+#    - Knauer6Port6PositionValve:
+#        name: valve3
+#        mac_address: 00:00:00:00:1a:fc
 #
-#    pump2:
-#        ML600:
-#            port: COM5
-#            address: 2
-#            syringe_volume: 5
+#    - Knauer6Port2PositionValve:
+#        name: valve4
+#        mac_address: 00:00:00:00:1a:fb
 #
-#    pump3:
-#        Elite11:
-#            port: COM6
-#            address: 1
-#            syringe_volume: 5
-#            diameter: 12.23
-#
-#    pump4:
-#        AzuraCompactPump:
-#            mac_address: 00:12:a2:b4:33:11
-#
-#    # Valves
-#
-#    valve1:
-#        Knauer16PortValve:
-#            mac_address: 00:00:00:00:1a:ff
-#
-#    valve2:
-#        Knauer12PortValve:
-#            mac_address: 00:00:00:00:1a:fe
-#
-#    valve3:
-#        Knauer6Port6PositionValve:
-#            mac_address: 00:00:00:00:1a:fc
-#    valve4:
-#        Knauer6Port2PositionValve:
-#            mac_address: 00:00:00:00:1a:fb
-#
-#    valve5:
-#        ViciValco:
-#            port: COM5
-#            address: 0
+#    - ViciValco:
+#        name: valve5
+#        port: COM5
+#        address: 0
+
 #    # Other
-#
-#    power-supply:
-#        MansonPowerSupply:
-#            port: COM7
-#    pump1:
-#        AzuraCompactPump:
-#            mac_address: 00:12:a2:b4:33:11
+#    - MansonPowerSupply:
+#        name: power-supply
+#        port: COM7
 
-    myreagent:
-        FlowchemVessel:
-            description: Long description
+    - VesselChemicals:
+        name: reagent1
+        description: Long description
 
 connections:
-    Tube:
+    - Tube:
         from:
             device: pump1
             position: 0
         to:
-            device: myreagent
+            device: reagent1
             position: 0
 
         length: 0.1 m

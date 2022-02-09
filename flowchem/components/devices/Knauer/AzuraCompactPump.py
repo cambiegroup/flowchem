@@ -70,7 +70,9 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         "supported": True,
     }
 
-    def __init__(self, ip_address=None, mac_address=None, name=None, max_pressure: str = None):
+    def __init__(
+        self, ip_address=None, mac_address=None, name=None, max_pressure: str = None
+    ):
         super().__init__(ip_address, mac_address, name)
         self.eol = b"\n\r"
 
@@ -81,7 +83,6 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         self._pressure_limit = max_pressure
 
         self.rate = flowchem_ureg.parse_expression("0 ml/min")
-        self._visualization_shape = "box3d"
         self._base_state = dict(rate="0 mL/min")
 
     async def initialize(self):
@@ -112,8 +113,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
 
         elif "ERROR:2" in reply:
             warnings.warn(
-                "Setpoint refused by device.\n"
-                "Refer to manual for allowed values.\n"
+                "Setpoint refused by device.\n" "Refer to manual for allowed values.\n"
             )
         else:
             warnings.warn("Unspecified error detected!")
@@ -198,7 +198,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         elif htype == AzuraPumpHeads.FLOWRATE_FIFTY_ML:
             self.max_allowed_pressure, self.max_allowed_flow = 150, 50000
 
-    async def get_headtype(self):
+    async def get_headtype(self) -> AzuraPumpHeads:
         """Returns pump's head type."""
         head_type_id = await self.create_and_send_command(HEADTYPE)
         try:
@@ -222,14 +222,14 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         logger.debug(f"Head type set to {head_type}")
 
     async def get_flow(self) -> str:
-        """ Gets flow rate. """
+        """Gets flow rate."""
         flow_value = await self.create_and_send_command(FLOW)
         flowrate = flowchem_ureg(f"{flow_value} ul/min")
         logger.debug(f"Current flow rate is {flowrate}")
         return str(flowrate.to("ml/min"))
 
     async def set_flow(self, flowrate: str = None):
-        """ Sets flow rate.
+        """Sets flow rate.
 
         :param flowrate: string with units
         """
@@ -249,7 +249,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         return str(p_min)
 
     async def set_minimum_pressure(self, value: str = "0 bar"):
-        """ Sets minimum pressure. The pumps stops if the measured P is lower than this. """
+        """Sets minimum pressure. The pumps stops if the measured P is lower than this."""
 
         pressure = flowchem_ureg(value)
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
@@ -268,7 +268,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         return str(p_max)
 
     async def set_maximum_pressure(self, value: str):
-        """ Sets maximum pressure. The pumps stops if the measured P is higher than this. """
+        """Sets maximum pressure. The pumps stops if the measured P is higher than this."""
 
         pressure = flowchem_ureg(value)
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
@@ -349,7 +349,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
     async def read_pressure(self) -> str:
-        """ If the pump has a pressure sensor, returns pressure. Read-only property of course. """
+        """If the pump has a pressure sensor, returns pressure. Read-only property of course."""
         pressure = await self._transmit_and_parse_reply(PRESSURE) * flowchem_ureg.bar
         logger.debug(f"Pressure measured = {pressure}")
         return str(pressure)
@@ -433,6 +433,18 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         else:
             await self.set_flow(self.rate)
             await self.start_flow()
+
+    def get_router(self):
+        """Creates an APIRouter for this object."""
+        from fastapi import APIRouter
+
+        router = APIRouter()
+        router.add_api_route("/flow", self.get_flow, methods=["GET"])
+        router.add_api_route("/flow", self.set_flow, methods=["PUT"])
+        router.add_api_route("/pressure", self.read_pressure, methods=["GET"])
+        router.add_api_route("/start", self.start_flow, methods=["PUT"])
+        router.add_api_route("/stop", self.stop_flow, methods=["PUT"])
+        return router
 
 
 if __name__ == "__main__":

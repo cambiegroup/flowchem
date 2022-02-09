@@ -1,7 +1,9 @@
 """ Control module for the Vapourtec R4 heater """
 import time
+
+from flowchem.components.properties import ActiveComponent
 from loguru import logger
-from typing import Tuple
+from typing import Tuple, Optional
 
 import aioserial
 
@@ -22,7 +24,7 @@ except ImportError as e:
     ) from e
 
 
-class R4Heater:
+class R4Heater(ActiveComponent):
     """R4 reactor heater control class."""
 
     DEFAULT_CONFIG = {
@@ -34,8 +36,8 @@ class R4Heater:
     }
     """ Virtual control of the Vapourtec R4 heating module. """
 
-    def __init__(self, **config):
-
+    def __init__(self, name: Optional[str] = None, **config):
+        super().__init__(name)
         if not HAS_VAPOURTEC_COMMANDS:
             raise InvalidConfiguration(
                 "R4Heater unusable: no Vapourtec Commands available.\n"
@@ -46,10 +48,10 @@ class R4Heater:
         configuration = dict(R4Heater.DEFAULT_CONFIG, **config)
         try:
             self._serial = aioserial.AioSerial(**configuration)
-        except aioserial.SerialException as e:
+        except aioserial.SerialException as ex:
             raise InvalidConfiguration(
                 f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
-            ) from e
+            ) from ex
 
     async def _write(self, command: str):
         """Writes a command to the pump"""
@@ -98,11 +100,11 @@ class R4Heater:
                 ret_code = await self.write_and_read_reply(
                     VapourtecCommand.TEMP.set_argument(channel)
                 )
-            except InvalidConfiguration as e:
+            except InvalidConfiguration as ex:
                 ret_code = "N"
                 failure += 1
                 if failure > 3:
-                    raise e
+                    raise ex
             else:
                 failure = 0
 
@@ -147,9 +149,9 @@ if __name__ == "__main__":
     async def main():
         """test function"""
         # noinspection PyArgumentEqualDefault
-        await heat.set_temperature(0, 30, wait=False)
+        await heat.set_temperature(0, "30 °C", wait=False)
         print("not waiting - default behaviour.")
-        await heat.set_temperature(0, 30, wait=True)
+        await heat.set_temperature(0, "30 °C", wait=True)
         print("actually I waited")
 
     asyncio.run(main())

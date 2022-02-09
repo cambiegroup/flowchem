@@ -23,7 +23,9 @@ def ml600_finder():
     for serial_port in port_available:
         try:
             print(f"Looking for pump on {serial_port}...")
-            link = HamiltonPumpIO(aioserial.Serial(serial_port, timeout=0.1))
+            link = HamiltonPumpIO(
+                aioserial.AioSerial(url=serial_port, timeout=0.1)
+            )
             asyncio.run(link.initialize())
             logger.info(f"{link.num_pump_connected} pump(s) found on <{serial_port}>")
             valid_ports.add(serial_port)

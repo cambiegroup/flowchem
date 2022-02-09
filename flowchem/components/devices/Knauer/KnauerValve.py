@@ -6,7 +6,7 @@ from enum import Enum
 
 from flowchem.exceptions import DeviceError
 from flowchem.components.devices.Knauer.Knauer_common import KnauerEthernetDevice
-from flowchem.components.stdlib.valve import Valve
+from flowchem.components.properties import Valve
 
 
 class KnauerValveHeads(Enum):
