@@ -35,10 +35,15 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
 
 async def get_device_type(ip_address: str) -> str:
     """Returns either 'Pump', 'Valve' or 'Unknown'"""
+    fut = asyncio.open_connection(host=ip_address, port=10001)
     try:
-        reader, writer = await asyncio.open_connection(host=ip_address, port=10001)
+        reader, writer = await asyncio.wait_for(fut, timeout=3)
     except ConnectionError:
         return "ConnectionError"
+    except asyncio.TimeoutError:
+        if ip_address == "192.168.1.2":
+            return "TimeoutError - Nice FlowIR that you have :D"
+        return "TimeoutError"
 
     # Test Pump
     writer.write("HEADTYPE:?\n\r".encode())
