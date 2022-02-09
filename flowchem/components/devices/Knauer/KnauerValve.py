@@ -116,12 +116,14 @@ class KnauerValve(KnauerEthernetDevice, Valve):
 
     async def switch_to_position(self, position: str):
         """Move valve to position."""
-        position = position.upper()
+        position = str(position).upper()
 
         # switching necessary?
         if position == self._position:
             logger.debug("Target position == current position. No movement needed.")
             return
+        else:
+            self._position = position
 
         # Switch to position
         await self._transmit_and_parse_reply(position)
