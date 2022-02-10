@@ -62,14 +62,20 @@ class KnauerEthernetDevice:
 
     async def initialize(self):
         """Initialize connection"""
+        # Future used to set shorter timeout than default
+        future = asyncio.open_connection(host=self.ip_address, port=10001)
         try:
-            self._reader, self._writer = await asyncio.open_connection(
-                host=self.ip_address, port=10001
-            )
+            self._reader, self._writer = await asyncio.wait_for(future, timeout=3)
         except ConnectionError as e:
+            logger.exception(e)
             raise InvalidConfiguration(
-                f"Cannot open connection with Knauer Device IP={self.ip_address}"
+                f"Cannot open connection with device {self.__class__.__name__} at IP={self.ip_address}"
             ) from e
+        except asyncio.TimeoutError as t:
+            logger.exception(t)
+            raise InvalidConfiguration(
+                f"No reply from device {self.__class__.__name__} at IP={self.ip_address}"
+            ) from t
 
     async def _send_and_receive(self, message: str) -> str:
         self._writer.write(message.encode("ascii") + self.eol)
