@@ -2,8 +2,8 @@ import asyncio
 
 from flowchem import Knauer16PortValve
 
-DELAY = 60 * 60
-START_POSITION = 10
+DELAY = 30 # in sec
+START_POSITION = 1  # First position for collection
 
 
 async def main():
@@ -22,4 +22,3 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
-    input()
