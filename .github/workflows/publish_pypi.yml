@@ -45,4 +45,4 @@ jobs:
       - name: Publish release 📦 to GitHub
         uses: elgohr/Github-Release-Action@master
         with:
-          args: "${{ env.STATE_RELEASE_VERSION }}"
+          args: Automated release
