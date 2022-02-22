@@ -64,7 +64,10 @@ class DeviceNode:
                     )
                 router = APIRouter()
 
-        router.prefix = f"/{self.safe_title}"
-        router.tags = [self.safe_title]
+        """ Router name is lowercase with no whitespace """
+        router_name = self.device.name.replace(" ", "").lower()
+
+        router.prefix = f"/{router_name}"
+        router.tags = [router_name]
         self._router = router
         return self._router
