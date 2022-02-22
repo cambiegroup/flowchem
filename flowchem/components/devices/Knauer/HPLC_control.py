@@ -14,6 +14,7 @@ from pathlib import Path
 from flowchem.exceptions import InvalidConfiguration
 
 try:
+    # noinspection PyUnresolvedReferences
     from flowchem.components.devices.Knauer.Knauer_HPLC_NDA import Lamp_Command
 
     HAS_KNAUER_COMMANDS = True

@@ -172,7 +172,7 @@ class ViciValcoValveIO:
 
     @property
     def name(self) -> str:
-        """This is used to provide a nice-looking default name to valves based on their serial connection."""
+        """This is used to provide a nice-looking default name to valve based on its serial connection."""
         try:
             return self._serial.name
         except AttributeError:
@@ -185,7 +185,7 @@ class ViciValco(InjectionValve):
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
     _io_instances: Set[ViciValcoValveIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
-    # When several valves are daisy chained on the same serial port, they need to all access the same Serial object,
+    # When several valves are daisy-chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
 

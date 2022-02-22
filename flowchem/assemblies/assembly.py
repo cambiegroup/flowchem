@@ -13,7 +13,7 @@ class Assembly(MultiportComponentMixin, Component):
     edges: Sequence[Tuple[Component, Component]]
 
     def _subcomponent_by_name(self, name: str) -> Component:
-        """ Returns a component in self.nodes by its name. """
+        """ Returns a component in nodes by its name. """
         for node in self.nodes:
             if node.name == name:
                 return node

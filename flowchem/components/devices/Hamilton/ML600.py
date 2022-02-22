@@ -124,7 +124,7 @@ class HamiltonPumpIO:
         Ensure connection with pump + initialize
 
         Args:
-            hw_initialization: Whether each pumps has to be initialized. Note that this might be undesired!
+            hw_initialization: Whether each pump has to be initialized. Note that this might be undesired!
         """
         # This has to be run after each power cycle to assign addresses to pumps
         self.num_pump_connected = await self._assign_pump_address()
@@ -134,7 +134,7 @@ class HamiltonPumpIO:
 
     async def _assign_pump_address(self) -> int:
         """
-        To be run on init, auto assign addresses to pumps based on their position on the daisy chain!
+        To be run on init, auto assign addresses to pumps based on their position in the daisy chain.
         A custom command syntax with no addresses is used here so read and write has been rewritten
         """
         try:
@@ -239,7 +239,7 @@ class ML600(Pump):
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
     _io_instances: Set[HamiltonPumpIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
-    # When several pumps are daisy chained on the same serial port, they need to all access the same Serial object,
+    # When several pumps are daisy-chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
 
@@ -549,14 +549,14 @@ class ML600(Pump):
             await self.wait_until_idle()
 
     async def get_return_steps(self) -> int:
-        """Return steps getter. Applied to the end of a downward syringe movement to removes mechanical slack."""
+        """Return steps' getter. Applied to the end of a downward syringe movement to removes mechanical slack."""
         steps = await self.send_command_and_read_reply(
             Protocol1CommandTemplate(command="YQN")
         )
         return int(steps)
 
     async def set_return_steps(self, target_steps: int):
-        """Return steps setter. Applied to the end of a downward syringe movement to removes mechanical slack."""
+        """Return steps' setter. Applied to the end of a downward syringe movement to removes mechanical slack."""
         set_return_steps_cmd = Protocol1CommandTemplate(command="YSN")
         await self.send_command_and_read_reply(
             set_return_steps_cmd, command_value=str(int(target_steps))

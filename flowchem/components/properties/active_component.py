@@ -147,7 +147,7 @@ class ActiveComponent(Component):
             assert procedure["start"] is not None
             assert procedure["stop"] is not None
 
-        # For now we still have to check for conflicting procedures
+        # For now, we still have to check for conflicting procedures
         for i, procedure in enumerate(procedures):
             try:
                 # the start time of the next procedure

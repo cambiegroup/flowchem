@@ -99,7 +99,7 @@ class Spinsolve(ActiveComponent):
         self.solvent = kwargs.get("solvent", "Chloroform?")
         self.user_data = dict(control_software="flowchem")
 
-        # Finally check version
+        # Finally, check version
         if version.parse(self.software_version) < version.parse("1.18.1.3062"):
             warnings.warn(
                 f"Spinsolve version {self.software_version} is older than the reference (1.18.1.3062)"

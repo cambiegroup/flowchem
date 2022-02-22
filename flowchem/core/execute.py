@@ -135,7 +135,7 @@ async def main(experiment: "Experiment", dry_run: Union[bool, int], strict: bool
                 _local_time = asctime(localtime(experiment.end_time))
                 end_msg = f"{experiment} completed at {_local_time}."
 
-                # Stop all of the sensors and exit the read loops
+                # Stop all the sensors and exit the read loops
                 logger.debug("Resetting all components")
 
                 # reset object

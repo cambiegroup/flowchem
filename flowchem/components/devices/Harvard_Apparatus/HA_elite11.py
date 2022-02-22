@@ -298,14 +298,14 @@ class Elite11InfuseOnly(Pump):
     Controls Harvard Apparatus Elite11 syringe pumps.
 
     The same protocol (Protocol11) can be used on other HA pumps, but is untested.
-    Several pumps can be daisy chained on the same serial connection, if so address 0 must be the first one.
+    Several pumps can be daisy-chained on the same serial connection, if so address 0 must be the first one.
     Read the manufacturer manual for more details.
     """
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
     _io_instances: Set[HarvardApparatusPumpIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
-    # When several pumps are daisy chained on the same serial port, they need to all access the same Serial object,
+    # When several pumps are daisy-chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
 
@@ -677,7 +677,7 @@ class Elite11InfuseOnly(Pump):
                 )
 
     async def pump_info(self) -> PumpInfo:
-        """Returns many info
+        """Returns much info
 
         e.g.
         ('Pump type          Pump 11',

@@ -74,18 +74,18 @@ class Reader:
 
     def clear_replies(self, reply_type=""):
         """Remove old replies."""
-        # Shortcut if none provided
+        # Shortcut if none provided...
         if not reply_type:
             self._replies.clear()
 
-        # Otherwise check type
+        # Otherwise, check type
         for reply in self._replies:
             if reply[0].tag.endswith(reply_type):
                 self._replies.remove(reply)
 
     def fetch_replies(self):
         """
-        Fetch the unprocessed chunks from the queue and adds them to the receive buffer
+        Fetch the unprocessed chunks from the queue and adds them to the reception buffer
         """
         while not self._queue.empty():
             self._rcv_buffer += self._queue.get()

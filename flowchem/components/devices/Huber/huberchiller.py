@@ -49,7 +49,7 @@ class PBCommand:
         return self.command[4:8]
 
     def parse_temperature(self) -> str:
-        """Parse a device temp from hex string to celsius float [two's complement 16 bit signed hex, see manual]"""
+        """Parse a device temp from hex string to celsius float [two's complement 16-bit signed hex, see manual]"""
         temp = (
             (int(self.data, 16) - 65536) / 100
             if int(self.data, 16) > 32767
@@ -69,12 +69,12 @@ class PBCommand:
         return str(flowchem_ureg(f"{self.parse_integer()} rpm"))
 
     def parse_bits(self) -> List[bool]:
-        """ " Parse a device reply from hexadecimal string to 16 constituting bits."""
+        """Parse a device reply from hexadecimal string to 16 constituting bits."""
         bits = f"{int(self.data, 16):016b}"
         return [bool(int(x)) for x in bits]
 
     def parse_boolean(self):
-        """ " Parse a device reply from hexadecimal string (0x0000 or 0x0001) to boolean."""
+        """Parse a device reply from hexadecimal string (0x0000 or 0x0001) to boolean."""
         return self.parse_integer() == 1
 
     def parse_status1(self) -> Dict[str, bool]:
