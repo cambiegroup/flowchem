@@ -36,7 +36,7 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
   build-release-gh:
-    runs-on: ubuntu-latestq
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
     - name: Create a Release
