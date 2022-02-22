@@ -223,9 +223,9 @@ class ClarityExecutioner:
 
 if __name__ == "__main__":
     computer_w_Clarity = False
-    if computer_w_Clarity == True:
+    if computer_w_Clarity:
         analyser = ClarityExecutioner(10014)
-    elif computer_w_Clarity == False:
+    else:
         commander = ClarityInterface(
             remote=True, host="192.168.10.11", port=10014, instrument_number=2
         )

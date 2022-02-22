@@ -20,6 +20,14 @@ from flowchem.units import flowchem_ureg
 from flowchem.components.stdlib import Pump
 
 
+def _parse_version(version_text: str) -> Tuple[int, int, int]:
+    """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4 """
+
+    numbers = version_text.split(" ")[-1]
+    version_digits = numbers.split(".")
+    return int(version_digits[0]), int(version_digits[1]), int(version_digits[2])
+
+
 class PumpInfo(BaseModel):
     """Detailed pump info."""
 
@@ -422,7 +430,7 @@ class Elite11InfuseOnly(Pump):
         )
 
         # makes sure that a 'clean' pump is initialized.
-        self._version = self._parse_version(await self.version())
+        self._version = _parse_version(await self.version())
 
         if self._version[0] >= 3:
             await self.clear_volumes()
@@ -483,13 +491,6 @@ class Elite11InfuseOnly(Pump):
             set_rate = upper_limit
 
         return set_rate.to("ml/min").magnitude
-
-    def _parse_version(self, version_text: str) -> Tuple[int, int, int]:
-        """Extract semver from version string"""
-
-        numbers = version_text.split(" ")[-1]
-        version_digits = numbers.split(".")
-        return int(version_digits[0]), int(version_digits[1]), int(version_digits[2])
 
     async def version(self) -> str:
         """Returns the current firmware version reported by the pump"""
@@ -581,17 +582,6 @@ class Elite11InfuseOnly(Pump):
             warnings.warn("Command not supported by pump, update firmware!")
             return
         await self._send_command_and_read_reply(Elite11Commands.CLEAR_INFUSED_VOLUME)
-
-    async def clear_infused_withdrawn_volume(self):
-        """Reset both the pump infused and withdrawn volume counters to 0"""
-        self.ensure_withdraw_is_enabled()
-        if self._version[0] < 3:
-            warnings.warn("Command not supported by pump, update firmware!")
-            return
-        await self._send_command_and_read_reply(
-            Elite11Commands.CLEAR_INFUSED_WITHDRAWN_VOLUME
-        )
-        sleep(0.1)  # FIXME check if needed
 
     async def clear_volumes(self):
         """Set all pump volumes to 0"""

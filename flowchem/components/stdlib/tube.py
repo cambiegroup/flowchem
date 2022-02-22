@@ -20,7 +20,7 @@ class Tube(Component):
     - `length`: The length of the tube, converted to a `pint.Quantity`.
     - `material`: The material of the tube.
     - `OD`: The outer diameter of the tube, converted to a `pint.Quantity`.
-    - `volume`: The volume of the tube, as determined from the length and inner diameter, converted to a `pint.Quantity`.
+    - `volume`: The tube volume, as determined from the length and inner diameter, converted to a `pint.Quantity`.
 
     Raises:
         - ValueError: When the outer diameter is less than the inner diameter of the tube.

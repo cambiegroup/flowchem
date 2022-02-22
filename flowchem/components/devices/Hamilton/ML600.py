@@ -304,7 +304,6 @@ class ML600(Pump):
                                        f"Syringe volume must be a string parsable as pint.Quantity!\n"
                                        f"It is now a {type(syringe_volume)}: {syringe_volume} ") from e
 
-
         if self.syringe_volume.m_as("ml") not in ML600.VALID_SYRINGE_VOLUME:
             raise InvalidConfiguration(
                 f"The specified syringe volume ({syringe_volume}) does not seem to be valid!\n"
@@ -579,7 +578,7 @@ class ML600(Pump):
             return
 
         # Valve to position specified
-        await self.set_valve_position(from_valve, wait_for_movement_end=True)
+        await self.set_valve_position(from_valve)
         # Move up to target volume
         await self.to_volume(
             str(cur_vol + volume),
@@ -605,7 +604,7 @@ class ML600(Pump):
             return
 
         # Valve to position specified
-        await self.set_valve_position(to_valve, wait_for_movement_end=True)
+        await self.set_valve_position(to_valve)
         # Move up to target volume
         await self.to_volume(
             str(cur_vol - volume),

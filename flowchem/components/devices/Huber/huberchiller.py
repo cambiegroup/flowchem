@@ -398,14 +398,14 @@ class HuberChiller(TempControl):
     @staticmethod
     def _temp_to_string(temp: pint.Quantity) -> str:
         """From temperature to string for command. f^-1 of PCommand.parse_temperature."""
-        minT = flowchem_ureg("-151 °C")
-        maxT = flowchem_ureg("327 °C")
+        min_temp = flowchem_ureg("-151 °C")
+        max_temp = flowchem_ureg("327 °C")
         if not isinstance(temp, pint.Quantity):
             logger.warning(
                 f"Implicit assumption that the temperature provided [{temp}] is in Celsius. Add units pls!"
             )
             temp = flowchem_ureg(f"{temp} °C")
-        assert minT <= temp <= maxT
+        assert min_temp <= temp <= max_temp
         # Hexadecimal two's complement
         return f"{int(temp.m_as('°C') * 100) & 65535:04X}"
 
