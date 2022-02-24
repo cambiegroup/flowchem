@@ -13,7 +13,7 @@ port = 13000
 @pytest.fixture(scope="session")
 def nmr():
     """ Spinsolve instance on host:port. Change to match your hardware ;) """
-    return Spinsolve.from_config(dict(host=host, port=port))
+    return Spinsolve.from_config(host=host, port=port)
 
 
 @pytest.mark.Spinsolve
