@@ -5,7 +5,7 @@ from flowchem.components.properties import Sensor
 
 class BrokenDummySensor(Sensor):
     """
-    A dummy sensor returning the number of times it has been read. After a few reads, it fails, raising a `RuntimeError`.
+    A dummy sensor returning the number of times it has been read. Fails after a few reads, raising a `RuntimeError`.
 
     ::: danger
     Using this component during real protocol execution will result in a failure.

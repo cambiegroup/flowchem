@@ -49,7 +49,7 @@ class PBCommand:
         return self.command[4:8]
 
     def parse_temperature(self) -> str:
-        """Parse a device temp from hex string to celsius float [two's complement 16 bit signed hex, see manual]"""
+        """Parse a device temp from hex string to celsius float [two's complement 16-bit signed hex, see manual]"""
         temp = (
             (int(self.data, 16) - 65536) / 100
             if int(self.data, 16) > 32767
@@ -69,12 +69,12 @@ class PBCommand:
         return str(flowchem_ureg(f"{self.parse_integer()} rpm"))
 
     def parse_bits(self) -> List[bool]:
-        """ " Parse a device reply from hexadecimal string to 16 constituting bits."""
+        """Parse a device reply from hexadecimal string to 16 constituting bits."""
         bits = f"{int(self.data, 16):016b}"
         return [bool(int(x)) for x in bits]
 
     def parse_boolean(self):
-        """ " Parse a device reply from hexadecimal string (0x0000 or 0x0001) to boolean."""
+        """Parse a device reply from hexadecimal string (0x0000 or 0x0001) to boolean."""
         return self.parse_integer() == 1
 
     def parse_status1(self) -> Dict[str, bool]:
@@ -398,14 +398,14 @@ class HuberChiller(TempControl):
     @staticmethod
     def _temp_to_string(temp: pint.Quantity) -> str:
         """From temperature to string for command. f^-1 of PCommand.parse_temperature."""
-        minT = flowchem_ureg("-151 °C")
-        maxT = flowchem_ureg("327 °C")
+        min_temp = flowchem_ureg("-151 °C")
+        max_temp = flowchem_ureg("327 °C")
         if not isinstance(temp, pint.Quantity):
             logger.warning(
                 f"Implicit assumption that the temperature provided [{temp}] is in Celsius. Add units pls!"
             )
             temp = flowchem_ureg(f"{temp} °C")
-        assert minT <= temp <= maxT
+        assert min_temp <= temp <= max_temp
         # Hexadecimal two's complement
         return f"{int(temp.m_as('°C') * 100) & 65535:04X}"
 

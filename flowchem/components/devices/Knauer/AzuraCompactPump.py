@@ -76,7 +76,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         super().__init__(ip_address, mac_address, name)
         self.eol = b"\n\r"
 
-        # All of the following are set upon initialize()
+        # All the following are set upon initialize()
         self.max_allowed_pressure, self.max_allowed_flow = 0, 0
         self._headtype = None
         self._running = None
@@ -203,7 +203,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         head_type_id = await self.create_and_send_command(HEADTYPE)
         try:
             headtype = AzuraPumpHeads(int(head_type_id))
-            # Sets internal property (changes max flowrate etc)
+            # Sets internal property (changes max flowrate etc.)
             self._headtype = headtype
         except ValueError as e:
             raise DeviceError(
@@ -217,7 +217,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
     async def set_headtype(self, head_type: AzuraPumpHeads):
         """Sets pump's head type."""
         await self.create_and_send_command(HEADTYPE, setpoint=head_type.value)
-        # Update internal property (changes max flowrate etc)
+        # Update internal property (changes max flowrate etc.)
         self._headtype = head_type
         logger.debug(f"Head type set to {head_type}")
 
@@ -242,14 +242,14 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         logger.info(f"Flow set to {flowrate}")
 
     async def get_minimum_pressure(self):
-        """Gets minimum pressure. The pumps stops if the measured P is lower than this."""
+        """Gets minimum pressure. The pump stops if the measured P is lower than this."""
 
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
         p_min = await self.create_and_send_command(command) * flowchem_ureg.bar
         return str(p_min)
 
     async def set_minimum_pressure(self, value: str = "0 bar"):
-        """Sets minimum pressure. The pumps stops if the measured P is lower than this."""
+        """Sets minimum pressure. The pump stops if the measured P is lower than this."""
 
         pressure = flowchem_ureg(value)
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
@@ -261,14 +261,14 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
         logger.info(f"Minimum pressure set to {pressure}")
 
     async def get_maximum_pressure(self) -> str:
-        """Gets maximum pressure. The pumps stops if the measured P is higher than this."""
+        """Gets maximum pressure. The pumps stop if the measured P is higher than this."""
 
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         p_max = await self.create_and_send_command(command) * flowchem_ureg.bar
         return str(p_max)
 
     async def set_maximum_pressure(self, value: str):
-        """Sets maximum pressure. The pumps stops if the measured P is higher than this."""
+        """Sets maximum pressure. The pumps stop if the measured P is higher than this."""
 
         pressure = flowchem_ureg(value)
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50

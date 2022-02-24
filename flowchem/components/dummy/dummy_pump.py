@@ -10,7 +10,7 @@ class DummyPump(Pump):
     A fake pumping device whose primary feature is that it moves fluid, used internally for testing.
 
     ::: warning
-    Users should not instantiate a `DummyPump` for use in a `Protocol` because it is not an actual laboratory instrument.
+    Users should not instantiate a `DummyPump` for use in a `Protocol` because it is not an actual lab instrument.
     :::
 
     Arguments:

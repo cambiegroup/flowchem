@@ -271,12 +271,12 @@ class MansonPowerSupply(ActiveComponent):
         return response == "OK"
 
     async def remove_protection(self) -> bool:
-        """ " I guess it removes over voltage protection?"""
+        """I guess it removes overvoltage protection?"""
         response = await self._send_command("SPRO0")
         return bool(response)
 
     async def add_protection(self) -> bool:
-        """ " I guess it adds over voltage protection?"""
+        """I guess it adds overvoltage protection?"""
         response = await self._send_command("SPRO1")
         return bool(response)
 

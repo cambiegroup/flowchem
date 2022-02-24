@@ -56,11 +56,11 @@ async def test_headtype(pump: AzuraCompactPump):
 @pytest.mark.KPump
 @pytest.mark.asyncio
 async def test_flow_rate(pump: AzuraCompactPump):
-    await pump.set_flow(1.25)
+    await pump.set_flow("1.25 ml/min")
     await pump.start_flow()
     # FIXME
     assert pint.Quantity(await pump.get_flow()).magnitude == 1.25
-    await pump.set_flow(math.pi)
+    await pump.set_flow(f"{math.pi} ml/min")
     assert math.isclose(pint.Quantity(await pump.get_flow()).magnitude, math.pi, abs_tol=1e-3)
     await pump.stop_flow()
 
@@ -77,7 +77,7 @@ async def test_analog_control(pump: AzuraCompactPump):
 @pytest.mark.KPump
 @pytest.mark.asyncio
 async def test_is_running(pump: AzuraCompactPump):
-    await pump.set_flow(1)
+    await pump.set_flow("1 ml/min")
     await pump.start_flow()
     assert pump.is_running() is True
     await pump.stop_flow()

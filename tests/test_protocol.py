@@ -55,7 +55,7 @@ def test_add(device_graph):
 
     # test adding with duration as timedelta
     P.procedures = []
-    P.add( device_graph["pump"], rate="10 mL/min", duration=timedelta(minutes=5))
+    P.add(device_graph["pump"], rate="10 mL/min", duration=timedelta(minutes=5))
     assert P.procedures[0] == procedure
 
     P = Protocol(device_graph)

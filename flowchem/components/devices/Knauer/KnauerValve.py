@@ -24,8 +24,7 @@ class KnauerValve(KnauerEthernetDevice, Valve):
     """
     Control Knauer multi position valves.
 
-    Valve type can be 6, 12, 16
-    or it can be 6 ports, two positions, which will be simply 2 (two states)
+    Valve type can be 6, 12, 16 or it can be 6 ports, two positions, which will be simply 2 (two states)
     in this case, the response for T is LI. Load and inject can be switched by sending L or I
     maybe valves should have an initial state which is set during init and updated, if no  change don't schedule command
     EN: https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_user-manual_en.pdf

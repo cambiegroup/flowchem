@@ -124,7 +124,7 @@ class iCIR_spectrometer:
 class IRSpectrum(BaseModel):
     """
     IR spectrum class.
-    Consider rampy for advance features (baseline fit, etc)
+    Consider rampy for advance features (baseline fit, etc.)
     See e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb
     """
 

@@ -78,13 +78,13 @@ def create_server_from_config(config: Dict = None, config_file: Path = None) -> 
 
 
 if __name__ == "__main__":
-    app = create_server_from_config(config_file=Path("../graph/sample_config.yml"))
+    myapp = create_server_from_config(config_file=Path("../graph/sample_config.yml"))
 
-    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
+    @myapp.get("/", response_class=HTMLResponse, include_in_schema=False)
     def root():
         """Server root"""
         return "<h1>Flowchem Device Server!</h1>" "<a href='./docs/'>API Reference</a>"
 
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1")
+    uvicorn.run(myapp, host="127.0.0.1")

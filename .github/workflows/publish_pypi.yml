@@ -38,11 +38,11 @@ jobs:
   build-release-gh:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@master
-    - name: Create a Release
-      if: startsWith(github.ref, 'refs/tags/v')
-      uses: elgohr/Github-Release-Action@master
-      env:
-        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-      with:
-        args: MyReleaseMessage
+      - uses: actions/checkout@master
+      - name: Get release version
+        id: get_version
+        run: echo ::save-state name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
+      - name: Publish release 📦 to GitHub
+        uses: elgohr/Github-Release-Action@master
+        with:
+          args: Automated release
