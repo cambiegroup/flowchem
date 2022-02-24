@@ -2,7 +2,7 @@ import asyncio
 
 from flowchem import Knauer16PortValve
 
-DELAY = 60 * 5 # in sec
+DELAY = 60 * 5  # in sec
 START_POSITION = 1  # First position for collection
 
 
