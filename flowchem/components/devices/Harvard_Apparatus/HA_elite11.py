@@ -234,7 +234,8 @@ class HarvardApparatusPumpIO:
         self._serial.write("\r\n".encode("ascii"))
         self._serial.readline()
         prompt = self._serial.readline()
-        address = 0 if prompt[0:2] == b":" else int(prompt[0:2])
+        valid_status = [status.value for status in PumpStatus]
+        address = 0 if prompt[0:2].decode() in valid_status else int(prompt[0:2])
         logger.debug(f"Address autodetected as {address}")
         return address
 
@@ -360,7 +361,7 @@ class Elite11InfuseOnly(Pump):
         self.pump_io = pump_io
         Elite11InfuseOnly._io_instances.add(self.pump_io)  # See above for details.
 
-        self.address: int = address if address else None  # type: ignore
+        self.address: int = address if address is None else None  # type: ignore
         self._version = None  # Set in initialize
 
         # diameter and syringe volume - these will be set in initialize() - check values here though.
