@@ -39,9 +39,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - name: Get release version
-        id: get_version
-        run: echo ::save-state name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
       - name: Publish release 📦 to GitHub
         uses: elgohr/Github-Release-Action@master
         with:
