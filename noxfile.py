@@ -16,4 +16,5 @@ def type_check(session):
 @nox.session(python=['3.9', '3.10'])
 def tests(session):
     session.install('.[test]')
+    session.run('pip install https://github.com/jjhelmus/nmrglue.git@master')
     session.run('pytest')
