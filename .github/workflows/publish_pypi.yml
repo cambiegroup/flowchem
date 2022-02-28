@@ -41,5 +41,7 @@ jobs:
       - uses: actions/checkout@master
       - name: Publish release 📦 to GitHub
         uses: elgohr/Github-Release-Action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
           args: AutomatedRelease
