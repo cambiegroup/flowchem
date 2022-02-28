@@ -42,4 +42,4 @@ jobs:
       - name: Publish release 📦 to GitHub
         uses: elgohr/Github-Release-Action@master
         with:
-          args: "Automated release"
+          args: AutomatedRelease
