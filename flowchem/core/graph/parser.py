@@ -146,6 +146,10 @@ def parse_graph_file(file: Union[str, Path]):
     name = file_path.stem
 
     with file_path.open() as stream:
-        config = yaml.safe_load(stream)
+        try:
+            config = yaml.safe_load(stream)
+        except yaml.parser.ParserError as p:
+            logger.exception(p)
+            raise InvalidConfiguration(f"Invalid YAML in graph {file_path}") from p
 
     return parse_graph_config(config, name)
