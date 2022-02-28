@@ -234,7 +234,8 @@ class HarvardApparatusPumpIO:
         self._serial.write("\r\n".encode("ascii"))
         self._serial.readline()
         prompt = self._serial.readline()
-        address = 0 if prompt[0:2] == b":" else int(prompt[0:2])
+        valid_status = [status.value for status in PumpStatus]
+        address = 0 if prompt[0:2].decode() in valid_status else int(prompt[0:2])
         logger.debug(f"Address autodetected as {address}")
         return address
 
