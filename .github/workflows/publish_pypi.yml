@@ -42,5 +42,7 @@ jobs:
       - name: Publish release 📦 to GitHub
         if: startsWith(github.ref, 'refs/tags/v')
         uses: elgohr/Github-Release-Action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
-          args: Automated release
+          args: AutomatedRelease
