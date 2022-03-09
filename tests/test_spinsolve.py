@@ -6,13 +6,14 @@ from pathlib import Path
 from flowchem.components.devices.Magritek.spinsolve import Spinsolve
 
 
-host = "BSMC-7WP43Y1"
+# Change to match your environment ;)
+host = "BSMC-YMEF002121"
 
 
 @pytest.fixture(scope="session")
 def nmr():
-    """ Spinsolve instance on host:port. Change to match your hardware ;) """
-    return Spinsolve.from_config(host=host)
+    """ Needs an actual Spinsolve instance running on the host. """
+    return Spinsolve(host=host)
 
 
 @pytest.mark.Spinsolve

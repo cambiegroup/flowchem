@@ -50,26 +50,3 @@ def create_folder_mapper(
             )
 
     return folder_mapper
-
-
-async def get_streams_for_connection(
-    host, port
-) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
-    """
-    Given a target (host, port) returns the corresponding asyncio streams (I/O).
-    """
-    try:
-        read, write = await asyncio.open_connection(host, port)
-    except Exception as e:
-        raise ConnectionError(f"Error connecting to {host}:{port} -- {e}") from e
-    return read, write
-
-
-def run_loop(loop):
-    """
-
-    Args:
-        loop:
-    """
-    asyncio.set_event_loop(loop)
-    loop.run_forever()
