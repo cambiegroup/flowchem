@@ -3,7 +3,7 @@
 import time
 import warnings
 import queue
-from typing import List
+from typing import List, Optional
 
 from lxml import etree
 
@@ -50,7 +50,7 @@ class Reader:
         start_time = time.time()
         while reply is None and time.time() < (start_time + timeout):
             reply = self.get_last_reply(reply_type)
-            time.sleep(0.5)
+            time.sleep(0.1)
 
         if reply is None:
             raise RuntimeError("No reply received from device!")
@@ -67,9 +67,7 @@ class Reader:
             # First tag in message is response type
             if reply[0].tag.endswith(reply_type):
                 if remove:
-                    self._replies.remove(
-                        reply
-                    )  # yes, I am also surprised that this is possible ;)
+                    self._replies.remove(reply)
                 return reply
 
     def clear_replies(self, reply_type=""):
@@ -88,45 +86,29 @@ class Reader:
         Fetch the unprocessed chunks from the queue and adds them to the reception buffer
         """
         while not self._queue.empty():
-            self._rcv_buffer += self._queue.get()
+            # From queue only complete replies thanks to readuntil(b"</Message>")
+            tree = self.parse_tree(self._queue.get())
             self._queue.task_done()
 
-        self.parse_buffer()
+            if tree:
+                self._replies.append(tree)
 
-    def parse_buffer(self):
-        """
-        Split then buffer into individual XML trees and parse them.
-        """
+            if tree and self.schema:
+                self.validate_tree(tree)
 
-        # Split buffer at each declaration to separate different trees
-        declaration = b'<?xml version="1.0" encoding="utf-8"?>'
-        trees = self._rcv_buffer.split(declaration)
+    def parse_tree(self, tree_string) -> Optional[etree.Element]:
+        """ Parse an XML reply tree, add it to the replies and validate it (if the schema is available). """
 
-        # Parse trees. (Buffer always starts with declaration, so split gives a tree[0] = b"" element that we skip
-        for tree in trees[1:]:
-            self.parse_tree(tree)
-
-        # Clear buffer
-        self._rcv_buffer = b""
-
-    def parse_tree(self, tree_string):
-        """
-        Parse an XML reply tree, add it to the replies and validate it (if the schema is available).
-        """
-
-        # Parse
         try:
-            root = etree.fromstring(tree_string, self.parser)
+            return etree.fromstring(tree_string, self.parser)
         except etree.XMLSyntaxError:
             warnings.warn(f"Cannot parse response XML {tree_string}")
             return None
 
-        # Add tree to replies
-        self._replies.append(root)
+    def validate_tree(self, tree: etree.Element):
+        """ Validate the XML tree against the schema. """
 
-        # Validate
-        if self.schema:
-            try:
-                self.schema.validate(root)
-            except etree.XMLSyntaxError as e:
-                warnings.warn(f"Invalid XML received! [Validation error: {e}]")
+        try:
+            self.schema.validate(tree)
+        except etree.XMLSyntaxError as e:
+            warnings.warn(f"Invalid XML received! [Validation error: {e}]")

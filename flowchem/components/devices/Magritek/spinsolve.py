@@ -1,4 +1,5 @@
 """ Spinsolve module """
+from unsync import unsync
 import asyncio
 import pprint as pp
 import queue
@@ -8,7 +9,7 @@ import warnings
 from flowchem.components.properties import ActiveComponent
 from loguru import logger
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 from lxml import etree
 from packaging import version
@@ -26,10 +27,18 @@ from flowchem.components.devices.Magritek.parser import (
     StatusNotification,
 )
 from flowchem.components.devices.Magritek.reader import Reader
-from flowchem.components.devices.Magritek.utils import (
-    run_loop,
-    get_streams_for_connection,
-)
+
+
+@unsync
+async def get_streams_for_connection(host: str, port: str) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+    """
+    Given a target (host, port) returns the corresponding asyncio streams (I/O).
+    """
+    try:
+        read, write = await asyncio.open_connection(host, port)
+    except Exception as e:
+        raise ConnectionError(f"Error connecting to {host}:{port} -- {e}") from e
+    return read, write
 
 
 class Spinsolve(ActiveComponent):
@@ -37,34 +46,25 @@ class Spinsolve(ActiveComponent):
     Spinsolve class, gives access to the spectrometer remote control API
     """
 
-    default_port = 13000
-
     def __init__(
         self,
-        io_reader: asyncio.StreamReader,
-        io_writer: asyncio.StreamWriter,
-        loop,
+        host="127.0.0.1",
         **kwargs,
     ):
         """
         Constructor, actuates the connection upon instantiation.
 
-        Dependency injection is used here with async stream reader/writer.
-        This also simplifies testing.
+        kwargs are: name, xml_schema
         """
 
         super().__init__(kwargs.get("name"))
         # IOs
-        self._io_writer = io_writer
-        self._io_reader = io_reader
+        self._io_reader, self._io_writer = get_streams_for_connection(host, kwargs.get("port", "13000")).result()
+
         # Queue needed for thread-safe operation, the reader is in a different thread
         self._replies: queue.Queue = queue.Queue()
         self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
-
-        # Event loop to run the connection listener
-        self._loop = loop
-        self._loop.create_task(self.connection_listener())
-        threading.Thread(target=lambda: run_loop(self._loop), daemon=True).start()
+        self._reader_thread = threading.Thread(target=lambda: self.connenction_listener_thread(), daemon=True).start()
 
         # Check if the instrument is connected
         hw_info = self.hw_request()
@@ -105,40 +105,29 @@ class Spinsolve(ActiveComponent):
                 f"Spinsolve version {self.software_version} is older than the reference (1.18.1.3062)"
             )
 
-    @classmethod
-    def from_config(cls, **config):
-        """Create instance from config dict"""
-        # Get loop if passed or existing
-        loop = config.get("loop", asyncio.get_event_loop())
-        # Create stream reader/writer pair
-        reader, writer = loop.run_until_complete(
-            get_streams_for_connection(config.get("host"), config.get("port", "13000"))
-        )
-        # Drop keys
-        for key in ("host", "port", "loop"):
-            config.pop(key, None)
-        # Instantiate with the rest of config
-        return cls(reader, writer, loop, **config)
+    def connenction_listener_thread(self):
+        """ Thread that listens to the connection and parses the reply """
+        self.connection_listener().result()
 
-    def __del__(self):
-        self._loop.stop()
-
+    @unsync
     async def connection_listener(self):
         """
         Listen for replies and puts them in the queue
         """
         while True:
             try:
-                chunk = await self._io_reader.read(1024)
+                chunk = await self._io_reader.readuntil(b"</Message>")
             except asyncio.CancelledError:
                 break
             self._replies.put(chunk)
 
-    def _transmit(self, message: bytes):
+    @unsync
+    async def _transmit(self, message: bytes):
         """
         Sends the message to the spectrometer
         """
         self._io_writer.write(message)
+        await self._io_writer.drain()
 
     @property
     def solvent(self) -> str:
@@ -230,7 +219,7 @@ class Spinsolve(ActiveComponent):
 
         # Transmit
         logger.debug(f"Transmitting request to spectrometer: {message}")
-        self._transmit(message)
+        self._transmit(message).result()
 
     def hw_request(self):
         """
@@ -401,3 +390,11 @@ class Spinsolve(ActiveComponent):
     def shim(self):
         """Performs a shim on sample"""
         raise NotImplementedError("Use run protocol with a shimming protocol instead!")
+
+
+if __name__ == '__main__':
+    host = "BSMC-YMEF002121"
+
+    nmr: Spinsolve = Spinsolve(host=host)
+    print(nmr.sample)
+
