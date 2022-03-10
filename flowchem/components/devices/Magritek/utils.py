@@ -1,5 +1,4 @@
-from typing import Callable, Union, Tuple
-import asyncio
+from typing import Callable, Union
 import ctypes.wintypes
 import warnings
 from pathlib import Path
