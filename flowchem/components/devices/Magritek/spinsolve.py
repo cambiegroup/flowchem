@@ -116,7 +116,7 @@ class Spinsolve(ActiveComponent):
         """
         while True:
             try:
-                chunk = await self._io_reader.read(1024)
+                chunk = await self._io_reader.readuntil(b"</Message>")
             except asyncio.CancelledError:
                 break
             self._replies.put(chunk)
