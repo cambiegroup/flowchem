@@ -1,5 +1,13 @@
 import nox
 
+nox.options.stop_on_first_error = True
+
+
+@nox.session(python=['3.9'])
+def black(session):
+    session.install('black')
+    session.run('black', 'flowchem', '--check')
+
 
 @nox.session(python=['3.9', '3.10'])
 def lint(session):
