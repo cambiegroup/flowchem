@@ -5,12 +5,12 @@ Principles:
 - it should still be possible to interact with the device object directly, i.e. without the HTTP interface, for power-users.
 
 Implementation design:
-- The end user should not need any knowledge of any implementation detail. Underlying complexity has to be handled internally and hidden to the user. 
+- The end user should not need any knowledge of any implementation detail. Underlying complexity has to be handled internally and hidden to the user.
 - Device objects should only raise Exceptions upon instantiation.
   - the connection to the device is implicit in the object instantiation
   - raising warning is the preferred way to signal errors during execution as it allows the control code to continue w.g. with cleanup
   - communication streams are passed to the device constructors (i.e. dependency injection). This simplifies testing.
-- Each device module should be independent. Code sharing is possible via `flowchem.analysis` (or `flowchem.utils` et simil.) 
+- Each device module should be independent. Code sharing is possible via `flowchem.analysis` (or `flowchem.utils` et simil.)
 - Each device module should be accompanied by tests and documentation (at least in form of examples).
 - Device objects should use generic `flowchem.exceptions` or sublcasses thereof.
 

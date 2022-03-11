@@ -9,5 +9,3 @@ path = asyncio.run(nmr.run_protocol("1D FLUORINE+", {"Number": 8, 'AcquisitionTi
 # path = Path(r"c:\projects\data\2022\02\24\121721-1D FLUORINE+-FlowChem Experiment")
 spectrum = NMRSpectrum(path)
 spectrum.plot()
-
-
