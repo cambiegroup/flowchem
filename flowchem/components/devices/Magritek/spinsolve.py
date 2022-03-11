@@ -5,7 +5,7 @@ import queue
 import threading
 import warnings
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 from loguru import logger
 from lxml import etree
@@ -31,7 +31,7 @@ from flowchem.components.properties import ActiveComponent
 @unsync
 async def get_streams_for_connection(
     host: str, port: str
-) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+):
     """
     Given a target (host, port) returns the corresponding asyncio streams (I/O).
     """
@@ -67,8 +67,8 @@ class Spinsolve(ActiveComponent):
         # Queue needed for thread-safe operation, the reader is in a different thread
         self._replies: queue.Queue = queue.Queue()
         self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
-        self._reader_thread = threading.Thread(
-            target=lambda: self.connenction_listener_thread(), daemon=True
+        threading.Thread(
+            target=self.connenction_listener_thread(), daemon=True
         ).start()
 
         # Check if the instrument is connected
@@ -245,7 +245,7 @@ class Spinsolve(ActiveComponent):
         tree = self._read_reply(reply_type="AvailableProtocolOptionsResponse")
 
         # Parse reply and construct the dict with protocols available
-        protocols = dict()
+        protocols = {}
         for element in tree.findall(".//Protocol"):
             protocol_name = element.get("protocol")
             protocols[protocol_name] = {
@@ -290,8 +290,7 @@ class Spinsolve(ActiveComponent):
         # If a folder mapper is present use it to translate the location
         if self._folder_mapper:
             return self._folder_mapper(remote_data_folder)
-        else:
-            return remote_data_folder
+        return remote_data_folder
 
     async def check_notifications(self) -> Path:
         """
@@ -336,7 +335,7 @@ class Spinsolve(ActiveComponent):
         # Valid option for protocol
         valid_options = self.protocols_option.get(protocol_name)
         if valid_options is None or protocol_options is None:
-            return dict()
+            return {}
 
         # For each option, check if valid. If not, remove it, raise warning and continue
         for option_name, option_value in list(protocol_options.items()):
@@ -398,7 +397,7 @@ class Spinsolve(ActiveComponent):
 
 
 if __name__ == "__main__":
-    host = "BSMC-YMEF002121"
+    hostname = "BSMC-YMEF002121"
 
-    nmr: Spinsolve = Spinsolve(host=host)
+    nmr: Spinsolve = Spinsolve(host=hostname)
     print(nmr.sample)

@@ -128,19 +128,19 @@ class HuberChiller(TempControl):
         """
         try:
             serial_object = aioserial.AioSerial(port, **serial_kwargs)
-        except aioserial.SerialException as e:
+        except aioserial.SerialException as serial_exception:
             raise InvalidConfiguration(
                 f"Cannot connect to the HuberChiller on the port <{port}>"
-            ) from e
+            ) from serial_exception
 
         return cls(serial_object, name)
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        sn = await self.serial_number()
-        if sn == 0:
+        serial_num = await self.serial_number()
+        if serial_num == 0:
             raise DeviceError("No reply received from Huber Chiller!")
-        logger.debug(f"Connected with Huber Chiller S/N {sn}")
+        logger.debug(f"Connected with Huber Chiller S/N {serial_num}")
 
     async def send_command_and_read_reply(self, command: str) -> str:
         """Sends a command to the chiller and reads the reply.
@@ -284,8 +284,7 @@ class HuberChiller(TempControl):
         reply = await self.send_command_and_read_reply("{M2D****")
         if pressure := PBCommand(reply).parse_integer() == 64536:
             return None
-        else:
-            return pressure
+        return pressure
 
     async def cooling_water_temp_outflow(self) -> str:
         """Returns the cooling water outlet temperature (in Celsius)."""
@@ -382,9 +381,9 @@ class HuberChiller(TempControl):
 
     async def serial_number(self) -> int:
         """GGet serial number."""
-        s1 = await self.send_command_and_read_reply("{M1B****")
-        s2 = await self.send_command_and_read_reply("{M1C****")
-        pb1, pb2 = PBCommand(s1), PBCommand(s2)
+        serial1 = await self.send_command_and_read_reply("{M1B****")
+        serial2 = await self.send_command_and_read_reply("{M1C****")
+        pb1, pb2 = PBCommand(serial1), PBCommand(serial2)
         return int(pb1.data + pb2.data, 16)
 
     async def wait_for_temperature_simple(self) -> None:

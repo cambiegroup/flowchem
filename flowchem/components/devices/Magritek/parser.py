@@ -83,5 +83,4 @@ def parse_state(xml_message: etree.Element):
 
     if remote_folder:
         return status_type, remote_folder
-    else:
-        return status_type, None
+    return status_type, None

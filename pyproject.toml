@@ -18,7 +18,8 @@ python_version = 3.9
 
 [tool.pylint.'MESSAGES CONTROL']
 max-line-length = 120
-load-plugins = ["perflint"]
+load-plugins = "perflint"
+extension-pkg-allow-list = 'pydantic, lxml'
 #disable = "C0330, R0201"
 
 [tool.isort]

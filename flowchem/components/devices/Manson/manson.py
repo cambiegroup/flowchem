@@ -37,10 +37,10 @@ class MansonPowerSupply(ActiveComponent):
         """
         try:
             serial_object = aioserial.AioSerial(port, **serial_kwargs)
-        except aioserial.SerialException as e:
+        except aioserial.SerialException as error:
             raise InvalidConfiguration(
                 f"Cannot connect to the MansonPowerSupply on the port <{port}>"
-            ) from e
+            ) from error
 
         return cls(serial_object, name)
 
@@ -127,10 +127,9 @@ class MansonPowerSupply(ActiveComponent):
 
         if response[8:9] == "0":
             return str(volt), str(curr), "CV"
-        elif response[8:9] == "1":
+        if response[8:9] == "1":
             return str(volt), str(curr), "CC"
-        else:
-            return str(volt), str(curr), "NN"
+        return str(volt), str(curr), "NN"
 
     async def get_output_voltage(self) -> str:
         """Returns output voltage in Volt"""

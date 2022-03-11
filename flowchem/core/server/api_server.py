@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict
 
 import yaml
-from core.graph.validation import validate_graph
+from flowchem.core.graph.validation import validate_graph
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from loguru import logger

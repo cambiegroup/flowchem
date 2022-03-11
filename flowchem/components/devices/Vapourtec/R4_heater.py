@@ -1,12 +1,12 @@
 """ Control module for the Vapourtec R4 heater """
 import time
-from typing import Optional, Tuple
+from typing import Optional
 
 import aioserial
 from loguru import logger
 
 from flowchem.components.properties import ActiveComponent
-from flowchem.exceptions import DeviceError, InvalidConfiguration
+from flowchem.exceptions import InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
 try:
@@ -64,17 +64,6 @@ class R4Heater(ActiveComponent):
         logger.debug(f"Reply received: {reply_string.decode('ascii')}")
         return reply_string.decode("ascii")
 
-    @staticmethod
-    def parse_response(response: str) -> Tuple[bool, str]:
-        """Split a received line in its components: success, reply"""
-        try:
-            if response[0:2] != "ER":
-                return True, response.rstrip()
-            else:
-                return False, response.rstrip()
-        except KeyError:
-            raise DeviceError(f"Invalid reply {response}")
-
     async def write_and_read_reply(self, command: R4Command) -> str:
         """Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed"""
@@ -85,10 +74,7 @@ class R4Heater(ActiveComponent):
         if not response:
             raise InvalidConfiguration("No response received from heating module!")
 
-        # Parse reply
-        success, parsed_response = self.parse_response(response)
-
-        return parsed_response
+        return response.rstrip()
 
     async def wait_for_target_temp(self, channel: int):
         """Waits until the target channel has reached the desired temperature and is stable"""

@@ -1,3 +1,4 @@
+" Parse a device graph file and instantiate DeviceGraph object. "
 import inspect
 import itertools
 from pathlib import Path
@@ -42,7 +43,7 @@ def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
     ]
 
     # Return them as dict (itertools to flatten the nested, per module, lists)
-    return {k: v for (k, v) in itertools.chain.from_iterable(objects_in_modules)}
+    return dict(itertools.chain.from_iterable(objects_in_modules))
 
 
 def parse_device_section(devices: Dict, graph: DeviceGraph):
@@ -57,14 +58,14 @@ def parse_device_section(devices: Dict, graph: DeviceGraph):
         device_class, device_config = next(iter(device_node.items()))
         try:
             obj_type = device_mapper[device_class]
-        except KeyError as e:
+        except KeyError as error:
             logger.exception(
                 f"Device of type {device_class} unknown! [Known devices: {device_mapper.keys()}]"
             )
             raise InvalidConfiguration(
                 f"Device of type {device_class} unknown! \n"
                 f"[Known devices: {list(device_mapper.keys())}]"
-            ) from e
+            ) from error
 
         # Create device object and add it to the graph
         device = DeviceNode(device_config, obj_type).device
@@ -150,11 +151,11 @@ def parse_graph_file(file: Union[str, Path]):
     file_path = Path(file)
     name = file_path.stem
 
-    with file_path.open() as stream:
+    with file_path.open(encoding="utf-8") as stream:
         try:
             config = yaml.safe_load(stream)
-        except yaml.parser.ParserError as p:
-            logger.exception(p)
-            raise InvalidConfiguration(f"Invalid YAML in graph {file_path}") from p
+        except yaml.parser.ParserError as parser_error:
+            logger.exception(parser_error)
+            raise InvalidConfiguration(f"Invalid YAML in graph {file_path}") from parser_error
 
     return parse_graph_config(config, name)

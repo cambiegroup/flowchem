@@ -54,7 +54,7 @@ class KnauerValve(KnauerEthernetDevice, Valve):
         """True if there are errors, False otherwise. Warns for errors."""
 
         if not reply.startswith("E"):
-            return None
+            return
 
         if "E0" in reply:
             DeviceError(
@@ -122,8 +122,8 @@ class KnauerValve(KnauerEthernetDevice, Valve):
         if position == self._position:
             logger.debug("Target position == current position. No movement needed.")
             return
-        else:
-            self._position = position
+
+        self._position = position
 
         # Switch to position
         await self._transmit_and_parse_reply(position)
@@ -142,12 +142,12 @@ class KnauerValve(KnauerEthernetDevice, Valve):
 
         try:
             headtype = KnauerValveHeads(reply)
-        except ValueError as e:
+        except ValueError as value_error:
             raise DeviceError(
                 "The valve type returned is not recognized.\n"
                 "Are you sure the address provided is correct?\n"
                 "Only multi-pos 6, 12, 16 and 2-pos 6 port valves are supported!"
-            ) from e
+            ) from value_error
 
         logger.info(f"Valve connected, type: {headtype}.")
         return headtype

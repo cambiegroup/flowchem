@@ -41,14 +41,6 @@ class iCIR_spectrometer:
     STOP_EXPERIMENT = "ns=2;s=Local.iCIR.Probe1.Methods.Stop"
     METHODS = "ns=2;s=Local.iCIR.Probe1.Methods"
 
-    def is_local(self):
-        """Returns true if the server is on the same machine running the python code."""
-        # noinspection PyUnresolvedReferences
-        return any(
-            x in self.opcua.aio_obj.server_url.netloc
-            for x in ("localhost", "127.0.0.1")
-        )
-
     @staticmethod
     def _normalize_template_name(template_name) -> str:
         """Adds .iCIRTemplate extension from string if not already present"""

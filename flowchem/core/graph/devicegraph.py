@@ -1,3 +1,4 @@
+""" DeviceGraph class. Represents all the hardware available for experiments. """
 from __future__ import annotations
 
 from typing import Any, Iterable, List, Optional, Union
@@ -74,11 +75,11 @@ class DeviceGraph:
                 assert isinstance(
                     destination, Component
                 ), "Destination must be a Component!"
-        except KeyError as ke:
+        except KeyError as key_error:
             logger.exception(
                 "A connection was attempted by node name with nodes that are not part of the graph!"
             )
-            raise InvalidConfiguration("Invalid nodes for connection!") from ke
+            raise InvalidConfiguration("Invalid nodes for connection!") from key_error
 
         # If ports are specified, ensure the values are valid with the respective component
         if origin_port is not None:
@@ -130,17 +131,17 @@ class DeviceGraph:
             return [device for device in self.graph.nodes if isinstance(device, item)]
 
         # If a string is passed return the device with that name
-        elif isinstance(item, str):
+        if isinstance(item, str):
             for node in self.graph.nodes:
                 if node.name == item:
                     return node
             raise KeyError(f"No component named '{item}' in {repr(self)}.")
 
         # a shorthand way to check if a component is in the apparatus
-        elif item in self.graph.nodes:
+        if item in self.graph.nodes:
             return item
-        else:
-            raise KeyError(f"{repr(item)} is not in {repr(self)}.")
+
+        raise KeyError(f"{repr(item)} is not in {repr(self)}.")
 
     def component_from_origin_and_port(
         self, origin: Component, port: Union[str, int]
@@ -189,7 +190,7 @@ class DeviceGraph:
         from rich.table import Table
 
         # Components table
-        components_table = Table(title=f"Components")
+        components_table = Table(title="Components")
 
         # Columns: Name, Type
         components_table.add_column("Name")
@@ -220,7 +221,7 @@ class DeviceGraph:
             to_component = next(self.graph.successors(tube))
 
             # Draw a line after the last tube
-            end_section = True if tube is last_tube else False
+            end_section = tube is last_tube
 
             tubing_table.add_row(
                 from_component.name,

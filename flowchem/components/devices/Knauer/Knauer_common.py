@@ -67,16 +67,16 @@ class KnauerEthernetDevice:
         future = asyncio.open_connection(host=self.ip_address, port=10001)
         try:
             self._reader, self._writer = await asyncio.wait_for(future, timeout=3)
-        except ConnectionError as e:
-            logger.exception(e)
+        except ConnectionError as connection_error:
+            logger.exception(connection_error)
             raise InvalidConfiguration(
                 f"Cannot open connection with device {self.__class__.__name__} at IP={self.ip_address}"
-            ) from e
-        except asyncio.TimeoutError as t:
-            logger.exception(t)
+            ) from connection_error
+        except asyncio.TimeoutError as timeout_error:
+            logger.exception(timeout_error)
             raise InvalidConfiguration(
                 f"No reply from device {self.__class__.__name__} at IP={self.ip_address}"
-            ) from t
+            ) from timeout_error
 
     async def _send_and_receive(self, message: str) -> str:
         self._writer.write(message.encode("ascii") + self.eol)

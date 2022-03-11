@@ -110,5 +110,5 @@ class Reader:
 
         try:
             self.schema.validate(tree)
-        except etree.XMLSyntaxError as e:
-            warnings.warn(f"Invalid XML received! [Validation error: {e}]")
+        except etree.XMLSyntaxError as syntax_error:
+            warnings.warn(f"Invalid XML received! [Validation error: {syntax_error}]")

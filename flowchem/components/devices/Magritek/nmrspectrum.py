@@ -46,7 +46,7 @@ class NMRSpectrum:
             self.process()
 
         fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(self.uc.ppm_scale(), self.processed_data)
+        axes = fig.add_subplot(111)
+        axes.plot(self.uc.ppm_scale(), self.processed_data)
         plt.xlim(ppm_range)  # plot as we are used to, from positive to negative
         return fig
