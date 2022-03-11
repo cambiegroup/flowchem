@@ -44,9 +44,13 @@ def create_folder_mapper(
         # If relative translate is not error
         # NOTE: Path.is_relative_to() is available from Py 3.9 only. NBD as this is not often used.
         if not path_to_be_translated.is_relative_to(remote_root):
-            logger.exception(f"Cannot translate remote path {path_to_be_translated} to a local path!")
-            raise InvalidConfiguration(f"Cannot translate remote path {path_to_be_translated} to a local path!"
-                                       f"{path_to_be_translated} is not relative to {remote_root}")
+            logger.exception(
+                f"Cannot translate remote path {path_to_be_translated} to a local path!"
+            )
+            raise InvalidConfiguration(
+                f"Cannot translate remote path {path_to_be_translated} to a local path!"
+                f"{path_to_be_translated} is not relative to {remote_root}"
+            )
 
         suffix = path_to_be_translated.relative_to(remote_root)
         return local_root / suffix

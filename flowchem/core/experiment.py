@@ -60,7 +60,9 @@ class Experiment(object):
         # default values
         self.dry_run: Union[bool, int]
         self.start_time: float  # hasn't started until main() is called
-        self.created_time = time.time()  # when the object was created (might be != from start_time)
+        self.created_time = (
+            time.time()
+        )  # when the object was created (might be != from start_time)
         self.end_time: float
         self.data: Dict[str, List[Datapoint]] = {}
         self.cancelled = False

@@ -228,7 +228,7 @@ class HamiltonPumpIO:
 
 
 class ML600(Pump):
-    """ ML600 implementation according to docs. Tested on 61501-01 (single syringe).
+    """ML600 implementation according to docs. Tested on 61501-01 (single syringe).
 
     From docs:
     To determine the volume dispensed per step the total syringe volume is divided by
@@ -302,9 +302,11 @@ class ML600(Pump):
         try:
             self.syringe_volume = flowchem_ureg(syringe_volume)
         except AttributeError as e:
-            raise InvalidConfiguration(f"{self.__class__.__name__}:{self.name} "
-                                       f"Syringe volume must be a string parsable as pint.Quantity!\n"
-                                       f"It is now a {type(syringe_volume)}: {syringe_volume} ") from e
+            raise InvalidConfiguration(
+                f"{self.__class__.__name__}:{self.name} "
+                f"Syringe volume must be a string parsable as pint.Quantity!\n"
+                f"It is now a {type(syringe_volume)}: {syringe_volume} "
+            ) from e
 
         if self.syringe_volume.m_as("ml") not in ML600.VALID_SYRINGE_VOLUME:
             raise InvalidConfiguration(

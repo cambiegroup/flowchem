@@ -151,11 +151,17 @@ class Protocol:
         if isinstance(component, MultiportComponentMixin) and "setting" in kwargs:
             if isinstance(kwargs["setting"], Component):
                 assert self.graph.graph.has_edge(component, kwargs["setting"])
-                assert self.graph.graph[component][kwargs["setting"]][0]["from_port"] in component.port
+                assert (
+                    self.graph.graph[component][kwargs["setting"]][0]["from_port"]
+                    in component.port
+                )
             if isinstance(kwargs["setting"], str):
                 to_component = self.graph[kwargs["setting"]]
                 assert self.graph.graph.has_edge(component, to_component)
-                assert self.graph.graph[component][to_component]["from_port"] in component.port
+                assert (
+                    self.graph.graph[component][to_component]["from_port"]
+                    in component.port
+                )
             if isinstance(kwargs["setting"], int):
                 assert kwargs["setting"] in component.port
 

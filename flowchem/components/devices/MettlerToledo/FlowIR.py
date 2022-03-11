@@ -21,6 +21,7 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
     """
     Object to interact with the iCIR software controlling the FlowIR and ReactIR.
     """
+
     counter = 0
 
     def __init__(self, url: str = None, name: str = None):

@@ -29,7 +29,9 @@ from flowchem.components.properties import ActiveComponent
 
 
 @unsync
-async def get_streams_for_connection(host: str, port: str) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+async def get_streams_for_connection(
+    host: str, port: str
+) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
     """
     Given a target (host, port) returns the corresponding asyncio streams (I/O).
     """
@@ -58,12 +60,16 @@ class Spinsolve(ActiveComponent):
 
         super().__init__(kwargs.get("name"))
         # IOs
-        self._io_reader, self._io_writer = get_streams_for_connection(host, kwargs.get("port", "13000")).result()
+        self._io_reader, self._io_writer = get_streams_for_connection(
+            host, kwargs.get("port", "13000")
+        ).result()
 
         # Queue needed for thread-safe operation, the reader is in a different thread
         self._replies: queue.Queue = queue.Queue()
         self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
-        self._reader_thread = threading.Thread(target=lambda: self.connenction_listener_thread(), daemon=True).start()
+        self._reader_thread = threading.Thread(
+            target=lambda: self.connenction_listener_thread(), daemon=True
+        ).start()
 
         # Check if the instrument is connected
         hw_info = self.hw_request()
@@ -105,7 +111,7 @@ class Spinsolve(ActiveComponent):
             )
 
     def connenction_listener_thread(self):
-        """ Thread that listens to the connection and parses the reply """
+        """Thread that listens to the connection and parses the reply"""
         self.connection_listener().result()
 
     @unsync
@@ -391,9 +397,8 @@ class Spinsolve(ActiveComponent):
         raise NotImplementedError("Use run protocol with a shimming protocol instead!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     host = "BSMC-YMEF002121"
 
     nmr: Spinsolve = Spinsolve(host=host)
     print(nmr.sample)
-

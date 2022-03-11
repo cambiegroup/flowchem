@@ -38,8 +38,12 @@ class DeviceGraph:
 
         exported_graph = dict()
         exported_graph["version"] = 1.0
-        exported_graph["devices"] = {device.name: device.to_yml() for device in self.graph.nodes}
-        exported_graph["physical_connections"] = {device.name: device.to_yml() for device in self.graph.edges}
+        exported_graph["devices"] = {
+            device.name: device.to_yml() for device in self.graph.nodes
+        }
+        exported_graph["physical_connections"] = {
+            device.name: device.to_yml() for device in self.graph.edges
+        }
         # FIXME
         return yaml.dump(exported_graph)
 
@@ -54,7 +58,9 @@ class DeviceGraph:
 
     def _add_device(self, device: Union[Component, Assembly]):
         """Adds a single device to the graph"""
-        assert isinstance(device, (Component, Assembly)), "Device must be a Component or a component assembly!"
+        assert isinstance(
+            device, (Component, Assembly)
+        ), "Device must be a Component or a component assembly!"
         self.graph.add_node(device)
         logger.debug(f"Added device <{device.name}> to the device graph {self.name}")
 
@@ -80,7 +86,9 @@ class DeviceGraph:
                 assert isinstance(origin, Component), "Origin must be a Component!"
             if isinstance(destination, str):
                 destination = self[destination]
-                assert isinstance(destination, Component), "Destination must be a Component!"
+                assert isinstance(
+                    destination, Component
+                ), "Destination must be a Component!"
         except KeyError as ke:
             logger.exception(
                 "A connection was attempted by node name with nodes that are not part of the graph!"
@@ -89,16 +97,24 @@ class DeviceGraph:
 
         # If ports are specified, ensure the values are valid with the respective component
         if origin_port is not None:
-            assert isinstance(origin, MultiportComponentMixin), "Only MappedComponents have ports!"
+            assert isinstance(
+                origin, MultiportComponentMixin
+            ), "Only MappedComponents have ports!"
             assert origin_port in origin.port, "The port specified was not found!"
 
         if destination_port is not None:
-            assert isinstance(destination, MultiportComponentMixin), "Only MappedComponents have ports!"
-            assert destination_port in destination.port, f"The port {destination_port} was not found in {destination}" \
-                                                         f"[ports available are: {destination.port}]!"
+            assert isinstance(
+                destination, MultiportComponentMixin
+            ), "Only MappedComponents have ports!"
+            assert destination_port in destination.port, (
+                f"The port {destination_port} was not found in {destination}"
+                f"[ports available are: {destination.port}]!"
+            )
 
         # Add the connection
-        self.graph.add_edge(origin, destination, from_port=origin_port, to_port=destination_port)
+        self.graph.add_edge(
+            origin, destination, from_port=origin_port, to_port=destination_port
+        )
 
     def __repr__(self):
         return f"<DeviceGraph {self.name}>"
@@ -141,11 +157,15 @@ class DeviceGraph:
         else:
             raise KeyError(f"{repr(item)} is not in {repr(self)}.")
 
-    def component_from_origin_and_port(self, origin: Component, port: Union[str, int]) -> Component:
-        """ Returns the component that is connected to the origin component in the port provided. """
+    def component_from_origin_and_port(
+        self, origin: Component, port: Union[str, int]
+    ) -> Component:
+        """Returns the component that is connected to the origin component in the port provided."""
 
         assert origin in self, "The origin component is not part of the graph!"
-        assert isinstance(origin, MultiportComponentMixin), "Only MappedComponents have ports!"
+        assert isinstance(
+            origin, MultiportComponentMixin
+        ), "Only MappedComponents have ports!"
 
         for _, to_component, data in self.graph.out_edges(origin, data=True):
             if data["from_port"] == port:
@@ -248,6 +268,7 @@ class DeviceGraph:
 
 if __name__ == "__main__":
     from flowchem.core.graph.parser import parse_graph_file
+
     graph = parse_graph_file("sample_config.yml")
     graph.summarize()
 

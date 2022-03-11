@@ -97,7 +97,7 @@ class Reader:
                 self.validate_tree(tree)
 
     def parse_tree(self, tree_string) -> Optional[etree.Element]:
-        """ Parse an XML reply tree, add it to the replies and validate it (if the schema is available). """
+        """Parse an XML reply tree, add it to the replies and validate it (if the schema is available)."""
 
         try:
             return etree.fromstring(tree_string, self.parser)
@@ -106,7 +106,7 @@ class Reader:
             return None
 
     def validate_tree(self, tree: etree.Element):
-        """ Validate the XML tree against the schema. """
+        """Validate the XML tree against the schema."""
 
         try:
             self.schema.validate(tree)

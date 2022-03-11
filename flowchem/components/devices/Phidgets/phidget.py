@@ -44,7 +44,7 @@ class PressureSensor(Sensor):
         vint_serial_number: int = None,
         vint_channel: int = None,
         phidget_is_remote: bool = False,
-        name: Optional[str] = None
+        name: Optional[str] = None,
     ):
         super().__init__(name=name)
         if not HAS_PHIDGET:

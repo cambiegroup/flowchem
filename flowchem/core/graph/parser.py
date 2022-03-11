@@ -58,9 +58,13 @@ def parse_device_section(devices: Dict, graph: DeviceGraph):
         try:
             obj_type = device_mapper[device_class]
         except KeyError as e:
-            logger.exception(f"Device of type {device_class} unknown! [Known devices: {device_mapper.keys()}]")
-            raise InvalidConfiguration(f"Device of type {device_class} unknown! \n"
-                                       f"[Known devices: {list(device_mapper.keys())}]") from e
+            logger.exception(
+                f"Device of type {device_class} unknown! [Known devices: {device_mapper.keys()}]"
+            )
+            raise InvalidConfiguration(
+                f"Device of type {device_class} unknown! \n"
+                f"[Known devices: {list(device_mapper.keys())}]"
+            ) from e
 
         # Create device object and add it to the graph
         device = DeviceNode(device_config, obj_type).device
@@ -97,7 +101,8 @@ def _parse_tube_connection(tube_config, graph: DeviceGraph):
     inlet = {
         "from": dict(
             device=tube_config["from"]["device"],
-            port=tube_config["from"].get("port", None)),
+            port=tube_config["from"].get("port", None),
+        ),
         "to": dict(device=tube.name),
     }
     _parse_interface_connection(inlet, graph)
@@ -105,8 +110,8 @@ def _parse_tube_connection(tube_config, graph: DeviceGraph):
     outlet = {
         "from": dict(device=tube.name),
         "to": dict(
-            device=tube_config["to"]["device"],
-            port=tube_config["to"].get("port", None)),
+            device=tube_config["to"]["device"], port=tube_config["to"].get("port", None)
+        ),
     }
     _parse_interface_connection(outlet, graph)
 

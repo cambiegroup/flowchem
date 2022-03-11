@@ -20,7 +20,7 @@ from flowchem.units import flowchem_ureg
 
 
 def _parse_version(version_text: str) -> Tuple[int, int, int]:
-    """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4 """
+    """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4"""
 
     numbers = version_text.split(" ")[-1]
     version_digits = numbers.split(".")
@@ -585,7 +585,7 @@ class Elite11InfuseOnly(Pump):
 
     async def clear_volumes(self):
         """Set all pump volumes to 0"""
-        await self.set_target_volume('0 ml')
+        await self.set_target_volume("0 ml")
         await self.clear_infused_volume()
 
     async def get_force(self):
