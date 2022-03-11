@@ -39,7 +39,7 @@ def get_package_list():
 
     package = []
 
-    with req_file.open("utf-8") as file_handle:
+    with req_file.open(encoding="utf-8") as file_handle:
         lines = file_handle.readlines()
         for line in lines:
             # Ignore nmrglue

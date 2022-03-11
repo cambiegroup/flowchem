@@ -53,10 +53,10 @@ def create_server_from_config(config: Dict = None, config_file: Path = None) -> 
             device_class = [
                 name for name in device_mapper.keys() if name in node_config
             ].pop()
-        except IndexError as e:
+        except IndexError as error:
             raise InvalidConfiguration(
                 f"No class available for device '{device_name}'"
-            ) from e
+            ) from error
 
         # Object type
         obj_type = device_mapper[device_class]
