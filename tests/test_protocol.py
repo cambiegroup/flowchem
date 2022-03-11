@@ -49,7 +49,10 @@ def test_add(device_graph):
     # test adding with start and stop as timedeltas
     P.procedures = []
     P.add(
-        device_graph["pump"], rate="10 mL/min", start=timedelta(seconds=0), stop=timedelta(minutes=5)
+        device_graph["pump"],
+        rate="10 mL/min",
+        start=timedelta(seconds=0),
+        stop=timedelta(minutes=5),
     )
     assert P.procedures[0] == procedure
 
@@ -92,7 +95,12 @@ def test_add(device_graph):
 
     # stop time before start time
     with pytest.raises(ValueError):
-        P.add([device_graph["pump"],  device_graph["pump"]], rate="10 mL/min", start="5 min", stop="4 min")
+        P.add(
+            [device_graph["pump"], device_graph["pump"]],
+            rate="10 mL/min",
+            start="5 min",
+            stop="4 min",
+        )
 
 
 def test_add_dummy(device_graph):

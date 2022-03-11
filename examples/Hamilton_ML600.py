@@ -18,7 +18,7 @@ conf_pump2 = {
 
 
 async def example(p1: ML600, p2: ML600):
-    """ Example code for Hamilton ML600 pumps """
+    """Example code for Hamilton ML600 pumps"""
     # Initialize pumps.
     await p1.initialize_pump()
     await p2.initialize_pump()
@@ -40,7 +40,9 @@ async def example(p1: ML600, p2: ML600):
     # You can avoid this by passing wait_for_movement_end=False.
     # The reason for this behaviour is that, while it is intuitive the need to wait for a syringe movement,
     # awaiting for the end of a brief valve movement is often forgotten.
-    await p1.set_valve_position(ML600.ValvePositionName.OUTPUT, wait_for_movement_end=False)
+    await p1.set_valve_position(
+        ML600.ValvePositionName.OUTPUT, wait_for_movement_end=False
+    )
     print(f"Pump 1 valve position is now {await p1.get_valve_position()}")
     await p1.set_valve_position(ML600.ValvePositionName.INPUT)
 
@@ -51,7 +53,10 @@ async def example(p1: ML600, p2: ML600):
     await p2.to_volume(0, 10)
 
     # Then we can rapidly fill our syringes
-    await asyncio.gather(p1.to_volume(p1.syringe_volume, speed=10), p2.to_volume(p2.syringe_volume, speed=10))
+    await asyncio.gather(
+        p1.to_volume(p1.syringe_volume, speed=10),
+        p2.to_volume(p2.syringe_volume, speed=10),
+    )
     # And let's wait for the movement to be over
     await asyncio.gather(p1.wait_until_idle(), p2.wait_until_idle())
 

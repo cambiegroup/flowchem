@@ -20,5 +20,5 @@ async def main():
             position = 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

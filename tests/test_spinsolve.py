@@ -12,7 +12,7 @@ host = "BSMC-YMEF002121"
 
 @pytest.fixture(scope="session")
 def nmr():
-    """ Needs an actual Spinsolve instance running on the host. """
+    """Needs an actual Spinsolve instance running on the host."""
     return Spinsolve(host=host)
 
 
@@ -75,28 +75,45 @@ def test_is_protocol_available(nmr: Spinsolve):
 @pytest.mark.Spinsolve
 def test_request_validation(nmr: Spinsolve):
     # VALID
-    valid_protocol = dict(Number="8", AcquisitionTime="3.2", RepetitionTime="2", PulseAngle="45")
+    valid_protocol = dict(
+        Number="8", AcquisitionTime="3.2", RepetitionTime="2", PulseAngle="45"
+    )
     check_protocol = nmr._validate_protocol_request("1D EXTENDED+", valid_protocol)
     assert check_protocol == valid_protocol
 
     # INVALID NAME
-    check_protocol = nmr._validate_protocol_request("NON EXISTING PROTOCOL", valid_protocol)
+    check_protocol = nmr._validate_protocol_request(
+        "NON EXISTING PROTOCOL", valid_protocol
+    )
     assert not check_protocol
 
     # PARTLY VALID OPTIONS
-    partly_valid = dict(Number="7", AcquisitionTime="3.2", RepetitionTime="2", PulseAngle="145")
+    partly_valid = dict(
+        Number="7", AcquisitionTime="3.2", RepetitionTime="2", PulseAngle="145"
+    )
     with pytest.warns(UserWarning, match="Invalid value"):
         check_protocol = nmr._validate_protocol_request("1D EXTENDED+", partly_valid)
     assert check_protocol == dict(AcquisitionTime="3.2", RepetitionTime="2")
 
     # INVALID OPTIONS 1
-    partly_valid = dict(Number="7", AcquisitionTime="43.2", RepetitionTime="2123092183", PulseAngle="145")
+    partly_valid = dict(
+        Number="7",
+        AcquisitionTime="43.2",
+        RepetitionTime="2123092183",
+        PulseAngle="145",
+    )
     with pytest.warns(UserWarning, match="Invalid value"):
         check_protocol = nmr._validate_protocol_request("1D EXTENDED+", partly_valid)
     assert not check_protocol
 
     # INVALID OPTIONS 21
-    partly_valid = dict(Number="8", AcquisitionTime="3.2", RepetitionTime="2", PulseAngle="45", blabla="no")
+    partly_valid = dict(
+        Number="8",
+        AcquisitionTime="3.2",
+        RepetitionTime="2",
+        PulseAngle="45",
+        blabla="no",
+    )
     with pytest.warns(UserWarning, match="Invalid option"):
         check_protocol = nmr._validate_protocol_request("1D EXTENDED+", partly_valid)
     assert "balbla" not in check_protocol
