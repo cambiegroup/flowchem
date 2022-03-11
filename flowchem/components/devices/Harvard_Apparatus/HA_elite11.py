@@ -3,21 +3,20 @@ This module is used to control Harvard Apparatus Elite 11 syringe pump via the 1
 """
 
 from __future__ import annotations
-from typing import Set, Optional, List, Tuple
-from loguru import logger
 
 import asyncio
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from time import sleep
+from typing import List, Optional, Set, Tuple
 
 import aioserial
+from loguru import logger
 from pydantic import BaseModel
 
-from flowchem.exceptions import InvalidConfiguration, DeviceError
-from flowchem.units import flowchem_ureg
 from flowchem.components.stdlib import Pump
+from flowchem.exceptions import DeviceError, InvalidConfiguration
+from flowchem.units import flowchem_ureg
 
 
 def _parse_version(version_text: str) -> Tuple[int, int, int]:

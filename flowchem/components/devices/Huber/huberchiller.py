@@ -3,15 +3,15 @@ Driver for Huber chillers.
 """
 import asyncio
 import warnings
-from loguru import logger
 from dataclasses import dataclass
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 import aioserial
 import pint
+from loguru import logger
 
 from flowchem.components.properties import TempControl
-from flowchem.exceptions import InvalidConfiguration, DeviceError
+from flowchem.exceptions import DeviceError, InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
 

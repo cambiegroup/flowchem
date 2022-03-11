@@ -4,14 +4,14 @@ This module is used to control Vici Valco Universal Electronic Actuators.
 
 from __future__ import annotations
 
-from loguru import logger
 from dataclasses import dataclass
 from typing import Optional, Set
 
 import aioserial
+from loguru import logger
 
 from flowchem.components.properties import InjectionValve
-from flowchem.exceptions import InvalidConfiguration, ActuationError, DeviceError
+from flowchem.exceptions import ActuationError, DeviceError, InvalidConfiguration
 
 
 @dataclass

@@ -1,7 +1,7 @@
 """ Common iCIR code. """
 import warnings
 from pathlib import Path
-from typing import TypedDict, List
+from typing import List, TypedDict
 
 from pydantic import BaseModel
 

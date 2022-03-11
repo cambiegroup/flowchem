@@ -1,4 +1,4 @@
-from ord_schema.proto.reaction_pb2 import ReactionInput, FlowRate
+from ord_schema.proto.reaction_pb2 import FlowRate, ReactionInput
 
 # from ord_schema.proto.reaction_pb2 import Compound, CrudeComponent, ReactionRole, ReactionIdentifier, CompoundPreparation,
 from flowchem.units import flowchem_ureg

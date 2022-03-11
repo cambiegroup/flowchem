@@ -3,10 +3,10 @@ Knauer pump control.
 """
 import asyncio
 import warnings
+from enum import Enum
 from typing import List
 
 from loguru import logger
-from enum import Enum
 
 from flowchem.components.devices.Knauer.Knauer_common import KnauerEthernetDevice
 from flowchem.components.stdlib import Pump

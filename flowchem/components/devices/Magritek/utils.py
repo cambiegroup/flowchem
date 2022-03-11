@@ -1,7 +1,11 @@
-from typing import Callable, Union
+""" Various utility functions for the Magritek device. """
 import ctypes.wintypes
-import warnings
 from pathlib import Path
+from typing import Callable, Union
+
+from loguru import logger
+
+from flowchem.exceptions import InvalidConfiguration
 
 
 def get_my_docs_path():
@@ -39,13 +43,12 @@ def create_folder_mapper(
         nonlocal remote_root, local_root
         # If relative translate is not error
         # NOTE: Path.is_relative_to() is available from Py 3.9 only. NBD as this is not often used.
-        if path_to_be_translated.is_relative_to(remote_root):
-            suffix = path_to_be_translated.relative_to(remote_root)
-            return local_root / suffix
-        else:
-            warnings.warn(
-                f"Cannot translate remote path {path_to_be_translated} to a local path!"
-                f"{path_to_be_translated} is not relative to {remote_root}"
-            )
+        if not path_to_be_translated.is_relative_to(remote_root):
+            logger.exception(f"Cannot translate remote path {path_to_be_translated} to a local path!")
+            raise InvalidConfiguration(f"Cannot translate remote path {path_to_be_translated} to a local path!"
+                                       f"{path_to_be_translated} is not relative to {remote_root}")
+
+        suffix = path_to_be_translated.relative_to(remote_root)
+        return local_root / suffix
 
     return folder_mapper

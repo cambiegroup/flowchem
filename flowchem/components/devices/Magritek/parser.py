@@ -1,9 +1,9 @@
 """ Functions related to instrument reply parsing """
 
 import warnings
+from enum import Enum
 
 from lxml import etree
-from enum import Enum
 
 
 class StatusNotification(Enum):

@@ -1,12 +1,11 @@
 """ Control module for the Vapourtec R4 heater """
 import time
-
-from flowchem.components.properties import ActiveComponent
-from loguru import logger
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 import aioserial
+from loguru import logger
 
+from flowchem.components.properties import ActiveComponent
 from flowchem.exceptions import DeviceError, InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
@@ -98,7 +97,7 @@ class R4Heater(ActiveComponent):
         while not t_stable:
             try:
                 ret_code = await self.write_and_read_reply(
-                    VapourtecCommand.TEMP.set_argument(channel)
+                    VapourtecCommand.TEMP.set_argument(str(channel))
                 )
             except InvalidConfiguration as ex:
                 ret_code = "N"

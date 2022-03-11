@@ -8,7 +8,6 @@ from hashlib import blake2b
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 from warnings import warn
-from loguru import logger
 
 import aiofiles
 import ipywidgets as widgets
@@ -17,12 +16,13 @@ from bokeh.plotting import figure
 from bokeh.resources import INLINE
 from IPython import get_ipython
 from IPython.display import display
+from loguru import logger
 
 from flowchem.components.properties import ActiveComponent, Sensor
 from flowchem.core.execute import main
 
 if TYPE_CHECKING:
-    from flowchem import Protocol, Datapoint
+    from flowchem import Datapoint, Protocol
 
 
 class Experiment(object):

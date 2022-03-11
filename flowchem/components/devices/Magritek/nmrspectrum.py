@@ -1,7 +1,8 @@
 """ NMR-spectrum object represents an NMR spectrum.  """
-import nmrglue as ng
 from pathlib import Path
+
 import matplotlib.pyplot as plt
+import nmrglue as ng
 
 
 class NMRSpectrum:

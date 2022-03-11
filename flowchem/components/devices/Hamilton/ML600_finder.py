@@ -2,14 +2,14 @@
 This module is used to discover the serial address of any ML600 connected to the PC.
 """
 import asyncio
-from loguru import logger
 
 import aioserial
 import serial.tools.list_ports
+from loguru import logger
 
 from flowchem.components.devices.Hamilton.ML600 import (
-    InvalidConfiguration,
     HamiltonPumpIO,
+    InvalidConfiguration,
 )
 
 

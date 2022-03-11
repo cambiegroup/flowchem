@@ -1,22 +1,20 @@
 """ Async implementation of FlowIR """
 
+import asyncio
 import datetime
 import warnings
-
-from flowchem.components.properties import ActiveComponent
-from loguru import logger
 from typing import List, Optional
 
-from flowchem.exceptions import DeviceError
-
-import asyncio
-from asyncua import ua, Client
+from asyncua import Client, ua
+from loguru import logger
 
 from flowchem.components.devices.MettlerToledo.iCIR_common import (
     IRSpectrum,
-    iCIR_spectrometer,
     ProbeInfo,
+    iCIR_spectrometer,
 )
+from flowchem.components.properties import ActiveComponent
+from flowchem.exceptions import DeviceError
 
 
 class FlowIR(iCIR_spectrometer, ActiveComponent):

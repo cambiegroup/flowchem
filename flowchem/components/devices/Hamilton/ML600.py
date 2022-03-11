@@ -4,21 +4,23 @@ This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO
 
 from __future__ import annotations
 
-from flowchem.components.stdlib import Pump
-from loguru import logger
 import string
 import time
 import warnings
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Set
+
+from loguru import logger
+
+from flowchem.components.stdlib import Pump
 
 if TYPE_CHECKING:
     import pint
 
 import aioserial
 
-from flowchem.exceptions import InvalidConfiguration, DeviceError
+from flowchem.exceptions import DeviceError, InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
 

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from loguru import logger
-from typing import Optional, Union, List, Iterable, Any
+from typing import Any, Iterable, List, Optional, Union
 
 import networkx as nx
+from loguru import logger
 
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.assemblies import Assembly
 from flowchem.components.properties import Component, MultiportComponentMixin
 from flowchem.components.stdlib import Tube
-from flowchem.assemblies import Assembly
+from flowchem.exceptions import InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
 

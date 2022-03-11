@@ -1,18 +1,18 @@
-import yaml
-from pathlib import Path
-from typing import Union, Dict, Iterable
-from loguru import logger
-from types import ModuleType
 import inspect
 import itertools
+from pathlib import Path
+from types import ModuleType
+from typing import Dict, Iterable, Union
 
+import yaml
+from loguru import logger
+
+import flowchem.assemblies
 from flowchem.components.stdlib import Tube
+from flowchem.core.graph.devicegraph import DeviceGraph
 from flowchem.core.graph.devicenode import DeviceNode
 from flowchem.core.graph.validation import validate_graph
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.core.graph.devicegraph import DeviceGraph
-import flowchem.assemblies
-
 
 # Packages containing the device class definitions.
 # Devices' classes must be in the module top level to be found.

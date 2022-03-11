@@ -1,32 +1,31 @@
 """ Spinsolve module """
-from unsync import unsync
 import asyncio
 import pprint as pp
 import queue
 import threading
 import warnings
-
-from flowchem.components.properties import ActiveComponent
-from loguru import logger
 from pathlib import Path
-from typing import Optional, Union, Tuple
+from typing import Optional, Tuple, Union
 
+from loguru import logger
 from lxml import etree
 from packaging import version
+from unsync import unsync
 
 from flowchem.components.devices.Magritek.msg_maker import (
     create_message,
     create_protocol_message,
-    set_user_data,
-    set_data_folder,
-    set_attribute,
     get_request,
+    set_attribute,
+    set_data_folder,
+    set_user_data,
 )
 from flowchem.components.devices.Magritek.parser import (
-    parse_status_notification,
     StatusNotification,
+    parse_status_notification,
 )
 from flowchem.components.devices.Magritek.reader import Reader
+from flowchem.components.properties import ActiveComponent
 
 
 @unsync

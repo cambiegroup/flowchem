@@ -1,26 +1,25 @@
-from typing import Union, Optional, MutableMapping, List, Dict, Any, Iterable
-
-import yaml
 import json
-from os import PathLike
 from copy import deepcopy
 from datetime import timedelta
 from math import isclose
+from os import PathLike
+from typing import Any, Dict, Iterable, List, MutableMapping, Optional, Union
 
 import altair as alt
 import pandas as pd
+import yaml
 from IPython import get_ipython
 from IPython.display import Code
 
-from flowchem.components.properties import Component
-from flowchem.units import flowchem_ureg
 from flowchem.components.properties import (
     ActiveComponent,
+    Component,
     MultiportComponentMixin,
     TempControl,
 )
-from flowchem.core.graph.devicegraph import DeviceGraph
 from flowchem.core.experiment import Experiment
+from flowchem.core.graph.devicegraph import DeviceGraph
+from flowchem.units import flowchem_ureg
 
 
 class Protocol:

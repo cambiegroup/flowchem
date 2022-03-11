@@ -3,8 +3,9 @@ import time
 import warnings
 from typing import Optional
 
-from flowchem.components.properties import Sensor
 from loguru import logger
+
+from flowchem.components.properties import Sensor
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -29,8 +30,8 @@ else:
     else:
         HAS_PHIDGET = True
 
-from flowchem.units import flowchem_ureg
 from flowchem.exceptions import DeviceError, InvalidConfiguration
+from flowchem.units import flowchem_ureg
 
 
 class PressureSensor(Sensor):

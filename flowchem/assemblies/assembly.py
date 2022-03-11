@@ -1,7 +1,6 @@
-from typing import Tuple, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence, Tuple
 
-from flowchem.components.properties import MultiportComponentMixin
-from flowchem.components.properties import Component
+from flowchem.components.properties import Component, MultiportComponentMixin
 
 if TYPE_CHECKING:
     from flowchem.core.graph import DeviceGraph

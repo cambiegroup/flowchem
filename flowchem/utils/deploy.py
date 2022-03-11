@@ -1,8 +1,8 @@
 """ Util function to install dependencies on PC with no internet access. """
 import argparse
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 EXCHANGE_FOLDER = Path(r"W:\BS-FlowChemistry\Resources\python_packages_local")
 
@@ -39,8 +39,8 @@ def get_package_list():
 
     package = []
 
-    with req_file.open() as fh:
-        lines = fh.readlines()
+    with req_file.open("utf-8") as file_handle:
+        lines = file_handle.readlines()
         for line in lines:
             # Ignore nmrglue
             if "nmrglue" in line:
@@ -51,18 +51,18 @@ def get_package_list():
     return package
 
 
-def download_all():
+def download_all(target_folder=EXCHANGE_FOLDER):
     """Downloads all packages in requirements."""
     for package in get_package_list():
-        download_to_folder(package, EXCHANGE_FOLDER)
-        print(f"Downloaded {package} to {EXCHANGE_FOLDER.as_posix()}")
+        download_to_folder(package, target_folder)
+        print(f"Downloaded {package} to {target_folder.as_posix()}")
 
 
-def install_all():
+def install_all(target_folder=EXCHANGE_FOLDER):
     """Installs all packages in requirements."""
     for package in get_package_list():
-        install_from_folder(package, EXCHANGE_FOLDER)
-        print(f"Installed {package} from {EXCHANGE_FOLDER.as_posix()}")
+        install_from_folder(package, target_folder)
+        print(f"Installed {package} from {target_folder.as_posix()}")
 
 
 if __name__ == "__main__":

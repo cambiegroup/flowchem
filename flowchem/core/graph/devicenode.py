@@ -2,11 +2,11 @@
 import inspect
 import warnings
 
-from loguru import logger
 from fastapi import APIRouter
+from loguru import logger
 
-from flowchem.components.properties import ActiveComponent
 from flowchem import Spinsolve
+from flowchem.components.properties import ActiveComponent
 from flowchem.core.server.routers import spinsolve_get_router
 
 

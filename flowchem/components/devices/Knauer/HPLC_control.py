@@ -4,13 +4,15 @@
 
 # https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
 
-import tenacity
-import subprocess
 import socket
-from threading import Thread
-from typing import Union
-from time import sleep
+import subprocess
 from pathlib import Path
+from threading import Thread
+from time import sleep
+from typing import Union
+
+import tenacity
+
 from flowchem.exceptions import InvalidConfiguration
 
 try:

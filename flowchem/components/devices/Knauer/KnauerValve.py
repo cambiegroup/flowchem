@@ -1,12 +1,13 @@
 """ Knauer valve control. """
 
 import warnings
-from loguru import logger
 from enum import Enum
 
-from flowchem.exceptions import DeviceError
+from loguru import logger
+
 from flowchem.components.devices.Knauer.Knauer_common import KnauerEthernetDevice
 from flowchem.components.properties import Valve
+from flowchem.exceptions import DeviceError
 
 
 class KnauerValveHeads(Enum):
@@ -190,8 +191,8 @@ class Knauer16PortValve(KnauerValve):
 
 if __name__ == "__main__":
     # This is a bug of asyncio on Windows :|
-    import sys
     import asyncio
+    import sys
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

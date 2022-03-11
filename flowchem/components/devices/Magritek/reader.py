@@ -1,8 +1,8 @@
 """ Connection reader + XML parser for Spinsolve replies """
 
+import queue
 import time
 import warnings
-import queue
 from typing import List, Optional
 
 from lxml import etree

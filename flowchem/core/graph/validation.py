@@ -1,9 +1,10 @@
 """ Validate graph files """
 from __future__ import annotations
+
+import json
+import os
 from typing import Dict
 
-import os
-import json
 import jsonschema
 
 # Validation schema for graph file

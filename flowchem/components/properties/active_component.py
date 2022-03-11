@@ -1,12 +1,12 @@
 import asyncio
-import warnings
 import math
-from typing import Any, Dict, Optional, MutableMapping, List
+import warnings
+from typing import Any, Dict, List, MutableMapping, Optional
 
 from loguru import logger
 
-from flowchem.units import flowchem_ureg
 from flowchem.components.properties import Component
+from flowchem.units import flowchem_ureg
 
 
 class ActiveComponent(Component):

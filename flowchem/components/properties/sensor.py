@@ -1,13 +1,14 @@
 from __future__ import annotations
+
 import asyncio
 import time
-from typing import Optional, AsyncGenerator, TYPE_CHECKING
+from typing import TYPE_CHECKING, AsyncGenerator, Optional
 from warnings import warn
 
 from loguru import logger
 
-from flowchem.units import flowchem_ureg
 from flowchem.components.properties import ActiveComponent
+from flowchem.units import flowchem_ureg
 
 if TYPE_CHECKING:
     from flowchem import Experiment

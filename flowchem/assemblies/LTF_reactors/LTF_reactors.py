@@ -1,8 +1,8 @@
 """ LTF reactors """
 from typing import Optional
 
-from flowchem.components.stdlib import Channel, YMixer
 from flowchem.assemblies import Assembly
+from flowchem.components.stdlib import Channel, YMixer
 
 
 class LTF_HTM_ST_3_1(Assembly):

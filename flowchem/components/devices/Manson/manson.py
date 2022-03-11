@@ -5,14 +5,13 @@ No license originally specified.
 
 import re
 import warnings
-
-from flowchem.components.properties import ActiveComponent
-from loguru import logger
-from typing import Literal, Tuple, List, Union
+from typing import List, Literal, Tuple, Union
 
 import aioserial
+from loguru import logger
 
-from flowchem.exceptions import InvalidConfiguration, DeviceError
+from flowchem.components.properties import ActiveComponent
+from flowchem.exceptions import DeviceError, InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
 

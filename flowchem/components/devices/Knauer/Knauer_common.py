@@ -2,6 +2,7 @@
 Module for communication with Knauer pumps and valves.
 """
 import asyncio
+
 from loguru import logger
 
 from flowchem.components.devices.Knauer.Knauer_autodiscover import autodiscover_knauer

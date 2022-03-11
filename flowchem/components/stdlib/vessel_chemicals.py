@@ -1,5 +1,7 @@
-from ord_schema.proto.reaction_pb2 import ReactionInput
 from typing import Optional
+
+from ord_schema.proto.reaction_pb2 import ReactionInput
+
 from flowchem.components.stdlib import Vessel
 
 
