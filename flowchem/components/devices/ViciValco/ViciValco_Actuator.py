@@ -4,14 +4,14 @@ This module is used to control Vici Valco Universal Electronic Actuators.
 
 from __future__ import annotations
 
-from loguru import logger
 from dataclasses import dataclass
 from typing import Optional, Set
 
 import aioserial
+from loguru import logger
 
 from flowchem.components.properties import InjectionValve
-from flowchem.exceptions import InvalidConfiguration, ActuationError, DeviceError
+from flowchem.exceptions import ActuationError, DeviceError, InvalidConfiguration
 
 
 @dataclass
@@ -91,10 +91,10 @@ class ViciValcoValveIO:
 
         try:
             serial_object = aioserial.AioSerial(port, **configuration)
-        except aioserial.SerialException as e:
+        except aioserial.SerialException as serial_exception:
             raise InvalidConfiguration(
                 f"Cannot connect to the valve on the port <{port}>"
-            ) from e
+            ) from serial_exception
 
         return cls(serial_object)
 
@@ -112,16 +112,16 @@ class ViciValcoValveIO:
         """Detects number of valves connected."""
         try:
             await self._serial.write_async("*ID\r".encode("ascii"))
-        except aioserial.SerialException as e:
-            raise InvalidConfiguration from e
+        except aioserial.SerialException as serial_error:
+            raise InvalidConfiguration from serial_error
 
         reply = self._serial.readlines()
         n_valves = len(reply)
         if n_valves == 0:
             raise InvalidConfiguration(f"No valve found on {self._serial.port}")
-        else:
-            logger.debug(f"Found {len(reply)} valves on {self._serial.port}!")
-            return len(reply)
+
+        logger.debug(f"Found {len(reply)} valves on {self._serial.port}!")
+        return len(reply)
 
     def _hw_init(self):
         """Send to all valves the HW initialization command (i.e. homing)"""
@@ -141,9 +141,9 @@ class ViciValcoValveIO:
     async def _read_reply(self, lines) -> str:
         """Reads the valve reply from serial communication"""
         reply_string = ""
-        for line in range(lines):
-            a = await self._serial.readline_async()
-            reply_string += a.decode("ascii")
+        for _ in range(lines):
+            line = await self._serial.readline_async()
+            reply_string += line.decode("ascii")
 
         logger.debug(f"Reply received: {reply_string}")
         return reply_string

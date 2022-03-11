@@ -1,9 +1,10 @@
 """ Validate graph files """
 from __future__ import annotations
+
+import json
+import os
 from typing import Dict
 
-import os
-import json
 import jsonschema
 
 # Validation schema for graph file
@@ -13,14 +14,17 @@ SCHEMA = os.path.join(
 
 
 def load_graph_schema():
-    """loads the schema defining valid config file."""
-    with open(SCHEMA, "r") as fp:
-        schema = json.load(fp)
+    """Loads and return the DeviceGraph schema."""
+    with open(SCHEMA, "r", encoding="utf-8") as file_handle:
+        schema = json.load(file_handle)
         jsonschema.Draft7Validator.check_schema(schema)
         return schema
 
 
 def validate_graph(graph: Dict):
+    """
+    Validate a graph file.
+    """
     schema = load_graph_schema()
     jsonschema.validate(graph, schema=schema)
     assert graph["version"] == "1.1"

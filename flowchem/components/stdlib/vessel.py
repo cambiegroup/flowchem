@@ -1,5 +1,6 @@
 """ A vessel, optionally with info on the chemical input contained. """
 from typing import Optional
+
 from ord_schema.proto.reaction_pb2 import ReactionInput
 
 from flowchem.components.properties import Component

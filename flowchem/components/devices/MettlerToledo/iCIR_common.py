@@ -1,7 +1,7 @@
 """ Common iCIR code. """
 import warnings
 from pathlib import Path
-from typing import TypedDict, List
+from typing import List, TypedDict
 
 from pydantic import BaseModel
 
@@ -40,14 +40,6 @@ class iCIR_spectrometer:
     START_EXPERIMENT = "ns=2;s=Local.iCIR.Probe1.Methods.Start Experiment"
     STOP_EXPERIMENT = "ns=2;s=Local.iCIR.Probe1.Methods.Stop"
     METHODS = "ns=2;s=Local.iCIR.Probe1.Methods"
-
-    def is_local(self):
-        """Returns true if the server is on the same machine running the python code."""
-        # noinspection PyUnresolvedReferences
-        return any(
-            x in self.opcua.aio_obj.server_url.netloc
-            for x in ("localhost", "127.0.0.1")
-        )
 
     @staticmethod
     def _normalize_template_name(template_name) -> str:

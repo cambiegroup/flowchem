@@ -1,6 +1,7 @@
-from ord_schema.proto.reaction_pb2 import ReactionInput, FlowRate
+""" Helper functions to populate the ORD-SCHEMA ReactionInput object. """
+from ord_schema.proto.reaction_pb2 import FlowRate, ReactionInput
 
-# from ord_schema.proto.reaction_pb2 import Compound, CrudeComponent, ReactionRole, ReactionIdentifier, CompoundPreparation,
+# from ord_schema.proto.reaction_pb2 import Compound, CrudeComponent, ReactionRole, ReactionIdentifier, ...
 from flowchem.units import flowchem_ureg
 
 
@@ -21,7 +22,7 @@ def add_flowrate_to_input(reaction: ReactionInput, flowrate_text: str):
     flow_rate_pb.value = flowrate.magnitude
     flow_rate_pb.units = FlowRate.FlowRateUnit.Value("MILLILITER_PER_MINUTE")
 
-    # Add the flowrate to the reaction
+    # Add the flow rate to the reaction
     reaction.flow_rate.CopyFrom(flow_rate_pb)
 
     return reaction

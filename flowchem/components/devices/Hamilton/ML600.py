@@ -4,22 +4,22 @@ This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO
 
 from __future__ import annotations
 
-from flowchem.components.stdlib import Pump
-from loguru import logger
 import string
 import time
 import warnings
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Optional, Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Set
+
+import aioserial
+from loguru import logger
+
+from flowchem.components.stdlib import Pump
+from flowchem.exceptions import DeviceError, InvalidConfiguration
+from flowchem.units import flowchem_ureg
 
 if TYPE_CHECKING:
     import pint
-
-import aioserial
-
-from flowchem.exceptions import InvalidConfiguration, DeviceError
-from flowchem.units import flowchem_ureg
 
 
 @dataclass
@@ -48,10 +48,7 @@ class Protocol1CommandTemplate:
 class Protocol1Command(Protocol1CommandTemplate):
     """Class representing a pump command and its expected reply"""
 
-    PUMP_ADDRESS = {
-        pump_num: address
-        for (pump_num, address) in enumerate(string.ascii_lowercase[:16], start=1)
-    }
+    PUMP_ADDRESS = dict(enumerate(string.ascii_lowercase[:16], start=1))
     # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
     # Note ':' is used for broadcast within the daisy chain.
 
@@ -112,10 +109,10 @@ class HamiltonPumpIO:
 
         try:
             serial_object = aioserial.AioSerial(**configuration)
-        except aioserial.SerialException as e:
+        except aioserial.SerialException as serial_exception:
             raise InvalidConfiguration(
                 f"Cannot connect to the pump on the port <{configuration.get('port')}>"
-            ) from e
+            ) from serial_exception
 
         return cls(serial_object)
 
@@ -143,20 +140,20 @@ class HamiltonPumpIO:
             raise InvalidConfiguration from e
 
         reply = await self._read_reply_async()
-        if reply and reply[:1] == "1":
-            # reply[1:2] should be the address of the last pump. However, this does not work reliably.
-            # So here we enumerate the pumps explicitly instead
-            last_pump = 0
-            for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
-                await self._write_async(f"{address}UR\r".encode("ascii"))
-                if "NV01" in await self._read_reply_async():
-                    last_pump = pump_num
-                else:
-                    break
-            logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
-            return int(last_pump)
-        else:
+        if not reply or reply[:1] != "1":
+
             raise InvalidConfiguration(f"No pump found on {self._serial.port}")
+        # reply[1:2] should be the address of the last pump. However, this does not work reliably.
+        # So here we enumerate the pumps explicitly instead
+        last_pump = 0
+        for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
+            await self._write_async(f"{address}UR\r".encode("ascii"))
+            if "NV01" in await self._read_reply_async():
+                last_pump = pump_num
+            else:
+                break
+        logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
+        return int(last_pump)
 
     async def _hw_init(self):
         """Send to all pumps the HW initialization command (i.e. homing)"""
@@ -179,7 +176,8 @@ class HamiltonPumpIO:
         logger.debug(f"Reply received: {reply_string}")
         return reply_string.decode("ascii")
 
-    def parse_response(self, response: str) -> str:
+    @staticmethod
+    def parse_response(response: str) -> str:
         """Split a received line in its components: success, reply"""
         status = response[:1]
         assert status in (
@@ -226,7 +224,7 @@ class HamiltonPumpIO:
 
 
 class ML600(Pump):
-    """ ML600 implementation according to docs. Tested on 61501-01 (single syringe).
+    """ML600 implementation according to docs. Tested on 61501-01 (single syringe).
 
     From docs:
     To determine the volume dispensed per step the total syringe volume is divided by
@@ -299,10 +297,12 @@ class ML600(Pump):
         # Syringe pumps only perform linear movement, and the volume displaced is function of the syringe loaded.
         try:
             self.syringe_volume = flowchem_ureg(syringe_volume)
-        except AttributeError as e:
-            raise InvalidConfiguration(f"{self.__class__.__name__}:{self.name} "
-                                       f"Syringe volume must be a string parsable as pint.Quantity!\n"
-                                       f"It is now a {type(syringe_volume)}: {syringe_volume} ") from e
+        except AttributeError as attribute_error:
+            raise InvalidConfiguration(
+                f"{self.__class__.__name__}:{self.name} "
+                f"Syringe volume must be a string parsable as pint.Quantity!\n"
+                f"It is now a {type(syringe_volume)}: {syringe_volume} "
+            ) from attribute_error
 
         if self.syringe_volume.m_as("ml") not in ML600.VALID_SYRINGE_VOLUME:
             raise InvalidConfiguration(

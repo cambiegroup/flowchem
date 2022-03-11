@@ -1,5 +1,6 @@
-from .Harvard_Apparatus import *
+""" HW device, organized by manufacturer. """
 from .Hamilton import *
+from .Harvard_Apparatus import *
 from .Huber import *
 from .Knauer import *
 from .Magritek import *

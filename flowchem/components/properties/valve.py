@@ -1,10 +1,7 @@
 from abc import ABC
-from typing import Optional, Union, Dict, Any, Set
+from typing import Any, Dict, Optional, Set, Union
 
-from flowchem.components.properties import (
-    ActiveComponent,
-    MultiportComponentMixin,
-)
+from flowchem.components.properties import ActiveComponent, MultiportComponentMixin
 
 
 class Valve(MultiportComponentMixin, ActiveComponent, ABC):

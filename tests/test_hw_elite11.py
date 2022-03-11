@@ -9,7 +9,7 @@ import pytest
 
 from flowchem.components.devices.Harvard_Apparatus.HA_elite11 import (
     Elite11InfuseWithdraw,
-    PumpStatus
+    PumpStatus,
 )
 from flowchem.units import flowchem_ureg
 
@@ -30,8 +30,10 @@ def event_loop(request):
 
 @pytest.fixture(scope="session")
 async def pump():
-    """ Change to match your hardware ;) """
-    pump = Elite11InfuseWithdraw.from_config(port="COM11", syringe_volume=5, diameter=20)
+    """Change to match your hardware ;)"""
+    pump = Elite11InfuseWithdraw.from_config(
+        port="COM11", syringe_volume=5, diameter=20
+    )
     await pump.initialize()
     return pump
 
@@ -87,7 +89,9 @@ async def test_syringe_volume(pump: Elite11InfuseWithdraw):
     await pump.set_syringe_volume(3e-05)
     vol = flowchem_ureg.Quantity(await pump.get_syringe_volume()).magnitude
     assert math.isclose(vol, 3e-5)
-    await pump.set_syringe_volume(50)  # Leave a sensible value otherwise other tests will fail!
+    await pump.set_syringe_volume(
+        50
+    )  # Leave a sensible value otherwise other tests will fail!
 
 
 @pytest.mark.HApump

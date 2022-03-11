@@ -1,36 +1,35 @@
 """ Spinsolve module """
-from unsync import unsync
 import asyncio
 import pprint as pp
 import queue
 import threading
 import warnings
-
-from flowchem.components.properties import ActiveComponent
-from loguru import logger
 from pathlib import Path
-from typing import Optional, Union, Tuple
+from typing import Optional, Union
 
+from loguru import logger
 from lxml import etree
 from packaging import version
+from unsync import unsync
 
 from flowchem.components.devices.Magritek.msg_maker import (
     create_message,
     create_protocol_message,
-    set_user_data,
-    set_data_folder,
-    set_attribute,
     get_request,
+    set_attribute,
+    set_data_folder,
+    set_user_data,
 )
 from flowchem.components.devices.Magritek.parser import (
-    parse_status_notification,
     StatusNotification,
+    parse_status_notification,
 )
 from flowchem.components.devices.Magritek.reader import Reader
+from flowchem.components.properties import ActiveComponent
 
 
 @unsync
-async def get_streams_for_connection(host: str, port: str) -> Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+async def get_streams_for_connection(host: str, port: str):
     """
     Given a target (host, port) returns the corresponding asyncio streams (I/O).
     """
@@ -59,12 +58,14 @@ class Spinsolve(ActiveComponent):
 
         super().__init__(kwargs.get("name"))
         # IOs
-        self._io_reader, self._io_writer = get_streams_for_connection(host, kwargs.get("port", "13000")).result()
+        self._io_reader, self._io_writer = get_streams_for_connection(
+            host, kwargs.get("port", "13000")
+        ).result()
 
         # Queue needed for thread-safe operation, the reader is in a different thread
         self._replies: queue.Queue = queue.Queue()
         self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
-        self._reader_thread = threading.Thread(target=lambda: self.connenction_listener_thread(), daemon=True).start()
+        threading.Thread(target=self.connenction_listener_thread(), daemon=True).start()
 
         # Check if the instrument is connected
         hw_info = self.hw_request()
@@ -106,7 +107,7 @@ class Spinsolve(ActiveComponent):
             )
 
     def connenction_listener_thread(self):
-        """ Thread that listens to the connection and parses the reply """
+        """Thread that listens to the connection and parses the reply"""
         self.connection_listener().result()
 
     @unsync
@@ -240,7 +241,7 @@ class Spinsolve(ActiveComponent):
         tree = self._read_reply(reply_type="AvailableProtocolOptionsResponse")
 
         # Parse reply and construct the dict with protocols available
-        protocols = dict()
+        protocols = {}
         for element in tree.findall(".//Protocol"):
             protocol_name = element.get("protocol")
             protocols[protocol_name] = {
@@ -285,8 +286,7 @@ class Spinsolve(ActiveComponent):
         # If a folder mapper is present use it to translate the location
         if self._folder_mapper:
             return self._folder_mapper(remote_data_folder)
-        else:
-            return remote_data_folder
+        return remote_data_folder
 
     async def check_notifications(self) -> Path:
         """
@@ -331,7 +331,7 @@ class Spinsolve(ActiveComponent):
         # Valid option for protocol
         valid_options = self.protocols_option.get(protocol_name)
         if valid_options is None or protocol_options is None:
-            return dict()
+            return {}
 
         # For each option, check if valid. If not, remove it, raise warning and continue
         for option_name, option_value in list(protocol_options.items()):
@@ -392,9 +392,8 @@ class Spinsolve(ActiveComponent):
         raise NotImplementedError("Use run protocol with a shimming protocol instead!")
 
 
-if __name__ == '__main__':
-    host = "BSMC-YMEF002121"
+if __name__ == "__main__":
+    hostname = "BSMC-YMEF002121"
 
-    nmr: Spinsolve = Spinsolve(host=host)
+    nmr: Spinsolve = Spinsolve(host=hostname)
     print(nmr.sample)
-

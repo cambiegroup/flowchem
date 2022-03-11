@@ -1,19 +1,19 @@
-from typing import Tuple, Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence, Tuple
 
-from flowchem.components.properties import MultiportComponentMixin
-from flowchem.components.properties import Component
+from flowchem.components.properties import Component, MultiportComponentMixin
 
 if TYPE_CHECKING:
     from flowchem.core.graph import DeviceGraph
 
 
 class Assembly(MultiportComponentMixin, Component):
-    """ A class representing a collection of components. """
+    """A class representing a collection of components."""
+
     nodes: Sequence[Component]
     edges: Sequence[Tuple[Component, Component]]
 
     def _subcomponent_by_name(self, name: str) -> Component:
-        """ Returns a component in nodes by its name. """
+        """Returns a component in nodes by its name."""
         for node in self.nodes:
             if node.name == name:
                 return node
@@ -28,7 +28,9 @@ class Assembly(MultiportComponentMixin, Component):
         assert self in graph.graph.nodes, "Assembly must be in the graph to explode it."
 
         # Convert edges to self into edges to self's components.
-        for from_component, to_component, attributes in graph.graph.in_edges(self, data=True):
+        for from_component, to_component, attributes in graph.graph.in_edges(
+            self, data=True
+        ):
             # If port attribute is unspecified, the connection is assumed to all the assembly's subcomponents.
             # This should only happen for logical connections (e.g. temp control).
             if attributes["to_port"] is None:
@@ -40,18 +42,28 @@ class Assembly(MultiportComponentMixin, Component):
             new_to_component = self._subcomponent_by_name(attributes["to_port"])
 
             # Update edge - just add a new one, the old one will be implicitly removed with graph.remove_node(self)
-            graph.add_connection(origin=from_component, destination=new_to_component,
-                                 origin_port=attributes.get("from_port", None))
+            graph.add_connection(
+                origin=from_component,
+                destination=new_to_component,
+                origin_port=attributes.get("from_port", None),
+            )
 
-        for from_component, to_component, attributes in graph.graph.out_edges(self, data=True):
-            assert from_component is self, "Getting the edges pointing from the assembly."
+        for from_component, to_component, attributes in graph.graph.out_edges(
+            self, data=True
+        ):
+            assert (
+                from_component is self
+            ), "Getting the edges pointing from the assembly."
 
             # New origin is the component with name matching the edge port on the assembly
             new_from_component = self._subcomponent_by_name(attributes["from_port"])
 
             # Update edge - just add a new one, the old one will be implicitly removed with graph.remove_node(self)
-            graph.add_connection(origin=new_from_component, destination=to_component,
-                                 destination_port=attributes.get("to_port", None))
+            graph.add_connection(
+                origin=new_from_component,
+                destination=to_component,
+                destination_port=attributes.get("to_port", None),
+            )
 
         # Updates component names. Ensures unique names in the graph. (Note: do not update those earlier: see above!)
         for component in self.nodes:
@@ -68,4 +80,6 @@ class Assembly(MultiportComponentMixin, Component):
 
     def _validate(self, dry_run):
         """Components are valid for dry runs, but not for real runs."""
-        raise NotImplementedError("Assembly object should be expanded into their components before run.")
+        raise NotImplementedError(
+            "Assembly object should be expanded into their components before run."
+        )

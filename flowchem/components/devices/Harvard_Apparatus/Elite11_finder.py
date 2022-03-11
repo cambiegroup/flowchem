@@ -1,9 +1,8 @@
 """
 This module is used to discover the serial address of any ML600 connected to the PC.
 """
-from loguru import logger
-
 import serial.tools.list_ports
+from loguru import logger
 
 from flowchem.components.devices.Harvard_Apparatus.HA_elite11 import (
     HarvardApparatusPumpIO,

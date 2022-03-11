@@ -1,14 +1,15 @@
+""" DeviceGraph class. Represents all the hardware available for experiments. """
 from __future__ import annotations
 
-from loguru import logger
-from typing import Optional, Union, List, Iterable, Any
+from typing import Any, Iterable, List, Optional, Union
 
 import networkx as nx
+from loguru import logger
 
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.assemblies import Assembly
 from flowchem.components.properties import Component, MultiportComponentMixin
 from flowchem.components.stdlib import Tube
-from flowchem.assemblies import Assembly
+from flowchem.exceptions import InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
 
@@ -32,17 +33,6 @@ class DeviceGraph:
         # NetworkX Multi directed graph object
         self.graph: nx.MultiDiGraph = nx.MultiDiGraph()
 
-    def to_yml(self):
-        """Convert the graph to a YAML string"""
-        import yaml
-
-        exported_graph = dict()
-        exported_graph["version"] = 1.0
-        exported_graph["devices"] = {device.name: device.to_yml() for device in self.graph.nodes}
-        exported_graph["physical_connections"] = {device.name: device.to_yml() for device in self.graph.edges}
-        # FIXME
-        return yaml.dump(exported_graph)
-
     def add_device(self, device: Any):
         """Add a device or list of devices to the graph"""
 
@@ -54,7 +44,9 @@ class DeviceGraph:
 
     def _add_device(self, device: Union[Component, Assembly]):
         """Adds a single device to the graph"""
-        assert isinstance(device, (Component, Assembly)), "Device must be a Component or a component assembly!"
+        assert isinstance(
+            device, (Component, Assembly)
+        ), "Device must be a Component or a component assembly!"
         self.graph.add_node(device)
         logger.debug(f"Added device <{device.name}> to the device graph {self.name}")
 
@@ -80,25 +72,35 @@ class DeviceGraph:
                 assert isinstance(origin, Component), "Origin must be a Component!"
             if isinstance(destination, str):
                 destination = self[destination]
-                assert isinstance(destination, Component), "Destination must be a Component!"
-        except KeyError as ke:
+                assert isinstance(
+                    destination, Component
+                ), "Destination must be a Component!"
+        except KeyError as key_error:
             logger.exception(
                 "A connection was attempted by node name with nodes that are not part of the graph!"
             )
-            raise InvalidConfiguration("Invalid nodes for connection!") from ke
+            raise InvalidConfiguration("Invalid nodes for connection!") from key_error
 
         # If ports are specified, ensure the values are valid with the respective component
         if origin_port is not None:
-            assert isinstance(origin, MultiportComponentMixin), "Only MappedComponents have ports!"
+            assert isinstance(
+                origin, MultiportComponentMixin
+            ), "Only MappedComponents have ports!"
             assert origin_port in origin.port, "The port specified was not found!"
 
         if destination_port is not None:
-            assert isinstance(destination, MultiportComponentMixin), "Only MappedComponents have ports!"
-            assert destination_port in destination.port, f"The port {destination_port} was not found in {destination}" \
-                                                         f"[ports available are: {destination.port}]!"
+            assert isinstance(
+                destination, MultiportComponentMixin
+            ), "Only MappedComponents have ports!"
+            assert destination_port in destination.port, (
+                f"The port {destination_port} was not found in {destination}"
+                f"[ports available are: {destination.port}]!"
+            )
 
         # Add the connection
-        self.graph.add_edge(origin, destination, from_port=origin_port, to_port=destination_port)
+        self.graph.add_edge(
+            origin, destination, from_port=origin_port, to_port=destination_port
+        )
 
     def __repr__(self):
         return f"<DeviceGraph {self.name}>"
@@ -129,23 +131,27 @@ class DeviceGraph:
             return [device for device in self.graph.nodes if isinstance(device, item)]
 
         # If a string is passed return the device with that name
-        elif isinstance(item, str):
+        if isinstance(item, str):
             for node in self.graph.nodes:
                 if node.name == item:
                     return node
             raise KeyError(f"No component named '{item}' in {repr(self)}.")
 
         # a shorthand way to check if a component is in the apparatus
-        elif item in self.graph.nodes:
+        if item in self.graph.nodes:
             return item
-        else:
-            raise KeyError(f"{repr(item)} is not in {repr(self)}.")
 
-    def component_from_origin_and_port(self, origin: Component, port: Union[str, int]) -> Component:
-        """ Returns the component that is connected to the origin component in the port provided. """
+        raise KeyError(f"{repr(item)} is not in {repr(self)}.")
+
+    def component_from_origin_and_port(
+        self, origin: Component, port: Union[str, int]
+    ) -> Component:
+        """Returns the component that is connected to the origin component in the port provided."""
 
         assert origin in self, "The origin component is not part of the graph!"
-        assert isinstance(origin, MultiportComponentMixin), "Only MappedComponents have ports!"
+        assert isinstance(
+            origin, MultiportComponentMixin
+        ), "Only MappedComponents have ports!"
 
         for _, to_component, data in self.graph.out_edges(origin, data=True):
             if data["from_port"] == port:
@@ -184,7 +190,7 @@ class DeviceGraph:
         from rich.table import Table
 
         # Components table
-        components_table = Table(title=f"Components")
+        components_table = Table(title="Components")
 
         # Columns: Name, Type
         components_table.add_column("Name")
@@ -215,7 +221,7 @@ class DeviceGraph:
             to_component = next(self.graph.successors(tube))
 
             # Draw a line after the last tube
-            end_section = True if tube is last_tube else False
+            end_section = tube is last_tube
 
             tubing_table.add_row(
                 from_component.name,
@@ -248,6 +254,7 @@ class DeviceGraph:
 
 if __name__ == "__main__":
     from flowchem.core.graph.parser import parse_graph_file
+
     graph = parse_graph_file("sample_config.yml")
     graph.summarize()
 

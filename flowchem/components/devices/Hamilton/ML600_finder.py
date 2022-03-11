@@ -2,14 +2,14 @@
 This module is used to discover the serial address of any ML600 connected to the PC.
 """
 import asyncio
-from loguru import logger
 
 import aioserial
 import serial.tools.list_ports
+from loguru import logger
 
 from flowchem.components.devices.Hamilton.ML600 import (
-    InvalidConfiguration,
     HamiltonPumpIO,
+    InvalidConfiguration,
 )
 
 
@@ -23,9 +23,7 @@ def ml600_finder():
     for serial_port in port_available:
         try:
             print(f"Looking for pump on {serial_port}...")
-            link = HamiltonPumpIO(
-                aioserial.AioSerial(url=serial_port, timeout=0.1)
-            )
+            link = HamiltonPumpIO(aioserial.AioSerial(url=serial_port, timeout=0.1))
             asyncio.run(link.initialize())
             logger.info(f"{link.num_pump_connected} pump(s) found on <{serial_port}>")
             valid_ports.add(serial_port)

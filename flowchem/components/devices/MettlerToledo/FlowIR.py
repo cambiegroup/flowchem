@@ -1,28 +1,27 @@
 """ Async implementation of FlowIR """
 
+import asyncio
 import datetime
 import warnings
-
-from flowchem.components.properties import ActiveComponent
-from loguru import logger
 from typing import List, Optional
 
-from flowchem.exceptions import DeviceError
-
-import asyncio
-from asyncua import ua, Client
+from asyncua import Client, ua
+from loguru import logger
 
 from flowchem.components.devices.MettlerToledo.iCIR_common import (
     IRSpectrum,
-    iCIR_spectrometer,
     ProbeInfo,
+    iCIR_spectrometer,
 )
+from flowchem.components.properties import ActiveComponent
+from flowchem.exceptions import DeviceError
 
 
 class FlowIR(iCIR_spectrometer, ActiveComponent):
     """
     Object to interact with the iCIR software controlling the FlowIR and ReactIR.
     """
+
     counter = 0
 
     def __init__(self, url: str = None, name: str = None):
@@ -48,12 +47,19 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
         """Initialize and check connection"""
         try:
             await self.opcua.connect()
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError as timeout_error:
             raise DeviceError(
                 f"Could not connect to FlowIR on {self.opcua.server_url}!"
-            )
+            ) from timeout_error
         await self.check_version()
         logger.debug("FlowIR initialized!")
+
+    def is_local(self):
+        """Returns true if the server is on the same machine running the python code."""
+        return any(
+            x in self.opcua.aio_obj.server_url.netloc
+            for x in ("localhost", "127.0.0.1")
+        )
 
     async def check_version(self):
         """Check if iCIR is installed and open and if the version is supported."""
@@ -66,10 +72,10 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
                     f"The current version of iCIR [self.version] has not been tested!"
                     f"Pleas use one of the supported versions: {self._supported_versions}"
                 )
-        except ua.UaStatusCodeError as e:  # iCIR app closed
+        except ua.UaStatusCodeError as error:  # iCIR app closed
             raise DeviceError(
                 "iCIR app not installed or closed or no instrument available!"
-            ) from e
+            ) from error
 
     # noinspection PyPep8Naming
     async def is_iCIR_connected(self) -> bool:
@@ -161,11 +167,11 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
             # Collect_bg does not seem to work in automation, set to false and do not expose in start_experiment()!
             collect_bg = False
             await method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
-        except ua.uaerrors.Bad as e:
+        except ua.uaerrors.Bad as error:
             raise DeviceError(
                 "The experiment could not be started!\n"
                 "Check iCIR status and close any open experiment."
-            ) from e
+            ) from error
         logger.info(f"FlowIR experiment {name} started with template {template}!")
 
     async def stop_experiment(self):

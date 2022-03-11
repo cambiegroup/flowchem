@@ -21,8 +21,24 @@ def test_pbcommand_parse_int():
 
 
 def test_pbcommand_parse_bits():
-    assert PBCommand("{S001234").parse_bits() == [False, False, False, True, False, False, True, False, False, False,
-                                                  True, True, False, True, False, False]
+    assert PBCommand("{S001234").parse_bits() == [
+        False,
+        False,
+        False,
+        True,
+        False,
+        False,
+        True,
+        False,
+        False,
+        False,
+        True,
+        True,
+        False,
+        True,
+        False,
+        False,
+    ]
 
 
 def test_pbcommand_parse_bool():
@@ -33,11 +49,13 @@ def test_pbcommand_parse_bool():
 def test_invalid_serial_port():
     with pytest.raises(InvalidConfiguration) as execinfo:
         HuberChiller.from_config(port="COM99")
-    assert str(execinfo.value) == 'Cannot connect to the HuberChiller on the port <COM99>'
+    assert (
+        str(execinfo.value) == "Cannot connect to the HuberChiller on the port <COM99>"
+    )
 
 
 class FakeSerial(aioserial.AioSerial):
-    """ Mock AioSerial. """
+    """Mock AioSerial."""
 
     # noinspection PyMissingConstructor
     def __init__(self):
@@ -59,11 +77,11 @@ class FakeSerial(aioserial.AioSerial):
         }
 
     async def write_async(self, text: bytes):
-        """ Override AioSerial method """
+        """Override AioSerial method"""
         self.last_command = text
 
     async def readline_async(self, size: int = -1) -> bytes:
-        """ Override AioSerial method """
+        """Override AioSerial method"""
         if self.last_command == b"{MFFFFFF\r\n":
             await asyncio.sleep(999)
         if self.fixed_reply:
@@ -76,7 +94,7 @@ class FakeSerial(aioserial.AioSerial):
 
 @pytest.fixture(scope="session")
 def chiller():
-    """ Chiller instance connected to FakeSerial """
+    """Chiller instance connected to FakeSerial"""
     return HuberChiller(FakeSerial())
 
 
@@ -84,7 +102,7 @@ def chiller():
 async def test_no_reply(chiller):
     with pytest.warns(UserWarning):
         reply = await chiller.send_command_and_read_reply("{MFFFFFF")
-    assert reply == '{SFFFFFF'
+    assert reply == "{SFFFFFF"
 
 
 @pytest.mark.asyncio

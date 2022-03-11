@@ -5,14 +5,13 @@ No license originally specified.
 
 import re
 import warnings
-
-from flowchem.components.properties import ActiveComponent
-from loguru import logger
-from typing import Literal, Tuple, List, Union
+from typing import List, Literal, Tuple, Union
 
 import aioserial
+from loguru import logger
 
-from flowchem.exceptions import InvalidConfiguration, DeviceError
+from flowchem.components.properties import ActiveComponent
+from flowchem.exceptions import DeviceError, InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
 
@@ -38,10 +37,10 @@ class MansonPowerSupply(ActiveComponent):
         """
         try:
             serial_object = aioserial.AioSerial(port, **serial_kwargs)
-        except aioserial.SerialException as e:
+        except aioserial.SerialException as error:
             raise InvalidConfiguration(
                 f"Cannot connect to the MansonPowerSupply on the port <{port}>"
-            ) from e
+            ) from error
 
         return cls(serial_object, name)
 
@@ -128,10 +127,9 @@ class MansonPowerSupply(ActiveComponent):
 
         if response[8:9] == "0":
             return str(volt), str(curr), "CV"
-        elif response[8:9] == "1":
+        if response[8:9] == "1":
             return str(volt), str(curr), "CC"
-        else:
-            return str(volt), str(curr), "NN"
+        return str(volt), str(curr), "NN"
 
     async def get_output_voltage(self) -> str:
         """Returns output voltage in Volt"""

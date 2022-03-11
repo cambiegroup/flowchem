@@ -1,18 +1,19 @@
-import yaml
-from pathlib import Path
-from typing import Union, Dict, Iterable
-from loguru import logger
-from types import ModuleType
+" Parse a device graph file and instantiate DeviceGraph object. "
 import inspect
 import itertools
+from pathlib import Path
+from types import ModuleType
+from typing import Dict, Iterable, Union
 
+import yaml
+from loguru import logger
+
+import flowchem.assemblies
 from flowchem.components.stdlib import Tube
+from flowchem.core.graph.devicegraph import DeviceGraph
 from flowchem.core.graph.devicenode import DeviceNode
 from flowchem.core.graph.validation import validate_graph
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.core.graph.devicegraph import DeviceGraph
-import flowchem.assemblies
-
 
 # Packages containing the device class definitions.
 # Devices' classes must be in the module top level to be found.
@@ -42,7 +43,7 @@ def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
     ]
 
     # Return them as dict (itertools to flatten the nested, per module, lists)
-    return {k: v for (k, v) in itertools.chain.from_iterable(objects_in_modules)}
+    return dict(itertools.chain.from_iterable(objects_in_modules))
 
 
 def parse_device_section(devices: Dict, graph: DeviceGraph):
@@ -57,10 +58,14 @@ def parse_device_section(devices: Dict, graph: DeviceGraph):
         device_class, device_config = next(iter(device_node.items()))
         try:
             obj_type = device_mapper[device_class]
-        except KeyError as e:
-            logger.exception(f"Device of type {device_class} unknown! [Known devices: {device_mapper.keys()}]")
-            raise InvalidConfiguration(f"Device of type {device_class} unknown! \n"
-                                       f"[Known devices: {list(device_mapper.keys())}]") from e
+        except KeyError as error:
+            logger.exception(
+                f"Device of type {device_class} unknown! [Known devices: {device_mapper.keys()}]"
+            )
+            raise InvalidConfiguration(
+                f"Device of type {device_class} unknown! \n"
+                f"[Known devices: {list(device_mapper.keys())}]"
+            ) from error
 
         # Create device object and add it to the graph
         device = DeviceNode(device_config, obj_type).device
@@ -97,7 +102,8 @@ def _parse_tube_connection(tube_config, graph: DeviceGraph):
     inlet = {
         "from": dict(
             device=tube_config["from"]["device"],
-            port=tube_config["from"].get("port", None)),
+            port=tube_config["from"].get("port", None),
+        ),
         "to": dict(device=tube.name),
     }
     _parse_interface_connection(inlet, graph)
@@ -105,8 +111,8 @@ def _parse_tube_connection(tube_config, graph: DeviceGraph):
     outlet = {
         "from": dict(device=tube.name),
         "to": dict(
-            device=tube_config["to"]["device"],
-            port=tube_config["to"].get("port", None)),
+            device=tube_config["to"]["device"], port=tube_config["to"].get("port", None)
+        ),
     }
     _parse_interface_connection(outlet, graph)
 
@@ -145,11 +151,13 @@ def parse_graph_file(file: Union[str, Path]):
     file_path = Path(file)
     name = file_path.stem
 
-    with file_path.open() as stream:
+    with file_path.open(encoding="utf-8") as stream:
         try:
             config = yaml.safe_load(stream)
-        except yaml.parser.ParserError as p:
-            logger.exception(p)
-            raise InvalidConfiguration(f"Invalid YAML in graph {file_path}") from p
+        except yaml.parser.ParserError as parser_error:
+            logger.exception(parser_error)
+            raise InvalidConfiguration(
+                f"Invalid YAML in graph {file_path}"
+            ) from parser_error
 
     return parse_graph_config(config, name)
