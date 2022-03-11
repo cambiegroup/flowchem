@@ -1,5 +1,4 @@
 import asyncio
-from pathlib import Path
 
 from flowchem.components.devices.Magritek import Spinsolve, NMRSpectrum
 

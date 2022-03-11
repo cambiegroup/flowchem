@@ -1,9 +1,8 @@
 import time
-import numpy as np
 import matplotlib.pyplot as plt
 from flowchem import PressureSensor
 
-p_sens = PressureSensor(sensor_min="0 bar", sensor_max="25 bar", vint_serial_number=627768, vint_channel=0)
+p_sens = PressureSensor(pressure_range=("0 bar", "25 bar"), vint_serial_number=627768, vint_channel=0)
 
 start_time = time.time()
 x = []
