@@ -155,7 +155,6 @@ class HamiltonPumpIO:
         logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
         return int(last_pump)
 
-
     async def _hw_init(self):
         """Send to all pumps the HW initialization command (i.e. homing)"""
         await self._write_async(b":XR\r")  # Broadcast: initialize + execute

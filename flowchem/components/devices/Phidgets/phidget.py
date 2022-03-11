@@ -73,7 +73,9 @@ class PressureSensor(Sensor):
             self.phidget.openWaitForAttachment(1000)
             logger.debug("Pressure sensor connected!")
         except PhidgetException as phdget_error:
-            raise DeviceError("Cannot connect to sensor! Check settings...") from phdget_error
+            raise DeviceError(
+                "Cannot connect to sensor! Check settings..."
+            ) from phdget_error
 
         # Set power supply to 24V
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)
@@ -100,7 +102,9 @@ class PressureSensor(Sensor):
         """Converts current reading into pressure value"""
         mill_amp = current_in_ampere * 1000
         # minP..maxP is 4..20mA
-        pressure_reading = self._min_pressure + ((mill_amp - 4) / 16) * (self._max_pressure - self._min_pressure)
+        pressure_reading = self._min_pressure + ((mill_amp - 4) / 16) * (
+            self._max_pressure - self._min_pressure
+        )
         logger.debug(f"Read pressure {pressure_reading} barg!")
         return str(pressure_reading * flowchem_ureg.bar)
 

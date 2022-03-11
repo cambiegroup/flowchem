@@ -229,7 +229,7 @@ class HarvardApparatusPumpIO:
             return None
 
     def autodetermine_address(self) -> int:
-        """ Autodetermine pump address based on response received."""
+        """Autodetermine pump address based on response received."""
         self._serial.write("\r\n".encode("ascii"))
         self._serial.readline()
         prompt = self._serial.readline()

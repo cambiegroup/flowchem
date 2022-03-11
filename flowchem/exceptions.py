@@ -14,4 +14,4 @@ class ActuationError(DeviceError):
 
 
 class ProtocolCancelled(Exception):
-    """ The protocol was cancelled by the user """
+    """The protocol was cancelled by the user"""

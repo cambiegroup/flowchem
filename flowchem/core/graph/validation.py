@@ -14,7 +14,7 @@ SCHEMA = os.path.join(
 
 
 def load_graph_schema():
-    """ Loads and return the DeviceGraph schema."""
+    """Loads and return the DeviceGraph schema."""
     with open(SCHEMA, "r", encoding="utf-8") as file_handle:
         schema = json.load(file_handle)
         jsonschema.Draft7Validator.check_schema(schema)
