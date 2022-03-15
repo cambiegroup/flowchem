@@ -65,7 +65,7 @@ class Spinsolve(ActiveComponent):
         # Queue needed for thread-safe operation, the reader is in a different thread
         self._replies: queue.Queue = queue.Queue()
         self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
-        threading.Thread(target=self.connenction_listener_thread(), daemon=True).start()
+        threading.Thread(target=self.connenction_listener_thread, daemon=True).start()
 
         # Check if the instrument is connected
         hw_info = self.hw_request()
