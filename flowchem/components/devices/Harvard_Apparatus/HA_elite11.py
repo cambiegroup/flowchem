@@ -360,7 +360,7 @@ class Elite11InfuseOnly(Pump):
         self.pump_io = pump_io
         Elite11InfuseOnly._io_instances.add(self.pump_io)  # See above for details.
 
-        self.address: int = address if address is None else None  # type: ignore
+        self.address: int = address if address is not None else None  # type: ignore
         self._version = None  # Set in initialize
 
         # diameter and syringe volume - these will be set in initialize() - check values here though.
@@ -415,10 +415,14 @@ class Elite11InfuseOnly(Pump):
     async def initialize(self):
         """Ensure a valid connection with the pump has been established and sets parameters."""
         # Autodetect address if none provided
+        print(f"THE ASDDRESS is {self.address=}")
         if self.address is None:
             self.address = self.pump_io.autodetermine_address()
 
-        await self.stop()
+        try:
+            await self.stop()
+        except IndexError as index_e:
+            raise InvalidConfiguration(f"Check pump address! Currently {self.address=}") from index_e
 
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
@@ -620,7 +624,7 @@ class Elite11InfuseOnly(Pump):
             return
 
         await self._send_command_and_read_reply(
-            Elite11Commands.DIAMETER, parameter=f"{diameter.to('mm'):.4f}"
+            Elite11Commands.DIAMETER, parameter=f"{diameter.to('mm').magnitude:.4f} mm"
         )
 
     async def get_current_flowrate(self) -> str:
