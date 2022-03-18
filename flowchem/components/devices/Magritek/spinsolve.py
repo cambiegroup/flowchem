@@ -292,7 +292,7 @@ class Spinsolve(ActiveComponent):
         """
         Read all the StatusNotification and returns the dataFolder
         """
-        remote_folder = None
+        remote_folder = Path()
         while True:
             # Get all StatusNotification
             status_update = await self._async_read_reply("StatusNotification", 6000)
@@ -301,17 +301,17 @@ class Spinsolve(ActiveComponent):
             status, folder = parse_status_notification(status_update)
             logger.debug(f"Status update: Status is {status} and data folder={folder}")
 
-            # When I get a response with folder, save the location!
+            # When I get a finishing response end protocol and return the data folder!
             if status is StatusNotification.FINISHING:
                 remote_folder = Path(folder)
                 break
 
             if status is StatusNotification.ERROR:
-                warnings.warn(
-                    "Error detected on running protocol -- aborting."
-                )  # Usually device busy
+                # Usually device busy
+                warnings.warn("Error detected on running protocol -- aborting.")
                 self.abort()  # Abort running experiment
                 break
+
         return remote_folder
 
     def abort(self):
