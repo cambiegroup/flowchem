@@ -46,9 +46,7 @@ class Spinsolve(ActiveComponent):
     """
 
     def __init__(
-        self,
-        host="127.0.0.1",
-        **kwargs,
+        self, host="127.0.0.1", **kwargs,
     ):
         """
         Constructor, actuates the connection upon instantiation.

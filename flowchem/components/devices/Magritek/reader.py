@@ -76,7 +76,9 @@ class Reader:
         """
         self.fetch_replies()
 
-        valid_replies = [reply for reply in self._replies if reply[0].tag.endswith(reply_type)]
+        valid_replies = [
+            reply for reply in self._replies if reply[0].tag.endswith(reply_type)
+        ]
 
         if len(valid_replies) > 0:
             first_valid_reply = valid_replies[0]

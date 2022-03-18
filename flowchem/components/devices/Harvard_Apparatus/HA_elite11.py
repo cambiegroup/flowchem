@@ -422,7 +422,9 @@ class Elite11InfuseOnly(Pump):
         try:
             await self.stop()
         except IndexError as index_e:
-            raise InvalidConfiguration(f"Check pump address! Currently {self.address=}") from index_e
+            raise InvalidConfiguration(
+                f"Check pump address! Currently {self.address=}"
+            ) from index_e
 
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)

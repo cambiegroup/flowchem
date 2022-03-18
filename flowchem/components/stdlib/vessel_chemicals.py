@@ -25,9 +25,7 @@ class VesselChemicals(Vessel):
     }
 
     def __init__(
-        self,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
+        self, description: Optional[str] = None, name: Optional[str] = None,
     ):
         super().__init__(name=name, description=description)
         self.chemical = None
