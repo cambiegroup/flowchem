@@ -35,11 +35,11 @@ class Reader:
         self._replies: List[etree.Element] = []
         self._rcv_buffer = b""
 
-    def wait_for_reply(self, reply_type="", remove=True, timeout=1):
+    def wait_for_reply(self, reply_type="", timeout=1):
         """
         Awaits for a reply of type reply_type or up to timeout
         """
-        reply = self.get_next_reply(reply_type, remove)
+        reply = self.get_next_reply(reply_type)
 
         # If already available just return
         if reply is not None:
@@ -49,7 +49,7 @@ class Reader:
         # Only relevant if controlling remote devices over connections with significant latency
         start_time = time.time()
         while reply is None and time.time() < (start_time + timeout):
-            reply = self.get_last_reply(reply_type)
+            reply = self.get_next_reply(reply_type)
             time.sleep(0.1)
 
         if reply is None:
@@ -57,22 +57,9 @@ class Reader:
 
         return reply
 
-    def get_last_reply(self, reply_type="", remove=True):
+    def get_next_reply(self, reply_type=""):
         """
-        Returns the last reply of given type
-        """
-        self.fetch_replies()
-
-        for reply in reversed(self._replies):
-            # First tag in message is response type
-            if reply[0].tag.endswith(reply_type):
-                if remove:
-                    self._replies.remove(reply)
-                return reply
-
-    def get_next_reply(self, reply_type="", remove=True):
-        """
-        Returns the next reply of given type in the Q self._replies
+        Returns the next reply of given type in self._replies.
         """
         self.fetch_replies()
 
@@ -82,8 +69,7 @@ class Reader:
 
         if len(valid_replies) > 0:
             first_valid_reply = valid_replies[0]
-            if remove:
-                self._replies.remove(first_valid_reply)
+            self._replies.remove(first_valid_reply)
             return first_valid_reply
 
     def clear_replies(self, reply_type=""):

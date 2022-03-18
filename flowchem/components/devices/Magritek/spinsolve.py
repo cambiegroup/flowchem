@@ -295,7 +295,6 @@ class Spinsolve(ActiveComponent):
         remote_folder = None
         while True:
             # Get all StatusNotification
-            # status_update = self._read_reply("StatusNotification", 6000)
             status_update = await self._async_read_reply("StatusNotification", 6000)
 
             # Parse them
