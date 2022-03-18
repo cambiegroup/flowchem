@@ -292,7 +292,7 @@ class Spinsolve(ActiveComponent):
         """
         Read all the StatusNotification and returns the dataFolder
         """
-        remote_folder = Path(".")
+        remote_folder = None
         while True:
             # Get all StatusNotification
             # status_update = self._read_reply("StatusNotification", 6000)
