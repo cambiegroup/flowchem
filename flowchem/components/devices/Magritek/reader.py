@@ -39,7 +39,7 @@ class Reader:
         """
         Awaits for a reply of type reply_type or up to timeout
         """
-        reply = self.get_last_reply(reply_type, remove)
+        reply = self.get_next_reply(reply_type, remove)
 
         # If already available just return
         if reply is not None:
@@ -69,6 +69,20 @@ class Reader:
                 if remove:
                     self._replies.remove(reply)
                 return reply
+
+    def get_next_reply(self, reply_type="", remove=True):
+        """
+        Returns the next reply of given type in the Q self._replies
+        """
+        self.fetch_replies()
+
+        valid_replies = [reply for reply in self._replies if reply[0].tag.endswith(reply_type)]
+
+        if len(valid_replies) > 0:
+            first_valid_reply = valid_replies[0]
+            if remove:
+                self._replies.remove(first_valid_reply)
+            return first_valid_reply
 
     def clear_replies(self, reply_type=""):
         """Remove old replies."""
