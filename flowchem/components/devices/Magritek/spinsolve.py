@@ -303,11 +303,8 @@ class Spinsolve(ActiveComponent):
             logger.debug(f"Status update: Status is {status} and data folder={folder}")
 
             # When I get a response with folder, save the location!
-            if folder:
+            if status is StatusNotification.FINISHING:
                 remote_folder = Path(folder)
-
-            # If it is complete leave loop
-            if status is StatusNotification.COMPLETED:
                 break
 
             if status is StatusNotification.ERROR:
