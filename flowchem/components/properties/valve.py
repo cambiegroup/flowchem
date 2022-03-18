@@ -14,7 +14,9 @@ class Valve(MultiportComponentMixin, ActiveComponent, ABC):
     """
 
     def __init__(
-        self, port: Set[Union[int, str]], name: Optional[str] = None,
+        self,
+        port: Set[Union[int, str]],
+        name: Optional[str] = None,
     ):
         super().__init__(name=name)
 

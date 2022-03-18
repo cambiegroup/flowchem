@@ -46,7 +46,9 @@ class NMRSpectrum:
         except KeyError:
             # Authophase needed - no info on phase from nmrglue
             self.processed_data = ng.proc_autophase.autops(
-                self.processed_data, "acme", disp=False,
+                self.processed_data,
+                "acme",
+                disp=False,
             )
 
         # Delete imaginary

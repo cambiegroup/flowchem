@@ -69,7 +69,10 @@ class MansonPowerSupply(ActiveComponent):
         multiplier = 100 if await self.get_info() in self.MODEL_ALT_RANGE else 10
         return str(current.m_as("A") * multiplier).zfill(3)
 
-    async def _send_command(self, command: str,) -> str:
+    async def _send_command(
+        self,
+        command: str,
+    ) -> str:
         """Internal function to send command and read reply."""
 
         # Flush buffer

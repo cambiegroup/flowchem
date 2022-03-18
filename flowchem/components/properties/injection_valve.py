@@ -11,7 +11,8 @@ class InjectionValve(MultiportComponentMixin, ActiveComponent, ABC):
     """
 
     def __init__(
-        self, name: Optional[str] = None,
+        self,
+        name: Optional[str] = None,
     ):
         # For injection valves, the positions are 'load' and 'inject'
         self.position = {"inject", "load"}

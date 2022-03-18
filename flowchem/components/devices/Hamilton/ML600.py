@@ -581,7 +581,8 @@ class ML600(Pump):
         await self.set_valve_position(from_valve)
         # Move up to target volume
         await self.to_volume(
-            str(cur_vol + volume), speed=self.flowrate_to_seconds_per_stroke(flowrate),
+            str(cur_vol + volume),
+            speed=self.flowrate_to_seconds_per_stroke(flowrate),
         )
 
         if wait:
@@ -606,7 +607,8 @@ class ML600(Pump):
         await self.set_valve_position(to_valve)
         # Move up to target volume
         await self.to_volume(
-            str(cur_vol - volume), speed=self.flowrate_to_seconds_per_stroke(flowrate),
+            str(cur_vol - volume),
+            speed=self.flowrate_to_seconds_per_stroke(flowrate),
         )
 
         if wait:
