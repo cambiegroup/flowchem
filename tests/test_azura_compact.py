@@ -31,7 +31,7 @@ def event_loop(request):
 
 @pytest.fixture(scope="session")
 async def pump():
-    """ Change to match your hardware ;) """
+    """Change to match your hardware ;)"""
     pump = AzuraCompactPump(ip_address="192.168.1.126")
     await pump.initialize()
     return pump
@@ -61,7 +61,9 @@ async def test_flow_rate(pump: AzuraCompactPump):
     # FIXME
     assert pint.Quantity(await pump.get_flow()).magnitude == 1.25
     await pump.set_flow(f"{math.pi} ml/min")
-    assert math.isclose(pint.Quantity(await pump.get_flow()).magnitude, math.pi, abs_tol=1e-3)
+    assert math.isclose(
+        pint.Quantity(await pump.get_flow()).magnitude, math.pi, abs_tol=1e-3
+    )
     await pump.stop_flow()
 
 

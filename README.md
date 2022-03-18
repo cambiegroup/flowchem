@@ -1,7 +1,7 @@
 Welcome to flowchem
 ===================
 
- 
+
 ![github-actions](https://github.com/cambiegroup/flowchem/actions/workflows/python-app.yml/badge.svg)
 [![PyPI version fury.io](https://badge.fury.io/py/flowchem.svg)](https://pypi.org/project/flowchem/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
@@ -23,7 +23,7 @@ Currently, the following instruments can be controlled via flowchem:
 * [License](#license)
 * [Questions](#questions)
 
- 
+
 ## Installation
 ```bash
 pip install flowchem

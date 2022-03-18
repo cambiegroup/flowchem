@@ -1,5 +1,6 @@
 """ Router for a Spinsolve object """
 from fastapi import APIRouter
+
 from flowchem import Spinsolve
 
 

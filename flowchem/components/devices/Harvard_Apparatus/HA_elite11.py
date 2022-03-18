@@ -3,25 +3,24 @@ This module is used to control Harvard Apparatus Elite 11 syringe pump via the 1
 """
 
 from __future__ import annotations
-from typing import Set, Optional, List, Tuple
-from loguru import logger
 
 import asyncio
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from time import sleep
+from typing import List, Optional, Set, Tuple
 
 import aioserial
+from loguru import logger
 from pydantic import BaseModel
 
-from flowchem.exceptions import InvalidConfiguration, DeviceError
-from flowchem.units import flowchem_ureg
 from flowchem.components.stdlib import Pump
+from flowchem.exceptions import DeviceError, InvalidConfiguration
+from flowchem.units import flowchem_ureg
 
 
 def _parse_version(version_text: str) -> Tuple[int, int, int]:
-    """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4 """
+    """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4"""
 
     numbers = version_text.split(" ")[-1]
     version_digits = numbers.split(".")
@@ -100,19 +99,19 @@ class HarvardApparatusPumpIO:
 
         try:
             self._serial = aioserial.AioSerial(port, **configuration)
-        except aioserial.SerialException as e:
+        except aioserial.SerialException as serial_exception:
             logger.error(f"Cannot connect to the Pump on the port <{port}>")
             raise InvalidConfiguration(
                 f"Cannot connect to the Pump on the port <{port}>"
-            ) from e
+            ) from serial_exception
 
     async def _write(self, command: Protocol11Command):
         """Writes a command to the pump"""
         command_msg = command.compile()
         try:
             await self._serial.write_async(command_msg.encode("ascii"))
-        except aioserial.SerialException as e:
-            raise InvalidConfiguration from e
+        except aioserial.SerialException as serial_exception:
+            raise InvalidConfiguration from serial_exception
         logger.debug(f"Sent {repr(command_msg)}!")
 
     async def _read_reply(self) -> List[str]:
@@ -141,8 +140,7 @@ class HarvardApparatusPumpIO:
         # Target reached is the only two-character status
         if status is PumpStatus.TARGET_REACHED:
             return pump_address, status, line[4:]
-        else:
-            return pump_address, status, line[3:]
+        return pump_address, status, line[3:]
 
     @staticmethod
     def parse_response(
@@ -161,18 +159,18 @@ class HarvardApparatusPumpIO:
                 f"The command {command_sent} is invalid for pump {command_sent.target_pump_address}!"
                 f"[Reply: {last_response_line}]"
             )
-        elif "Unknown command" in last_response_line:
+        if "Unknown command" in last_response_line:
             raise DeviceError(
                 f"The command {command_sent} is unknown to pump {command_sent.target_pump_address}!"
                 f"[Maybe a withdraw command has been used with an infuse only pump?]"
                 f"[Reply: {last_response_line}]"
             )
-        elif "Argument error" in last_response_line:
+        if "Argument error" in last_response_line:
             raise DeviceError(
                 f"The command {command_sent} to pump {command_sent.target_pump_address} has an "
                 f"invalid argument [Reply: {last_response_line}]"
             )
-        elif "Out of range" in last_response_line:
+        if "Out of range" in last_response_line:
             raise DeviceError(
                 f"The command {command_sent} to pump {command_sent.target_pump_address} has an "
                 f"argument out of range! [Reply: {last_response_line}]"
@@ -182,8 +180,8 @@ class HarvardApparatusPumpIO:
         """Reset input buffer before reading from serial. In theory not necessary if all replies are consumed..."""
         try:
             self._serial.reset_input_buffer()
-        except aioserial.PortNotOpenError as e:
-            raise InvalidConfiguration from e
+        except aioserial.PortNotOpenError as port_not_open_error:
+            raise InvalidConfiguration from port_not_open_error
 
     async def write_and_read_reply(
         self, command: Protocol11Command, return_parsed: bool = True
@@ -231,6 +229,7 @@ class HarvardApparatusPumpIO:
             return None
 
     def autodetermine_address(self) -> int:
+        """Autodetermine pump address based on response received."""
         self._serial.write("\r\n".encode("ascii"))
         self._serial.readline()
         prompt = self._serial.readline()
@@ -361,7 +360,7 @@ class Elite11InfuseOnly(Pump):
         self.pump_io = pump_io
         Elite11InfuseOnly._io_instances.add(self.pump_io)  # See above for details.
 
-        self.address: int = address if address is None else None  # type: ignore
+        self.address: int = address if address is not None else None  # type: ignore
         self._version = None  # Set in initialize
 
         # diameter and syringe volume - these will be set in initialize() - check values here though.
@@ -369,15 +368,13 @@ class Elite11InfuseOnly(Pump):
             raise InvalidConfiguration(
                 "Please provide the syringe diameter explicitly!\nThis prevents errors :)"
             )
-        else:
-            self._diameter = diameter
+        self._diameter = diameter
 
         if syringe_volume is None:
             raise InvalidConfiguration(
                 "Please provide the syringe volume explicitly!\nThis prevents errors :)"
             )
-        else:
-            self._syringe_volume = syringe_volume
+        self._syringe_volume = syringe_volume
 
     @classmethod
     def from_config(
@@ -418,10 +415,14 @@ class Elite11InfuseOnly(Pump):
     async def initialize(self):
         """Ensure a valid connection with the pump has been established and sets parameters."""
         # Autodetect address if none provided
+        print(f"THE ASDDRESS is {self.address=}")
         if self.address is None:
             self.address = self.pump_io.autodetermine_address()
 
-        await self.stop()
+        try:
+            await self.stop()
+        except IndexError as index_e:
+            raise InvalidConfiguration(f"Check pump address! Currently {self.address=}") from index_e
 
         await self.set_syringe_diameter(self._diameter)
         await self.set_syringe_volume(self._syringe_volume)
@@ -586,7 +587,7 @@ class Elite11InfuseOnly(Pump):
 
     async def clear_volumes(self):
         """Set all pump volumes to 0"""
-        await self.set_target_volume('0 ml')
+        await self.set_target_volume("0 ml")
         await self.clear_infused_volume()
 
     async def get_force(self):
@@ -623,7 +624,7 @@ class Elite11InfuseOnly(Pump):
             return
 
         await self._send_command_and_read_reply(
-            Elite11Commands.DIAMETER, parameter=f"{diameter.to('mm'):.4f}"
+            Elite11Commands.DIAMETER, parameter=f"{diameter.to('mm').magnitude:.4f} mm"
         )
 
     async def get_current_flowrate(self) -> str:
@@ -635,9 +636,8 @@ class Elite11InfuseOnly(Pump):
             return await self._send_command_and_read_reply(
                 Elite11Commands.CURRENT_MOVING_RATE
             )
-        else:
-            warnings.warn("Pump is not moving, cannot provide moving rate!")
-            return ""
+        warnings.warn("Pump is not moving, cannot provide moving rate!")
+        return ""
 
     async def get_target_volume(self) -> str:
         """Returns target volume or a falsy empty string if not set."""
@@ -760,7 +760,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
 
     async def initialize(self):
         """Ensure a valid connection with the pump has been established and sets parameters."""
-        await super(Elite11InfuseWithdraw, self).initialize()
+        await super().initialize()
 
         # Additionally, ensure pump support withdrawing upon initialization
         pump_info = await self.pump_info()
@@ -811,8 +811,8 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
         await self.clear_withdrawn_volume()
 
     def get_router(self):
-        router = super(Elite11InfuseWithdraw, self).get_router()
-        """Creates an APIRouter for this object."""
+        router = super().get_router()
+        # Creates an APIRouter for this object.
         router.add_api_route("/run/inverse", self.inverse_run, methods=["PUT"])
         router.add_api_route("/run/withdraw", self.withdraw_run, methods=["PUT"])
         router.add_api_route("/withdraw-rate", self.get_withdraw_rate, methods=["GET"])

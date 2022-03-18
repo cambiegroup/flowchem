@@ -1,9 +1,9 @@
 """ Functions related to instrument reply parsing """
 
 import warnings
+from enum import Enum
 
 from lxml import etree
-from enum import Enum
 
 
 class StatusNotification(Enum):
@@ -83,5 +83,4 @@ def parse_state(xml_message: etree.Element):
 
     if remote_folder:
         return status_type, remote_folder
-    else:
-        return status_type, None
+    return status_type, None

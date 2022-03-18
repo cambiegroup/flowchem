@@ -2,7 +2,7 @@
 from abc import ABC
 from typing import Optional
 
-from flowchem.components.properties import MultiportComponentMixin, ActiveComponent
+from flowchem.components.properties import ActiveComponent, MultiportComponentMixin
 
 
 class InjectionValve(MultiportComponentMixin, ActiveComponent, ABC):

@@ -1,14 +1,14 @@
 """ Autodiscover Knauer devices on network """
-from typing import Tuple, Union, Text, Dict
 import asyncio
 import queue
 import socket
 import sys
 import time
-from loguru import logger
 from threading import Thread
+from typing import Dict, Text, Tuple, Union
 
 from getmac import getmac
+from loguru import logger
 
 Address = Tuple[str, int]
 

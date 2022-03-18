@@ -1,8 +1,8 @@
 from abc import ABC
 from typing import Optional
 
-from flowchem.units import flowchem_ureg
 from flowchem.components.properties import ActiveComponent
+from flowchem.units import flowchem_ureg
 
 
 class Pump(ActiveComponent, ABC):

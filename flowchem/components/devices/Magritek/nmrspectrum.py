@@ -1,13 +1,19 @@
 """ NMR-spectrum object represents an NMR spectrum.  """
-import nmrglue as ng
+import time
 from pathlib import Path
+
 import matplotlib.pyplot as plt
+import nmrglue as ng
 
 
 class NMRSpectrum:
     """General spectrum object, instantiated from Spinsolve folder w/ experimental results."""
 
     def __init__(self, location: Path):
+        jcamp_file = location / "nmr_fid.dx"
+        if not jcamp_file.exists():
+            print("File nmr_fid.dx not existing, waiting 2 sec just in case...")
+            time.sleep(2)
         self.dic, self.raw_data = ng.spinsolve.read(dir=location.as_posix())
         self.processed_data = None
 
@@ -31,10 +37,17 @@ class NMRSpectrum:
         # FT
         self.processed_data = ng.proc_base.fft(self.processed_data)
 
-        # Autophase
-        self.processed_data = ng.proc_autophase.autops(
-            self.processed_data, "acme", disp=False
-        )
+        # Phasing
+        try:
+            # Try to extract phase info from JCAMP-DX file...
+            ph0 = float(self.dic['dx']['$PHC0'].pop())
+            ph1 = float(self.dic['dx']['$PHC1'].pop())
+            self.processed_data = ng.proc_base.ps(self.processed_data, ph0, ph1, True)
+        except KeyError:
+            # Authophase needed - no info on phase from nmrglue
+            self.processed_data = ng.proc_autophase.autops(
+                self.processed_data, "acme", disp=False,
+            )
 
         # Delete imaginary
         self.processed_data = ng.proc_base.di(self.processed_data)
@@ -45,7 +58,8 @@ class NMRSpectrum:
             self.process()
 
         fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.plot(self.uc.ppm_scale(), self.processed_data)
+        axes = fig.add_subplot(111)
+        axes.plot(self.uc.ppm_scale(), self.processed_data)
+
         plt.xlim(ppm_range)  # plot as we are used to, from positive to negative
         return fig

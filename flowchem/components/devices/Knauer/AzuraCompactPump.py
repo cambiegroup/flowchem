@@ -3,10 +3,10 @@ Knauer pump control.
 """
 import asyncio
 import warnings
+from enum import Enum
 from typing import List
 
 from loguru import logger
-from enum import Enum
 
 from flowchem.components.devices.Knauer.Knauer_common import KnauerEthernetDevice
 from flowchem.components.stdlib import Pump
@@ -131,18 +131,18 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
             return ""
 
         # Setpoint ok
-        elif ":OK" in reply:
+        if ":OK" in reply:
             logger.debug("setpoint successfully set!")
             return "OK"
 
         # Replies to 'VALUE?' are in the format 'VALUE:'
-        elif message[:-1] in reply:
+        if message[:-1] in reply:
             logger.debug(f"setpoint successfully acquired, value={reply}")
             # Last value after colon
             return reply.split(":")[-1]
 
         # No reply
-        elif not reply:
+        if not reply:
             warnings.warn("No reply received")
             return ""
 
@@ -181,8 +181,7 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
             return ""
 
         # SETTER w/o range
-        else:
-            return await self._transmit_and_parse_reply(message + ":" + str(setpoint))
+        return await self._transmit_and_parse_reply(message + ":" + str(setpoint))
 
     @property
     def _headtype(self):
@@ -205,11 +204,11 @@ class AzuraCompactPump(KnauerEthernetDevice, Pump):
             headtype = AzuraPumpHeads(int(head_type_id))
             # Sets internal property (changes max flowrate etc.)
             self._headtype = headtype
-        except ValueError as e:
+        except ValueError as value_error:
             raise DeviceError(
                 "It seems you're trying instantiate an unknown device/unknown pump type as Knauer Pump.\n"
                 "Only Knauer Azura Compact is supported"
-            ) from e
+            ) from value_error
         logger.debug(f"Head type of pump {self.ip_address} is {headtype}")
 
         return headtype

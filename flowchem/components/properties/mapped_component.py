@@ -24,6 +24,7 @@ class MultiportComponentMixin(Component):
     - `name`: The name of the component.
 
     """
+
     def __init__(self, name: Optional[str] = None):
         super().__init__(name=name)
         self.port: Set[Union[str, int]] = set()

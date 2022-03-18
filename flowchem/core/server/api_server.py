@@ -1,19 +1,16 @@
 """" Run with uvicorn main:app """
 from pathlib import Path
-from loguru import logger
 from typing import Dict
 
 import yaml
+from flowchem.core.graph.validation import validate_graph
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from loguru import logger
 
 import flowchem
-from flowchem.core.graph.parser import (
-    DEVICE_MODULES,
-    get_device_class_mapper,
-)
-from core.graph.validation import validate_graph
 from flowchem.core.graph.devicenode import DeviceNode
+from flowchem.core.graph.parser import DEVICE_MODULES, get_device_class_mapper
 from flowchem.exceptions import InvalidConfiguration
 
 
@@ -56,10 +53,10 @@ def create_server_from_config(config: Dict = None, config_file: Path = None) -> 
             device_class = [
                 name for name in device_mapper.keys() if name in node_config
             ].pop()
-        except IndexError as e:
+        except IndexError as error:
             raise InvalidConfiguration(
                 f"No class available for device '{device_name}'"
-            ) from e
+            ) from error
 
         # Object type
         obj_type = device_mapper[device_class]

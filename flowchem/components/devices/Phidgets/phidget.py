@@ -1,10 +1,11 @@
 """ Use Phidgets to control lab devices. So far, only 4..20mA interface for Swagelock Pressure-sensor """
 import time
 import warnings
-from typing import Optional
+from typing import Optional, Tuple
+
+from loguru import logger
 
 from flowchem.components.properties import Sensor
-from loguru import logger
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -22,15 +23,12 @@ else:
         )
         HAS_PHIDGET = False
     except PhidgetException as phidget_e:
-        if "Logging already enabled" in phidget_e.description:
-            HAS_PHIDGET = True
-        else:
-            HAS_PHIDGET = False
+        HAS_PHIDGET = "Logging already enabled" in phidget_e.description
     else:
         HAS_PHIDGET = True
 
-from flowchem.units import flowchem_ureg
 from flowchem.exceptions import DeviceError, InvalidConfiguration
+from flowchem.units import flowchem_ureg
 
 
 class PressureSensor(Sensor):
@@ -38,12 +36,11 @@ class PressureSensor(Sensor):
 
     def __init__(
         self,
-        sensor_min: str = "0 bar",
-        sensor_max: str = "10 bar",
+        pressure_range: Tuple[str, str] = ("0 bar", "10 bar"),
         vint_serial_number: int = None,
         vint_channel: int = None,
         phidget_is_remote: bool = False,
-        name: Optional[str] = None
+        name: Optional[str] = None,
     ):
         super().__init__(name=name)
         if not HAS_PHIDGET:
@@ -52,8 +49,9 @@ class PressureSensor(Sensor):
             )
 
         # Sensor range
-        self._minP = flowchem_ureg(sensor_min)
-        self._maxP = flowchem_ureg(sensor_max)
+        sensor_min, sensor_max = pressure_range
+        self._min_pressure = flowchem_ureg(sensor_min)
+        self._max_pressure = flowchem_ureg(sensor_max)
         # current meter
         self.phidget = CurrentInput()
 
@@ -74,8 +72,10 @@ class PressureSensor(Sensor):
         try:
             self.phidget.openWaitForAttachment(1000)
             logger.debug("Pressure sensor connected!")
-        except PhidgetException as e:
-            raise DeviceError("Cannot connect to sensor! Check settings...") from e
+        except PhidgetException as phdget_error:
+            raise DeviceError(
+                "Cannot connect to sensor! Check settings..."
+            ) from phdget_error
 
         # Set power supply to 24V
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)
@@ -100,9 +100,11 @@ class PressureSensor(Sensor):
 
     def _current_to_pressure(self, current_in_ampere: float) -> str:
         """Converts current reading into pressure value"""
-        ma = current_in_ampere * 1000
+        mill_amp = current_in_ampere * 1000
         # minP..maxP is 4..20mA
-        pressure_reading = self._minP + ((ma - 4) / 16) * (self._maxP - self._minP)
+        pressure_reading = self._min_pressure + ((mill_amp - 4) / 16) * (
+            self._max_pressure - self._min_pressure
+        )
         logger.debug(f"Read pressure {pressure_reading} barg!")
         return str(pressure_reading * flowchem_ureg.bar)
 
@@ -132,8 +134,7 @@ class PressureSensor(Sensor):
 
 if __name__ == "__main__":
     test = PressureSensor(
-        sensor_min="0 bar",
-        sensor_max="25 bar",
+        pressure_range=("0 bar", "25 bar"),
         vint_serial_number=627768,
         vint_channel=0,
     )
