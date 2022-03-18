@@ -40,8 +40,8 @@ class NMRSpectrum:
         # Phasing
         try:
             # Try to extract phase info from JCAMP-DX file...
-            ph0 = float(self.dic['dx']['$PHC0'].pop())
-            ph1 = float(self.dic['dx']['$PHC1'].pop())
+            ph0 = float(self.dic["dx"]["$PHC0"].pop())
+            ph1 = float(self.dic["dx"]["$PHC1"].pop())
             self.processed_data = ng.proc_base.ps(self.processed_data, ph0, ph1, True)
         except KeyError:
             # Authophase needed - no info on phase from nmrglue
