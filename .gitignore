@@ -127,4 +127,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-/flowchem/components/devices/Vapourtec/commands.py
+/flowchem/devices/Vapourtec/commands.py

@@ -3,7 +3,7 @@ import pytest
 import asyncio
 import time
 from pathlib import Path
-from flowchem.components.devices.Magritek.spinsolve import Spinsolve
+from devices.Magritek import Spinsolve
 
 
 # Change to match your environment ;)

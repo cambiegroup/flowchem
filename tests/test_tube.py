@@ -1,6 +1,6 @@
 import pytest
 
-from flowchem.components.stdlib import Tube
+from components import Tube
 
 
 def test_diameter_validation():

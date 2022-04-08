@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from flowchem.components.devices.MettlerToledo.iCIR_common import IRSpectrum
+from devices.MettlerToledo import IRSpectrum
 from flowchem import FlowIR
 
 

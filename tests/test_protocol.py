@@ -4,9 +4,9 @@ import pytest
 
 
 from flowchem import DeviceGraph, Protocol
-from flowchem.components.properties import Valve, Component
-from flowchem.components.dummy import Dummy
-from flowchem.components.stdlib import Pump, Vessel
+from components import Component
+from components import Dummy
+from components import Pump
 
 
 @pytest.fixture

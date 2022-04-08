@@ -10,7 +10,7 @@ import pint
 import pytest
 
 from flowchem import AzuraCompactPump
-from flowchem.components.devices.Knauer.AzuraCompactPump import AzuraPumpHeads
+from devices.Knauer.AzuraCompactPump import AzuraPumpHeads
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

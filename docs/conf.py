@@ -10,19 +10,26 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import configparser
+import datetime
 
+CONF_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+ROOT_DIR = os.path.abspath(os.path.join(CONF_DIR, os.pardir))
+SETUP_FILE = os.path.join(ROOT_DIR, 'setup.cfg')
+
+config = configparser.ConfigParser()
+config.read(SETUP_FILE)
 
 # -- Project information -----------------------------------------------------
 
-project = "Flowchem"
-copyright = "2021, Dario Cambie, Jakob Wolf"
-author = "Dario Cambie, Jakob Wolf"
+project = config["metadata"]["name"]
+YEAR = datetime.date.today().strftime("%Y")
+author = config["metadata"]["author"]
+copyright = f"{YEAR}, {author}"
 
 # The full version, including alpha/beta/rc tags
-release = "0.0.1"
+release = config["metadata"]["version"]
 
 
 # -- General configuration ---------------------------------------------------

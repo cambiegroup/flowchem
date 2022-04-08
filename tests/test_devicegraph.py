@@ -1,5 +1,5 @@
 import pytest
-from flowchem.components.properties import Component
+from components import Component
 from flowchem import DeviceGraph
 
 a, b, c, d = [Component() for _ in range(4)]

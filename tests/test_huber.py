@@ -4,7 +4,7 @@ import asyncio
 import aioserial
 import pytest
 
-from flowchem.components.devices.Huber.huberchiller import HuberChiller, PBCommand
+from devices import HuberChiller, PBCommand
 from flowchem.exceptions import InvalidConfiguration
 
 
