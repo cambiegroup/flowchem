@@ -1,0 +1,29 @@
+version: 0.1.0
+devices:
+    -   Elite11InfuseOnly:
+            name: donor
+            port: COM11
+            address: 0
+
+    -   Elite11InfuseOnly:
+            name: activator
+            port: COM11
+            address: 1
+            default-parameters:
+                diameter: 4.6 mm
+                syringe_volume: 1 ml
+
+    -   AzuraCompactPump:
+            mac_address: 00:80:A3:BA:C3:4A
+            name: quencher
+            default-parameters:
+                max_pressure: 13 bar
+
+    -   ViciValco:
+            name: sample-loop
+            port: COM13
+            address: 0
+
+    -   HuberChiller:
+            name: chiller
+            port: COM3

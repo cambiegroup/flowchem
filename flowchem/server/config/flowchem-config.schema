@@ -2,8 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://cambiegroup.github.io/flowchem/flowchem-graph-spec.json",
   "type": "object",
-  "title": "Flowchem hardware description",
-  "description": "Defines a graph of devices.",
+  "title": "Flowchem hardware connection",
+  "description": "Defines the connection information for HW devices.",
   "properties": {
     "version": {
       "type": "string",
@@ -11,7 +11,7 @@
     },
     "devices": {
       "type": "array",
-      "description": "Devices, nodes of the graph",
+      "description": "Devices to be connected to",
       "uniqueItems": false,
       "items": {
         "anyOf": [
@@ -77,8 +77,6 @@
       "id": "#/definitions/huberchiller",
       "additionalProperties": false,
       "properties": {
-        "HuberChiller": {
-          "properties": {
             "name": {
               "type": "string"
             },
@@ -88,384 +86,103 @@
             "baudrate": {
               "type": "number"
             }
-          },
-          "required": [
-            "port",
-            "name"
-          ]
-        }
-      }
+      },
+      "required": [
+        "port",
+        "name"
+      ]
     },
     "ml600": {
       "id": "#/definitions/ml600",
       "additionalProperties": false,
       "properties": {
-        "ML600": {
+        "name": {
+          "type": "string"
+        },
+        "port": {
+          "type": "string"
+        },
+        "baudrate": {
+          "type": "number"
+        },
+        "address": {
+          "type": "number"
+        },
+        "default-parameters": {
           "properties": {
-            "port": {
-              "type": "string"
-            },
             "syringe_volume": {
               "type": "string"
-            },
-            "address": {
-              "type": "number"
-            },
-            "name": {
-              "type": "string"
-            },
-            "baudrate": {
-              "type": "number"
             }
-          },
-          "required": [
-            "port",
-            "syringe_volume",
-            "name"
-          ]
+          }
         }
-      }
+      },
+      "required": [
+        "port",
+        "name"
+      ]
+
     },
     "spinsolve": {
       "id": "#/definitions/spinsolve",
       "additionalProperties": false,
       "properties": {
-        "Spinsolve": {
+        "name": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "number"
+        },
+        "data_folder": {
+          "type": "string"
+        },
+        "xml_schema": {
+          "type": "string"
+        },
+        "default-parameters": {
           "properties": {
-            "name": {
-              "type": "string"
-            },
-            "host": {
-              "type": "string"
-            },
-            "port": {
-              "type": "number"
-            },
-            "data_folder": {
-              "type": "string"
-            },
-            "xml_schema": {
-              "type": "string"
-            },
             "sample_name": {
               "type": "string"
             },
             "solvent": {
               "type": "string"
             }
-          },
-          "required": [
-            "host",
-            "data_folder",
-            "name"
-          ]
+          }
         }
-      }
+      },
+        "required": [
+        "host",
+        "data_folder",
+        "name"
+      ]
     },
     "pressure-sensor": {
-      "id": "#/definitions/pressure-sensor",
-      "additionalProperties": false,
-      "properties": {
-        "PressureSensor": {
-          "required": [
-            "name"
-          ],
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "sensor_min_bar": {
-              "type": "number"
-            },
-            "sensor_max_bar": {
-              "type": "number"
-            },
-            "vint_serial_number": {
-              "type": "number"
-            },
-            "vint_channel": {
-              "type": "number"
-            },
-            "phidget_is_remote": {
-              "type": "boolean"
-            }
-          }
-        }
-      }
     },
     "flowir": {
-      "id": "#/definitions/flowir",
-      "additionalProperties": false,
-      "properties": {
-        "FlowIR": {
-          "required": [
-            "name"
-          ],
-          "properties": {
-            "url": {
-              "type": "string"
-            },
-            "name": {
-              "type": "string"
-            }
-          }
-        }
-      }
     },
     "manson": {
-      "id": "#/definitions/manson",
-      "additionalProperties": false,
-      "properties": {
-        "MansonPowerSupply": {
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "port": {
-              "type": "string"
-            },
-            "baudrate": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "port",
-            "name"
-          ]
-        }
-      }
     },
     "r4heater": {
-      "id": "#/definitions/r4heater",
-      "additionalProperties": false,
-      "properties": {
-        "R4Heater": {
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "port": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "port",
-            "name"
-          ]
-        }
-      }
     },
     "elite11infuseonly": {
-      "id": "#/definitions/elite11infuseonly",
-      "additionalProperties": false,
-      "properties": {
-        "Elite11InfuseOnly": {
-          "type": "object",
-          "properties": {
-            "port": {
-              "type": "string"
-            },
-            "address": {
-              "type": "number"
-            },
-            "diameter": {
-              "type": "string"
-            },
-            "syringe_volume": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "port",
-            "syringe_volume",
-            "diameter"
-          ]
-        }
-      }
     },
     "elite11infusewithdraw": {
-      "id": "#/definitions/elite11infusewithdraw",
-      "additionalProperties": false,
-      "properties": {
-        "Elite11InfuseWithdraw": {
-          "type": "object",
-          "properties": {
-            "port": {
-              "type": "string"
-            },
-            "address": {
-              "type": "number"
-            },
-            "diameter": {
-              "type": "string"
-            },
-            "syringe_volume": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "port",
-            "syringe_volume",
-            "diameter"
-          ]
-        }
-      }
     },
     "azura-compact": {
-      "id": "#/definitions/azura-compact",
-      "additionalProperties": false,
-      "properties": {
-        "AzuraCompactPump": {
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "mac_address": {
-              "type": "string"
-            },
-            "ip_address": {
-              "type": "string"
-            }
-          },
-          "oneOf": [
-            {
-              "required": [
-                "mac_address",
-                "name"
-              ]
-            },
-            {
-              "required": [
-                "ip_address",
-                "name"
-              ]
-            }
-          ]
-        }
-      }
     },
     "knauer-valve-12": {
-      "id": "#/definitions/knauer-valve-12",
-      "additionalProperties": false,
-      "properties": {
-        "Knauer12PortValve": {
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "mac_address": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "mac_address",
-            "name"
-          ]
-        }
-      }
     },
     "knauer-valve-16": {
-      "id": "#/definitions/knauer-valve-16",
-      "additionalProperties": false,
-      "properties": {
-        "Knauer16PortValve": {
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "mac_address": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "mac_address",
-            "name"
-          ]
-        }
-      }
     },
     "knauer-valve-6-6": {
-      "id": "#/definitions/knauer-valve-6-6",
-      "additionalProperties": false,
-      "properties": {
-        "Knauer6Port6PositionValve": {
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "mac_address": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "mac_address",
-            "name"
-          ]
-        }
-      }
     },
     "knauer-valve-6-2": {
-      "id": "#/definitions/knauer-valve-6-2",
-      "additionalProperties": false,
-      "properties": {
-        "Knauer6Port2PositionValve": {
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "mac_address": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "mac_address",
-            "name"
-          ]
-        }
-      }
     },
     "clarity_interface": {
-      "id": "#/definitions/clarity_interface",
-      "additionalProperties": false,
-      "properties": {
-        "ClarityInterface": {
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "instrument_number": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "instrument_number",
-            "name"
-          ]
-        }
-      }
     },
     "vici-valco": {
-      "id": "#/definitions/vici-valco",
-      "additionalProperties": false,
-      "properties": {
-        "ViciValco": {
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "address": {
-              "type": "number"
-            },
-            "port": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "port",
-            "name"
-          ]
-        }
-      }
     }
   }
 }

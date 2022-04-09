@@ -1,4 +1,6 @@
 """ Parse a device config file. """
+from __future__ import annotations
+
 import inspect
 import itertools
 from pathlib import Path
@@ -8,139 +10,24 @@ from typing import Dict, Iterable, Union
 import yaml
 from loguru import logger
 import flowchem
+from flowchem.models import BaseDevice
 from server.config.validator import validate_config
 from flowchem.exceptions import InvalidConfiguration
 
 # Packages containing the device class definitions.
+
 # Devices' classes must be in the module top level to be found.
 DEVICE_MODULES = [flowchem]
+_objects_in_modules = [
+    inspect.getmembers(module, inspect.isclass) for module in DEVICE_MODULES
+]
+
+# Dict of device class names and their respective classes, i.e. {device_class_name: DeviceClass}.
+DEVICE_MAPPER = dict(itertools.chain.from_iterable(_objects_in_modules))
 
 
-def get_device_class_mapper(modules: Iterable[ModuleType]) -> Dict[str, type]:
-    """
-    Given an iterable of modules containing the device classes, return a
-    dictionary Dict[device_class_name, DeviceClass]
-
-    Args:
-        modules (Iterable[ModuleType]): The modules to inspect for devices.
-            Only class in the top level of each module will be extracted.
-    Returns:
-        device_dict (Dict[str, type]): Dict of device class names and their
-            respective classes, i.e. {device_class_name: DeviceClass}.
-    """
-    # Get (name, obj) tuple for the top level of each module.
-    objects_in_modules = [
-        inspect.getmembers(module, inspect.isclass) for module in modules
-    ]
-
-    # Return them as dict (itertools to flatten the nested, per module, lists)
-    return dict(itertools.chain.from_iterable(objects_in_modules))
-
-
-def parse_device_section(devices: Dict, graph: DeviceGraph):
-    """Parse the devices' section of the config config"""
-
-    # Device mapper needed for device instantiation
-    device_mapper = get_device_class_mapper(DEVICE_MODULES)
-    logger.debug(f"Device classes found: {device_mapper.keys()}")
-
-    # Parse devices
-    for device_node in devices:
-        device_class, device_config = next(iter(device_node.items()))
-        try:
-            obj_type = device_mapper[device_class]
-        except KeyError as error:
-            logger.exception(
-                f"Device of type {device_class} unknown! [Known devices: {device_mapper.keys()}]"
-            )
-            raise InvalidConfiguration(
-                f"Device of type {device_class} unknown! \n"
-                f"[Known devices: {list(device_mapper.keys())}]"
-            ) from error
-
-        # Create device object and add it to the config
-        device = DeviceNode(device_config, obj_type).device
-        graph.add_device(device)
-
-
-def parse_connection_section(connections: Dict, graph: DeviceGraph):
-    """Parse connections from the config config"""
-    for edge in connections:
-        edge_class, edge_config = next(iter(edge.items()))
-
-        if "Tube" in edge_class:
-            _parse_tube_connection(edge_config, graph)
-        elif "Interface" in edge_class:
-            _parse_interface_connection(edge_config, graph)
-        else:
-            raise InvalidConfiguration(f"Invalid connection type in {edge}")
-
-
-def _parse_tube_connection(tube_config, graph: DeviceGraph):
-    """
-    The Tube object is a convenience object for connecting devices without explicitly creating the
-    in-between tube node.
-    """
-    tube = Tube(
-        length=tube_config["length"],
-        ID=tube_config["inner-diameter"],
-        OD=tube_config["outer-diameter"],
-        material=tube_config["material"],
-    )
-    graph.add_device(tube)
-
-    # Create logic connections for newly created tube
-    inlet = {
-        "from": dict(
-            device=tube_config["from"]["device"],
-            port=tube_config["from"].get("port", None),
-        ),
-        "to": dict(device=tube.name),
-    }
-    _parse_interface_connection(inlet, graph)
-
-    outlet = {
-        "from": dict(device=tube.name),
-        "to": dict(
-            device=tube_config["to"]["device"], port=tube_config["to"].get("port", None)
-        ),
-    }
-    _parse_interface_connection(outlet, graph)
-
-
-def _parse_interface_connection(iface_config, graph: DeviceGraph):
-    """Parse a dict containing the Tube connection and returns the Connection"""
-    graph.add_connection(
-        origin=iface_config["from"]["device"],
-        destination=iface_config["to"]["device"],
-        origin_port=iface_config["from"].get("port", None),
-        destination_port=iface_config["to"].get("port", None),
-    )
-
-
-def parse_graph_config(graph_config: Dict, name: str = None) -> DeviceGraph:
-    """Parse a config config and returns a DeviceGraph object."""
-
-    # Validate config
-    validate_config(graph_config)
-
-    # Create DeviceGraph object
-    device_graph = DeviceGraph(name)
-
-    # Parse devices
-    parse_device_section(graph_config["devices"], device_graph)
-
-    # Parse connections
-    parse_connection_section(graph_config["connections"], device_graph)
-
-    logger.info(f"Parsed config {name}")
-    return device_graph
-
-
-def parse_graph_file(file: Union[str, Path]):
-    """Parse a config config file and returns a DeviceGraph object."""
-    file_path = Path(file)
-    name = file_path.stem
+def parse_config_file(file_path: Path) -> Dict:
+    """Parse a config file."""
 
     with file_path.open(encoding="utf-8") as stream:
         try:
@@ -151,4 +38,48 @@ def parse_graph_file(file: Union[str, Path]):
                 f"Invalid YAML in config {file_path}"
             ) from parser_error
 
-    return parse_graph_config(config, name)
+    config["filename"] = file_path.stem
+    return parse_config(config)
+
+
+def parse_config(graph_config: Dict) -> Dict:
+    """Parse config."""
+
+    # Validate config
+    validate_config(graph_config)
+
+    # Parse devices
+    graph_config["devices"] = [parse_device(dev) for dev in graph_config["devices"]]
+    logger.info(f"Parsed config!")
+
+    return graph_config
+
+
+def parse_device(device_dict) -> BaseDevice:
+    """Parse device config and return a device object."""
+    device_class, device_config = next(iter(device_dict.items()))
+
+    if device_config is None:
+        device_config = {}
+
+    try:
+        obj_type = DEVICE_MAPPER[device_class]
+    except KeyError as error:
+        logger.exception(
+            f"Device of type {device_class} unknown! [Known devices: {DEVICE_MAPPER.keys()}]"
+        )
+        raise InvalidConfiguration(
+            f"Device of type {device_class} unknown! \n"
+            f"[Known devices: {list(DEVICE_MAPPER.keys())}]"
+        ) from error
+
+    try:
+        device = obj_type(**device_config)
+        logger.debug(f"Created device '{device.name}' instance: {device}")
+    except TypeError as error:
+        raise ConnectionError(
+            f"Wrong configuration provided for device: {device_config.get('name')} of type {obj_type}!\n"
+            f"Configuration: {device_config}\n"
+            f"Accepted parameters: {inspect.getfullargspec(obj_type).args}"
+        ) from error
+    return device

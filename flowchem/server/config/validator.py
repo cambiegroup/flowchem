@@ -9,7 +9,7 @@ import jsonschema
 
 # Validation schema for config file
 SCHEMA = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "flowchem-config.schema"
+    os.path.dirname(os.path.realpath(__file__)), "./flowchem-config.schema"
 )
 
 
@@ -25,6 +25,9 @@ def validate_config(config: Dict):
     """
     Validate a config file.
     """
+
     schema = get_config_schema()
     jsonschema.validate(config, schema=schema)
+
+    # Validation above only checks structure, not content
     assert config["version"] == "1.0"
