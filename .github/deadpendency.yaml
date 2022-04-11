@@ -1,5 +1,6 @@
 ignore-failures:
   python:
+    - aioserial
     - getmac
     - backcall
     - commonmark
