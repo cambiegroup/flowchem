@@ -10,6 +10,7 @@ ignore-failures:
     - pyasn1
     - pyasn1-modules
     - webencodings
+    - wcwidth
 additional-deps:
   python:
     # name can be included so Deadpendency can load the package details in the registry
