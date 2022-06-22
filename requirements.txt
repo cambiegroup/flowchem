@@ -189,7 +189,7 @@ nmrglue==0.8
     # via flowchem (setup.py)
 notebook==6.4.12
     # via widgetsnbextension
-numpy==1.21.4
+numpy==1.22.0
     # via
     #   altair
     #   bokeh
