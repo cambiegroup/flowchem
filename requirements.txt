@@ -156,7 +156,7 @@ lmfit==1.0.3
     # via flowchem (setup.py)
 loguru==0.6.0
     # via flowchem (setup.py)
-lxml==4.6.5
+lxml==4.9.1
     # via flowchem (setup.py)
 markupsafe==2.0.1
     # via jinja2
