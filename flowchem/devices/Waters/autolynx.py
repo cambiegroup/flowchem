@@ -4,6 +4,7 @@ When the MS is running and Autolynx is running, measuring an MS only requires pu
 into a specific (and installation dependent) folder.
 The Aim of this code is to supply a class that deals with creating the file with right experiment code and fields and
 dropping it to the right folder.
+https://www.waters.com/webassets/cms/support/docs/71500123505ra.pdf
 """
 from pathlib import Path
 
@@ -16,7 +17,9 @@ class AutoLynxQueueFile:
         self.rows = f"\t{ms_exp_file}\t{tune_file}\t{inlet_method}\t66\t1"
         self.queue_path = Path(path_to_AutoLynxQ)
 
-    def record_mass_spec(self, sample_name: str, file_name = "next.csv"):
+    def record_mass_spec(self, sample_name: str, file_name = "next.txt"):
+        # Autolynx behaves weirdly, it expects a .txt file and that the fields are separated by tabs. A csv file
+        # separated w commas however does not work... Autolynx has to be set to look for csv files
         file_path = self.queue_path/Path(file_name)
         if file_path.is_file() and file_path.exists():
             append = True
