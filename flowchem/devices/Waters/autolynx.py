@@ -7,7 +7,7 @@ dropping it to the right folder.
 https://www.waters.com/webassets/cms/support/docs/71500123505ra.pdf
 """
 from pathlib import Path
-
+import subprocess
 
 class AutoLynxQueueFile:
     def __init__(self, path_to_AutoLynxQ = r"W:\BS-FlowChemistry\Equipment\Waters MS\AutoLynxQ",
@@ -28,7 +28,24 @@ class AutoLynxQueueFile:
         with open(file_path,'a') as f:
             if append == False:
                 f.write(self.fields)
-            f.write("\n" + sample_name + self.rows)
+            f.write(f"\n{sample_name}{self.rows}")
+
+# convert to mzml C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit>
+class Converter:
+
+
+    def __init__(self, path_to_executable = r"C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit", output_dir = r""):
+        self.exe = path_to_executable
+        self.output_dir = output_dir
+
+
+# open subprocess in this location
+    def convert_masspec(self, filename):
+        # create string
+        exe_str = f"msconvert {filename}.RAW -o {self.output_dir}"
+        print(exe_str)
+        subprocess.Popen(exe_str, cwd=self.exe, shell=True)
+        #x.run(exe_str, shell=True, capture_output=False, timeout=3)
 
 
 if __name__ == "__main__":
