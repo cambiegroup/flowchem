@@ -11,6 +11,7 @@ import subprocess
 import pymzml
 from pandas import DataFrame
 
+# autolynx queue file is also where the conversion should happen - just set duration and a bit after that issue the conversion command
 class AutoLynxQueueFile:
     def __init__(self, path_to_AutoLynxQ = r"W:\BS-FlowChemistry\Equipment\Waters MS\AutoLynxQ",
                  ms_exp_file = "15min_scan.exp", tune_file = "SampleTuneAndDev_ManOBz.ipr",
@@ -18,11 +19,12 @@ class AutoLynxQueueFile:
         self.fields = "FILE_NAME\tMS_FILE\tMS_TUNE_FILE\tINLET_FILE\tSAMPLE_LOCATION\tIndex"
         self.rows = f"\t{ms_exp_file}\t{tune_file}\t{inlet_method}\t66\t1"
         self.queue_path = Path(path_to_AutoLynxQ)
+        self.run_duration = None
 
-    def record_mass_spec(self, sample_name: str, file_name = "next.txt"):
+    def record_mass_spec(self, sample_name: str, run_duration: int = 0, queue_name = "next.txt", do_conversion: bool = True):
         # Autolynx behaves weirdly, it expects a .txt file and that the fields are separated by tabs. A csv file
         # separated w commas however does not work... Autolynx has to be set to look for csv files
-        file_path = self.queue_path/Path(file_name)
+        file_path = self.queue_path/Path(queue_name)
         if file_path.is_file() and file_path.exists():
             append = True
         else:
@@ -31,21 +33,36 @@ class AutoLynxQueueFile:
             if append == False:
                 f.write(self.fields)
             f.write(f"\n{sample_name}{self.rows}")
+        if do_conversion:
+            c = Converter(output_dir=r"W:\BS-FlowChemistry\data\open_format_ms")
+            # get filename
+            # get run duration
+            c.convert_masspec(sample_name+".raw", run_delay=run_duration+30)
+
+
+
 
 # convert to mzml C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit>
 class Converter:
 
-
-    def __init__(self, path_to_executable = r"C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit", output_dir = r""):
+    def __init__(self, path_to_executable = r"C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit",
+                 output_dir = r"W:\BS-FlowChemistry\data\open_format_ms",
+                 raw_data=r"W:\BS-FlowChemistry\data\MS_Jakob.PRO\Data"):
+        self.raw_data = raw_data
         self.exe = path_to_executable
         self.output_dir = output_dir
 
-
 # open subprocess in this location
-    def convert_masspec(self, filename):
+    def convert_masspec(self, filename, run_delay: int = 0):
+
+        assert 0 <= run_delay <= 9999
+        filename_w_path_ending = self.raw_data/Path(filename+".raw")
         # create string
-        exe_str = f"msconvert {filename}.RAW -o {self.output_dir}"
-        print(exe_str)
+        exe_str = f"msconvert {filename_w_path_ending} -o {self.output_dir}"
+        if run_delay:
+            # execute conversion w delay
+            exe_str = f"TIMEOUT /t {run_delay} /nobreak && {exe_str}"
+
         subprocess.Popen(exe_str, cwd=self.exe, shell=True)
         #x.run(exe_str, shell=True, capture_output=False, timeout=3)
 
