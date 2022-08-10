@@ -114,5 +114,21 @@ class IonChromatogram:
 
 
 if __name__ == "__main__":
-    a = AutoLynxQueueFile()
-    a.record_mass_spec('testestest')
+    # seems to work - now, a comparison is needed of what is present already and what new
+    from pathlib import Path
+    proprietary_data_path = Path(r"W:\BS-FlowChemistry\data\MS_Jakob.PRO\Data")
+    open_data_path = Path(r"W:\BS-FlowChemistry\data\open_format_ms")
+    conv = Converter(output_dir=str(open_data_path))
+    converted = []
+    prop=[]
+    for i in proprietary_data_path.rglob("*.raw"):
+        prop.append(i.stem)
+    for j in open_data_path.rglob("*.mzML"):
+        converted.append(j.stem)
+    unique = set(converted).symmetric_difference(set(prop))
+    print(unique)
+    for i in unique:
+        x=next(proprietary_data_path.rglob(i.strip() + ".raw"))
+        conv.convert_masspec(str(x))
+
+
