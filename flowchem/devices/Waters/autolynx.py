@@ -8,6 +8,8 @@ https://www.waters.com/webassets/cms/support/docs/71500123505ra.pdf
 """
 from pathlib import Path
 import subprocess
+import pymzml
+from pandas import DataFrame
 
 class AutoLynxQueueFile:
     def __init__(self, path_to_AutoLynxQ = r"W:\BS-FlowChemistry\Equipment\Waters MS\AutoLynxQ",
@@ -46,6 +48,52 @@ class Converter:
         print(exe_str)
         subprocess.Popen(exe_str, cwd=self.exe, shell=True)
         #x.run(exe_str, shell=True, capture_output=False, timeout=3)
+
+
+class IonChromatogram:
+    # peak detection would be kind of nice
+    # adding spectra off a certain range would be nice
+    # extracting the TIC for one mass (or, even better, not only take monoisotopic mass)
+    # integrate over a timerange, so add upp all spectra in specific time
+    # idea is autoprocessing based on ELSD
+    def __init__(self, filepath:Path):
+        # read the mzml
+        self.spectra_over_time = pymzml.run.Reader(filepath, skip_chromatogram = True)
+
+        # actually, use a dataframe?
+        self.time_TIC = self._extract_time_index_tic()
+
+    def _create_offset(self, offset_min: float) -> None:
+        # simply add offset_min on the time axis
+        self.time_TIC["time_offset"] = self.time_TIC["time"] + offset_min
+
+    def get_tic_for_mass(self) -> None:
+        # spectrum.has_peak(m/z) -> [(m/z:intensity)]
+        # should append the mz-intensity to dataframe
+        pass
+
+    def average_over_spectra(self):
+        # should take spectra slice on a time basis, merge all of these on m/z axis and divide resulting intensity by amount of spectra in slice
+        # alternative would be to only take the spectra subset of detected peaks
+        pass
+
+    def reduce_spectral_width(self):
+        pass
+
+    def _extract_time_index_tic(self) -> DataFrame:
+        time = []
+        _x_index = []
+        tic = []
+        for i in self.spectra_over_time:
+            time.append(i.scan_time_in_minutes())
+            tic.append(i.TIC)
+        time_TIC = DataFrame(data={"time":time, "TIC":tic})
+        return time_TIC
+
+    def smooth_ion_chrom(self, window_size:int = 19, degree:int = 3) -> None:
+        from scipy.signal import savgol_filter
+        self.time_TIC["Smoothed_TIC"] = savgol_filter(self.time_TIC.TIC, window_size, degree)
+
 
 
 if __name__ == "__main__":
