@@ -72,10 +72,10 @@ class Converter:
 class IonChromatogram:
     # peak detection would be kind of nice
     # adding spectra off a certain range would be nice
-    # extracting the TIC for one mass (or, even better, not only take monoisotopic mass)
-    # integrate over a timerange, so add upp all spectra in specific time
     # idea is autoprocessing based on ELSD
     def __init__(self, filepath:Path):
+
+        self._filepath = filepath
         # read the mzml
         self.spectra_over_time = pymzml.run.Reader(filepath, skip_chromatogram = True)
 
@@ -86,18 +86,80 @@ class IonChromatogram:
         # simply add offset_min on the time axis
         self.time_TIC["time_offset"] = self.time_TIC["time"] + offset_min
 
-    def get_tic_for_mass(self) -> None:
-        # spectrum.has_peak(m/z) -> [(m/z:intensity)]
-        # should append the mz-intensity to dataframe
-        pass
+    def get_tic_for_mass(self, mass_charge: float) -> None:
+        # TODO this is super slow - takes 0.3 seconds per spectrum - I think it does 256281 repetitions
+        """
+        IMPORTANT: depends on the correct ms_precisions set to the reader
+        THIS IS VEEERY slow, better use reduce_spectral_width function
+        get the total ion current for a specific mass
+        Args:
+            mass_charge: supply monoisotopic mass of expected adduct
+        Returns:
+            None. Appends to self.time_TIC
+        """
+        peak_tic = []
+        for spectrum in self.spectra_over_time:
+            peak = spectrum.has_peak(mass_charge)
+            try:
+                peak_tic.append(peak[1])
+            except IndexError:
+                peak_tic.append(0)
+        self.time_TIC[f"TIC_{mass_charge}"] = peak_tic
 
-    def average_over_spectra(self):
+
+    def average_over_spectra(self, start: float, end: float):
         # should take spectra slice on a time basis, merge all of these on m/z axis and divide resulting intensity by amount of spectra in slice
         # alternative would be to only take the spectra subset of detected peaks
-        pass
+        time_tic_slice = self.time_TIC.loc[start < self.time_TIC["time_offset"]].loc[end > self.time_TIC["time_offset"]]
+        summed_spec = pymzml.spec.Spectrum(measured_precision = self.spectra_over_time[round(self.spectra_over_time.get_spectrum_count()/2)].measured_precision)
+        for spectrum_index in time_tic_slice.index:
+            summed_spec += self.spectra_over_time[spectrum_index]
+        return summed_spec
 
-    def reduce_spectral_width(self):
-        pass
+    # TODO get the highest peaks. deconvolution would be nice but prob hard... also, adducts with other ions should be filtered
+    # but resulting spectrum should go to database, and found masses
+    # for assigning SM, searching the spectrum for the right mass is actually more useful I think
+
+    def reduce_spectral_width(self, lower_bound: int, upper_bound: int) -> None:
+        """
+        Reduces spectral width. Careful - the mzML file reader is affected by that. File has to be reloaded to
+        regenerate initial width.
+        Idea is to get more meaningful peaks and only take what is actually related to measured compound
+        Also, does smoothing by savgol
+        Args:
+            lower_bound: lower mass limit
+            upper_bound: upper mass limit
+
+        Returns:
+            None. A new column  will be added to self.time_TIC
+        """
+        from scipy.signal import savgol_filter
+        new_TIC = []
+        for spectrum in self.spectra_over_time:
+            spectrum.reduce(mz_range=(lower_bound, upper_bound))
+            new_TIC.append(spectrum.i.sum())
+        self.time_TIC[f"TIC_{lower_bound}-{upper_bound}"] = savgol_filter(new_TIC, 19, 3)
+
+    def tic_for_mass(self, mass: float, allowed_plus_minus: float) -> None:
+        """
+        Reduces spectral width. Careful - the mzML file reader is affected by that. File has to be reloaded to
+        regenerate initial width.
+        Idea is to get more meaningful peaks and only take what is actually related to measured compound
+        Also, does smoothing by savgol
+        Args:
+            allowed_plus_minus: windowsize, +- 50%
+
+        Returns:
+            None. A new column  will be added to self.time_TIC
+        """
+        spectra = pymzml.run.Reader(self._filepath, skip_chromatogram = True)
+        new_TIC = []
+        lower_bound = mass - 0.5* allowed_plus_minus
+        upper_bound = mass + 0.5 * allowed_plus_minus
+        for spectrum in spectra:
+            spectrum.reduce(mz_range=(lower_bound, upper_bound))
+            new_TIC.append(spectrum.i.sum())
+        self.time_TIC[f"TIC_{lower_bound}-{upper_bound}"] = new_TIC
 
     def _extract_time_index_tic(self) -> DataFrame:
         time = []
