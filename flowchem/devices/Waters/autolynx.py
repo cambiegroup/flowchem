@@ -37,7 +37,7 @@ class AutoLynxQueueFile:
             c = Converter(output_dir=r"W:\BS-FlowChemistry\data\open_format_ms")
             # get filename
             # get run duration
-            c.convert_masspec(sample_name+".raw", run_delay=run_duration+30)
+            c.convert_masspec(str(sample_name), run_delay=run_duration+60)
 
 
 
@@ -56,7 +56,9 @@ class Converter:
     def convert_masspec(self, filename, run_delay: int = 0):
 
         assert 0 <= run_delay <= 9999
-        filename_w_path_ending = self.raw_data/Path(filename+".raw")
+        if ".raw" not in filename:
+            filename = filename + ".raw"
+        filename_w_path_ending = Path(self.raw_data)/Path(filename)
         # create string
         exe_str = f"msconvert {filename_w_path_ending} -o {self.output_dir}"
         if run_delay:
