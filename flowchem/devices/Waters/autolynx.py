@@ -63,7 +63,7 @@ class Converter:
         exe_str = f"msconvert {filename_w_path_ending} -o {self.output_dir}"
         if run_delay:
             # execute conversion w delay
-            exe_str = f"TIMEOUT /t {run_delay} /nobreak && {exe_str}"
+            exe_str = f"ping -n {run_delay} 127.0.0.1 >NUL && {exe_str}"
 
         subprocess.Popen(exe_str, cwd=self.exe, shell=True)
         #x.run(exe_str, shell=True, capture_output=False, timeout=3)
