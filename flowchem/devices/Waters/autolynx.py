@@ -192,7 +192,11 @@ if __name__ == "__main__":
     unique = set(converted).symmetric_difference(set(prop))
     print(unique)
     for i in unique:
-        x=next(proprietary_data_path.rglob(i.strip() + ".raw"))
-        conv.convert_masspec(str(x))
+        x=proprietary_data_path.rglob(i.strip() + ".raw")
+        print(x)
+        try:
+            conv.convert_masspec(str(next(x)))
+        except StopIteration:
+            pass
 
 
