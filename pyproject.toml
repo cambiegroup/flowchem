@@ -88,8 +88,8 @@ phidget = [
     "phidget22>=1.7.20211005",
 ]
 
-#[project.scripts]
-# flowchem = "flowchem.cli:main"
+[project.scripts]
+ flowchem = "flowchem.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = "tests"

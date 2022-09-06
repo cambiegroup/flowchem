@@ -4,7 +4,7 @@ import rich_click as click
 
 @click.argument("device_config", type=click.Path(), required=True)
 @click.command()
-def cli(device_config):
+def main(device_config):
     """
     Flowchem device manager.
     Starts the flowchem server for the devices described in the DEVICE_CONFIG.
@@ -14,4 +14,4 @@ def cli(device_config):
 
 
 if __name__ == "__main__":
-    cli()
+    main()
