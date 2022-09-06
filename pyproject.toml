@@ -2,6 +2,70 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project]
+name = "flowchem"
+version = "0.1.0-alpha1"
+description = "Flowchem is a python library to control a variety of instruments commonly found in chemistry labs."
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["chemistry", "automation", "laboratory", "science"]
+license = {text = "MIT"}
+classifiers = [
+    "License :: OSI Approved :: MIT License"
+]
+dependencies = [
+    "aiofiles>=0.8.0",
+    "aioserial>=1.3.0",
+    "altair>=4.1.0",
+    "asyncua>=0.9.92",
+    "bokeh>=2.4.2",
+    "fastapi>=0.65.2",
+    "getmac>=0.8.2",
+    "graphviz>=0.19",
+    "ipython>=7.30.1",
+    "ipywidgets>=7.6.5",
+    "jsonschema>=4.2.1",
+    "lmfit>=1.0.3",
+    "loguru>=0.5.0",
+    "lxml>=4.6.4",
+    "matplotlib>=3.5.0",
+    "networkx>=2.6.3",
+    "nmrglue >= 0.8",
+    "numpy>=1.20.3",
+    "ord-schema>=0.3.0",
+    "packaging>=21.3",
+    "pandas>=1.0.0",
+    "pint>=0.16.1",
+    "pydantic>=1.8.2",
+    "pyserial>=3",
+    "pyyaml>=6.0",
+    "rich_click>=0.3.0",
+    "scipy>=1.6.3, <1.8",
+    "unsync>=1.0.0",
+    "uvicorn>=0.13.4",
+    "zeroconf>=0.36.2",
+    "google-api-python-client",
+    "rich",
+    "ipywidgets",
+    "requests",
+    'importlib-metadata; python_version<"3.8"',
+]
+authors = [
+    { name = "Dario Cambié", email = "Dario.Cambie@mpikg.mpg.de" },
+    { name = "Jakob Wolf", email = "Jakob.Wolf@mpikg.mpg.de" },
+    { name = "Wei-Hsin Hsu", email = "Wei-hsin.Hsu@mpikg.mpg.de" },
+]
+[project.urls]
+    homepage = "https://github.com/cambiegroup/flowchem"
+    repository = "https://github.com/cambiegroup/flowchem"
+
+
 [tool.pytest.ini_options]
 testpaths = "tests"
 asyncio_mode = "auto"
@@ -14,7 +78,7 @@ markers = [
 
 [tool.mypy]
 ignore_missing_imports = true
-python_version = 3.9
+python_version = 3.10
 
 [tool.pylint.'MESSAGES CONTROL']
 max-line-length = 120
