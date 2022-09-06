@@ -1,4 +1,4 @@
 """ Manson devices """
-from .manson import MansonPowerSupply
+from .powersupply import MansonPowerSupply
 
 __all__ = ["MansonPowerSupply"]

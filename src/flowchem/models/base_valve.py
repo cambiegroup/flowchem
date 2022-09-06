@@ -4,7 +4,8 @@ from __future__ import annotations
 from abc import abstractmethod
 
 from fastapi import APIRouter
-from flowchem.models import BaseDevice
+
+from .base_device import BaseDevice
 
 
 class BaseValve(BaseDevice):

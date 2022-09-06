@@ -7,15 +7,15 @@ from typing import Optional
 
 from asyncua import Client
 from asyncua import ua
-from components import ActiveComponent
 from devices.MettlerToledo.iCIR_common import iCIR_spectrometer
 from devices.MettlerToledo.iCIR_common import IRSpectrum
 from devices.MettlerToledo.iCIR_common import ProbeInfo
 from flowchem.exceptions import DeviceError
+from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
 
-class FlowIR(iCIR_spectrometer, ActiveComponent):
+class FlowIR(iCIR_spectrometer, BaseDevice):
     """
     Object to interact with the iCIR software controlling the FlowIR and ReactIR.
     """
@@ -27,7 +27,7 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
         Initiate connection with OPC UA server.
         Intended to be used as context-manager!
         """
-        ActiveComponent.__init__(self, name)
+        BaseDevice.__init__(self, name)
 
         if name is None:
             self.name = f"FlowIR_{self.counter}"

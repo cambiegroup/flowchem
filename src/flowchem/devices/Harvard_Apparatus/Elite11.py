@@ -11,9 +11,9 @@ from typing import Set
 from typing import Tuple
 
 import aioserial
-from flowchem.components.stdlib import Pump
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
+from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
 from loguru import logger
 from pydantic import BaseModel
@@ -301,7 +301,7 @@ class Elite11Commands:
 
 
 # noinspection PyProtectedMember
-class Elite11InfuseOnly(Pump):
+class Elite11InfuseOnly(BaseDevice):
     """
     Controls Harvard Apparatus Elite11 syringe pumps.
 

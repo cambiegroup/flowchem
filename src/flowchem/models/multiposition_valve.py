@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import ABC
 
-from flowchem.models import BaseValve
+from .base_valve import BaseValve
 
 
 class MultipositionValve(BaseValve, ABC):

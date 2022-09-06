@@ -2,9 +2,10 @@
 import warnings
 from enum import Enum
 
-from devices.Knauer.Knauer_common import KnauerEthernetDevice
+from devices.Knauer._common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
-from flowchem.models.valves import *
+from flowchem.models.injection_valve import InjectionValve
+from flowchem.models.multiposition_valve import MultipositionValve
 from loguru import logger
 
 
@@ -149,25 +150,25 @@ class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
         await super().initialize()
         assert self.valve_type == KnauerValveHeads.SIX_PORT_TWO_POSITION
 
-    async def set_position(self, position: InjectionValvePosition):
+    async def set_position(self, position: str):
         """Move valve to position."""
         await super().set_position(self.position_mapping[position.name])
 
-    async def get_position(self) -> InjectionValvePosition:
+    async def get_position(self) -> str:
         """Move valve to position."""
         valve_pos = await super().get_position()
-        return InjectionValvePosition(self._reverse_position_mapping[valve_pos])
+        return self._reverse_position_mapping[valve_pos]
 
 
 class KnauerMultipositionValve(KnauerValve, MultipositionValve):
-    async def set_position(self, position: MultipositionValvePosition):
+    async def set_position(self, position: str):
         """Move valve to position."""
-        await super().set_position(self.position_mapping[position.name])
+        await super().set_position(self.position_mapping[position])
 
-    async def get_position(self) -> MultipositionValvePosition:
+    async def get_position(self) -> str:
         """Move valve to position."""
         valve_pos = "P" + await super().get_position()
-        return MultipositionValvePosition(self._reverse_position_mapping[valve_pos])
+        return self._reverse_position_mapping[valve_pos]
 
 
 class Knauer6Port6PositionValve(KnauerMultipositionValve):

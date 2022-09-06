@@ -14,10 +14,10 @@ from devices.Magritek.msg_maker import get_request
 from devices.Magritek.msg_maker import set_attribute
 from devices.Magritek.msg_maker import set_data_folder
 from devices.Magritek.msg_maker import set_user_data
-from devices.Magritek.parser import parse_status_notification
-from devices.Magritek.parser import StatusNotification
 from devices.Magritek.reader import Reader
-from flowchem.components.properties import ActiveComponent
+from devices.Magritek.xml_parser import parse_status_notification
+from devices.Magritek.xml_parser import StatusNotification
+from flowchem.models.base_device import BaseDevice
 from loguru import logger
 from lxml import etree
 from packaging import version
@@ -36,7 +36,7 @@ async def get_streams_for_connection(host: str, port: str):
     return read, write
 
 
-class Spinsolve(ActiveComponent):
+class Spinsolve(BaseDevice):
     """
     Spinsolve class, gives access to the spectrometer remote control API
     """

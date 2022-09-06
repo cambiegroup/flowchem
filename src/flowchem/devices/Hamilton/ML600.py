@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 import aioserial
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.models.properties import Pump
+from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
 from loguru import logger
 
@@ -224,7 +224,7 @@ class HamiltonPumpIO:
             return ""
 
 
-class ML600(Pump):
+class ML600(BaseDevice):
     """ML600 implementation according to docs. Tested on 61501-01 (single syringe).
 
     From docs:

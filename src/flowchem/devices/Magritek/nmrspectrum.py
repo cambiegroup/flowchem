@@ -3,8 +3,10 @@ import time
 from pathlib import Path
 
 import nmrglue as ng
+
 try:
     import matplotlib.pyplot as plt
+
     HAS_MATPLOTLIB = True
 except ModuleNotFoundError:
     HAS_MATPLOTLIB = False

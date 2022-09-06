@@ -1,4 +1,4 @@
 """ ViciValco devices """
-from .ViciValco_Actuator import ViciValco
+from .valve_actuator import ViciValco
 
 __all__ = ["ViciValco"]

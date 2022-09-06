@@ -9,10 +9,9 @@ from typing import Set
 
 import aioserial
 from flowchem.exceptions import InvalidConfiguration
+from flowchem.models.injection_valve import InjectionValve
 from flowchem.units import flowchem_ureg
 from loguru import logger
-from models.valves.injection_valve import InjectionValve
-from models.valves.injection_valve import InjectionValvePosition
 
 
 @dataclass
@@ -196,25 +195,19 @@ class ViciValco(InjectionValve):
         version = ViciCommand(valve_id=self.address, command="VR", reply_lines=5)
         return await self.valve_io.write_and_read_reply(version)
 
-    async def get_position(self) -> InjectionValvePosition:
+    async def get_position(self) -> str:
         """Represent the position of the valve."""
         current_pos = ViciCommand(valve_id=self.address, command="CP")
         valve_pos = await self.valve_io.write_and_read_reply(current_pos)
 
-        return InjectionValvePosition(self._reverse_position_mapping[valve_pos])
+        return self._reverse_position_mapping[valve_pos]
 
-    async def set_position(self, position: InjectionValvePosition | str):
+    async def set_position(self, position: str | str):
         """Set valve position. Switches really quick and doesn't reply, so waiting does not make sense."""
 
-        if isinstance(position, InjectionValvePosition):
-            target_pos = self.position_mapping[position.name]
-        elif position in self.position_mapping.values():
-            target_pos = position
-        else:
-            raise ValueError(f"Position {position} is not valid.")
-
+        # FIXME check position validity
         valve_by_name_cw = ViciCommand(
-            valve_id=self.address, command="GO", value=target_pos, reply_lines=0
+            valve_id=self.address, command="GO", value=position, reply_lines=0
         )
         await self.valve_io.write_and_read_reply(valve_by_name_cw)
 
@@ -251,5 +244,4 @@ if __name__ == "__main__":
     asyncio.run(valve1.initialize())
 
     # Set position works with both strings and InjectionValvePosition
-    asyncio.run(valve1.set_position(InjectionValvePosition.LOAD))
     asyncio.run(valve1.set_position("2"))

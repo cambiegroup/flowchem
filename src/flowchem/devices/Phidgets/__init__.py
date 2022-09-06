@@ -1,4 +1,4 @@
 """ Phidget-based devices """
-from .phidget import PressureSensor
+from .pressure_sensor import PressureSensor
 
 __all__ = ["PressureSensor"]

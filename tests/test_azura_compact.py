@@ -8,7 +8,7 @@ import sys
 
 import pint
 import pytest
-from devices.Knauer.AzuraCompactPump import AzuraPumpHeads
+from devices.Knauer.AzuraCompact import AzuraPumpHeads
 from flowchem import AzuraCompactPump
 
 if sys.platform == "win32":

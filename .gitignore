@@ -128,3 +128,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /flowchem/devices/Vapourtec/commands.py
+/src/flowchem/devices/knauer_hplc_nda.py

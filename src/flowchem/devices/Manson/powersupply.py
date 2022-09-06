@@ -8,14 +8,14 @@ from typing import Tuple
 from typing import Union
 
 import aioserial
-from components import ActiveComponent
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
+from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
 from loguru import logger
 
 
-class MansonPowerSupply(ActiveComponent):
+class MansonPowerSupply(BaseDevice):
     """Control module for Manson Power Supply (e.g. used to power LEDs in the photo-rector or as potentiostat)"""
 
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]

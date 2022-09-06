@@ -4,10 +4,8 @@ from pathlib import Path
 import flowchem
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.models import BaseDevice
+from flowchem.server.configuration_parser import parse_config_file
 from loguru import logger
-from server.config.parser import parse_config_file
 
 
 def create_server_from_file(config_file: Path) -> FastAPI:
@@ -50,4 +48,4 @@ if __name__ == "__main__":
 
     import uvicorn
 
-    uvicorn.run(myapp, host="127.0.0.1")
+    uvicorn.run(myapp)

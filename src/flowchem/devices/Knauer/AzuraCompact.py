@@ -6,9 +6,9 @@ import warnings
 from enum import Enum
 from typing import List
 
-from components import Pump
-from devices.Knauer.Knauer_common import KnauerEthernetDevice
+from flowchem.devices.Knauer.Knauer_common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
+from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
 from loguru import logger
 
@@ -45,7 +45,7 @@ class AzuraPumpHeads(Enum):
     FLOWRATE_TEN_ML = 10
 
 
-class AzuraCompactPump(KnauerEthernetDevice, Pump):
+class AzuraCompactPump(KnauerEthernetDevice, BaseDevice):
     """Control module for Knauer Azura Compact pumps."""
 
     metadata = {

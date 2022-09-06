@@ -5,7 +5,7 @@ from abc import ABC
 from asyncio import sleep
 
 from fastapi import APIRouter
-from flowchem.models import BaseValve
+from flowchem.models.base_valve import BaseValve
 from flowchem.units import flowchem_ureg
 
 

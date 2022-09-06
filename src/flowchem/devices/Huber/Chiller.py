@@ -12,7 +12,7 @@ import aioserial
 import pint
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.models import TempControl
+from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
 from loguru import logger
 
@@ -112,7 +112,7 @@ class PBCommand:
         )
 
 
-class HuberChiller(TempControl):
+class HuberChiller(BaseDevice):
     """
     Control class for Huber chillers.
     """

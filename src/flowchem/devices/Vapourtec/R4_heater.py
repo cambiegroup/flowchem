@@ -3,8 +3,8 @@ import time
 from typing import Optional
 
 import aioserial
-from components import ActiveComponent
 from flowchem.exceptions import InvalidConfiguration
+from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
 from loguru import logger
 
@@ -17,12 +17,9 @@ try:
     HAS_VAPOURTEC_COMMANDS = True
 except ImportError as e:
     HAS_VAPOURTEC_COMMANDS = False
-    raise PermissionError(
-        "Cannot redistribute Vapourtec commands... Contact Vapourtec to get them!"
-    ) from e
 
 
-class R4Heater(ActiveComponent):
+class R4Heater(BaseDevice):
     """R4 reactor heater control class."""
 
     DEFAULT_CONFIG = {
@@ -63,7 +60,7 @@ class R4Heater(ActiveComponent):
         logger.debug(f"Reply received: {reply_string.decode('ascii')}")
         return reply_string.decode("ascii")
 
-    async def write_and_read_reply(self, command: R4Command) -> str:
+    async def write_and_read_reply(self, command: "R4Command") -> str:
         """Main HamiltonPumpIO method.
 
         Sends a command to the pump, read the replies and returns it, optionally parsed."""

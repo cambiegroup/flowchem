@@ -4,7 +4,7 @@ import warnings
 from typing import Optional
 from typing import Tuple
 
-from components import Sensor
+from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
 try:
@@ -31,7 +31,7 @@ from flowchem.exceptions import DeviceError, InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
 
-class PressureSensor(Sensor):
+class PressureSensor(BaseDevice):
     """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
 
     def __init__(

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 65.0.0", "wheel", "pip>=22.0.0"]
+requires = ["setuptools", "wheel", "pip"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -42,7 +42,8 @@ dependencies = [
     "pydantic>=1.8.2",
     "pyserial>=3",
     "rich_click>=0.3.0",
-    "tomli; python_version<3.11",
+    "tenacity",
+    'tomli; python_version<"3.11"',
     "unsync>=1.0.0",
     "uvicorn>=0.13.4",
     "google-api-python-client",

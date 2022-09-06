@@ -6,8 +6,8 @@ import asyncio
 import math
 
 import pytest
-from devices.Harvard_Apparatus.HA_elite11 import Elite11InfuseWithdraw
-from devices.Harvard_Apparatus.HA_elite11 import PumpStatus
+from devices.Harvard_Apparatus.Elite11 import Elite11InfuseWithdraw
+from devices.Harvard_Apparatus.Elite11 import PumpStatus
 from flowchem.units import flowchem_ureg
 
 

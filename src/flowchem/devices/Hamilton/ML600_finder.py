@@ -11,19 +11,25 @@ from loguru import logger
 def ml600_finder():
     """Try to initialize an ML600 on every available COM port."""
     port_available = [comport.device for comport in serial.tools.list_ports.comports()]
+    logger.info(f"Found the following serial port(s): {port_available}")
 
     # Ports connected to an ML600-looking device
     valid_ports = set()
 
     for serial_port in port_available:
+        logger.info(f"Looking for pump on {serial_port}...")
         try:
-            print(f"Looking for pump on {serial_port}...")
-            link = HamiltonPumpIO(aioserial.AioSerial(url=serial_port, timeout=0.1))
+            link = HamiltonPumpIO(aioserial.AioSerial(port=serial_port, timeout=0.1))
+        except IOError:
+            logger.warning(f"Cannot open {serial_port}!")
+            continue
+
+        try:
             asyncio.run(link.initialize())
             logger.info(f"{link.num_pump_connected} pump(s) found on <{serial_port}>")
             valid_ports.add(serial_port)
         except InvalidConfiguration:
-            logger.debug(f"No pump found on {serial_port}")
+            logger.info(f"No pumps found on {serial_port}.")
 
     return valid_ports
 
@@ -31,6 +37,6 @@ def ml600_finder():
 if __name__ == "__main__":
     ml600_pumps = ml600_finder()
     if len(ml600_pumps) > 0:
-        print(f"The following serial port are connected to ML600: {ml600_pumps}")
+        logger.info(f"The following serial port are connected to ML600: {ml600_pumps}")
     else:
-        print("No ML600 pump found")
+        logger.error("No ML600 pump found")

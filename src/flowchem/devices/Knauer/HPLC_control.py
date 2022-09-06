@@ -14,12 +14,11 @@ from flowchem.exceptions import InvalidConfiguration
 
 try:
     # noinspection PyUnresolvedReferences
-    from devices import Lamp_Command
+    from .Knauer_HPLC_NDA import Lamp_Command
 
     HAS_KNAUER_COMMANDS = True
-except ModuleNotFoundError:
+except ImportError:
     HAS_KNAUER_COMMANDS = False
-    raise ModuleNotFoundError("You need to get the NDA communication from Knauer.")
 
 # Todo should have a command constructor dataclass, would be more neat. For now, will do without to get it running asap
 
@@ -89,7 +88,7 @@ class ClarityInterface:
     ):
         """
         start_method: supply the path to the method to start with, this is important for a soft column start
-        config file: if you want to start with specific instrumment configuration, specify location of config file here
+        config file: if you want to start with specific instrument configuration, specify location of config file here
         """
         if not password:
             self.execute_command(

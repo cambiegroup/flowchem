@@ -2,7 +2,7 @@
 This module is used to discover the serial address of any ML600 connected to the PC.
 """
 import serial.tools.list_ports
-from devices.Harvard_Apparatus.HA_elite11 import (
+from devices.Harvard_Apparatus.Elite11 import (
     HarvardApparatusPumpIO,
 )
 from flowchem.exceptions import InvalidConfiguration
