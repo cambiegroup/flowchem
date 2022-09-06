@@ -10,5 +10,6 @@ from .devices.Phidgets import *
 from .devices.Vapourtec import *
 from .devices.ViciValco import *
 
-
-__version__ = "0.0.8"
+# Option 5 in https://packaging.python.org/en/latest/guides/single-sourcing-package-version/
+from importlib import metadata
+__version__ = metadata.version('flowchem')
