@@ -1,18 +1,18 @@
-"""
-Original code from Manson website with edits.
-No license originally specified.
-"""
-
+"""Control moculde for Manson lab power supply unites."""
+# Note: Original code from Manson website with edits. No license originally specified.
 import re
 import warnings
-from typing import List, Literal, Tuple, Union
+from typing import List
+from typing import Literal
+from typing import Tuple
+from typing import Union
 
 import aioserial
-from loguru import logger
-
 from components import ActiveComponent
-from flowchem.exceptions import DeviceError, InvalidConfiguration
+from flowchem.exceptions import DeviceError
+from flowchem.exceptions import InvalidConfiguration
 from flowchem.units import flowchem_ureg
+from loguru import logger
 
 
 class MansonPowerSupply(ActiveComponent):

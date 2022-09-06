@@ -1,21 +1,18 @@
 """
 This module is used to control Vici Valco Universal Electronic Actuators.
 """
-
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Set, Optional
+from typing import Optional
+from typing import Set
 
 import aioserial
-from loguru import logger
-
-from models.valves.injection_valve import (
-    InjectionValve,
-    InjectionValvePosition,
-)
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.units import flowchem_ureg
+from loguru import logger
+from models.valves.injection_valve import InjectionValve
+from models.valves.injection_valve import InjectionValvePosition
 
 
 @dataclass
@@ -86,7 +83,7 @@ class ViciValcoValveIO:
             logger.debug(f"Reply received: {reply_string}")
         else:
             raise InvalidConfiguration(
-                f"No response received from valve! Maybe check valve address?"
+                "No response received from valve! Check valve address?"
             )
 
         return reply_string.rstrip()
@@ -225,7 +222,9 @@ class ViciValco(InjectionValve):
         """Switch valve to a position for a given time."""
 
         delay = flowchem_ureg(injection_time).to("ms")
-        set_delay = ViciCommand(valve_id=self.address, command="DT", value=delay.magnitude)
+        set_delay = ViciCommand(
+            valve_id=self.address, command="DT", value=delay.magnitude
+        )
         await self.valve_io.write_and_read_reply(set_delay)
 
         time_toggle = ViciCommand(valve_id=self.address, command="TT")

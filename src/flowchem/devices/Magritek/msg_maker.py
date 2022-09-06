@@ -1,5 +1,4 @@
 """ Functions related to the construction of instrument request """
-
 from pathlib import WindowsPath
 
 from lxml import etree

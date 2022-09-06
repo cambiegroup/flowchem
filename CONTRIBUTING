@@ -1,0 +1,8 @@
+It is great that you are interested in contributing to the project!
+Feel free to open issue/PR in the repo, but if you intend to introduce significant changes it is suggested to discuss it
+in an issue before submitting a large pull request.
+
+We target Python 3.10+ with src layout.
+
+We use pre-commit for formatters/linter and tox for testing (pytest with coverage and mypy).
+Both are run by CI (GitHub Actions) on every commit/PR.

@@ -6,12 +6,11 @@ import warnings
 from enum import Enum
 from typing import List
 
-from loguru import logger
-
-from devices.Knauer.Knauer_common import KnauerEthernetDevice
 from components import Pump
+from devices.Knauer.Knauer_common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
 from flowchem.units import flowchem_ureg
+from loguru import logger
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min

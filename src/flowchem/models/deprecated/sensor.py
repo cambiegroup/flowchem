@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import TYPE_CHECKING, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Optional
+from typing import TYPE_CHECKING
 from warnings import warn
-
-from loguru import logger
 
 from flowchem.components.properties import ActiveComponent
 from flowchem.units import flowchem_ureg
+from loguru import logger
 
 if TYPE_CHECKING:
     from flowchem import Experiment
@@ -32,6 +33,7 @@ class Sensor(ActiveComponent):
     async def _read(self):
         """
         Collects the data.
+
         In the generic `Sensor` implementation, this raises a `NotImplementedError`.
         Subclasses of `Sensor` should implement their own version of this method.
         """

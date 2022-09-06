@@ -1,22 +1,22 @@
-"""
-This module is used to control Harvard Apparatus Elite 11 syringe pump via the 11 protocol.
-"""
-
+"""This module is used to control Harvard Apparatus Elite 11 syringe pump via the 11 protocol."""
 from __future__ import annotations
 
 import asyncio
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Set, Tuple
+from typing import List
+from typing import Optional
+from typing import Set
+from typing import Tuple
 
 import aioserial
+from flowchem.components.stdlib import Pump
+from flowchem.exceptions import DeviceError
+from flowchem.exceptions import InvalidConfiguration
+from flowchem.units import flowchem_ureg
 from loguru import logger
 from pydantic import BaseModel
-
-from flowchem.components.stdlib import Pump
-from flowchem.exceptions import DeviceError, InvalidConfiguration
-from flowchem.units import flowchem_ureg
 
 
 def _parse_version(version_text: str) -> Tuple[int, int, int]:

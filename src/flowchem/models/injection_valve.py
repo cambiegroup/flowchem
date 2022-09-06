@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from abc import ABC
 from asyncio import sleep
-from fastapi import APIRouter
 
+from fastapi import APIRouter
 from flowchem.models import BaseValve
 from flowchem.units import flowchem_ureg
 
@@ -30,7 +30,7 @@ class InjectionValve(BaseValve, ABC):
         super().__init__(**kwargs)
 
     async def _toggle_position(self) -> None:
-        """ Toggle position. """
+        """Toggle position."""
         current_position = await self.get_position()
         if current_position == "LOAD":
             await self.set_position("INJECT")
@@ -46,7 +46,7 @@ class InjectionValve(BaseValve, ABC):
         """
         time_to_wait = flowchem_ureg(injection_time)
         initial_position = await self.get_position()
-        
+
         await self._toggle_position()
         await sleep(time_to_wait.to("s").magnitude)
         await self.set_position(initial_position)

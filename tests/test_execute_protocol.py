@@ -1,8 +1,11 @@
-from components import DummyPump, DummySensor, BrokenDummySensor
-from flowchem import Protocol, DeviceGraph
+from components import BrokenDummySensor
+from components import DummyPump
+from components import DummySensor
+from flowchem import DeviceGraph
+from flowchem import Protocol
+from flowchem.units import flowchem_ureg
 
 # create components
-from flowchem.units import flowchem_ureg
 
 #
 # def test_execute():

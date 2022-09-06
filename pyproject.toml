@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools >= 65.0.0", "wheel", "pip>=22.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -7,6 +7,10 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+#[tool.setuptools.package-data]
+#"*" = ["*.txt"]
+#flowchem = ["file.csv"]
 
 [project]
 name = "flowchem"
@@ -70,7 +74,7 @@ dependencies = [
 dev = [
     "mypy",
     "flake8",
-    "isort",
+    "black",
     "pylint",
     "tox",
     "pre-commit"
@@ -107,5 +111,24 @@ max-line-length = 120
 extension-pkg-allow-list = 'pydantic, lxml'
 #disable = "C0330, R0201"
 
-[tool.isort]
-profile = "black"
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py310,pep8,mypy,black
+isolated_build = true
+minversion = 3.10.4
+
+[testenv]
+description = Run the tests with pytest under {basepython}
+deps = pytest
+changedir = {envtmpdir}
+commands = python -m pytest {posargs} {toxinidir}
+extras = dev,test
+
+
+[testenv:pep8]
+commands = flake8 --count --select=E9,F63,F7,F82 --show-source --statistics
+
+[testenv:mypy]
+commands = mypy --install-types --non-interactive
+"""

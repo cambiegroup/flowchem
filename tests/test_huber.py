@@ -3,8 +3,8 @@ import asyncio
 
 import aioserial
 import pytest
-
-from devices import HuberChiller, PBCommand
+from devices import HuberChiller
+from devices import PBCommand
 from flowchem.exceptions import InvalidConfiguration
 
 
@@ -109,13 +109,13 @@ async def test_no_reply(chiller):
 async def test_status(chiller):
     chiller._serial.fixed_reply = None
     stat = await chiller.status()
-    stat_content = [x for x in stat.values()]
+    stat_content = list(stat.values())
     assert all(stat_content)
 
     # Set reply in FakeSerial
     chiller._serial.fixed_reply = b"{S0A0000"
     stat = await chiller.status()
-    stat_content = [x for x in stat.values()]
+    stat_content = list(stat.values())
     assert not any(stat_content)
 
 

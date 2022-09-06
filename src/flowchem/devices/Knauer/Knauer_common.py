@@ -1,18 +1,13 @@
-"""
-Module for communication with Knauer pumps and valves.
-"""
+"""Module for communication with Knauer pumps and valves."""
 import asyncio
-
-from loguru import logger
 
 from devices.Knauer.Knauer_autodiscover import autodiscover_knauer
 from flowchem.exceptions import InvalidConfiguration
+from loguru import logger
 
 
 class KnauerEthernetDevice:
-    """
-    Common base class for shared logic across Knauer pumps and valves.
-    """
+    """Common base class for shared logic across Knauer pumps and valves."""
 
     TCP_PORT = 10001
     BUFFER_SIZE = 1024
@@ -62,7 +57,7 @@ class KnauerEthernetDevice:
         return ip_address
 
     async def initialize(self):
-        """Initialize connection"""
+        """Initialize connection."""
         # Future used to set shorter timeout than default
         future = asyncio.open_connection(host=self.ip_address, port=10001)
         try:

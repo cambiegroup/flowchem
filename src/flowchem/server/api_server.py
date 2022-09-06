@@ -1,18 +1,13 @@
 """" Run with uvicorn main:app """
-import inspect
 from pathlib import Path
-from typing import Dict
-
-import yaml
-
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from loguru import logger
 
 import flowchem
-from flowchem.models import BaseDevice
-from server.config.parser import parse_config_file
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from flowchem.exceptions import InvalidConfiguration
+from flowchem.models import BaseDevice
+from loguru import logger
+from server.config.parser import parse_config_file
 
 
 def create_server_from_file(config_file: Path) -> FastAPI:

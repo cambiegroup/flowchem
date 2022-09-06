@@ -1,13 +1,8 @@
 """ Shell script executor """
-
 import rich_click as click
 
 
-@click.argument(
-    "device_config",
-    type=click.Path(),
-    required=True
-)
+@click.argument("device_config", type=click.Path(), required=True)
 @click.command()
 def cli(device_config):
     """

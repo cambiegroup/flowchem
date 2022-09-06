@@ -1,11 +1,11 @@
-""" Use Phidgets to control lab devices. So far, only 4..20mA interface for Swagelock Pressure-sensor """
+"""Use Phidgets to control lab devices. So far, only 4..20mA interface for Swagelock Pressure-sensor."""
 import time
 import warnings
-from typing import Optional, Tuple
-
-from loguru import logger
+from typing import Optional
+from typing import Tuple
 
 from components import Sensor
+from loguru import logger
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -16,7 +16,7 @@ except ImportError:
 else:
     try:
         Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
-    except (OSError, FileNotFoundError):
+    except OSError:
         warnings.warn(
             "Phidget22 package installed but Phidget library not found!\n"
             "Get it from https://www.phidgets.com/docs/Operating_System_Support"
@@ -32,7 +32,7 @@ from flowchem.units import flowchem_ureg
 
 
 class PressureSensor(Sensor):
-    """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value"""
+    """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
 
     def __init__(
         self,
@@ -42,6 +42,7 @@ class PressureSensor(Sensor):
         phidget_is_remote: bool = False,
         name: Optional[str] = None,
     ):
+        """Initialize PressureSensor with the given pressure range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
             raise InvalidConfiguration(
@@ -82,10 +83,11 @@ class PressureSensor(Sensor):
         self.phidget.setDataInterval(200)  # 200ms
 
     def __del__(self):
+        """Ensure connection closure upon deletion."""
         self.phidget.close()
 
     def get_router(self):
-        """Creates an APIRouter for this object."""
+        """Create an APIRouter for this object."""
         from fastapi import APIRouter
 
         router = APIRouter()
@@ -95,11 +97,11 @@ class PressureSensor(Sensor):
         return router
 
     def is_attached(self) -> bool:
-        """Whether the device is connected"""
+        """Whether the device is connected."""
         return bool(self.phidget.getAttached())
 
     def _current_to_pressure(self, current_in_ampere: float) -> str:
-        """Converts current reading into pressure value"""
+        """Convert current reading into pressure value."""
         mill_amp = current_in_ampere * 1000
         # minP..maxP is 4..20mA
         pressure_reading = self._min_pressure + ((mill_amp - 4) / 16) * (

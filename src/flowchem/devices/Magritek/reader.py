@@ -1,13 +1,12 @@
-""" Connection reader + XML parser for Spinsolve replies """
-
+"""Connection reader + XML parser for Spinsolve replies."""
 import queue
 import time
 import warnings
-from typing import List, Optional
-
-from lxml import etree
+from typing import List
+from typing import Optional
 
 from devices.Magritek.utils import get_my_docs_path
+from lxml import etree
 
 
 class Reader:

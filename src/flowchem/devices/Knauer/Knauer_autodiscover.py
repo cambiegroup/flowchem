@@ -5,7 +5,10 @@ import socket
 import sys
 import time
 from threading import Thread
-from typing import Dict, Text, Tuple, Union
+from typing import Dict
+from typing import Text
+from typing import Tuple
+from typing import Union
 
 from getmac import getmac
 from loguru import logger

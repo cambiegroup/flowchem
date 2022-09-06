@@ -1,6 +1,8 @@
 """ All devices should inherit from this class. """
 from __future__ import annotations
+
 from abc import ABC
+
 from fastapi import APIRouter
 
 

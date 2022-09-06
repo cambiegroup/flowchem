@@ -6,12 +6,12 @@ import itertools
 from pathlib import Path
 from typing import Dict
 
-import yaml
-from loguru import logger
 import flowchem
-from flowchem.models import BaseDevice
-from server.config.validator import validate_config
+import yaml
 from flowchem.exceptions import InvalidConfiguration
+from flowchem.models import BaseDevice
+from loguru import logger
+from server.config.validator import validate_config
 
 # Packages containing the device class definitions.
 
@@ -49,7 +49,7 @@ def parse_config(graph_config: Dict) -> Dict:
 
     # Parse devices
     graph_config["devices"] = [parse_device(dev) for dev in graph_config["devices"]]
-    logger.info(f"Parsed config!")
+    logger.info("Parsed config!")
 
     return graph_config
 

@@ -1,4 +1,4 @@
-""" Represent a generic multiposition valve. """
+"""Generic multiposition valve."""
 from __future__ import annotations
 
 from abc import ABC
@@ -20,4 +20,4 @@ class MultipositionValve(BaseValve, ABC):
         """
         super().__init__(**kwargs)
 
-        self.positions = {str(x+1) for x in range(positions)}
+        self.positions = {str(x + 1) for x in range(positions)}

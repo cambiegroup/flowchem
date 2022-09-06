@@ -1,8 +1,9 @@
 """ Test Spinsolve, needs actual connection with the device """
-import pytest
 import asyncio
 import time
 from pathlib import Path
+
+import pytest
 from devices.Magritek import Spinsolve
 
 

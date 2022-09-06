@@ -3,11 +3,10 @@ import time
 from typing import Optional
 
 import aioserial
-from loguru import logger
-
 from components import ActiveComponent
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.units import flowchem_ureg
+from loguru import logger
 
 try:
     from devices import (
@@ -59,14 +58,15 @@ class R4Heater(ActiveComponent):
         logger.debug(f"Sent command: {repr(command)}")
 
     async def _read_reply(self) -> str:
-        """Reads the pump reply from serial communication"""
+        """Reads the pump reply from serial communication."""
         reply_string = await self._serial.readline_async()
         logger.debug(f"Reply received: {reply_string.decode('ascii')}")
         return reply_string.decode("ascii")
 
     async def write_and_read_reply(self, command: R4Command) -> str:
         """Main HamiltonPumpIO method.
-        Sends a command to the pump, read the replies and returns it, optionally parsed"""
+
+        Sends a command to the pump, read the replies and returns it, optionally parsed."""
         self._serial.reset_input_buffer()
         await self._write(command.compile())
         response = await self._read_reply()
@@ -77,7 +77,7 @@ class R4Heater(ActiveComponent):
         return response.rstrip()
 
     async def wait_for_target_temp(self, channel: int):
-        """Waits until the target channel has reached the desired temperature and is stable"""
+        """Waits until the target channel has reached the desired temperature and is stable."""
         t_stable = False
         failure = 0
         while not t_stable:
@@ -102,7 +102,7 @@ class R4Heater(ActiveComponent):
     async def set_temperature(
         self, channel, target_temperature: str, wait: bool = False
     ):
-        """Set temperature and optionally waits for S"""
+        """Set temperature and optionally waits for S."""
         set_command = getattr(VapourtecCommand, f"SET_CH{channel}_TEMP")
 
         set_temperature = flowchem_ureg(target_temperature)

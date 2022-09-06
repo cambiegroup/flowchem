@@ -1,11 +1,11 @@
 """ Various utility functions for the Magritek device. """
 import ctypes.wintypes
 from pathlib import Path
-from typing import Callable, Union
-
-from loguru import logger
+from typing import Callable
+from typing import Union
 
 from flowchem.exceptions import InvalidConfiguration
+from loguru import logger
 
 
 def get_my_docs_path():
@@ -27,9 +27,9 @@ def get_my_docs_path():
 def create_folder_mapper(
     remote_root: Path, local_root: Path
 ) -> Callable[[Union[Path, str]], Path]:
-    """
-    Returns a function that converts path relative to remote_root to their corresponding on local_root
-    Used when using spinsolve on a remote PC to share the result data via a remotely mounted network drive
+    """Return a function that converts path relative to remote_root to their corresponding on local_root.
+
+    Used when using spinsolve on a remote PC to share the result data via a remotely mounted network drive.
     """
 
     def folder_mapper(path_to_be_translated: Union[Path, str]):

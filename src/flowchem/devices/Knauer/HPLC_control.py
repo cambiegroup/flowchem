@@ -1,9 +1,7 @@
 # This could become a mess...
 # what needs to be done is switch the lamps on, which works over serial.
 # the rest is just sending commands to the console, possibly also to another machine
-
 # https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
-
 import socket
 import subprocess
 from pathlib import Path
@@ -12,7 +10,6 @@ from time import sleep
 from typing import Union
 
 import tenacity
-
 from flowchem.exceptions import InvalidConfiguration
 
 try:
@@ -56,10 +53,7 @@ class ClarityInterface:
     # TODO would have to have some way to fail
     @classmethod
     def from_config(cls, config_dict: dict):
-        try:
-            pass
-        except:
-            pass
+        pass
 
     # if remote execute everything on other PC, else on this
     # Todo doesn't make sense here, done other way
@@ -220,7 +214,7 @@ class ClarityExecutioner:
             print("listening")
 
 
-###TODO: also dsk or k for opening with specific desktop could be helpful-.
+# TODO: also dsk or k for opening with specific desktop could be helpful-.
 # TODO Export results can be specified -> exports result, rewrite to a nicer interface
 
 if __name__ == "__main__":

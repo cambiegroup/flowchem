@@ -1,12 +1,11 @@
 from datetime import timedelta
 
 import pytest
-
-
-from flowchem import DeviceGraph, Protocol
 from components import Component
 from components import Dummy
 from components import Pump
+from flowchem import DeviceGraph
+from flowchem import Protocol
 
 
 @pytest.fixture

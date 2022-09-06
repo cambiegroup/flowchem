@@ -1,20 +1,18 @@
 """ Async implementation of FlowIR """
-
 import asyncio
 import datetime
 import warnings
-from typing import List, Optional
+from typing import List
+from typing import Optional
 
-from asyncua import Client, ua
-from loguru import logger
-
-from devices.MettlerToledo.iCIR_common import (
-    IRSpectrum,
-    ProbeInfo,
-    iCIR_spectrometer,
-)
+from asyncua import Client
+from asyncua import ua
 from components import ActiveComponent
+from devices.MettlerToledo.iCIR_common import iCIR_spectrometer
+from devices.MettlerToledo.iCIR_common import IRSpectrum
+from devices.MettlerToledo.iCIR_common import ProbeInfo
 from flowchem.exceptions import DeviceError
+from loguru import logger
 
 
 class FlowIR(iCIR_spectrometer, ActiveComponent):
@@ -88,7 +86,7 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
         return self.parse_probe_info(probe_info)
 
     async def probe_status(self):
-        """Returns current probe status"""
+        """Returns current probe status."""
         return await self.opcua.get_node(self.PROBE_STATUS).get_value()
 
     async def is_running(self) -> bool:
@@ -96,11 +94,11 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
         return await self.probe_status() == "Running"
 
     async def last_sample_time(self) -> datetime.datetime:
-        """Returns date/time of latest scan"""
+        """Returns date/time of latest scan."""
         return await self.opcua.get_node(self.LAST_SAMPLE_TIME).get_value()
 
     async def sample_count(self) -> Optional[int]:
-        """Sample count (integer autoincrement) watch for changes to ensure latest spectrum is recent"""
+        """Sample count (integer autoincrement) watch for changes to ensure latest spectrum is recent."""
         return await self.opcua.get_node(self.SAMPLE_COUNT).get_value()
 
     @staticmethod
@@ -112,7 +110,7 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
 
     @staticmethod
     async def spectrum_from_node(node) -> IRSpectrum:
-        """Given a Spectrum node returns it as IRSpectrum"""
+        """Given a Spectrum node returns it as IRSpectrum."""
         try:
             intensity = await node.get_value()
             wavenumber = await FlowIR._wavenumber_from_spectrum_node(node)
@@ -122,17 +120,17 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
             return IRSpectrum(wavenumber=[], intensity=[])
 
     async def last_spectrum_treated(self) -> IRSpectrum:
-        """Returns an IRSpectrum element for the last acquisition"""
+        """Returns an IRSpectrum element for the last acquisition."""
         return await FlowIR.spectrum_from_node(
             self.opcua.get_node(self.SPECTRA_TREATED)
         )
 
     async def last_spectrum_raw(self) -> IRSpectrum:
-        """RAW result latest scan"""
+        """RAW result latest scan."""
         return await FlowIR.spectrum_from_node(self.opcua.get_node(self.SPECTRA_RAW))
 
     async def last_spectrum_background(self) -> IRSpectrum:
-        """RAW result latest scan"""
+        """RAW result latest scan."""
         return await FlowIR.spectrum_from_node(
             self.opcua.get_node(self.SPECTRA_BACKGROUND)
         )
@@ -140,7 +138,7 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
     async def start_experiment(
         self, template: str, name: str = "Unnamed flowchem exp."
     ):
-        """Starts an experiment on iCIR
+        """Starts an experiment on iCIR.
 
         Args:
             template: name of the experiment template, should be in the right folder on the PC running iCIR
@@ -175,7 +173,9 @@ class FlowIR(iCIR_spectrometer, ActiveComponent):
         logger.info(f"FlowIR experiment {name} started with template {template}!")
 
     async def stop_experiment(self):
-        """Stops the experiment currently running (it does not imply instrument is then idle, wait for scan end)"""
+        """Stop the experiment currently running.
+
+        Note: the call does not make the instrument idle: you need to wait for the current scan to end!"""
         method_parent = self.opcua.get_node(self.METHODS)
         stop_nodeid = self.opcua.get_node(self.STOP_EXPERIMENT).nodeid
         await method_parent.call_method(stop_nodeid)

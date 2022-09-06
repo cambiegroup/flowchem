@@ -1,5 +1,4 @@
 """ Functions related to instrument reply parsing """
-
 import warnings
 from enum import Enum
 

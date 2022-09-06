@@ -1,4 +1,4 @@
-""" Represent a generic valve. """
+"""Represent a generic valve."""
 from __future__ import annotations
 
 from abc import abstractmethod
@@ -11,6 +11,7 @@ class BaseValve(BaseDevice):
     """A generic valve."""
 
     def __init__(self, **kwargs):
+        """BaseValve constructor, sets positions as an empty set."""
         super().__init__(**kwargs)
         self.positions = set()
 
@@ -21,6 +22,7 @@ class BaseValve(BaseDevice):
         raise NotImplementedError
 
     async def initialize(self):
+        """Initialize valve."""
         assert len(self.positions) > 0, "Valve must have at least one position!"
         await self.set_position(self._DEFAULT_POSITION)
 
@@ -35,8 +37,8 @@ class BaseValve(BaseDevice):
     def position_names(self) -> list[str]:
         """
         Get the list of available positions for this valve.
-        Returns: list of strings
 
+        Returns: list of strings
         """
         return list(self.positions)
 

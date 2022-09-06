@@ -1,5 +1,3 @@
-# isort: skip_file
-
 """ HW device, organized by manufacturer. """
 from .devices.Hamilton import *
 from .devices.Harvard_Apparatus import *

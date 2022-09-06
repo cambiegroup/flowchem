@@ -1,7 +1,6 @@
 """
 This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO+.
 """
-
 from __future__ import annotations
 
 import string
@@ -9,14 +8,16 @@ import time
 import warnings
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import TYPE_CHECKING, Optional, Set
+from typing import Optional
+from typing import Set
+from typing import TYPE_CHECKING
 
 import aioserial
-from loguru import logger
-
+from flowchem.exceptions import DeviceError
+from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.properties import Pump
-from flowchem.exceptions import DeviceError, InvalidConfiguration
 from flowchem.units import flowchem_ureg
+from loguru import logger
 
 if TYPE_CHECKING:
     import pint

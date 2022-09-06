@@ -5,27 +5,23 @@ import queue
 import threading
 import warnings
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
+from devices.Magritek.msg_maker import create_message
+from devices.Magritek.msg_maker import create_protocol_message
+from devices.Magritek.msg_maker import get_request
+from devices.Magritek.msg_maker import set_attribute
+from devices.Magritek.msg_maker import set_data_folder
+from devices.Magritek.msg_maker import set_user_data
+from devices.Magritek.parser import parse_status_notification
+from devices.Magritek.parser import StatusNotification
+from devices.Magritek.reader import Reader
+from flowchem.components.properties import ActiveComponent
 from loguru import logger
 from lxml import etree
 from packaging import version
 from unsync import unsync
-
-from devices.Magritek.msg_maker import (
-    create_message,
-    create_protocol_message,
-    get_request,
-    set_attribute,
-    set_data_folder,
-    set_user_data,
-)
-from devices.Magritek.parser import (
-    StatusNotification,
-    parse_status_notification,
-)
-from devices.Magritek.reader import Reader
-from flowchem.components.properties import ActiveComponent
 
 
 @unsync
@@ -98,7 +94,7 @@ class Spinsolve(ActiveComponent):
         # Sets default sample, solvent value and user data
         self.sample = kwargs.get("sample_name", "FlowChem Experiment")
         self.solvent = kwargs.get("solvent", "Chloroform?")
-        self.user_data = dict(control_software="flowchem")
+        self.user_data = {"control_software": "flowchem"}
 
         # Finally, check version
         if version.parse(self.software_version) < version.parse("1.18.1.3062"):
@@ -384,7 +380,7 @@ class Spinsolve(ActiveComponent):
     #     return float(reply.find(".//LineWidth").text), float(reply.find(".//BaseWidth").text)
 
     def shim(self):
-        """Performs a shim on sample"""
+        """Shim on sample."""
         raise NotImplementedError("Use run protocol with a shimming protocol instead!")
 
 

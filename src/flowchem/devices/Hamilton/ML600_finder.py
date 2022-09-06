@@ -1,16 +1,11 @@
-"""
-This module is used to discover the serial address of any ML600 connected to the PC.
-"""
+"""This module is used to discover the serial address of any ML600 connected to the PC."""
 import asyncio
 
 import aioserial
 import serial.tools.list_ports
+from devices.Hamilton.ML600 import HamiltonPumpIO
+from devices.Hamilton.ML600 import InvalidConfiguration
 from loguru import logger
-
-from devices.Hamilton.ML600 import (
-    HamiltonPumpIO,
-    InvalidConfiguration,
-)
 
 
 def ml600_finder():

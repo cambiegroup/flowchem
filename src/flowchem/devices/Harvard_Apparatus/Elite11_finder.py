@@ -2,12 +2,11 @@
 This module is used to discover the serial address of any ML600 connected to the PC.
 """
 import serial.tools.list_ports
-from loguru import logger
-
 from devices.Harvard_Apparatus.HA_elite11 import (
     HarvardApparatusPumpIO,
 )
 from flowchem.exceptions import InvalidConfiguration
+from loguru import logger
 
 
 # noinspection PyProtectedMember
