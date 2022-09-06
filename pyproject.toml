@@ -23,7 +23,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
 authors = [
-    { name = "Dario Cambié", email = "Dario.Cambie@mpikg.mpg.de" },
+    { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
     { name = "Jakob Wolf", email = "Jakob.Wolf@mpikg.mpg.de" },
     { name = "Wei-Hsin Hsu", email = "Wei-hsin.Hsu@mpikg.mpg.de" },
 ]
