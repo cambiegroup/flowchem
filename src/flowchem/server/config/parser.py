@@ -18,9 +18,9 @@ from flowchem.models import BaseDevice
 from loguru import logger
 
 # Packages containing the device class definitions.
+DEVICE_MODULES = [flowchem.devices]
 
 # Devices' classes must be in the module top level to be found.
-DEVICE_MODULES = [flowchem]
 _objects_in_modules = [
     inspect.getmembers(module, inspect.isclass) for module in DEVICE_MODULES
 ]
