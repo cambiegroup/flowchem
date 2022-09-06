@@ -6,8 +6,13 @@ import itertools
 from pathlib import Path
 from typing import Dict
 
+# For Python >= 3.11 use stdlib tomllib instead of tomli
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+
 import flowchem
-import yaml
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models import BaseDevice
 from loguru import logger
@@ -27,13 +32,13 @@ DEVICE_MAPPER = dict(itertools.chain.from_iterable(_objects_in_modules))
 def parse_config_file(file_path: Path) -> Dict:
     """Parse a config file."""
 
-    with file_path.open(encoding="utf-8") as stream:
+    with file_path.open('rb') as stream:
         try:
-            config = yaml.safe_load(stream)
-        except yaml.parser.ParserError as parser_error:
+            config = tomllib.load(stream)
+        except tomllib.TOMLDecodeError as parser_error:
             logger.exception(parser_error)
             raise InvalidConfiguration(
-                f"Invalid YAML in config {file_path}"
+                f"The configuration file {file_path} is not a valid TOML file!"
             ) from parser_error
 
     config["filename"] = file_path.stem
