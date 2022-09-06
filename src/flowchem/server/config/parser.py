@@ -11,7 +11,6 @@ import yaml
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models import BaseDevice
 from loguru import logger
-from server.config.validator import validate_config
 
 # Packages containing the device class definitions.
 
@@ -43,9 +42,6 @@ def parse_config_file(file_path: Path) -> Dict:
 
 def parse_config(graph_config: Dict) -> Dict:
     """Parse config."""
-
-    # Validate config
-    validate_config(graph_config)
 
     # Parse devices
     graph_config["devices"] = [parse_device(dev) for dev in graph_config["devices"]]
