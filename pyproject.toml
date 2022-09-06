@@ -8,9 +8,8 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
-#[tool.setuptools.package-data]
-#"*" = ["*.txt"]
-#flowchem = ["file.csv"]
+[tool.setuptools.package-data]
+flowchem = ["py.typed"]
 
 [project]
 name = "flowchem"
@@ -19,7 +18,7 @@ description = "Flowchem is a python library to control a variety of instruments 
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["chemistry", "automation", "laboratory", "science"]
-license = {text = "MIT"}
+license = { file = "LICENSE" }
 classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
