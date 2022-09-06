@@ -66,8 +66,8 @@ dependencies = [
 ]
 
 [project.urls]
-    homepage = "https://github.com/cambiegroup/flowchem"
-    repository = "https://github.com/cambiegroup/flowchem"
+Homepage = "https://github.com/cambiegroup/flowchem"
+Repository = "https://github.com/cambiegroup/flowchem"
 
 [project.optional-dependencies]
 dev = [
