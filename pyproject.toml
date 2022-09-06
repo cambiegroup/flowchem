@@ -19,6 +19,11 @@ license = {text = "MIT"}
 classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
+authors = [
+    { name = "Dario Cambié", email = "Dario.Cambie@mpikg.mpg.de" },
+    { name = "Jakob Wolf", email = "Jakob.Wolf@mpikg.mpg.de" },
+    { name = "Wei-Hsin Hsu", email = "Wei-hsin.Hsu@mpikg.mpg.de" },
+]
 dependencies = [
     "aiofiles>=0.8.0",
     "aioserial>=1.3.0",
@@ -56,15 +61,31 @@ dependencies = [
     "requests",
     'importlib-metadata; python_version<"3.8"',
 ]
-authors = [
-    { name = "Dario Cambié", email = "Dario.Cambie@mpikg.mpg.de" },
-    { name = "Jakob Wolf", email = "Jakob.Wolf@mpikg.mpg.de" },
-    { name = "Wei-Hsin Hsu", email = "Wei-hsin.Hsu@mpikg.mpg.de" },
-]
+
 [project.urls]
     homepage = "https://github.com/cambiegroup/flowchem"
     repository = "https://github.com/cambiegroup/flowchem"
 
+[project.optional-dependencies]
+dev = [
+    "mypy",
+    "flake8",
+    "isort",
+    "pylint",
+    "tox",
+    "pre-commit"
+]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov"
+]
+phidget = [
+    "phidget22>=1.7.20211005",
+]
+
+#[project.scripts]
+# flowchem = "flowchem.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = "tests"
