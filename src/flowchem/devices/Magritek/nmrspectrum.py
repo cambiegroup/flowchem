@@ -2,8 +2,12 @@
 import time
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import nmrglue as ng
+try:
+    import matplotlib.pyplot as plt
+    HAS_MATPLOTLIB = True
+except ModuleNotFoundError:
+    HAS_MATPLOTLIB = False
 
 
 class NMRSpectrum:
@@ -56,6 +60,9 @@ class NMRSpectrum:
 
     def plot(self, ppm_range=(8, 0)):
         """Returns spectrum as matplotlib figure"""
+        if not HAS_MATPLOTLIB:
+            raise RuntimeError("Plot function requested but matplotlib not installed!")
+
         if self.processed_data is None:
             self.process()
 
