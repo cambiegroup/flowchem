@@ -5,8 +5,9 @@ import warnings
 from typing import List
 from typing import Optional
 
-from devices.Magritek.utils import get_my_docs_path
 from lxml import etree
+
+from .utils import get_my_docs_path
 
 
 class Reader:

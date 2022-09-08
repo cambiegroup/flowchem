@@ -2,11 +2,12 @@
 import warnings
 from enum import Enum
 
-from devices.Knauer._common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
 from flowchem.models.injection_valve import InjectionValve
 from flowchem.models.multiposition_valve import MultipositionValve
 from loguru import logger
+
+from ._common import KnauerEthernetDevice
 
 
 class KnauerValveHeads(Enum):

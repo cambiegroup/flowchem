@@ -3,8 +3,8 @@ import asyncio
 
 import aioserial
 import serial.tools.list_ports
-from devices.Hamilton.ML600 import HamiltonPumpIO
-from devices.Hamilton.ML600 import InvalidConfiguration
+from flowchem.devices.Hamilton.ML600 import HamiltonPumpIO
+from flowchem.devices.Hamilton.ML600 import InvalidConfiguration
 from loguru import logger
 
 

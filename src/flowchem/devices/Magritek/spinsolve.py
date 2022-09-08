@@ -8,15 +8,15 @@ from pathlib import Path
 from typing import Optional
 from typing import Union
 
-from devices.Magritek.msg_maker import create_message
-from devices.Magritek.msg_maker import create_protocol_message
-from devices.Magritek.msg_maker import get_request
-from devices.Magritek.msg_maker import set_attribute
-from devices.Magritek.msg_maker import set_data_folder
-from devices.Magritek.msg_maker import set_user_data
-from devices.Magritek.reader import Reader
-from devices.Magritek.xml_parser import parse_status_notification
-from devices.Magritek.xml_parser import StatusNotification
+from flowchem.devices.Magritek._msg_maker import create_message
+from flowchem.devices.Magritek._msg_maker import create_protocol_message
+from flowchem.devices.Magritek._msg_maker import get_request
+from flowchem.devices.Magritek._msg_maker import set_attribute
+from flowchem.devices.Magritek._msg_maker import set_data_folder
+from flowchem.devices.Magritek._msg_maker import set_user_data
+from flowchem.devices.Magritek.reader import Reader
+from flowchem.devices.Magritek.xml_parser import parse_status_notification
+from flowchem.devices.Magritek.xml_parser import StatusNotification
 from flowchem.models.base_device import BaseDevice
 from loguru import logger
 from lxml import etree

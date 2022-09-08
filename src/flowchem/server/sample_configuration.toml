@@ -1,9 +1,10 @@
 config_version = "1.0"
+simulation = true
 
 [device.donor]
 type = "Elite11InfuseOnly"
 port = "COM11"
-address= 0
+address = 0
 diameter = "4.6 mm"
 syringe_volume = "1 ml"
 
