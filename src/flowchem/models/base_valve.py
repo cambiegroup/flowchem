@@ -16,6 +16,13 @@ class BaseValve(BaseDevice):
         super().__init__(**kwargs)
         self.positions = set()
 
+        # If generic port naming is mapped to device-specific via position_mapping create reverse
+        try:
+            position_mapping = self.position_mapping
+            self._reverse_position_mapping = {v: k for k, v in position_mapping}
+        except AttributeError:
+            pass
+
     @classmethod
     @property
     @abstractmethod

@@ -162,14 +162,9 @@ class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
 
 
 class KnauerMultipositionValve(KnauerValve, MultipositionValve):
-    async def set_position(self, position: str):
-        """Move valve to position."""
-        await super().set_position(self.position_mapping[position])
+    """Valve position '1' ... '16' match MultipositionValve standard, no position_mapping needed here."""
 
-    async def get_position(self) -> str:
-        """Move valve to position."""
-        valve_pos = "P" + await super().get_position()
-        return self._reverse_position_mapping[valve_pos]
+    pass
 
 
 class Knauer6Port6PositionValve(KnauerMultipositionValve):
@@ -212,9 +207,9 @@ if __name__ == "__main__":
     async def main(valve: KnauerValve):
         """test function."""
         await valve.initialize()
-        await valve.switch_to_position("I")
-        print(await valve.get_current_position())
-        await valve.switch_to_position("L")
-        print(await valve.get_current_position())
+        await valve.set_position("I")
+        print(await valve.get_position())
+        await valve.set_position("L")
+        print(await valve.get_position())
 
     asyncio.run(main(v))

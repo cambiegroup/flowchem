@@ -311,7 +311,7 @@ class ML600(BaseDevice):
                 f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}"
             )
 
-        self._steps_per_ml = flowchem_ureg.Quantity(
+        self._steps_per_ml: pint.Quantity = flowchem_ureg.Quantity(
             f"{48000 / self.syringe_volume} step/ml"
         )
         self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
@@ -442,8 +442,8 @@ class ML600(BaseDevice):
         example to dispense 9 mL from a 10 mL syringe you would determine the number of
         steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
         """
-        flowrate = flowchem_ureg(flowrate)
-        flowrate_in_steps_sec = flowrate * self._steps_per_ml
+        flowrate_w_units = flowchem_ureg(flowrate)
+        flowrate_in_steps_sec = flowrate_w_units * self._steps_per_ml
         seconds_per_stroke = (1 / flowrate_in_steps_sec).to("second/stroke")
 
         return self._validate_speed(str(seconds_per_stroke))

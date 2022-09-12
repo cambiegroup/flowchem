@@ -130,6 +130,7 @@ class ViciValco(InjectionValve):
     def __init__(
         self,
         valve_io: ViciValcoValveIO,
+        loop_volume: str = "1 ul",
         address: Optional[int] = None,
         name: str = None,
     ):
@@ -146,12 +147,19 @@ class ViciValco(InjectionValve):
 
         # The valve name is used for logs and error messages.
         self.name = f"Valve {self.valve_io.name}:{address}" if name is None else name
-        super().__init__(name)
+        super().__init__(loop_volume=loop_volume, name=name)
 
         self.address = address
 
     @classmethod
-    def from_config(cls, port: str, address: int, name: str = None, **serial_kwargs):
+    def from_config(
+        cls,
+        port: str,
+        address: int,
+        loop_volume: str = "1 ul",
+        name: str = None,
+        **serial_kwargs,
+    ):
         """This class method is used to create instances via config file by the server for HTTP interface."""
         existing_io = [v for v in ViciValco._io_instances if v._serial.port == port]
 
@@ -161,7 +169,7 @@ class ViciValco(InjectionValve):
         else:
             valve_io = ViciValcoValveIO.from_config(port, **serial_kwargs)
 
-        return cls(valve_io, address=address, name=name)
+        return cls(valve_io, loop_volume=loop_volume, address=address, name=name)
 
     async def initialize(self):
         """Must be called after init before anything else."""
@@ -211,7 +219,7 @@ class ViciValco(InjectionValve):
         )
         await self.valve_io.write_and_read_reply(valve_by_name_cw)
 
-    async def timed_toggle(self, injection_time: int):
+    async def timed_toggle(self, injection_time: str):
         """Switch valve to a position for a given time."""
 
         delay = flowchem_ureg(injection_time).to("ms")
