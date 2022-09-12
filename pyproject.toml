@@ -75,7 +75,7 @@ phidget = [
 plot = [
     "matplotlib>=3.5.0",
 ]
-doc = [
+docs = [
     "myst-parser",
     "sphinx",
     "sphinx-rtd-theme",
