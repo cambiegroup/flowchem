@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools", "wheel", "pip"]
+# Setuptools 64 and pip 21.3 are needed for editable installs, but a modern version of setuptools never hurts
+requires = ["setuptools==60.2.0", "wheel", "pip>=22"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -74,6 +75,12 @@ phidget = [
 ]
 plot = [
     "matplotlib>=3.5.0",
+]
+doc = [
+    "myst-parser",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "sphinx-rtd-theme",
 ]
 
 [project.scripts]
