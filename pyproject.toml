@@ -18,15 +18,18 @@ version = "0.1.0-alpha2"
 description = "Flowchem is a python library to control a variety of instruments commonly found in chemistry labs."
 readme = "README.md"
 requires-python = ">=3.10"
-keywords = ["chemistry", "automation", "laboratory", "science"]
 license = { file = "LICENSE" }
-classifiers = [
-    "License :: OSI Approved :: MIT License"
-]
+keywords = ["chemistry", "automation", "laboratory", "science"]
 authors = [
     { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
     { name = "Jakob Wolf", email = "Jakob.Wolf@mpikg.mpg.de" },
     { name = "Wei-Hsin Hsu", email = "Wei-hsin.Hsu@mpikg.mpg.de" },
+]
+maintainers = [
+  { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" }
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License"
 ]
 dependencies = [
     "aioserial>=1.3.0",
@@ -51,10 +54,6 @@ dependencies = [
     "rich",
     'importlib-metadata; python_version<"3.8"',
 ]
-
-[project.urls]
-Homepage = "https://github.com/cambiegroup/flowchem"
-Repository = "https://github.com/cambiegroup/flowchem"
 
 [project.optional-dependencies]
 dev = [
@@ -82,6 +81,15 @@ doc = [
     "sphinx-rtd-theme",
     "sphinx-rtd-theme",
 ]
+types = [
+    "types-lxml",
+    "data-science-types",
+]
+
+[project.urls]
+homepage = "https://github.com/cambiegroup/flowchem"
+documentation = "https://flowchem.readthedocs.io"
+repository = "https://github.com/cambiegroup/flowchem"
 
 [project.scripts]
  flowchem = "flowchem.cli:main"
@@ -107,17 +115,16 @@ envlist = py310,pep8,mypy,black
 isolated_build = true
 minversion = 3.10.4
 
-[testenv]
-description = Run the tests with pytest under {basepython}
-deps = pytest
+[testenv:{flake8,mypy,test}]
+envdir = {toxworkdir}/.tox
 changedir = {envtmpdir}
-commands = python -m pytest {posargs} {toxinidir}
 extras = dev,test
-
-
-[testenv:pep8]
-commands = flake8 --count --select=E9,F63,F7,F82 --show-source --statistics
-
-[testenv:mypy]
-commands = mypy --install-types --non-interactive .
+description =
+    test: Run the tests with pytest under {basepython}
+    flake8: Run flake8
+    mypy: Run mypy
+commands =
+    test: python -m pytest {posargs} {toxinidir}
+    flake8: flake8 --count --select=E9,F63,F7,F82 --show-source --statistics
+    mypy: mypy --ignore-missing-imports {toxinidir}/src
 """
