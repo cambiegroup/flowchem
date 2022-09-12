@@ -7,27 +7,26 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-import configparser
 import datetime
 import os
+import sys
+from importlib import metadata
+
+sys.path.insert(0, os.path.abspath("../src"))
+print(sys.path)
 
 CONF_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 ROOT_DIR = os.path.abspath(os.path.join(CONF_DIR, os.pardir))
-SETUP_FILE = os.path.join(ROOT_DIR, "setup.cfg")
 
-config = configparser.ConfigParser()
-config.read(SETUP_FILE)
 
 # -- Project information -----------------------------------------------------
 
-project = config["metadata"]["name"]
+# Extract from
+project = "flowchem"
 YEAR = datetime.date.today().strftime("%Y")
-author = config["metadata"]["author"]
+author = "Dario Cambié"
 copyright = f"{YEAR}, {author}"
-
-# The full version, including alpha/beta/rc tags
-release = config["metadata"]["version"]
+release = metadata.version("flowchem")
 
 
 # -- General configuration ---------------------------------------------------
@@ -35,7 +34,24 @@ release = config["metadata"]["version"]
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = ["myst_parser", "sphinx.ext.autodoc"]
+
+source_suffix = [".rst", ".md"]
+
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "fieldlist",
+    "html_admonition",
+    "html_image",
+    "replacements",
+    "smartquotes",
+    "strikethrough",
+    "substitution",
+    "tasklist",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -56,4 +72,5 @@ html_theme = "alabaster"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = []
+# html_static_path = ["_static"]

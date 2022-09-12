@@ -6,15 +6,14 @@
 Welcome to Flowchem's documentation!
 ====================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+Select a topic from the list below, or read the Getting Started guide.
 
+```{toctree}
+:maxdepth: 2
+:caption: "Contents:"
 
+devices/SupportedDevices
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+Add_new_device_type
+Principles
+```

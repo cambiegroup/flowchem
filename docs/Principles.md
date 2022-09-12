@@ -1,3 +1,5 @@
+# Design principles
+
 Principles:
 - Follows unix philosophy: do one thing, and do it well. Flowchem provides uniform API endpoints for device connection.
 - Abstracts away the myriads of different underlying hardware connections methods.
