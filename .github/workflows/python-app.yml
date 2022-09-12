@@ -26,5 +26,5 @@ jobs:
       - name: Setup nox
         uses: ./.github/actions/setup-nox
 
-      - name: Run nox
-        run: nox
+      - name: Run tox
+        run: tox
