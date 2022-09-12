@@ -1,5 +1,8 @@
+from click.testing import CliRunner
 from flowchem.cli import main
 
 
 def test_cli():
-    main("test_configurateion.toml")
+    runner = CliRunner()
+    result = runner.invoke(main, ["test_configuration.toml"])
+    assert result.exit_code == 0
