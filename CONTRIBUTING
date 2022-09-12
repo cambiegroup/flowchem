@@ -6,3 +6,6 @@ We target Python 3.10+ with src layout.
 
 We use pre-commit for formatters/linter and tox for testing (pytest with coverage and mypy).
 Both are run by CI (GitHub Actions) on every commit/PR.
+
+src-layour
+https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout
