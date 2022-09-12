@@ -175,11 +175,11 @@ class HuberChiller(BaseDevice):
         reply = await self.send_command_and_read_reply("{M00****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_temperature_setpoint(self, temp: str):
+    async def set_temperature_setpoint(self, set_temp: str):
         """Set the set point used by temperature controller. Internal if not probe, otherwise process temp."""
         min_t = flowchem_ureg(await self.min_setpoint())
         max_t = flowchem_ureg(await self.max_setpoint())
-        temp = flowchem_ureg(temp)
+        temp = flowchem_ureg(set_temp)
 
         if temp > max_t:
             temp = max_t
@@ -308,9 +308,9 @@ class HuberChiller(BaseDevice):
         reply = await self.send_command_and_read_reply("{M51****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_max_internal_temp(self, temp: str):
+    async def set_alarm_max_internal_temp(self, set_temp: str):
         """Sets the max internal temp before the alarm is triggered and a fault generated."""
-        temp = flowchem_ureg(temp)
+        temp = flowchem_ureg(set_temp)
         await self.send_command_and_read_reply("{M51" + self._temp_to_string(temp))
 
     async def alarm_min_internal_temp(self) -> str:
@@ -318,9 +318,9 @@ class HuberChiller(BaseDevice):
         reply = await self.send_command_and_read_reply("{M52****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_min_internal_temp(self, temp: str):
+    async def set_alarm_min_internal_temp(self, set_temp: str):
         """Sets the min internal temp before the alarm is triggered and a fault generated."""
-        temp = flowchem_ureg(temp)
+        temp = flowchem_ureg(set_temp)
         await self.send_command_and_read_reply("{M52" + self._temp_to_string(temp))
 
     async def alarm_max_process_temp(self) -> str:
@@ -328,9 +328,9 @@ class HuberChiller(BaseDevice):
         reply = await self.send_command_and_read_reply("{M53****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_max_process_temp(self, temp: str):
+    async def set_alarm_max_process_temp(self, set_temp: str):
         """Sets the max process temp before the alarm is triggered and a fault generated."""
-        temp = flowchem_ureg(temp)
+        temp = flowchem_ureg(set_temp)
         await self.send_command_and_read_reply("{M53" + self._temp_to_string(temp))
 
     async def alarm_min_process_temp(self) -> str:
@@ -338,9 +338,9 @@ class HuberChiller(BaseDevice):
         reply = await self.send_command_and_read_reply("{M54****")
         return PBCommand(reply).parse_temperature()
 
-    async def set_alarm_min_process_temp(self, temp: str):
+    async def set_alarm_min_process_temp(self, set_temp: str):
         """Sets the min process temp before the alarm is triggered and a fault generated."""
-        temp = flowchem_ureg(temp)
+        temp = flowchem_ureg(set_temp)
         await self.send_command_and_read_reply("{M54" + self._temp_to_string(temp))
 
     async def set_ramp_duration(self, ramp_time: str):

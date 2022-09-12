@@ -524,7 +524,7 @@ class Elite11InfuseOnly(BaseDevice):
             Elite11Commands.SYRINGE_VOLUME
         )  # e.g. '100 ml'
 
-    async def set_syringe_volume(self, volume_w_units: str = None):
+    async def set_syringe_volume(self, volume_w_units: str):
         """Sets the syringe volume in ml.
 
         :param volume_w_units: the volume of the syringe.

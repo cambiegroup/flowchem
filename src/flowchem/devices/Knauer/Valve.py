@@ -153,7 +153,7 @@ class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
 
     async def set_position(self, position: str):
         """Move valve to position."""
-        await super().set_position(self.position_mapping[position.name])
+        await super().set_position(self.position_mapping[position])
 
     async def get_position(self) -> str:
         """Move valve to position."""

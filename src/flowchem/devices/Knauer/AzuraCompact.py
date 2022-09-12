@@ -232,6 +232,9 @@ class AzuraCompactPump(KnauerEthernetDevice, BaseDevice):
 
         :param flowrate: string with units
         """
+        if flowrate is None:
+            flowrate = "0 ml/min"
+
         parsed_flowrate = flowchem_ureg(flowrate)
         await self.create_and_send_command(
             FLOW,

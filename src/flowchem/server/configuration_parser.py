@@ -1,14 +1,15 @@
 """ Parse a device config file. """
 import inspect
+import sys
 from pathlib import Path
 from typing import Dict
 
 from flowchem.devices.autodiscovery import autodiscover_device_classes
 
-# For Python >= 3.11 use stdlib tomllib instead of tomli
-try:
+
+if sys.version_info >= (3, 11):
     import tomllib
-except ModuleNotFoundError:
+else:
     import tomli as tomllib
 
 from flowchem.exceptions import InvalidConfiguration
@@ -105,10 +106,8 @@ def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
                 f"The following parameters were not recognized: {invalid_parameters}"
             )
 
-    # Then check if a mandatory arguments was not satisfied...
-    mandatory_args = arg_spec.args[
-        1 : -len(arg_spec.defaults)
-    ]  # 1 to skip self/cls, -n to remove args with default
+    # Then check if a mandatory arguments was not satisfied. [1 to skip cls/self, -n to remove args w/ default]
+    mandatory_args = arg_spec.args[1 : -len(arg_spec.defaults)]  # type: ignore
     missing_parameters = list(set(mandatory_args).difference(called_with.keys()))
     if missing_parameters:
         logger.error(
