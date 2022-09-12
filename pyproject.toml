@@ -1,6 +1,6 @@
 [build-system]
 # Setuptools 64 and pip 21.3 are needed for editable installs, but a modern version of setuptools never hurts
-requires = ["setuptools==60.2.0", "wheel", "pip>=22"]
+requires = ["setuptools>64", "wheel", "pip>=22"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
