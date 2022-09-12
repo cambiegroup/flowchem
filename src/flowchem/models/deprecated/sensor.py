@@ -1,21 +1,12 @@
 from __future__ import annotations
 
-import asyncio
-import time
-from collections.abc import AsyncGenerator
 from typing import Optional
-from typing import TYPE_CHECKING
-from warnings import warn
 
-from flowchem.components.properties import ActiveComponent
+from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
-from loguru import logger
-
-if TYPE_CHECKING:
-    from flowchem import Experiment
 
 
-class Sensor(ActiveComponent):
+class Sensor(BaseDevice):
     """
     A generic sensor.
 
@@ -38,50 +29,3 @@ class Sensor(ActiveComponent):
         Subclasses of `Sensor` should implement their own version of this method.
         """
         raise NotImplementedError
-
-    async def _monitor(
-        self, experiment: "Experiment", dry_run: bool = False
-    ) -> AsyncGenerator:
-        """
-        If data collection is off and needs to be turned on, turn it on.
-        If data collection is on and needs to be turned off, turn off and return data.
-        """
-        while not experiment._end_loop:  # type: ignore
-            # if the sensor is off, hand control back over
-            if not self.rate:
-                await asyncio.sleep(0)
-                continue
-
-            if not dry_run:
-                yield {"data": await self._read(), "timestamp": time.time()}
-            else:
-                yield {"data": "simulated read", "timestamp": time.time()}
-
-            # then wait for the sensor's next read
-            if self.rate:
-                await asyncio.sleep(1 / self.rate.m_as("Hz"))
-
-        logger.debug(f"Monitor loop for {self} has completed.")
-
-    async def _validate_read(self):
-        async with self:
-            logger.trace("Context entered")
-            res = await self._read()
-            if not res:
-                warn(
-                    "Sensor reads should probably return data. "
-                    f"Currently, {self}._read() does not return anything."
-                )
-
-    def _validate(self, dry_run: bool) -> None:
-        logger.debug(f"Performing sensor specific checks for {self}...")
-        if not dry_run:
-            logger.trace("Executing Sensor-specific checks...")
-            logger.trace("Entering context...")
-            asyncio.run(self._validate_read())
-        logger.trace("Performing general component checks...")
-        super()._validate(dry_run=dry_run)
-
-    async def _update(self) -> None:
-        # sensors don't have an update method; they implement read
-        pass
