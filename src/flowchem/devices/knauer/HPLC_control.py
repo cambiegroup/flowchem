@@ -10,6 +10,7 @@ from time import sleep
 from typing import Union
 
 import tenacity
+
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 
@@ -27,9 +28,6 @@ except ImportError:
 
 
 class ClarityInterface(BaseDevice):
-
-    metadata = {"OWL_subclassOf": []}
-
     def __init__(
         self,
         remote: bool = False,

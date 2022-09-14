@@ -108,7 +108,8 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
     for device_ip in device_list:
         # MAC address
         mac = get_mac_address(ip=device_ip)
-        device_info[mac] = device_ip
+        if mac:
+            device_info[mac] = device_ip
     return device_info
 
 
