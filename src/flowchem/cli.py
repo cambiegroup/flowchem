@@ -3,6 +3,7 @@ import rich_click as click
 
 
 @click.argument("device_config", type=click.Path(), required=True)
+@click.version_option()
 @click.command()
 def main(device_config):
     """
