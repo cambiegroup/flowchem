@@ -1,4 +1,5 @@
 """" Run with uvicorn main:app """
+from importlib.metadata import metadata
 from pathlib import Path
 
 import flowchem
@@ -20,9 +21,14 @@ def create_server_from_file(config_file: Path) -> FastAPI:
 
 def create_server_for_devices(dev_list: list) -> FastAPI:
     """Initialize and create API endpoints for device object provided."""
+    flowchem_metadata = metadata("flowchem")
 
     # FastAPI server
-    app = FastAPI(title="flowchem", version=flowchem.__version__)
+    app = FastAPI(
+        title="flowchem",
+        description=flowchem_metadata["Summary"],
+        version=flowchem.__version__,
+    )
 
     # Parse list of devices and generate endpoints
     for device in dev_list:
