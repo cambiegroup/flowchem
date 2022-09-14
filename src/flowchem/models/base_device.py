@@ -43,7 +43,13 @@ class BaseDevice(ABC):
         return router
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} {self.name}>"
+        try:
+            return f"<{self.__class__.__name__} {self.name}>"
+        except AttributeError:
+            return f"<{self.__class__.__name__} Unknown>"
 
     def __str__(self):
-        return f"{self.__class__.__name__} {self.name}"
+        try:
+            return f"{self.__class__.__name__} {self.name}"
+        except AttributeError:
+            return f"<{self.__class__.__name__} Unknown>"

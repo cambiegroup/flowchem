@@ -225,9 +225,9 @@ class HamiltonPumpIO:
 
 
 class ML600(BaseDevice):
-    """ML600 implementation according to docs. Tested on 61501-01 (single syringe).
+    """ML600 implementation according to manufacturer docs. Tested on a 61501-01 (i.e. single syringe system).
 
-    From docs:
+    From manufacturer docs:
     To determine the volume dispensed per step the total syringe volume is divided by
     48,000 steps. All Hamilton instrument syringes are designed with a 60 mm stroke
     length and the Microlab 600 is designed to move 60 mm in 48,000 steps. For

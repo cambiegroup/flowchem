@@ -10,24 +10,24 @@ from flowchem.units import flowchem_ureg
 
 
 class InjectionValve(BaseValve, ABC):
-    """A generic injection valve."""
+    """An abstract class for devices of type injection valve."""
 
-    _DEFAULT_POSITION = "LOAD"
-    positions = {"LOAD", "INJECT"}
-
-    def __init__(self, loop_volume: str, **kwargs):
+    def __init__(self, loop_volume: str, default_position="LOAD", name=None):
         """
-        Initialize a generic injection valve.
 
         Args:
-            loop_volume: string with volume and units, e.g. "10 ul"
+            loop_volume: string with volume and units of the injection loop, e.g. "10 ul"
+            default_position: the position to be set upon initialization.
+            name (str): device name, passed to BaseDevice.
         """
 
         self.loop_volume = flowchem_ureg(loop_volume)
 
         # Default position is set upon initialization
         self._default_position = "LOAD"
-        super().__init__(**kwargs)
+        super().__init__(
+            positions=("LOAD", "INJECT"), default_position=default_position, name=name
+        )
 
     async def _toggle_position(self) -> None:
         """Toggle position."""
@@ -42,7 +42,7 @@ class InjectionValve(BaseValve, ABC):
         Switch the valve to the specified position for the specified time.
 
         Args:
-            injection_time: time to switch to the specified position (string with units)
+            injection_time: time to switch to the specified position (string with units).
         """
         time_to_wait = flowchem_ureg(injection_time)
         initial_position = await self.get_position()

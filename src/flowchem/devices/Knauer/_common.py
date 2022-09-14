@@ -14,7 +14,7 @@ class KnauerEthernetDevice:
     BUFFER_SIZE = 1024
     _id_counter = 0
 
-    def __init__(self, ip_address, mac_address, name: str = None):
+    def __init__(self, ip_address, mac_address, **kwargs):
         """
         Knauer Ethernet Device - either pump or valve.
 
@@ -28,7 +28,7 @@ class KnauerEthernetDevice:
             mac_address: MAC address of Knauer device
             name: name of device (optional)
         """
-        super().__init__(name)  # type: ignore
+        super().__init__(**kwargs)
 
         # MAC address
         if mac_address:
@@ -63,7 +63,7 @@ class KnauerEthernetDevice:
         future = asyncio.open_connection(host=self.ip_address, port=10001)
         try:
             self._reader, self._writer = await asyncio.wait_for(future, timeout=3)
-        except ConnectionError as connection_error:
+        except (ConnectionError, OSError) as connection_error:
             logger.exception(connection_error)
             raise InvalidConfiguration(
                 f"Cannot open connection with device {self.__class__.__name__} at IP={self.ip_address}"

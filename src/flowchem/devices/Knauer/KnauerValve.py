@@ -2,12 +2,11 @@
 import warnings
 from enum import Enum
 
+from flowchem.devices.Knauer._common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
 from flowchem.models.injection_valve import InjectionValve
 from flowchem.models.multiposition_valve import MultipositionValve
 from loguru import logger
-
-from ._common import KnauerEthernetDevice
 
 
 class KnauerValveHeads(Enum):
@@ -33,8 +32,8 @@ class KnauerValve(KnauerEthernetDevice):
     DIP switch for valve selection
     """
 
-    def __init__(self, ip_address=None, mac_address=None, name=None):
-        super().__init__(ip_address, mac_address, name)
+    def __init__(self, ip_address=None, mac_address=None, **kwargs):
+        super().__init__(ip_address, mac_address, **kwargs)
         self.eol = b"\r\n"
         self.valve_type = None  # Set during initialize()
 
@@ -161,14 +160,19 @@ class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
         return self._reverse_position_mapping[valve_pos]
 
 
-class KnauerMultipositionValve(KnauerValve, MultipositionValve):
-    """Valve position '1' ... '16' match MultipositionValve standard, no position_mapping needed here."""
-
-    pass
-
-
-class Knauer6Port6PositionValve(KnauerMultipositionValve):
+class Knauer6Port6PositionValve(KnauerValve, MultipositionValve):
     """KnauerValve of type SIX_PORT_SIX_POSITION."""
+
+    def __init__(
+        self, ip_address=None, mac_address=None, default_position: int = 1, name=None
+    ):
+        super().__init__(
+            ip_address=ip_address,
+            mac_address=mac_address,
+            port_count=6,
+            default_position=default_position,
+            name=name,
+        )
 
     async def initialize(self):
         """Ensure valve type"""
@@ -176,8 +180,19 @@ class Knauer6Port6PositionValve(KnauerMultipositionValve):
         assert self.valve_type == KnauerValveHeads.SIX_PORT_SIX_POSITION
 
 
-class Knauer12PortValve(KnauerMultipositionValve):
+class Knauer12PortValve(KnauerValve, MultipositionValve):
     """KnauerValve of type TWELVE_PORT_TWELVE_POSITION."""
+
+    def __init__(
+        self, ip_address=None, mac_address=None, default_position: int = 1, name=None
+    ):
+        super().__init__(
+            ip_address=ip_address,
+            mac_address=mac_address,
+            port_count=12,
+            default_position=default_position,
+            name=name,
+        )
 
     async def initialize(self):
         """Ensure valve type."""
@@ -185,8 +200,19 @@ class Knauer12PortValve(KnauerMultipositionValve):
         assert self.valve_type == KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION
 
 
-class Knauer16PortValve(KnauerMultipositionValve):
+class Knauer16PortValve(KnauerValve, MultipositionValve):
     """KnauerValve of type SIXTEEN_PORT_SIXTEEN_POSITION."""
+
+    def __init__(
+        self, ip_address=None, mac_address=None, default_position: int = 1, name=None
+    ):
+        super().__init__(
+            ip_address=ip_address,
+            mac_address=mac_address,
+            port_count=16,
+            default_position=default_position,
+            name=name,
+        )
 
     async def initialize(self):
         """Ensure valve type."""
@@ -195,14 +221,9 @@ class Knauer16PortValve(KnauerMultipositionValve):
 
 
 if __name__ == "__main__":
-    # This is a bug of asyncio on Windows :|
     import asyncio
-    import sys
 
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-    v = KnauerValve(ip_address="192.168.1.176")
+    v = Knauer6Port6PositionValve(ip_address="192.168.1.176")
 
     async def main(valve: KnauerValve):
         """test function."""

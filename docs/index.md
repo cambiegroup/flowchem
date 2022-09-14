@@ -13,6 +13,7 @@ Select a topic from the list below, or read the Getting Started guide.
 :caption: "Contents:"
 
 devices/SupportedDevices
+models/Models
 
 Add_new_device_type
 Principles
