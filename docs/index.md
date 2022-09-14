@@ -12,9 +12,13 @@ Select a topic from the list below, or read the Getting Started guide.
 :maxdepth: 2
 :caption: "Contents:"
 
-devices/SupportedDevices
-models/Models
+GettingStarted
 
-Add_new_device_type
-Principles
+UserGuide
+devices/SupportedDevices
+
+Community
+
+Contributing
+
 ```

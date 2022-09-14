@@ -11,6 +11,7 @@ The following devices are currently supported in flowchem:
 
 hamilton/ML600
 harvardapparatus/Elite11
-huber/chiller
+huber/HuberChiller
+knauer/KnauerValve
 
 ```
