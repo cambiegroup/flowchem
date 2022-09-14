@@ -10,8 +10,9 @@ from typing import Text
 from typing import Tuple
 from typing import Union
 
-from getmac import getmac
 from loguru import logger
+
+from .getmac import get_mac_address
 
 Address = Tuple[str, int]
 
@@ -106,7 +107,7 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
     device_info = dict()
     for device_ip in device_list:
         # MAC address
-        mac = getmac.get_mac_address(ip=device_ip)
+        mac = get_mac_address(ip=device_ip)
         device_info[mac] = device_ip
     return device_info
 
