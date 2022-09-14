@@ -11,6 +11,7 @@ from typing import Union
 
 import tenacity
 from flowchem.exceptions import InvalidConfiguration
+from flowchem.models.base_device import BaseDevice
 
 try:
     # noinspection PyUnresolvedReferences
@@ -25,7 +26,10 @@ except ImportError:
 # TODO Very weird, when starting from synthesis, fractioning valve is blocked. no idea why, it's ip is not used.
 
 
-class ClarityInterface:
+class ClarityInterface(BaseDevice):
+
+    metadata = {"OWL_subclassOf": []}
+
     def __init__(
         self,
         remote: bool = False,
@@ -33,6 +37,7 @@ class ClarityInterface:
         port: int = None,
         path_to_executable: str = None,
         instrument_number: int = 1,
+        name=None,
     ):
         if not HAS_KNAUER_COMMANDS:
             raise InvalidConfiguration(
@@ -49,10 +54,9 @@ class ClarityInterface:
         else:
             self.command_executor = ClarityExecutioner.execute_command  # type:ignore
 
-    # TODO would have to have some way to fail
-    @classmethod
-    def from_config(cls, config_dict: dict):
-        pass
+        super().__init__(name=name)
+        # Ontology: high performance liquid chromatography instrument
+        self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0001057")
 
     # if remote execute everything on other PC, else on this
     # Todo doesn't make sense here, done other way

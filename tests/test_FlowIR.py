@@ -5,7 +5,7 @@ import sys
 
 import pytest
 from flowchem.devices import FlowIR
-from flowchem.devices.MettlerToledo import IRSpectrum
+from flowchem.devices.mettlertoledo import IRSpectrum
 
 
 def check_pytest_asyncio_installed():

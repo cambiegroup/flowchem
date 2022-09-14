@@ -1,4 +1,4 @@
-"""Generic multiposition valve."""
+"""Generic multi-position valve."""
 from __future__ import annotations
 
 from abc import ABC
@@ -7,7 +7,7 @@ from .base_valve import BaseValve
 
 
 class MultipositionValve(BaseValve, ABC):
-    """An abstract class for devices of type multiposition valve."""
+    """An abstract class for devices of type multi-position valve."""
 
     _DEFAULT_POSITION = "1"
 

@@ -2,10 +2,10 @@
 import warnings
 from enum import Enum
 
-from flowchem.devices.Knauer._common import KnauerEthernetDevice
+from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
-from flowchem.models.injection_valve import InjectionValve
-from flowchem.models.multiposition_valve import MultipositionValve
+from flowchem.models.valves.injection_valve import InjectionValve
+from flowchem.models.valves.multiposition_valve import MultipositionValve
 from loguru import logger
 
 

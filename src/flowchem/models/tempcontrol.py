@@ -1,11 +1,11 @@
 from abc import ABC
 from typing import Optional
 
-from flowchem.components.properties import ActiveComponent
+from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
 
 
-class TempControl(ActiveComponent, ABC):
+class TempControl(BaseDevice, ABC):
     """
     A generic temperature controller.
 

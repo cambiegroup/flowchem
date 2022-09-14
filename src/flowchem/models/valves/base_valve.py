@@ -6,14 +6,14 @@ from abc import ABC
 from fastapi import APIRouter
 from loguru import logger
 
-from .base_device import BaseDevice
+from ..base_device import BaseDevice
 
 
 class BaseValve(BaseDevice, ABC):
     """An abstract class for devices of type valve.
 
     .. warning::
-        Devices should not directly subclass this object but rather a more specific valve type,
+        Device objects should not directly subclass this object but rather a more specific valve type,
         such as `InjectionValve` or `MultipositionValve`.
 
     All valves are characterized by:

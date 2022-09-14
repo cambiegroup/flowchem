@@ -8,15 +8,15 @@ from pathlib import Path
 from typing import Optional
 from typing import Union
 
-from flowchem.devices.Magritek._msg_maker import create_message
-from flowchem.devices.Magritek._msg_maker import create_protocol_message
-from flowchem.devices.Magritek._msg_maker import get_request
-from flowchem.devices.Magritek._msg_maker import set_attribute
-from flowchem.devices.Magritek._msg_maker import set_data_folder
-from flowchem.devices.Magritek._msg_maker import set_user_data
-from flowchem.devices.Magritek.reader import Reader
-from flowchem.devices.Magritek.xml_parser import parse_status_notification
-from flowchem.devices.Magritek.xml_parser import StatusNotification
+from flowchem.devices.magritek._msg_maker import create_message
+from flowchem.devices.magritek._msg_maker import create_protocol_message
+from flowchem.devices.magritek._msg_maker import get_request
+from flowchem.devices.magritek._msg_maker import set_attribute
+from flowchem.devices.magritek._msg_maker import set_data_folder
+from flowchem.devices.magritek._msg_maker import set_user_data
+from flowchem.devices.magritek.reader import Reader
+from flowchem.devices.magritek.xml_parser import parse_status_notification
+from flowchem.devices.magritek.xml_parser import StatusNotification
 from flowchem.models.base_device import BaseDevice
 from loguru import logger
 from lxml import etree
@@ -53,6 +53,8 @@ class Spinsolve(BaseDevice):
         """
 
         super().__init__(kwargs.get("name"))
+        # fourier transformation NMR instrument
+        self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0000487")
         # IOs
         self._io_reader, self._io_writer = get_streams_for_connection(
             host, kwargs.get("port", "13000")
