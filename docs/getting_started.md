@@ -1,7 +1,7 @@
 # flowchem: the basics for new users
 
 Welcome to the new users guide to flowchem!
-If you have comments or suggestions, please don’t hesitate to [reach out](./Community.md)!
+If you have comments or suggestions, please don’t hesitate to [reach out](./community.md)!
 
 ## Welcome to flowchem!
 

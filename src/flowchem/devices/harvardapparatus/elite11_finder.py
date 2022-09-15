@@ -3,7 +3,7 @@ This module is used to discover the serial address of any ML600 connected to the
 """
 import rich_click as click
 import serial.tools.list_ports
-from flowchem.devices.harvardapparatus.Elite11 import (
+from flowchem.devices.harvardapparatus.elite11 import (
     HarvardApparatusPumpIO,
 )
 from flowchem.exceptions import InvalidConfiguration

@@ -126,6 +126,7 @@ class ViciValve(InjectionValve):
 
     # Map generic position to device-specific ones.
     position_mapping = {"LOAD": "1", "INJECT": "2"}
+    _reverse_position_mapping = {v: k for k, v in position_mapping}
 
     def __init__(
         self,

@@ -1,5 +1,5 @@
 """ MettlerToledo devices """
-from ._iCIR_common import IRSpectrum
-from .FlowIR import FlowIR
+from ._icir_common import IRSpectrum
+from .flowir import FlowIR
 
 __all__ = ["FlowIR", "IRSpectrum"]

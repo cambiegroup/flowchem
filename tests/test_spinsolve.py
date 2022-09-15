@@ -117,7 +117,7 @@ def test_request_validation(nmr: Spinsolve):
     )
     with pytest.warns(UserWarning, match="Invalid option"):
         check_protocol = nmr._validate_protocol_request("1D EXTENDED+", partly_valid)
-    assert "balbla" not in check_protocol
+    assert "blabla" not in check_protocol
 
 
 @pytest.mark.Spinsolve

@@ -1,5 +1,5 @@
 """ Huber devices """
-from .Chiller import HuberChiller
-from .Chiller import PBCommand
+from .chiller import HuberChiller
+from .chiller import PBCommand
 
 __all__ = ["HuberChiller", "PBCommand"]

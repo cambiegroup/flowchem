@@ -1,6 +1,4 @@
-"""
-Driver for Huber chillers.
-"""
+"""Huber chiller control driver."""
 import asyncio
 import warnings
 from dataclasses import dataclass
@@ -147,8 +145,11 @@ class HuberChiller(BaseDevice):
     async def send_command_and_read_reply(self, command: str) -> str:
         """Sends a command to the chiller and reads the reply.
 
-        :param command: string to be transmitted
-        :return: reply received
+        Args:
+            command (str): string to be transmitted
+
+        Returns:
+            str: reply received
         """
         # Send command. Using PBCommand ensure command validation, see PBCommand.to_chiller()
         pb_command = PBCommand(command.upper())
@@ -224,12 +225,12 @@ class HuberChiller(BaseDevice):
         return str(flowchem_ureg(f"{power} watt"))
 
     async def status(self) -> Dict[str, bool]:
-        """Returns the info contained in vstatus1 as dict."""
+        """Returns the info contained in `vstatus1` as dict."""
         reply = await self.send_command_and_read_reply("{M0A****")
         return PBCommand(reply).parse_status1()
 
     async def status2(self) -> Dict[str, bool]:
-        """Returns the info contained in vstatus2 as dict."""
+        """Returns the info contained in `vstatus2` as dict."""
         reply = await self.send_command_and_read_reply("{M3C****")
         return PBCommand(reply).parse_status2()
 
@@ -435,9 +436,6 @@ class HuberChiller(BaseDevice):
         # Actually turn off chiller
         await self.stop_circulation()
         await self.stop_temperature_control()
-
-    async def _update(self):
-        await self.set_temperature_setpoint(self.temp)
 
     def get_router(self):
         """Creates an APIRouter for this HuberChiller instance."""

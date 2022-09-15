@@ -73,10 +73,10 @@ class PressureSensor(BaseDevice):
         try:
             self.phidget.openWaitForAttachment(1000)
             logger.debug("Pressure sensor connected!")
-        except PhidgetException as phdget_error:
+        except PhidgetException as phidget_error:
             raise DeviceError(
                 "Cannot connect to sensor! Check settings..."
-            ) from phdget_error
+            ) from phidget_error
 
         # Set power supply to 24V
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)

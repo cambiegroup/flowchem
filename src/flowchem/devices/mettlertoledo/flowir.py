@@ -11,9 +11,9 @@ from flowchem.exceptions import DeviceError
 from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
-from ._iCIR_common import iCIR_spectrometer
-from ._iCIR_common import IRSpectrum
-from ._iCIR_common import ProbeInfo
+from ._icir_common import iCIR_spectrometer
+from ._icir_common import IRSpectrum
+from ._icir_common import ProbeInfo
 
 
 class FlowIR(iCIR_spectrometer, BaseDevice):

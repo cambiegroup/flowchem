@@ -4,8 +4,8 @@ import asyncio
 import aioserial
 import rich_click as click
 import serial.tools.list_ports
-from flowchem.devices.hamilton.ML600 import HamiltonPumpIO
-from flowchem.devices.hamilton.ML600 import InvalidConfiguration
+from flowchem.devices.hamilton.ml600 import HamiltonPumpIO
+from flowchem.devices.hamilton.ml600 import InvalidConfiguration
 from loguru import logger
 
 
@@ -16,7 +16,6 @@ def ml600_finder():
 
     # Ports connected to an ML600-looking device
     valid_ports = set()
-
     for serial_port in port_available:
         logger.info(f"Looking for pump on {serial_port}...")
         try:

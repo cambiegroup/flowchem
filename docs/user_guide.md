@@ -4,6 +4,6 @@
 ```{toctree}
 :maxdepth: 2
 
-devices/SupportedDevices
+devices/supported_devices
 
 ```

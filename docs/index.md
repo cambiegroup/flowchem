@@ -1,17 +1,17 @@
 Welcome to Flowchem's documentation!
 ====================================
 
-Select a topic from the list below, or read the [Getting Started](./GettingStarted.md) guide.
+Select a topic from the list below, or read the [Getting Started](./getting_started.md) guide.
 
 ```{toctree}
 :maxdepth: 3
 
-GettingStarted
+getting_started
 
-UserGuide
+user_guide
 
-Community
+community
 
-Contributing
+contributing
 
 ```

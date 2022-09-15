@@ -25,6 +25,7 @@ class BaseDevice(ABC):
             self.name = str(name)
 
         # Support for OWL classes
+        # noinspection HttpUrlsUsage
         self.owl_subclass_of = {"http://purl.obolibrary.org/obo/OBI_0000968"}
 
     async def initialize(self):

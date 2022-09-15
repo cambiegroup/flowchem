@@ -1,10 +1,8 @@
-# Harvard Apparatus Syringe Pump Elite11
-
+# Huber Chiller
 ## Introduction
-Harvard-Apparatus Elite11 pumps connected via USB cables (which creates a virtual serial port) are supported in flowchem
-via the two device types: `Elite11InfuseOnly` and `Elite11InfuseWithdraw`.
-This difference reflect the existence in commerce of both variants, i.e. pumps only capable of infusion and pumps that
-support both infusion and withdrawing commands.
+The majority of Huber chillers can be controlled via so-called `PB Commands` over serial communication.
+A variety of `PB Commands` are supported in `flowchem`, but some of them may be unavailable on specific models, see the
+[manufacturer documentation](./pb_commands_handbook.pdf) for more details.
 
 As for all `flowchem` devices, the virtual instrument can be instantiated via a configuration file that generates an
 openAPI endpoint.
@@ -14,7 +12,7 @@ openAPI endpoint.
 Configuration sample showing all possible parameters:
 
 ```toml
-[device.my-elite11-pump]  # This is the pump identifier
+[device.my-huber-chiller]  # This is the chiller identifier
 type = "Elite11InfuseOnly"  # Either Elite11InfuseOnly or Elite11InfuseWithdraw depending on model
 port = "COM11"  # This will be /dev/tty* under linux/MacOS
 address = 0  # Only needed for daisy-chaining. The address can be set on the pump, see manufacturer manual.

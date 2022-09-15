@@ -14,8 +14,8 @@ The scheme below represents the current device object taxonomy.
 ```{toctree}
 :maxdepth: 2
 
-valves/BaseValve
-valves/InjectionValve
-valves/MultipositionValve
+valves/base_valve
+valves/injection_valve
+valves/multiposition_valve
 
 ```

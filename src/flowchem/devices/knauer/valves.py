@@ -5,7 +5,7 @@ from enum import Enum
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
 from flowchem.models.valves.injection_valve import InjectionValve
-from flowchem.models.valves.multiposition_valve import MultipositionValve
+from flowchem.models.valves.multiposition_valve import MultiPositionValve
 from loguru import logger
 
 
@@ -24,7 +24,7 @@ class KnauerValve(KnauerEthernetDevice):
     """
     Control Knauer multi position valves.
 
-    Valve type can be 6, 12, 16 or it can be 6 ports, two positions, which will be simply 2 (two states)
+    Valve type can be 6, 12, 16, or it can be 6 ports, two positions, which will be simply 2 (two states)
     in this case, the response for T is LI. Load and inject can be switched by sending L or I
     maybe valves should have an initial state which is set during init and updated, if no  change don't schedule command
     EN: https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_user-manual_en.pdf
@@ -90,8 +90,11 @@ class KnauerValve(KnauerEthernetDevice):
         """
         Sends command, receives reply and parse it.
 
-        :param message: str with command to be sent
-        :return: reply: str with reply
+        Args:
+            message (str): command to be sent
+
+        Returns:
+            str: reply
         """
         reply = await self._send_and_receive(message)
         self.handle_errors(reply)
@@ -160,7 +163,7 @@ class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
         return self._reverse_position_mapping[valve_pos]
 
 
-class Knauer6Port6PositionValve(KnauerValve, MultipositionValve):
+class Knauer6Port6PositionValve(KnauerValve, MultiPositionValve):
     """KnauerValve of type SIX_PORT_SIX_POSITION."""
 
     def __init__(
@@ -180,7 +183,7 @@ class Knauer6Port6PositionValve(KnauerValve, MultipositionValve):
         assert self.valve_type == KnauerValveHeads.SIX_PORT_SIX_POSITION
 
 
-class Knauer12PortValve(KnauerValve, MultipositionValve):
+class Knauer12PortValve(KnauerValve, MultiPositionValve):
     """KnauerValve of type TWELVE_PORT_TWELVE_POSITION."""
 
     def __init__(
@@ -200,7 +203,7 @@ class Knauer12PortValve(KnauerValve, MultipositionValve):
         assert self.valve_type == KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION
 
 
-class Knauer16PortValve(KnauerValve, MultipositionValve):
+class Knauer16PortValve(KnauerValve, MultiPositionValve):
     """KnauerValve of type SIXTEEN_PORT_SIXTEEN_POSITION."""
 
     def __init__(

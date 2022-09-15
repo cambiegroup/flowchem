@@ -1,10 +1,10 @@
 """Module for communication with Knauer pumps and valves."""
 import asyncio
 
+from flowchem.exceptions import InvalidConfiguration
 from loguru import logger
 
 from ._autodiscover import autodiscover_knauer
-from flowchem.exceptions import InvalidConfiguration
 
 
 class KnauerEthernetDevice:
@@ -40,7 +40,7 @@ class KnauerEthernetDevice:
         self._reader: asyncio.StreamReader = None  # type: ignore
         self._writer: asyncio.StreamWriter = None  # type: ignore
 
-        # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by sublcasses
+        # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by the subclasses
         self.eol = b""
 
     def _ip_from_mac(self, mac_address: str) -> str:

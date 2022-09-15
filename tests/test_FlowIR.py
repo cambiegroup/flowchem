@@ -4,8 +4,8 @@ import datetime
 import sys
 
 import pytest
-from flowchem.devices import FlowIR
 from flowchem.devices.mettlertoledo import IRSpectrum
+from flowchem.devices.mettlertoledo.flowir import FlowIR
 
 
 def check_pytest_asyncio_installed():

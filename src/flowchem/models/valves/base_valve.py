@@ -14,7 +14,7 @@ class BaseValve(BaseDevice, ABC):
 
     .. warning::
         Device objects should not directly subclass this object but rather a more specific valve type,
-        such as `InjectionValve` or `MultipositionValve`.
+        such as `InjectionValve` or `MultiPositionValve`.
 
     All valves are characterized by:
 
@@ -46,13 +46,6 @@ class BaseValve(BaseDevice, ABC):
                     f"The default valve position specified for {__name__} {self.name} is not valid!"
                     f"Default position: {default_position}. Known positions: {self.positions}"
                 )
-
-        # If generic port naming is mapped to device-specific via position_mapping create reverse
-        try:
-            position_mapping = self.position_mapping
-            self._reverse_position_mapping = {v: k for k, v in position_mapping}
-        except AttributeError:
-            pass
 
     async def initialize(self):
         """Initialize the valve."""

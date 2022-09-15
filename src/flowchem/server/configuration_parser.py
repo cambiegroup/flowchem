@@ -8,6 +8,7 @@ from flowchem.devices.autodiscovery import autodiscover_device_classes
 
 
 if sys.version_info >= (3, 11):
+    # noinspection PyUnresolvedReferences
     import tomllib
 else:
     import tomli as tomllib

@@ -100,12 +100,11 @@ pip install .[docs]
 ```
 
 
-
 ```{toctree}
 :maxdepth: 2
 
-DesignPrinciples
-Add_new_device_type
-models/Models
+design_principles
+add_new_device_type
+models/device_models
 
 ```
