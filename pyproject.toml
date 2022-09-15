@@ -95,7 +95,7 @@ flowchem = "flowchem.cli:main"
 ml600-finder = "flowchem.devices.hamilton.ml600_finder:main"
 elite11-finder = "flowchem.devices.harvardapparatus.elite11_finder:main"
 huber-chiller-finder = "flowchem.devices.huber.huber_chiller_finder:main"
-knauer-finder = "flowchem.devices.knauer._autodiscover huber.huber_chiller_finder:main"
+knauer-finder = "flowchem.devices.knauer._autodiscover:main"
 
 [tool.pytest.ini_options]
 testpaths = "tests"
