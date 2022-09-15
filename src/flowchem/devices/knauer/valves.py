@@ -147,6 +147,7 @@ class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
     """KnauerValve of type SIX_PORT_TWO_POSITION."""
 
     position_mapping = {"LOAD": "L", "INJECT": "I"}
+    _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
     async def initialize(self):
         """Ensure valve type"""
