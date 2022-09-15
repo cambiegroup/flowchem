@@ -8,15 +8,26 @@ If you have comments or suggestions, please don’t hesitate to [reach out](./Co
 Flowchem is a python library to control a variety of instruments commonly found in chemistry labs.
 
 ## Installing flowchem
-While the RESTful API created by flowchem can be consumed from different programs and programming languages, flowchem
-itself is written in the popular open-source language Python.
+While the RESTful API created by flowchem can be consumed from different programs and programming languages, flowchem itself is written in the popular open-source language Python.
 
-If you already have Python version 3.10 or above, you can install flowchem with:
+If you already have Python version 3.10 or above, you can install flowchem with pipx as follows:
+```shell
+pip install pipx
+pipx ensurepath
+pipx install flowchem
+```
+This is the recommended way because it will:
+* install flowchem in a virtualenv, without messing up with your system interpreter
+* make the `flowchem` command available system-wide, by adding it to the system PATH
+
+Alternatively, you can install it *normally* via pip with:
 ```shell
 pip install flowchem
 ```
 
 If you don’t have Python yet, you can download it from [python.org](https://www.python.org/downloads/).
+
+To verify the installation has been completed successfully you can run `flowchem --version` command.
 
 ## How to use flowchem
 Flowchem simply needs a device configuration file that specify the connection settings for the different devices

@@ -1,10 +1,10 @@
 """Module for communication with Knauer pumps and valves."""
 import asyncio
 
-from flowchem.exceptions import InvalidConfiguration
 from loguru import logger
 
 from ._autodiscover import autodiscover_knauer
+from flowchem.exceptions import InvalidConfiguration
 
 
 class KnauerEthernetDevice:
@@ -24,8 +24,8 @@ class KnauerEthernetDevice:
         Note that for configuration files, the MAC address is preferred as it is static.
 
         Args:
-            ip_address: IP address of Knauer device
-            mac_address: MAC address of Knauer device
+            ip_address: device IP address (only 1 of either IP or MAC address is needed)
+            mac_address: device MAC address (only 1 of either IP or MAC address is needed)
             name: name of device (optional)
         """
         super().__init__(**kwargs)

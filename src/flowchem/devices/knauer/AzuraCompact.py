@@ -6,12 +6,12 @@ import warnings
 from enum import Enum
 from typing import List
 
-from flowchem.exceptions import DeviceError
-from flowchem.models.base_device import BaseDevice
-from flowchem.units import flowchem_ureg
 from loguru import logger
 
 from ._common import KnauerEthernetDevice
+from flowchem.exceptions import DeviceError
+from flowchem.models.base_device import BaseDevice
+from flowchem.units import flowchem_ureg
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
@@ -71,9 +71,9 @@ class AzuraCompactPump(KnauerEthernetDevice, BaseDevice):
     }
 
     def __init__(
-        self, ip_address=None, mac_address=None, name=None, max_pressure: str = None
+        self, ip_address=None, mac_address=None, max_pressure: str = None, name=None
     ):
-        super().__init__(ip_address, mac_address, name)
+        super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"
 
         # All the following are set upon initialize()
