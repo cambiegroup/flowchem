@@ -10,9 +10,9 @@ from typing import Text
 from typing import Tuple
 from typing import Union
 
+import rich_click as click
+from flowchem.devices.knauer.getmac import get_mac_address
 from loguru import logger
-
-from .getmac import get_mac_address
 
 Address = Tuple[str, int]
 
@@ -84,7 +84,10 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
         hostname = socket.gethostname()
         source_ip = socket.gethostbyname(hostname)
 
-    loop = asyncio.get_event_loop()
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
     device_q: queue.Queue = queue.Queue()
     coro = loop.create_datagram_endpoint(
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
@@ -113,15 +116,25 @@ def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
     return device_info
 
 
-if __name__ == "__main__":
+@click.command()
+def main():
     # This is a bug of asyncio on Windows :|
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     # Autodiscover devices (dict mac as index, IP as value)
+    logger.info("Starting detection")
     devices = autodiscover_knauer()
 
     for mac_address, ip in devices.items():
+        logger.info(f"Determining device type for device at {ip} [{mac_address}]")
         # Device Type
         device_type = asyncio.run(get_device_type(ip))
-        print(f"MAC: {mac_address} IP: {ip} DEVICE_TYPE: {device_type}")
+        logger.info(f"Found a {device_type} on IP {ip}")
+
+    if not devices:
+        logger.info("No device found!")
+
+
+if __name__ == "__main__":
+    main()

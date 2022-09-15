@@ -115,6 +115,14 @@ class HuberChiller(BaseDevice):
     Control class for Huber chillers.
     """
 
+    DEFAULT_CONFIG = {
+        "timeout": 0.1,
+        "baudrate": 9600,
+        "parity": aioserial.PARITY_NONE,
+        "stopbits": aioserial.STOPBITS_ONE,
+        "bytesize": aioserial.EIGHTBITS,
+    }
+
     def __init__(self, aio: aioserial.AioSerial, name=None):
         super().__init__(name)
         self._serial = aio
@@ -126,9 +134,12 @@ class HuberChiller(BaseDevice):
 
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
+        # Merge default settings, including serial, with provided ones.
+        configuration = HuberChiller.DEFAULT_CONFIG | serial_kwargs
+
         try:
-            serial_object = aioserial.AioSerial(port, **serial_kwargs)
-        except aioserial.SerialException as serial_exception:
+            serial_object = aioserial.AioSerial(port, **configuration)
+        except (OSError, aioserial.SerialException) as serial_exception:
             raise InvalidConfiguration(
                 f"Cannot connect to the HuberChiller on the port <{port}>"
             ) from serial_exception
