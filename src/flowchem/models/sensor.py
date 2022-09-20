@@ -26,6 +26,6 @@ class Sensor(BaseDevice):
         Collects the data.
 
         In the generic `Sensor` implementation, this raises a `NotImplementedError`.
-        Subclasses of `Sensor` should implement their own version of this method.
+        Subclasses of `Sensor` should implement their own version of this method.git
         """
         raise NotImplementedError
