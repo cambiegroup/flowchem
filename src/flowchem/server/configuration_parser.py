@@ -2,9 +2,8 @@
 import inspect
 import sys
 from pathlib import Path
-from typing import Dict
 
-from flowchem.devices.autodiscovery import autodiscover_device_classes
+from flowchem.devices.find_device_type import autodiscover_device_classes
 
 
 if sys.version_info >= (3, 11):
