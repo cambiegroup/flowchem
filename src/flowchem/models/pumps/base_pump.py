@@ -2,6 +2,7 @@ from abc import ABC
 from typing import Optional
 
 from fastapi import APIRouter
+
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
 
@@ -48,8 +49,8 @@ class BasePump(BaseDevice, ABC):
         router.add_api_route("/infuse", self.infuse, methods=["PUT"])
         router.add_api_route("/stop", self.stop, methods=["PUT"])
 
-        if hasattr(self, "withdraw"):
-            router.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
+        if w := getattr(self, "withdraw", None) is not None:
+            router.add_api_route("/withdraw", w, methods=["PUT"])
 
         return router
 
