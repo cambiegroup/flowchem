@@ -222,7 +222,7 @@ class HarvardApparatusPumpIO:
         prompt = self._serial.readline()
         valid_status = [status.value for status in PumpStatus]
         address = 0 if prompt[0:2].decode() in valid_status else int(prompt[0:2])
-        logger.debug(f"Address autodetected as {address}")
+        logger.debug(f"Address detected as {address}")
         return address
 
 
@@ -328,7 +328,7 @@ class Elite11InfuseOnly(BaseDevice):
     def __init__(
         self,
         pump_io: HarvardApparatusPumpIO,
-        diameter: str,
+        syringe_diameter: str,
         syringe_volume: str,
         address: int | None = None,
         name: str | None = None,
@@ -350,12 +350,12 @@ class Elite11InfuseOnly(BaseDevice):
         self.address: int = address if address is not None else 0  # type: ignore
         self._version = None  # Set in initialize
 
-        # diameter and syringe volume - these will be set in initialize() - check values here though.
-        if diameter is None:
+        # syringe diameter and volume - these will be set in initialize() - check values here though.
+        if syringe_diameter is None:
             raise InvalidConfiguration(
                 "Please provide the syringe diameter explicitly!\nThis prevents errors :)"
             )
-        self._diameter = diameter
+        self._diameter = syringe_diameter
 
         if syringe_volume is None:
             raise InvalidConfiguration(
@@ -367,7 +367,7 @@ class Elite11InfuseOnly(BaseDevice):
     def from_config(
         cls,
         port: str,
-        diameter: str,
+        syringe_diameter: str,
         syringe_volume: str,
         address: int = None,
         name: str = None,
@@ -395,7 +395,7 @@ class Elite11InfuseOnly(BaseDevice):
             pumpio,
             address=address,
             name=name,
-            diameter=diameter,
+            syringe_diameter=syringe_diameter,
             syringe_volume=syringe_volume,
         )
 
@@ -740,7 +740,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
     def __init__(
         self,
         pump_io: HarvardApparatusPumpIO,
-        diameter: str,
+        syringe_diameter: str,
         syringe_volume: str,
         address: int | None = None,
         name: str | None = None,
@@ -753,7 +753,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
         The prompt is used to confirm that the address is correct.
         This acts as a check to see that the pump is connected and working."""
 
-        super().__init__(pump_io, diameter, syringe_volume, address, name)
+        super().__init__(pump_io, syringe_diameter, syringe_volume, address, name)
 
     async def initialize(self):
         """Ensure a valid connection with the pump has been established and sets parameters."""
@@ -826,7 +826,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
 
 if __name__ == "__main__":
     pump = Elite11InfuseOnly.from_config(
-        port="COM4", syringe_volume="10 ml", diameter="10 mm"
+        port="COM4", syringe_volume="10 ml", syringe_diameter="10 mm"
     )
 
     async def main():
