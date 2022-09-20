@@ -39,11 +39,19 @@ A simple command can help you to identify the serial port connected to the Elite
 Simply run the `elite11-finder` command from the command line, after having installed flowchem.
 % FIXME add a successful connection example here :D
 ```shell
-(flowchem)  dario@eeepc > /tmp/pycharm_project_420 $ elite11-finder
-2022-09-14 15:22:05.793 | INFO     | flowchem.devices.harvardapparatus.Elite11_finder:elite11_finder:17 - Found the following serial port(s): ['/dev/ttyS0']
-2022-09-14 15:22:05.793 | INFO     | flowchem.devices.harvardapparatus.Elite11_finder:elite11_finder:23 - Looking for pump on /dev/ttyS0...
-2022-09-14 15:22:05.793 | ERROR    | flowchem.devices.harvardapparatus.Elite11:__init__:103 - Cannot connect to the Pump on the port </dev/ttyS0>
-2022-09-14 15:22:05.793 | ERROR    | flowchem.devices.harvardapparatus.Elite11_finder:main:47 - No Elite11 pump found
+(venv) C:\Users\BS-Flowlab\PycharmProjects\flowchem>elite11-finder
+2022-09-20 18:20:25.906 | INFO     | flowchem.devices.harvardapparatus.elite11_finder:elite11_finder:17 - Found the following serial port(s): ['COM1', '
+COM3', 'COM4']
+2022-09-20 18:20:25.912 | INFO     | flowchem.devices.harvardapparatus.elite11_finder:elite11_finder:23 - Looking for pump on COM1...
+2022-09-20 18:20:26.022 | DEBUG    | flowchem.devices.harvardapparatus.elite11_finder:elite11_finder:34 - No pump found on COM1
+2022-09-20 18:20:26.041 | INFO     | flowchem.devices.harvardapparatus.elite11_finder:elite11_finder:23 - Looking for pump on COM3...
+2022-09-20 18:20:26.178 | DEBUG    | flowchem.devices.harvardapparatus.elite11_finder:elite11_finder:34 - No pump found on COM3
+2022-09-20 18:20:26.211 | INFO     | flowchem.devices.harvardapparatus.elite11_finder:elite11_finder:23 - Looking for pump on COM4...
+2022-09-20 18:20:26.242 | INFO     | flowchem.devices.harvardapparatus.elite11_finder:elite11_finder:29 - Pump found on <COM4>
+2022-09-20 18:20:26.400 | INFO     | flowchem.devices.harvardapparatus.elite11_finder:elite11_finder:31 - Pump address is :!
+Found a pump with address : on COM4!
+2022-09-20 18:20:26.408 | INFO     | flowchem.devices.harvardapparatus.elite11_finder:main:45 - The following serial port are connected to Elite11: {'CO
+M4'}
 ```
 
 ## Further information
