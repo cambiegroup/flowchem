@@ -36,9 +36,7 @@ async def get_streams_for_connection(host: str, port: str):
 
 
 class Spinsolve(BaseDevice):
-    """
-    Spinsolve class, gives access to the spectrometer remote control API
-    """
+    """Spinsolve class, gives access to the spectrometer remote control API."""
 
     def __init__(
         self,
