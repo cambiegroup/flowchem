@@ -1,7 +1,6 @@
 """ Common iCIR code. """
 import warnings
 from pathlib import Path
-from typing import List
 from typing import TypedDict
 
 from pydantic import BaseModel
@@ -121,5 +120,5 @@ class IRSpectrum(BaseModel):
     See e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb
     """
 
-    wavenumber: List[float]
-    intensity: List[float]
+    wavenumber: list[float]
+    intensity: list[float]

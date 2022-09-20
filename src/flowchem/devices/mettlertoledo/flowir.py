@@ -2,18 +2,16 @@
 import asyncio
 import datetime
 import warnings
-from typing import List
-from typing import Optional
 
 from asyncua import Client
 from asyncua import ua
-from flowchem.exceptions import DeviceError
-from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
 from ._icir_common import iCIR_spectrometer
 from ._icir_common import IRSpectrum
 from ._icir_common import ProbeInfo
+from flowchem.exceptions import DeviceError
+from flowchem.models.base_device import BaseDevice
 
 
 class FlowIR(iCIR_spectrometer, BaseDevice):
@@ -98,12 +96,12 @@ class FlowIR(iCIR_spectrometer, BaseDevice):
         """Returns date/time of latest scan."""
         return await self.opcua.get_node(self.LAST_SAMPLE_TIME).get_value()
 
-    async def sample_count(self) -> Optional[int]:
+    async def sample_count(self) -> int | None:
         """Sample count (integer autoincrement) watch for changes to ensure latest spectrum is recent."""
         return await self.opcua.get_node(self.SAMPLE_COUNT).get_value()
 
     @staticmethod
-    async def _wavenumber_from_spectrum_node(node) -> List[float]:
+    async def _wavenumber_from_spectrum_node(node) -> list[float]:
         """Gets the X-axis value of a spectrum. This is necessary as they change e.g. with resolution."""
         node_property = await node.get_properties()
         x_axis = await node_property[0].get_value()
