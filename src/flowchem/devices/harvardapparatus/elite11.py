@@ -3,10 +3,6 @@ import asyncio
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
 
 import aioserial
 from loguru import logger
@@ -26,7 +22,7 @@ class PumpInfo(BaseModel):
     infuse_only: bool
 
     @classmethod
-    def parse_pump_string(cls, metrics_text: List[str]):
+    def parse_pump_string(cls, metrics_text: list[str]):
         """Parse pump response string into model."""
         pump_type, pump_description, infuse_only = "", "", True
         for line in metrics_text:
@@ -105,7 +101,7 @@ class HarvardApparatusPumpIO:
             raise InvalidConfiguration from serial_exception
         logger.debug(f"Sent {repr(command_msg)}!")
 
-    async def _read_reply(self) -> List[str]:
+    async def _read_reply(self) -> list[str]:
         """Reads the pump reply from serial communication"""
         reply_string = []
 
@@ -122,7 +118,7 @@ class HarvardApparatusPumpIO:
         return reply_string
 
     @staticmethod
-    def parse_response_line(line: str) -> Tuple[int, PumpStatus, str]:
+    def parse_response_line(line: str) -> tuple[int, PumpStatus, str]:
         """Split a received line in its components: address, prompt and reply body"""
         assert len(line) >= 3
         pump_address = int(line[0:2])
@@ -135,8 +131,8 @@ class HarvardApparatusPumpIO:
 
     @staticmethod
     def parse_response(
-        response: List[str],
-    ) -> Tuple[List[int], List[PumpStatus], List[str]]:
+        response: list[str],
+    ) -> tuple[list[int], list[PumpStatus], list[str]]:
         """Aggregates address prompt and reply body from all the reply lines and return them."""
         parsed_lines = list(map(HarvardApparatusPumpIO.parse_response_line, response))
         # noinspection PyTypeChecker
@@ -176,7 +172,7 @@ class HarvardApparatusPumpIO:
 
     async def write_and_read_reply(
         self, command: Protocol11Command, return_parsed: bool = True
-    ) -> List[str]:
+    ) -> list[str]:
         """Main PumpIO method. Sends a command to the pump, read the replies and returns it, optionally parsed.
 
         If unparsed reply is a List[str] with raw replies.
@@ -212,7 +208,7 @@ class HarvardApparatusPumpIO:
         return parsed_response if return_parsed else response
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """This is used to provide a nice-looking default name to pumps based on their serial connection."""
         try:
             return self._serial.name
@@ -221,7 +217,7 @@ class HarvardApparatusPumpIO:
 
     def autodiscover_address(self) -> int:
         """Autodiscover pump address based on response received."""
-        self._serial.write("\r\n".encode("ascii"))
+        self._serial.write(b"\r\n")
         self._serial.readline()
         prompt = self._serial.readline()
         valid_status = [status.value for status in PumpStatus]
@@ -302,7 +298,7 @@ class Elite11InfuseOnly(BaseDevice):
     """
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
-    _io_instances: Set[HarvardApparatusPumpIO] = set()
+    _io_instances: set[HarvardApparatusPumpIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
     # When several pumps are daisy-chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
@@ -334,8 +330,8 @@ class Elite11InfuseOnly(BaseDevice):
         pump_io: HarvardApparatusPumpIO,
         diameter: str,
         syringe_volume: str,
-        address: Optional[int] = None,
-        name: Optional[str] = None,
+        address: int | None = None,
+        name: str | None = None,
     ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
@@ -404,7 +400,7 @@ class Elite11InfuseOnly(BaseDevice):
         )
 
     @staticmethod
-    def _parse_version(version_text: str) -> Tuple[int, int, int]:
+    def _parse_version(version_text: str) -> tuple[int, int, int]:
         """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4"""
 
         numbers = version_text.split(" ")[-1]
@@ -452,7 +448,7 @@ class Elite11InfuseOnly(BaseDevice):
 
     async def _send_command_and_read_reply_multiline(
         self, command: str, parameter="", parse=True
-    ) -> List[str]:
+    ) -> list[str]:
         """Sends a command based on its template and return the corresponding reply as str"""
 
         cmd = Protocol11Command(
@@ -746,8 +742,8 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
         pump_io: HarvardApparatusPumpIO,
         diameter: str,
         syringe_volume: str,
-        address: Optional[int] = None,
-        name: Optional[str] = None,
+        address: int | None = None,
+        name: str | None = None,
     ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters

@@ -3,9 +3,10 @@ import inspect
 from importlib.metadata import entry_points
 from typing import Any
 
+from loguru import logger
+
 import flowchem.devices
 from flowchem.models.base_device import BaseDevice
-from loguru import logger
 
 
 def autodiscover_device_classes():

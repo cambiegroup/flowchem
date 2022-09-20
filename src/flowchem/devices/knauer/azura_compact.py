@@ -1,18 +1,15 @@
-"""
-Knauer pump control.
-"""
+"""Knauer pump control."""
 import asyncio
 import warnings
 from enum import Enum
-from typing import List
 
+from loguru import logger
+
+from ._common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
 from flowchem.models.pumps.hplc_pump import HplcPump
 from flowchem.models.sensors.pressure_sensor import PressureSensor
 from flowchem.units import flowchem_ureg
-from loguru import logger
-
-from ._common import KnauerEthernetDevice
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to the highest flow rate in ml/min
@@ -365,7 +362,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.debug(f"Extflow reading returns {ext_flow}")
         return float(ext_flow)
 
-    async def read_errors(self) -> List[int]:
+    async def read_errors(self) -> list[int]:
         """Returns the last 5 errors."""
         last_5_errors = await self.create_and_send_command(ERRORS)
         logger.debug(f"Error reading returns {last_5_errors}")

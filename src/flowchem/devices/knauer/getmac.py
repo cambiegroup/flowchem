@@ -361,7 +361,7 @@ def _arping_iputils(host):
     # type: (str) -> Optional[str]
     """Parse iputils arping output."""
     return _search(
-        r" from {} \[({})\]".format(re.escape(host), MAC_RE_COLON),
+        rf" from {re.escape(host)} \[({MAC_RE_COLON})\]",
         _popen("arping", "-f -c 1 %s" % host).strip(),
     )
 

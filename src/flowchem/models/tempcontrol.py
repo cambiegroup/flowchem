@@ -19,7 +19,7 @@ class TempControl(BaseDevice, ABC):
     - `temp`: The temperature setting as a `pint.Quantity`.
     """
 
-    def __init__(self, name: Optional[str] = None):
+    def __init__(self, name: str | None = None):
         super().__init__(name=name)
 
         self.temp = flowchem_ureg.parse_expression("0 degC")

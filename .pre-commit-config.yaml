@@ -23,6 +23,12 @@ repos:
     -   id: reorder-python-imports
         args: [--py39-plus]
 
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v2.38.0
+    hooks:
+        -   id: pyupgrade
+            args: [--py310-plus]
+
 #-   repo: https://gitlab.com/pycqa/flake8
 #    rev: 5.0.4
 #    hooks:

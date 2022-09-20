@@ -1,11 +1,10 @@
 """Use Phidgets to control lab devices. So far, only 4..20mA interface for Swagelock Pressure-sensor."""
 import time
 import warnings
-from typing import Optional
-from typing import Tuple
+
+from loguru import logger
 
 from flowchem.models.base_device import BaseDevice
-from loguru import logger
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -36,11 +35,11 @@ class PressureSensor(BaseDevice):
 
     def __init__(
         self,
-        pressure_range: Tuple[str, str] = ("0 bar", "10 bar"),
+        pressure_range: tuple[str, str] = ("0 bar", "10 bar"),
         vint_serial_number: int = None,
         vint_channel: int = None,
         phidget_is_remote: bool = False,
-        name: Optional[str] = None,
+        name: str | None = None,
     ):
         """Initialize PressureSensor with the given pressure range (sensor-specific!)."""
         super().__init__(name=name)

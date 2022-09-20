@@ -2,17 +2,15 @@
 import asyncio
 import warnings
 from dataclasses import dataclass
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import aioserial
 import pint
+from loguru import logger
+
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
-from loguru import logger
 
 
 @dataclass
@@ -68,7 +66,7 @@ class PBCommand:
         """Parse a device reply from hexadecimal string to rpm."""
         return str(flowchem_ureg(f"{self.parse_integer()} rpm"))
 
-    def parse_bits(self) -> List[bool]:
+    def parse_bits(self) -> list[bool]:
         """Parse a device reply from hexadecimal string to 16 constituting bits."""
         bits = f"{int(self.data, 16):016b}"
         return [bool(int(x)) for x in bits]
@@ -77,7 +75,7 @@ class PBCommand:
         """Parse a device reply from hexadecimal string (0x0000 or 0x0001) to boolean."""
         return self.parse_integer() == 1
 
-    def parse_status1(self) -> Dict[str, bool]:
+    def parse_status1(self) -> dict[str, bool]:
         """Parse response to status1 command and returns dict"""
         bits = self.parse_bits()
         return dict(
@@ -98,7 +96,7 @@ class PBCommand:
             freeze_protection=bits[14],
         )
 
-    def parse_status2(self) -> Dict[str, bool]:
+    def parse_status2(self) -> dict[str, bool]:
         """Parse response to status2 command and returns dict. See manufacturer docs for more info"""
         bits = self.parse_bits()
         return dict(
@@ -235,12 +233,12 @@ class HuberChiller(BaseDevice):
         power = PBCommand(reply).parse_integer()
         return str(flowchem_ureg(f"{power} watt"))
 
-    async def status(self) -> Dict[str, bool]:
+    async def status(self) -> dict[str, bool]:
         """Returns the info contained in `vstatus1` as dict."""
         reply = await self.send_command_and_read_reply("{M0A****")
         return PBCommand(reply).parse_status1()
 
-    async def status2(self) -> Dict[str, bool]:
+    async def status2(self) -> dict[str, bool]:
         """Returns the info contained in `vstatus2` as dict."""
         reply = await self.send_command_and_read_reply("{M3C****")
         return PBCommand(reply).parse_status2()
@@ -293,7 +291,7 @@ class HuberChiller(BaseDevice):
         reply = await self.send_command_and_read_reply("{M2C****")
         return PBCommand(reply).parse_temperature()
 
-    async def cooling_water_pressure(self) -> Optional[float]:
+    async def cooling_water_pressure(self) -> float | None:
         """Returns the cooling water inlet pressure (in mbar)."""
         reply = await self.send_command_and_read_reply("{M2D****")
         if pressure := PBCommand(reply).parse_integer() == 64536:

@@ -18,7 +18,7 @@ from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
 
-def load_configuration_file(file_path: Path) -> Dict:
+def load_configuration_file(file_path: Path) -> dict:
     """Read the TOML configuration file and returns it as a dict.
 
     Extensive exception handling due to the error-prone human editing needed in the configuration file."""
@@ -32,7 +32,7 @@ def load_configuration_file(file_path: Path) -> Dict:
             ) from parser_error
 
 
-def parse_config_file(file_path: Path | str) -> Dict:
+def parse_config_file(file_path: Path | str) -> dict:
     """Parse a config file."""
 
     file_path = Path(file_path)
@@ -41,7 +41,7 @@ def parse_config_file(file_path: Path | str) -> Dict:
     return parse_config(config)
 
 
-def parse_config(config: Dict) -> Dict:
+def parse_config(config: dict) -> dict:
     """Parse config."""
     # This creates a dict with device type as key and object to be instantiated as values.
     device_mapper = autodiscover_device_classes()

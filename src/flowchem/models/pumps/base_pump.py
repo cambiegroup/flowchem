@@ -1,5 +1,4 @@
 from abc import ABC
-from typing import Optional
 
 from fastapi import APIRouter
 
@@ -19,7 +18,7 @@ class BasePump(BaseDevice, ABC):
     - `rate`: The flow rate of the pump as a `pint.Quantity`. Must be of the dimensionality of volume/time.
     """
 
-    def __init__(self, name: Optional[str] = None):
+    def __init__(self, name: str | None = None):
         super().__init__(name=name)
         self.rate = flowchem_ureg.parse_expression("0 ml/min")
         self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0001042")

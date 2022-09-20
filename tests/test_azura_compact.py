@@ -8,6 +8,7 @@ import sys
 
 import pint
 import pytest
+
 from flowchem.devices.knauer.azura_compact import AzuraCompactPump
 from flowchem.devices.knauer.azura_compact import AzuraPumpHeads
 

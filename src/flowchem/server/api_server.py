@@ -3,11 +3,12 @@ from collections.abc import Iterable
 from importlib.metadata import metadata
 from pathlib import Path
 
-import flowchem
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
-from flowchem.server.configuration_parser import parse_config_file
 from loguru import logger
+
+import flowchem
+from flowchem.server.configuration_parser import parse_config_file
 
 
 def create_server_from_file(config_file: Path) -> FastAPI:
@@ -50,7 +51,11 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
 
 
 if __name__ == "__main__":
-    myapp = create_server_from_file(config_file=Path("../../../examples/autonomous_reaction_optimization/devices.toml"))
+    myapp = create_server_from_file(
+        config_file=Path(
+            "../../../examples/autonomous_reaction_optimization/devices.toml"
+        )
+    )
 
     @myapp.get("/", response_class=HTMLResponse, include_in_schema=False)
     def root():

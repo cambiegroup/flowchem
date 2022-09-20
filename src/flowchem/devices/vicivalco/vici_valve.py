@@ -4,14 +4,13 @@ This module is used to control Vici Valco Universal Electronic Actuators.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
-from typing import Set
 
 import aioserial
+from loguru import logger
+
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.valves.injection_valve import InjectionValve
 from flowchem.units import flowchem_ureg
-from loguru import logger
 
 
 @dataclass
@@ -22,7 +21,7 @@ class ViciCommand:
     """
 
     command: str
-    valve_id: Optional[int] = None
+    valve_id: int | None = None
     value: str = ""
     reply_lines: int = 1
 
@@ -119,7 +118,7 @@ class ViciValve(InjectionValve):
     """
 
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
-    _io_instances: Set[ViciValcoValveIO] = set()
+    _io_instances: set[ViciValcoValveIO] = set()
     # When several valves are daisy-chained on the same serial port, they need to all access the *same* Serial object,
     # because access to the serial port is exclusive by definition.
     # The mutable object _io_instances as class variable creates a shared state across all the instances.
@@ -132,7 +131,7 @@ class ViciValve(InjectionValve):
         self,
         valve_io: ViciValcoValveIO,
         loop_volume: str = "1 ul",
-        address: Optional[int] = None,
+        address: int | None = None,
         name: str = None,
     ):
         """

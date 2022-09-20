@@ -1,12 +1,12 @@
 """ Control module for the Vapourtec R4 heater """
 import time
-from typing import Optional
 
 import aioserial
+from loguru import logger
+
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
-from loguru import logger
 
 try:
     from devices import (
@@ -31,7 +31,7 @@ class R4Heater(BaseDevice):
     }
     """ Virtual control of the Vapourtec R4 heating module. """
 
-    def __init__(self, name: Optional[str] = None, **config):
+    def __init__(self, name: str | None = None, **config):
         super().__init__(name)
         if not HAS_VAPOURTEC_COMMANDS:
             raise InvalidConfiguration(
