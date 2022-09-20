@@ -8,7 +8,7 @@ As for all `flowchem` devices, the virtual instrument can be instantiated via a 
 openAPI endpoint.
 
 
-## Configuration for API use
+## Configuration
 Configuration sample showing all possible parameters:
 
 ```toml

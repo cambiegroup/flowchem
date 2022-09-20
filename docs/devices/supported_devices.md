@@ -11,5 +11,6 @@ harvardapparatus/elite11
 huber/chiller
 knauer/valves
 magritek/spinsolve
+manson/manson
 
 ```

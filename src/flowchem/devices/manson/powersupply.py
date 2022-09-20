@@ -283,20 +283,15 @@ class MansonPowerSupply(BaseDevice):
 
     def get_router(self):
         """Creates an APIRouter for this MansonPowerSupply instance."""
-        from fastapi import APIRouter
+        router = super().get_router()
 
-        router = APIRouter()
-        router.add_api_route("/output/on", self.output_on, methods=["GET"])
-        router.add_api_route("/output/off", self.output_off, methods=["GET"])
+        router.add_api_route("/on", self.output_on, methods=["GET"])
+        router.add_api_route("/off", self.output_off, methods=["GET"])
         router.add_api_route("/output/power", self.get_output_power, methods=["GET"])
         router.add_api_route("/output/mode", self.get_output_mode, methods=["GET"])
         router.add_api_route("/voltage/read", self.get_output_voltage, methods=["GET"])
         router.add_api_route("/voltage/max", self.set_voltage, methods=["PUT"])
         router.add_api_route("/current/read", self.get_output_current, methods=["GET"])
         router.add_api_route("/current/max", self.set_current, methods=["PUT"])
-        router.add_api_route("/protection/add", self.add_protection, methods=["GET"])
-        router.add_api_route(
-            "/protection/remove", self.remove_protection, methods=["GET"]
-        )
 
         return router
