@@ -16,7 +16,7 @@ def create_server_from_file(config_file: Path) -> FastAPI:
     config: Path to the yaml file with the device config or dict.
     """
     parsed_config = parse_config_file(config_file)
-    return create_server_for_devices(parsed_config["devices"])
+    return create_server_for_devices(parsed_config["device"])
 
 
 def create_server_for_devices(dev_list: list) -> FastAPI:
@@ -45,7 +45,7 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
 
 
 if __name__ == "__main__":
-    myapp = create_server_from_file(config_file=Path("config/sample_config.yml"))
+    myapp = create_server_from_file(config_file=Path("../../../examples/autonomous_reaction_optimization/devices.toml"))
 
     @myapp.get("/", response_class=HTMLResponse, include_in_schema=False)
     def root():
