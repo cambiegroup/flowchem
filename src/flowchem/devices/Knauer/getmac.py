@@ -57,7 +57,7 @@ PATH = os.environ.get("PATH", os.defpath).split(os.pathsep)
 if not WINDOWS:
     PATH.extend(("/sbin", "/usr/sbin"))
 
-# Use a copy of the environment so we don't
+# Use a copy of the environment so that we don't
 # modify the process's current environment.
 ENV = dict(os.environ)
 ENV["LC_ALL"] = "C"  # Ensure ASCII output so we parse correctly
@@ -88,11 +88,12 @@ except ImportError:
 WARNED_UNSUPPORTED_PYTHONS = False
 
 
+# noinspection PyBroadException
 def get_mac_address(
     interface=None, ip=None, ip6=None, hostname=None, network_request=True
 ):
     # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
-    """Get a Unicast IEEE 802 MAC-48 address from a local interface or remote host.
+    """Get an Unicast IEEE 802 MAC-48 address from a local interface or remote host.
     You must only use one of the first four arguments. If none of the arguments
     are selected, the default network interface for the system will be used.
     Exceptions will be handled silently and returned as a None.
@@ -120,7 +121,7 @@ def get_mac_address(
     if hostname:
         ip = socket.gethostbyname(hostname)
 
-    # Populate the ARP table by sending a empty UDP packet to a high port
+    # Populate the ARP table by sending an empty UDP packet to a high port
     if network_request and (ip or ip6):
         if ip:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -136,7 +137,7 @@ def get_mac_address(
         finally:
             s.close()
 
-    # Setup the address hunt based on the arguments specified
+    # Set up the address hunt based on the arguments specified
     if ip6:
         if not socket.has_ipv6:
             log.error(
@@ -190,7 +191,7 @@ def get_mac_address(
             log.debug("Adding colons to MAC %s", mac)
             mac = ":".join(mac[i : i + 2] for i in range(0, len(mac), 2))
 
-        # Pad single-character octets with a leading zero (e.g Darwin's ARP output)
+        # Pad single-character octets with a leading zero (e.g. Darwin's ARP output)
         elif len(mac) < 17:
             log.debug(
                 "Length of MAC %s is %d, padding single-character " "octets with zeros",
@@ -252,6 +253,7 @@ def _call_proc(executable, args):
         return str(output)
 
 
+# noinspection PyBroadException
 def _windows_ctypes_host(host):
     # type: (str) -> Optional[str]
     host = host.encode()  # type: ignore
@@ -547,7 +549,7 @@ def _get_default_iface_linux():
     """Get the default interface by reading /proc/net/route.
     This is the same source as the `route` command, however it's much
     faster to read this file than to call `route`. If it fails for whatever
-    reason, we can fall back on the system commands (e.g for a platform
+    reason, we can fall back on the system commands (e.g. for a platform
     that has a route command, but maybe doesn't use /proc?).
     """
     data = _read_file("/proc/net/route")

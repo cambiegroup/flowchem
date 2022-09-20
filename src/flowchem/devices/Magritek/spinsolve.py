@@ -8,15 +8,15 @@ from pathlib import Path
 from typing import Optional
 from typing import Union
 
-from flowchem.devices.Magritek._msg_maker import create_message
-from flowchem.devices.Magritek._msg_maker import create_protocol_message
-from flowchem.devices.Magritek._msg_maker import get_request
-from flowchem.devices.Magritek._msg_maker import set_attribute
-from flowchem.devices.Magritek._msg_maker import set_data_folder
-from flowchem.devices.Magritek._msg_maker import set_user_data
-from flowchem.devices.Magritek.reader import Reader
-from flowchem.devices.Magritek.xml_parser import parse_status_notification
-from flowchem.devices.Magritek.xml_parser import StatusNotification
+from flowchem.devices.magritek._msg_maker import create_message
+from flowchem.devices.magritek._msg_maker import create_protocol_message
+from flowchem.devices.magritek._msg_maker import get_request
+from flowchem.devices.magritek._msg_maker import set_attribute
+from flowchem.devices.magritek._msg_maker import set_data_folder
+from flowchem.devices.magritek._msg_maker import set_user_data
+from flowchem.devices.magritek.reader import Reader
+from flowchem.devices.magritek.xml_parser import parse_status_notification
+from flowchem.devices.magritek.xml_parser import StatusNotification
 from flowchem.models.base_device import BaseDevice
 from loguru import logger
 from lxml import etree
@@ -53,6 +53,9 @@ class Spinsolve(BaseDevice):
         """
 
         super().__init__(kwargs.get("name"))
+        # fourier transformation NMR instrument
+        # noinspection HttpUrlsUsage
+        self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0000487")
         # IOs
         self._io_reader, self._io_writer = get_streams_for_connection(
             host, kwargs.get("port", "13000")
@@ -61,7 +64,7 @@ class Spinsolve(BaseDevice):
         # Queue needed for thread-safe operation, the reader is in a different thread
         self._replies: queue.Queue = queue.Queue()
         self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
-        threading.Thread(target=self.connenction_listener_thread, daemon=True).start()
+        threading.Thread(target=self.connection_listener_thread, daemon=True).start()
 
         # Check if the instrument is connected
         hw_info = self.hw_request()
@@ -102,7 +105,7 @@ class Spinsolve(BaseDevice):
                 f"Spinsolve version {self.software_version} is older than the reference (1.18.1.3062)"
             )
 
-    def connenction_listener_thread(self):
+    def connection_listener_thread(self):
         """Thread that listens to the connection and parses the reply"""
         self.connection_listener().result()
 
@@ -167,7 +170,7 @@ class Spinsolve(BaseDevice):
 
     @data_folder.setter
     def data_folder(self, location: str):
-        """Sets the location provided as data folder. optionally, with typeThese are included in acq.par"""
+        """Sets the location provided as data folder. optionally, with typeThese are included in `acq.par`"""
         if location is not None:
             self._data_folder = location
             self.send_message(set_data_folder(location))
@@ -189,7 +192,7 @@ class Spinsolve(BaseDevice):
 
     @user_data.setter
     def user_data(self, data_to_be_set: dict):
-        """Sets the user data proewqvided in the dict. These are included in acq.par"""
+        """Sets the user data proewqvided in the dict. These are included in `acq.par`"""
         self.send_message(set_user_data(data_to_be_set))
 
     def _read_reply(self, reply_type="", timeout=5):

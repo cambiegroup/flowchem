@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 
 import pytest
-from flowchem.devices.Magritek import Spinsolve
+from flowchem.devices.magritek import Spinsolve
 
 
 # Change to match your environment ;)
@@ -117,7 +117,7 @@ def test_request_validation(nmr: Spinsolve):
     )
     with pytest.warns(UserWarning, match="Invalid option"):
         check_protocol = nmr._validate_protocol_request("1D EXTENDED+", partly_valid)
-    assert "balbla" not in check_protocol
+    assert "blabla" not in check_protocol
 
 
 @pytest.mark.Spinsolve

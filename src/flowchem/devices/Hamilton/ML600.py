@@ -106,7 +106,7 @@ class HamiltonPumpIO:
     def from_config(cls, config):
         """Create HamiltonPumpIO from config."""
         # Merge default settings, including serial, with provided ones.
-        configuration = dict(HamiltonPumpIO.DEFAULT_CONFIG, **config)
+        configuration = HamiltonPumpIO.DEFAULT_CONFIG | config
 
         try:
             serial_object = aioserial.AioSerial(**configuration)

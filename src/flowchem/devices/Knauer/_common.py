@@ -24,8 +24,8 @@ class KnauerEthernetDevice:
         Note that for configuration files, the MAC address is preferred as it is static.
 
         Args:
-            ip_address: IP address of Knauer device
-            mac_address: MAC address of Knauer device
+            ip_address: device IP address (only 1 of either IP or MAC address is needed)
+            mac_address: device MAC address (only 1 of either IP or MAC address is needed)
             name: name of device (optional)
         """
         super().__init__(**kwargs)
@@ -40,7 +40,7 @@ class KnauerEthernetDevice:
         self._reader: asyncio.StreamReader = None  # type: ignore
         self._writer: asyncio.StreamWriter = None  # type: ignore
 
-        # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by sublcasses
+        # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by the subclasses
         self.eol = b""
 
     def _ip_from_mac(self, mac_address: str) -> str:

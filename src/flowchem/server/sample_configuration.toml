@@ -21,7 +21,7 @@ mac_address = "00:80:A3:BA:C3:4A"
 max_pressure = "13 bar"
 
 [device.sample-loop]
-type = "ViciValco"
+type = "ViciValve"
 port = "COM13"
 address = 0
 

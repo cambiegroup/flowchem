@@ -9,7 +9,7 @@ from typing import Set
 
 import aioserial
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.models.injection_valve import InjectionValve
+from flowchem.models.valves.injection_valve import InjectionValve
 from flowchem.units import flowchem_ureg
 from loguru import logger
 
@@ -113,7 +113,7 @@ class ViciValcoValveIO:
             return ""
 
 
-class ViciValco(InjectionValve):
+class ViciValve(InjectionValve):
     """
     ViciValco injection valves.
     """
@@ -126,6 +126,7 @@ class ViciValco(InjectionValve):
 
     # Map generic position to device-specific ones.
     position_mapping = {"LOAD": "1", "INJECT": "2"}
+    _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
     def __init__(
         self,
@@ -143,7 +144,7 @@ class ViciValco(InjectionValve):
         """
 
         self.valve_io = valve_io
-        ViciValco._io_instances.add(self.valve_io)
+        ViciValve._io_instances.add(self.valve_io)
 
         # The valve name is used for logs and error messages.
         self.name = f"Valve {self.valve_io.name}:{address}" if name is None else name
@@ -161,7 +162,7 @@ class ViciValco(InjectionValve):
         **serial_kwargs,
     ):
         """This class method is used to create instances via config file by the server for HTTP interface."""
-        existing_io = [v for v in ViciValco._io_instances if v._serial.port == port]
+        existing_io = [v for v in ViciValve._io_instances if v._serial.port == port]
 
         # If no existing serial object are available for the port provided, create a new one
         if existing_io:
@@ -248,7 +249,7 @@ class ViciValco(InjectionValve):
 if __name__ == "__main__":
     import asyncio
 
-    valve1 = ViciValco.from_config(port="COM13", address=0, name="test1")
+    valve1 = ViciValve.from_config(port="COM13", address=0, name="test1")
     asyncio.run(valve1.initialize())
 
     # Set position works with both strings and InjectionValvePosition

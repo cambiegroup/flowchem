@@ -61,9 +61,7 @@ class R4Heater(BaseDevice):
         return reply_string.decode("ascii")
 
     async def write_and_read_reply(self, command: "R4Command") -> str:
-        """Main HamiltonPumpIO method.
-
-        Sends a command to the pump, read the replies and returns it, optionally parsed."""
+        """Sends a command to the pump, read the replies and returns it, optionally parsed."""
         self._serial.reset_input_buffer()
         await self._write(command.compile())
         response = await self._read_reply()
@@ -73,27 +71,34 @@ class R4Heater(BaseDevice):
 
         return response.rstrip()
 
-    async def wait_for_target_temp(self, channel: int):
-        """Waits until the target channel has reached the desired temperature and is stable."""
-        t_stable = False
+    async def is_target_temp_reached(self, channel: int) -> bool:
+        """Checks if the target temperature has been reached.
+
+        Args:
+            channel: channel number
+        """
         failure = 0
-        while not t_stable:
+        while True:
             try:
                 ret_code = await self.write_and_read_reply(
                     VapourtecCommand.TEMP.set_argument(str(channel))
                 )
             except InvalidConfiguration as ex:
-                ret_code = "N"
                 failure += 1
+                # Allows 3 failures cause the R4 is choosy at times...
                 if failure > 3:
                     raise ex
-            else:
-                failure = 0
+                else:
+                    continue
 
-            if ret_code[:1] == "S":
-                logger.debug(f"Target temperature reached on channel {channel}!")
-                t_stable = True
-            else:
+            return ret_code[:1] == "S"
+
+    async def wait_for_target_temp(self, channel: int):
+        """Waits until the target channel has reached the desired temperature and is stable."""
+        t_stable = False
+        failure = 0
+        while not t_stable:
+            if not self.is_target_temp_reached(channel):
                 time.sleep(1)
 
     async def set_temperature(
@@ -119,6 +124,9 @@ class R4Heater(BaseDevice):
 
         router = APIRouter()
         router.add_api_route("/temperature/set", self.set_temperature, methods=["PUT"])
+        router.add_api_route(
+            "/temperature/stable", self.is_target_temp_reached, methods=["GET"]
+        )
 
         return router
 

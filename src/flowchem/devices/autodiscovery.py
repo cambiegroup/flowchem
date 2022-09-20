@@ -1,4 +1,4 @@
-"""Auto-discover the device classes present in the device subfolders."""
+"""Auto-discover the device classes present in the device sub-folders."""
 import inspect
 from importlib.metadata import entry_points
 from typing import Any
@@ -9,7 +9,7 @@ from loguru import logger
 
 
 def autodiscover_device_classes():
-    """Get all the device-controlling classes, either from flowchem.devices or third party packages."""
+    """Get all the device-controlling classes, either from `flowchem.devices` or third party packages."""
     first_part_objects = autodiscover_first_party()
     logger.info(f"{len(first_part_objects)} first-party device type found!")
     third_part_objects = autodiscover_third_party()
@@ -36,12 +36,12 @@ def _autodiscover_devices_in_module(module) -> dict[str, Any]:
 
 
 def autodiscover_first_party() -> dict[str, Any]:
-    """Get classes from flowchem.devices subpackages."""
+    """Get classes from `flowchem.devices` subpackages."""
     return _autodiscover_devices_in_module(flowchem.devices)
 
 
 def autodiscover_third_party() -> dict[str, Any]:
-    """Get classes from packages with a flowchem.devices entrypoint.
+    """Get classes from packages with a `flowchem.devices` entrypoint.
 
     A plugin structure can be used to add devices from an external package via setuptools entry points.
     See https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/#using-package-metadata"""

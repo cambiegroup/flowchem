@@ -56,7 +56,7 @@ def set_data_folder(location) -> etree.Element:
 def set_user_data(data: dict) -> etree.Element:
     """
     Given a dict with custom data, it creates a Set/UserData message.
-    Those data are saved in acq.par
+    Those data are saved in the file `acq.par`
     """
     user_data = set_attribute("UserData")
     for key, value in data.items():

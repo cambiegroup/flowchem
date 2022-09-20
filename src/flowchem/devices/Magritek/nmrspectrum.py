@@ -50,7 +50,7 @@ class NMRSpectrum:
             ph1 = float(self.dic["dx"]["$PHC1"].pop())
             self.processed_data = ng.proc_base.ps(self.processed_data, ph0, ph1, True)
         except KeyError:
-            # Authophase needed - no info on phase from nmrglue
+            # Auto phase needed - no info on phase from nmrglue
             self.processed_data = ng.proc_autophase.autops(
                 self.processed_data,
                 "acme",

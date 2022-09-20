@@ -1,7 +1,7 @@
-# Base Valve
+# Multi-position Valve
 
 ```{eval-rst}
-.. autoclass:: flowchem.models.base_valve.BaseValve
+.. autoclass:: flowchem.models.valves.multiposition_valve.MultiPositionValve
     :show-inheritance:
     :members:
     :exclude-members: get_router, initialize

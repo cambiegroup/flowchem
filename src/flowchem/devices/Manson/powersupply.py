@@ -1,4 +1,4 @@
-"""Control moculde for Manson lab power supply unites."""
+"""Control module for Manson lab power supply unites."""
 # Note: Original code from Manson website with edits. No license originally specified.
 import re
 import warnings
@@ -269,12 +269,12 @@ class MansonPowerSupply(BaseDevice):
         return response == "OK"
 
     async def remove_protection(self) -> bool:
-        """I guess it removes overvoltage protection?"""
+        """I guess it removes over voltage protection?"""
         response = await self._send_command("SPRO0")
         return bool(response)
 
     async def add_protection(self) -> bool:
-        """I guess it adds overvoltage protection?"""
+        """I guess it adds over voltage protection?"""
         response = await self._send_command("SPRO1")
         return bool(response)
 

@@ -35,7 +35,7 @@ class PumpInfo(BaseModel):
     infuse_only: bool
 
     @classmethod
-    def parse_pumpstring(cls, metrics_text: List[str]):
+    def parse_pump_string(cls, metrics_text: List[str]):
         """Parse pump response string into model."""
         pump_type, pump_description, infuse_only = "", "", True
         for line in metrics_text:
@@ -228,8 +228,8 @@ class HarvardApparatusPumpIO:
         except AttributeError:
             return None
 
-    def autodetermine_address(self) -> int:
-        """Autodetermine pump address based on response received."""
+    def autodiscover_address(self) -> int:
+        """Autodiscover pump address based on response received."""
         self._serial.write("\r\n".encode("ascii"))
         self._serial.readline()
         prompt = self._serial.readline()
@@ -300,7 +300,7 @@ class Elite11Commands:
     CLEAR_TARGET_VOLUME = "ctvolume"
 
 
-# noinspection PyProtectedMember
+# noinspection PyProtectedMember,DuplicatedCode
 class Elite11InfuseOnly(BaseDevice):
     """
     Controls Harvard Apparatus Elite11 syringe pumps.
@@ -328,13 +328,13 @@ class Elite11InfuseOnly(BaseDevice):
             },
             {
                 "first_name": "Dario",
-                "last_name": "Cambie",
+                "last_name": "Cambié",
                 "email": "dario.cambie@mpikg.mpg.de",
                 "institution": "Max Planck Institute of Colloids and Interfaces",
                 "github_username": "dcambie",
             },
         ],
-        "stability": "beta",
+        "tested": True,
         "supported": True,
     }
 
@@ -415,9 +415,8 @@ class Elite11InfuseOnly(BaseDevice):
     async def initialize(self):
         """Ensure a valid connection with the pump has been established and sets parameters."""
         # Autodetect address if none provided
-        print(f"THE ASDDRESS is {self.address=}")
         if self.address is None:
-            self.address = self.pump_io.autodetermine_address()
+            self.address = self.pump_io.autodiscover_address()
 
         try:
             await self.stop()
@@ -527,7 +526,8 @@ class Elite11InfuseOnly(BaseDevice):
     async def set_syringe_volume(self, volume_w_units: str):
         """Sets the syringe volume in ml.
 
-        :param volume_w_units: the volume of the syringe.
+        Args:
+            volume_w_units (str): the volume of the syringe.
         """
         volume = flowchem_ureg(volume_w_units)
         await self._send_command_and_read_reply(
@@ -697,7 +697,7 @@ class Elite11InfuseOnly(BaseDevice):
         parsed_multiline_response = await self._send_command_and_read_reply_multiline(
             Elite11Commands.METRICS
         )
-        return PumpInfo.parse_pumpstring(parsed_multiline_response)
+        return PumpInfo.parse_pump_string(parsed_multiline_response)
 
     def get_router(self):
         """Creates an APIRouter for this object."""
@@ -723,7 +723,7 @@ class Elite11InfuseOnly(BaseDevice):
         )
         router.add_api_route("/info/is-moving", self.is_moving, methods=["GET"])
         router.add_api_route(
-            "/info/current-flowrate", self.get_current_flowrate, methods=["GET"]
+            "/info/current-flow-rate", self.get_current_flowrate, methods=["GET"]
         )
         router.add_api_route(
             "/info/infused-volume", self.get_infused_volume, methods=["GET"]
@@ -827,21 +827,6 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
         )
 
         return router
-
-    async def __aenter__(self):
-        await self.initialize()
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.stop()
-
-    async def _update(self):
-        """Actuates flow rate changes."""
-        if self.rate == 0:
-            await self.stop()
-        else:
-            await self.set_infusion_rate(str(self.rate))
-            await self.infuse_run()
 
 
 if __name__ == "__main__":

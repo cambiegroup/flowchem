@@ -88,7 +88,7 @@ class Reader:
         Fetch the unprocessed chunks from the queue and adds them to the reception buffer
         """
         while not self._queue.empty():
-            # From queue only complete replies thanks to readuntil(b"</Message>")
+            # From queue only complete replies thanks to read until(b"</Message>")
             tree = self.parse_tree(self._queue.get())
             self._queue.task_done()
 

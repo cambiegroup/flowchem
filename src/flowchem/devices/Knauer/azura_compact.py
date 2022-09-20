@@ -14,16 +14,16 @@ from loguru import logger
 from ._common import KnauerEthernetDevice
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
-HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to highest flowrate in ml/min
-PMIN10 = "PMIN10"  # 0-400 in 0.1 MPa, use to avoid dryrunning
-PMIN50 = "PMIN50"  # 0-150 in 0.1 MPa, use to avoid dryrunning
+HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to the highest flow rate in ml/min
+PMIN10 = "PMIN10"  # 0-400 in 0.1 MPa, use to avoid running dry
+PMIN50 = "PMIN50"  # 0-150 in 0.1 MPa, use to avoid running dry
 PMAX10 = "PMAX10"  # 0-400 in 0.1 MPa, chosen automatically by selecting pump head
-PMAX50 = "PMAX50"  # 0-150 in 0.1 MPa, chosen automatically by selecting pumphead
+PMAX50 = "PMAX50"  # 0-150 in 0.1 MPa, chosen automatically by selecting pump head
 IMIN10 = "IMIN10"  # 0-100 minimum motor current
 IMIN50 = "IMIN50"  # 0-100 minimum motor current
 STARTLEVEL = "STARTLEVEL"  # 0, 1 configures start. 0 -> only start pump when shorted to GND, 1 -> always allow start
 ERRIO = "ERRIO"  # 0, 1 write/read error in/output ??? sets errio either 1 or 0, reports errio:ok
-STARTMODE = "STARTMODE"  # 0, 1; 0=pause pump after switchon, 1=start immediatley with previous set flow rate
+STARTMODE = "STARTMODE"  # 0, 1; 0=pause pump after switch on, 1=start immediately with previous set flow rate
 ADJ10 = "ADJ10"  # 100-2000
 ADJ50 = "ADJ50"  # 100-2000
 CORR10 = "CORR10"  # 0-300
@@ -46,6 +46,7 @@ class AzuraPumpHeads(Enum):
     FLOWRATE_TEN_ML = 10
 
 
+# noinspection DuplicatedCode
 class AzuraCompactPump(KnauerEthernetDevice, BaseDevice):
     """Control module for Knauer Azura Compact pumps."""
 
@@ -66,14 +67,14 @@ class AzuraCompactPump(KnauerEthernetDevice, BaseDevice):
                 "github_username": "dcambie",
             },
         ],
-        "stability": "beta",
+        "tested": True,
         "supported": True,
     }
 
     def __init__(
-        self, ip_address=None, mac_address=None, name=None, max_pressure: str = None
+        self, ip_address=None, mac_address=None, max_pressure: str = None, name=None
     ):
-        super().__init__(ip_address, mac_address, name)
+        super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"
 
         # All the following are set upon initialize()
@@ -230,7 +231,8 @@ class AzuraCompactPump(KnauerEthernetDevice, BaseDevice):
     async def set_flow(self, flowrate: str = None):
         """Sets flow rate.
 
-        :param flowrate: string with units
+        Args:
+            flowrate (str): value with units
         """
         if flowrate is None:
             flowrate = "0 ml/min"
