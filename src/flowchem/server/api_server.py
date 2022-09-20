@@ -1,4 +1,5 @@
 """" Run with uvicorn main:app """
+from collections.abc import Iterable
 from importlib.metadata import metadata
 from pathlib import Path
 
@@ -34,12 +35,16 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
     for device in dev_list:
         # FIXME do initialization here
 
-        # Get router
-        router = device.get_router()
+        # Get routers (some compounded devices can return multiple routers for the subcomponents, but most only 1!)
+        routers = device.get_router()
 
-        # Add to App
-        app.include_router(router, prefix=router.prefix, tags=router.tags)
-        logger.debug(f"Router for <{device.name}> added to app!")
+        if not isinstance(routers, Iterable):
+            routers = (routers,)
+
+        for router in routers:
+            # Add to App
+            app.include_router(router, prefix=router.prefix, tags=router.tags)
+            logger.debug(f"Router <{router.prefix}> added to app!")
 
     return app
 

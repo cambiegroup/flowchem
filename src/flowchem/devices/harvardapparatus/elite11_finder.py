@@ -24,9 +24,11 @@ def elite11_finder():
         try:
             link = HarvardApparatusPumpIO(port=serial_port)
             link._serial.write("\r\n".encode("ascii"))
+
             if link._serial.readline() == b"\n":
                 valid_ports.add(serial_port)
                 logger.info(f"Pump found on <{serial_port}>")
+
                 pump = link._serial.readline().decode("ascii")
                 logger.info(f"Pump address is {pump[0:2]}!")
                 print(f"Found a pump with address {pump[0:2]} on {serial_port}!")

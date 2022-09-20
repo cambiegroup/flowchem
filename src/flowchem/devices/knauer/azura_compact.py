@@ -7,7 +7,8 @@ from enum import Enum
 from typing import List
 
 from flowchem.exceptions import DeviceError
-from flowchem.models.base_device import BaseDevice
+from flowchem.models.pumps.hplc_pump import HplcPump
+from flowchem.models.sensors.pressure_sensor import PressureSensor
 from flowchem.units import flowchem_ureg
 from loguru import logger
 
@@ -47,7 +48,7 @@ class AzuraPumpHeads(Enum):
 
 
 # noinspection DuplicatedCode
-class AzuraCompactPump(KnauerEthernetDevice, BaseDevice):
+class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
     """Control module for Knauer Azura Compact pumps."""
 
     metadata = {
@@ -352,11 +353,11 @@ class AzuraCompactPump(KnauerEthernetDevice, BaseDevice):
         )
         logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
-    async def read_pressure(self) -> str:
+    async def read_pressure(self, units: str | None = "bar") -> float:
         """If the pump has a pressure sensor, returns pressure. Read-only property of course."""
         pressure = await self._transmit_and_parse_reply(PRESSURE) * flowchem_ureg.bar
         logger.debug(f"Pressure measured = {pressure}")
-        return str(pressure)
+        return pressure.m_as(units)
 
     async def read_extflow(self) -> float:
         """Read the set flowrate from analog in."""
@@ -440,15 +441,18 @@ class AzuraCompactPump(KnauerEthernetDevice, BaseDevice):
 
     def get_router(self):
         """Creates an APIRouter for this object."""
-        from fastapi import APIRouter
+        router = super().get_router()
 
-        router = APIRouter()
         router.add_api_route("/flow", self.get_flow, methods=["GET"])
         router.add_api_route("/flow", self.set_flow, methods=["PUT"])
-        router.add_api_route("/pressure", self.read_pressure, methods=["GET"])
         router.add_api_route("/start", self.start_flow, methods=["PUT"])
         router.add_api_route("/stop", self.stop_flow, methods=["PUT"])
-        return router
+
+        # Pressure sensor as sub-device following pressure sensors schema
+        router2 = super(PressureSensor).get_router()
+        router2.prefix += "/pressure-sensor/"
+
+        return router, router2
 
 
 if __name__ == "__main__":
