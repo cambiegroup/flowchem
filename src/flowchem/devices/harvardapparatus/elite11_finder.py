@@ -30,8 +30,11 @@ def elite11_finder():
                 logger.info(f"Pump found on <{serial_port}>")
 
                 pump = link._serial.readline().decode("ascii")
-                logger.info(f"Pump address is {pump[0:2]}!")
-                print(f"Found a pump with address {pump[0:2]} on {serial_port}!")
+                try:
+                    int(pump[0:2])
+                    logger.info(f"Pump address is {pump[0:2]}!")
+                except ValueError:
+                    logger.info(f"Single pump, not part of daisy chain.")
             else:
                 logger.debug(f"No pump found on {serial_port}")
         except InvalidConfiguration:

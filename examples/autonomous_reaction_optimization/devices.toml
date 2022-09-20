@@ -1,0 +1,6 @@
+[device.socl2]
+type = "Elite11InfuseOnly"
+port = "COM4"
+diameter = "4.6 mm"
+syringe_volume = "1 ml"
+baudrate = 115200
