@@ -4,7 +4,7 @@ import warnings
 
 from loguru import logger
 
-from flowchem.models.base_device import BaseDevice
+from flowchem.models.sensors.pressure_sensor import PressureSensor
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -26,11 +26,11 @@ else:
     else:
         HAS_PHIDGET = True
 
-from flowchem.exceptions import DeviceError, InvalidConfiguration
+from flowchem.exceptions import InvalidConfiguration
 from flowchem.units import flowchem_ureg
 
 
-class PressureSensor(BaseDevice):
+class PhidgetPressureSensor(PressureSensor):
     """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
 
     def __init__(
@@ -73,7 +73,7 @@ class PressureSensor(BaseDevice):
             self.phidget.openWaitForAttachment(1000)
             logger.debug("Pressure sensor connected!")
         except PhidgetException as phidget_error:
-            raise DeviceError(
+            raise InvalidConfiguration(
                 "Cannot connect to sensor! Check settings..."
             ) from phidget_error
 
@@ -87,11 +87,8 @@ class PressureSensor(BaseDevice):
 
     def get_router(self):
         """Create an APIRouter for this object."""
-        from fastapi import APIRouter
-
-        router = APIRouter()
+        router = super().get_router()
         router.add_api_route("/attached", self.is_attached, methods=["GET"])
-        router.add_api_route("/pressure", self.read_pressure, methods=["GET"])
 
         return router
 
@@ -109,9 +106,9 @@ class PressureSensor(BaseDevice):
         logger.debug(f"Read pressure {pressure_reading} barg!")
         return str(pressure_reading * flowchem_ureg.bar)
 
-    def read_pressure(self) -> str:
+    def read_pressure(self, units: str | None = "bar") -> str:
         """
-        Read pressure from sensor, in bar.
+        Read pressure from the sensor and returns with `units` (default: bar).
 
         This is the main class method, and it never fails, but rather return None. Why?
 
@@ -130,11 +127,12 @@ class PressureSensor(BaseDevice):
             warnings.warn("Cannot read pressure!")
             return ""
         else:
-            return self._current_to_pressure(current)
+            pressure = self._current_to_pressure(current) * flowchem_ureg.bar
+            return pressure.m_as(units)
 
 
 if __name__ == "__main__":
-    test = PressureSensor(
+    test = PhidgetPressureSensor(
         pressure_range=("0 bar", "25 bar"),
         vint_serial_number=627768,
         vint_channel=0,

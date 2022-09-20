@@ -6,12 +6,7 @@ from .sensor import Sensor
 
 
 class PressureSensor(Sensor, ABC):
-    """
-    A pressure sensor.
-
-    Attributes:
-    - `name`: The name of the Sensor.
-    """
+    """A pressure sensor."""
 
     def __init__(self, name: str | None = None):
         super().__init__(name=name)
