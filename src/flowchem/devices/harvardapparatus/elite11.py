@@ -1,6 +1,4 @@
 """This module is used to control Harvard Apparatus Elite 11 syringe pump via the 11 protocol."""
-from __future__ import annotations
-
 import asyncio
 import warnings
 from dataclasses import dataclass
@@ -11,20 +9,13 @@ from typing import Set
 from typing import Tuple
 
 import aioserial
+from loguru import logger
+from pydantic import BaseModel
+
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
-from loguru import logger
-from pydantic import BaseModel
-
-
-def _parse_version(version_text: str) -> Tuple[int, int, int]:
-    """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4"""
-
-    numbers = version_text.split(" ")[-1]
-    version_digits = numbers.split(".")
-    return int(version_digits[0]), int(version_digits[1]), int(version_digits[2])
 
 
 class PumpInfo(BaseModel):
@@ -412,6 +403,14 @@ class Elite11InfuseOnly(BaseDevice):
             syringe_volume=syringe_volume,
         )
 
+    @staticmethod
+    def _parse_version(version_text: str) -> Tuple[int, int, int]:
+        """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4"""
+
+        numbers = version_text.split(" ")[-1]
+        version_digits = numbers.split(".")
+        return int(version_digits[0]), int(version_digits[1]), int(version_digits[2])
+
     async def initialize(self):
         """Ensure a valid connection with the pump has been established and sets parameters."""
         # Autodetect address if none provided
@@ -433,7 +432,7 @@ class Elite11InfuseOnly(BaseDevice):
         )
 
         # makes sure that a 'clean' pump is initialized.
-        self._version = _parse_version(await self.version())
+        self._version = self._parse_version(await self.version())
 
         if self._version[0] >= 3:
             await self.clear_volumes()
