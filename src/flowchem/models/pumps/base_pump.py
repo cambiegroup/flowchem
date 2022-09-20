@@ -48,8 +48,8 @@ class BasePump(BaseDevice, ABC):
         router.add_api_route("/infuse", self.infuse, methods=["PUT"])
         router.add_api_route("/stop", self.stop, methods=["PUT"])
 
-        if getattr(self, "withdraw", None) is not None:
-            router.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
+        if hasattr(self, "withdraw"):
+            router.add_api_route("/withdraw", self.withdraw, methods=["PUT"])  # type: ignore
 
         return router
 
