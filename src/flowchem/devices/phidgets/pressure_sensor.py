@@ -106,7 +106,7 @@ class PhidgetPressureSensor(PressureSensor):
         logger.debug(f"Read pressure {pressure_reading} barg!")
         return str(pressure_reading * flowchem_ureg.bar)
 
-    def read_pressure(self, units: str | None = "bar") -> str:
+    def read_pressure(self, units: str | None = "bar") -> str:  # type: ignore
         """
         Read pressure from the sensor and returns with `units` (default: bar).
 
