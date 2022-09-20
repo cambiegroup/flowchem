@@ -1,5 +1,7 @@
 # Contribute to flowchem
 % part of this page is based on the numpy project one
+% See also https://rdflib.readthedocs.io/en/stable/developers.html
+% And https://diataxis.fr/how-to-guides/
 
 Not a coder? Not a problem! Flowchem is multi-faceted, and we can use a lot of help.
 These are all activities we’d like to get help with :
