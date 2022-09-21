@@ -1,5 +1,9 @@
 # import all submodules to add them to the flowchem.device namespace
 # This is so that users do not need to know inner manufacturer-based folder structure
+# Explicit
+# from .hamilton import ML600
+# from .harvardapparatus import Elite11InfuseOnly, Elite11InfuseWithdraw
+# Implicit alternative
 import importlib
 import pkgutil
 
