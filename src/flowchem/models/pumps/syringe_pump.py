@@ -1,9 +1,9 @@
 from abc import ABC
 
-from flowchem.models.base_device import BaseDevice
+from flowchem.models.pumps.base_pump import BasePump
 
 
-class SyringePump(BaseDevice, ABC):
+class SyringePump(BasePump, ABC):
     """A generic Syringe pump."""
 
     def __init__(self, *args, **kwargs):
