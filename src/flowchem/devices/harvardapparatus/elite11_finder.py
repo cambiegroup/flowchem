@@ -33,9 +33,9 @@ def elite11_finder() -> set:
                 logger.info(f"Pump found on <{serial_port}>")
 
                 pump = link._serial.readline().decode("ascii")
-                try:
+                if pump[0:2].isdigit():
                     address = int(pump[0:2])
-                except ValueError:
+                else:
                     address = 0
 
                 test_pump = Elite11InfuseOnly(
