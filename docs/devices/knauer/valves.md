@@ -32,8 +32,8 @@ The valve position naming follow the general convention of flowchem (see [Base V
 * Multiposition valves have positions from '1' to 'n' where n is the total amount of port available.
 
 ## Device auto-detection
-It is possible to find all the Knauer device in the current local network with the `knauer-finder` utility provided with
-`flowchem`.
+It is possible to find all the Knauer device in the current local network with the `knauer-finder` utility provided with `flowchem`.
+On Windows, you might be asked by Windows Defender to create a rule to allow access to the network.
 
 % FIXME add a successful connection example here :D
 ```shell

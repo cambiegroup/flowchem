@@ -72,7 +72,12 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
     }
 
     def __init__(
-        self, ip_address=None, mac_address=None, max_pressure: str = None, name=None
+        self,
+        ip_address=None,
+        mac_address=None,
+        max_pressure: str = None,
+        min_pressure: str = None,
+        name=None,
     ):
         super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"
@@ -81,7 +86,8 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         self.max_allowed_pressure, self.max_allowed_flow = 0, 0
         self._headtype = None
         self._running = None
-        self._pressure_limit = max_pressure
+        self._pressure_max = max_pressure
+        self._pressure_min = min_pressure
 
         self.rate = flowchem_ureg.parse_expression("0 ml/min")
         self._base_state = dict(rate="0 mL/min")
@@ -98,8 +104,10 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         # Also ensure rest state is not pumping.
         await self.stop()
 
-        if self._pressure_limit is not None:
-            await self.set_maximum_pressure(self._pressure_limit)
+        if self._pressure_max is not None:
+            await self.set_maximum_pressure(self._pressure_max)
+        if self._pressure_min is not None:
+            await self.set_minimum_pressure(self._pressure_min)
 
     @staticmethod
     def error_present(reply: str) -> bool:
