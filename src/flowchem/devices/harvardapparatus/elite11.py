@@ -433,6 +433,16 @@ class Elite11InfuseOnly(SyringePump):
         if self._version[0] >= 3:
             await self.clear_volumes()
 
+        # User-friendly message if infuse-only on withdraw pump
+        pump_info = await self.pump_info()
+        if not pump_info.infuse_only:
+            logger.warning(
+                f"The pump {self.name} has been loaded as InfuseOnly but has withdrawing capabilities!"
+            )
+            logger.warning(
+                "Consider using Elite11InfuseWithdraw in your configuration instead of Elite11InfuseOnly"
+            )
+
     async def _send_command_and_read_reply(
         self, command: str, parameter="", parse=True
     ) -> str:
