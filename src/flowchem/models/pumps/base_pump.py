@@ -63,7 +63,7 @@ class WithdrawMixin:
 
     def get_router(self, prefix: str | None = None) -> APIRouter:
         """Get the API router for this device."""
-        router = super().get_router(prefix)
+        router = super().get_router(prefix)  # type: ignore
 
         router.add_api_route(
             "/withdraw-flow-rate", self.get_withdrawing_flow_rate, methods=["GET"]

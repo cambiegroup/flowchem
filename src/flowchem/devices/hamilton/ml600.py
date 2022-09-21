@@ -21,207 +21,6 @@ if TYPE_CHECKING:
     import pint
 
 
-@dataclass
-class Protocol1CommandTemplate:
-    """Class representing a pump command and its expected reply, but without target pump number"""
-
-    command: str
-    optional_parameter: str = ""
-    execute_command: bool = True
-
-    def to_pump(
-        self, address: int, command_value: str = "", argument_value: str = ""
-    ) -> Protocol1Command:
-        """Returns a Protocol11Command by adding to the template pump address and command arguments"""
-        return Protocol1Command(
-            target_pump_num=address,
-            command=self.command,
-            optional_parameter=self.optional_parameter,
-            command_value=command_value,
-            argument_value=argument_value,
-            execute_command=self.execute_command,
-        )
-
-
-@dataclass
-class Protocol1Command(Protocol1CommandTemplate):
-    """Class representing a pump command and its expected reply"""
-
-    PUMP_ADDRESS = dict(enumerate(string.ascii_lowercase[:16], start=1))
-    # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
-    # Note ':' is used for broadcast within the daisy chain.
-
-    target_pump_num: int = 1
-    command_value: str | None = None
-    argument_value: str | None = None
-
-    def compile(self) -> bytes:
-        """Create actual command byte by prepending pump address to command and appending executing command."""
-        assert self.target_pump_num in range(1, 17)
-        if not self.command_value:
-            self.command_value = ""
-
-        compiled_command = (
-            f"{self.PUMP_ADDRESS[self.target_pump_num]}"
-            f"{self.command}{self.command_value}"
-        )
-
-        if self.argument_value:
-            compiled_command += f"{self.optional_parameter}{self.argument_value}"
-        # Add execution flag at the end
-        if self.execute_command is True:
-            compiled_command += "R"
-
-        return (compiled_command + "\r").encode("ascii")
-
-
-class HamiltonPumpIO:
-    """Setup with serial parameters, low level IO"""
-
-    ACKNOWLEDGE = chr(6)
-    NEGATIVE_ACKNOWLEDGE = chr(21)
-    DEFAULT_CONFIG = {
-        "timeout": 0.1,
-        "baudrate": 9600,
-        "parity": aioserial.PARITY_EVEN,
-        "stopbits": aioserial.STOPBITS_ONE,
-        "bytesize": aioserial.SEVENBITS,
-    }
-
-    def __init__(self, aio_port: aioserial.Serial):
-        """
-        Initialize communication on the serial port where the pumps are located and initialize them
-        Args:
-            aio_port: aioserial.Serial() object
-        """
-        self._serial = aio_port
-
-        # These will be set by `HamiltonPumpIO.initialize()`
-        self._initialized = False
-        self.num_pump_connected: int | None = None
-
-    @classmethod
-    def from_config(cls, config):
-        """Create HamiltonPumpIO from config."""
-        # Merge default settings, including serial, with provided ones.
-        configuration = HamiltonPumpIO.DEFAULT_CONFIG | config
-
-        try:
-            serial_object = aioserial.AioSerial(**configuration)
-        except aioserial.SerialException as serial_exception:
-            raise InvalidConfiguration(
-                f"Cannot connect to the pump on the port <{configuration.get('port')}>"
-            ) from serial_exception
-
-        return cls(serial_object)
-
-    async def initialize(self, hw_initialization: bool = True):
-        """
-        Ensure connection with pump + initialize
-
-        Args:
-            hw_initialization: Whether each pump has to be initialized. Note that this might be undesired!
-        """
-        # This has to be run after each power cycle to assign addresses to pumps
-        self.num_pump_connected = await self._assign_pump_address()
-        if hw_initialization:
-            await self._hw_init()
-        self._initialized = True
-
-    async def _assign_pump_address(self) -> int:
-        """
-        To be run on init, auto assign addresses to pumps based on their position in the daisy chain.
-        A custom command syntax with no addresses is used here so read and write has been rewritten
-        """
-        try:
-            await self._write_async(b"1a\r")
-        except aioserial.SerialException as e:
-            raise InvalidConfiguration from e
-
-        reply = await self._read_reply_async()
-        if not reply or reply[:1] != "1":
-
-            raise InvalidConfiguration(f"No pump found on {self._serial.port}")
-        # reply[1:2] should be the address of the last pump. However, this does not work reliably.
-        # So here we enumerate the pumps explicitly instead
-        last_pump = 0
-        for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
-            await self._write_async(f"{address}UR\r".encode("ascii"))
-            if "NV01" in await self._read_reply_async():
-                last_pump = pump_num
-            else:
-                break
-        logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
-        return int(last_pump)
-
-    async def _hw_init(self):
-        """Send to all pumps the HW initialization command (i.e. homing)"""
-        await self._write_async(b":XR\r")  # Broadcast: initialize + execute
-        # Note: no need to consume reply here because there is none (since we are using broadcast)
-
-    async def _write_async(self, command: bytes):
-        """Writes a command to the pump"""
-        if not self._initialized:
-            raise DeviceError(
-                "Pump not initialized!\n"
-                "Have you called `initialize()` after object creation?"
-            )
-        await self._serial.write_async(command)
-        logger.debug(f"Command {repr(command)} sent!")
-
-    async def _read_reply_async(self) -> str:
-        """Reads the pump reply from serial communication"""
-        reply_string = await self._serial.readline_async()
-        logger.debug(f"Reply received: {reply_string}")
-        return reply_string.decode("ascii")
-
-    @staticmethod
-    def parse_response(response: str) -> str:
-        """Split a received line in its components: success, reply"""
-        status = response[:1]
-        assert status in (
-            HamiltonPumpIO.ACKNOWLEDGE,
-            HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE,
-        ), "Invalid status reply!"
-
-        if status == HamiltonPumpIO.ACKNOWLEDGE:
-            logger.debug("Positive acknowledge received")
-        else:
-            logger.warning("Negative acknowledge received")
-            warnings.warn(
-                "Negative acknowledge reply received from pump: check command validity!"
-            )
-
-        return response[1:].rstrip()
-
-    def reset_buffer(self):
-        """Reset input buffer before reading from serial. In theory not necessary if all replies are consumed..."""
-        self._serial.reset_input_buffer()
-
-    async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
-        """Main HamiltonPumpIO method.
-        Sends a command to the pump, read the replies and returns it, optionally parsed"""
-        self.reset_buffer()
-        await self._write_async(command.compile())
-        response = await self._read_reply_async()
-
-        if not response:
-            raise InvalidConfiguration(
-                f"No response received from pump, check pump address! "
-                f"(Currently set to {command.target_pump_num})"
-            )
-
-        return self.parse_response(response)
-
-    @property
-    def name(self) -> str:
-        """This is used to provide a nice-looking default name to pumps based on their serial connection."""
-        try:
-            return self._serial.name
-        except AttributeError:
-            return ""
-
-
 class ML600(BaseDevice):
     """ML600 implementation according to manufacturer docs. Tested on a 61501-01 (i.e. single syringe system).
 
@@ -232,6 +31,203 @@ class ML600(BaseDevice):
     example to dispense 9 mL from a 10 mL syringe you would determine the number of
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
+
+    @dataclass
+    class Protocol1CommandTemplate:
+        """Class representing a pump command and its expected reply, but without target pump number"""
+
+        command: str
+        optional_parameter: str = ""
+        execute_command: bool = True
+
+        def to_pump(
+            self, address: int, command_value: str = "", argument_value: str = ""
+        ) -> Protocol1Command:
+            """Returns a Protocol11Command by adding to the template pump address and command arguments"""
+            return Protocol1Command(
+                target_pump_num=address,
+                command=self.command,
+                optional_parameter=self.optional_parameter,
+                command_value=command_value,
+                argument_value=argument_value,
+                execute_command=self.execute_command,
+            )
+
+    @dataclass
+    class Protocol1Command(Protocol1CommandTemplate):
+        """Class representing a pump command and its expected reply"""
+
+        PUMP_ADDRESS = dict(enumerate(string.ascii_lowercase[:16], start=1))
+        # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
+        # Note ':' is used for broadcast within the daisy chain.
+
+        target_pump_num: int = 1
+        command_value: str | None = None
+        argument_value: str | None = None
+
+        def compile(self) -> bytes:
+            """Create actual command byte by prepending pump address to command and appending executing command."""
+            assert self.target_pump_num in range(1, 17)
+            if not self.command_value:
+                self.command_value = ""
+
+            compiled_command = (
+                f"{self.PUMP_ADDRESS[self.target_pump_num]}"
+                f"{self.command}{self.command_value}"
+            )
+
+            if self.argument_value:
+                compiled_command += f"{self.optional_parameter}{self.argument_value}"
+            # Add execution flag at the end
+            if self.execute_command is True:
+                compiled_command += "R"
+
+            return (compiled_command + "\r").encode("ascii")
+
+    class HamiltonPumpIO:
+        """Setup with serial parameters, low level IO"""
+
+        ACKNOWLEDGE = chr(6)
+        NEGATIVE_ACKNOWLEDGE = chr(21)
+        DEFAULT_CONFIG = {
+            "timeout": 0.1,
+            "baudrate": 9600,
+            "parity": aioserial.PARITY_EVEN,
+            "stopbits": aioserial.STOPBITS_ONE,
+            "bytesize": aioserial.SEVENBITS,
+        }
+
+        def __init__(self, aio_port: aioserial.Serial):
+            """
+            Initialize communication on the serial port where the pumps are located and initialize them
+            Args:
+                aio_port: aioserial.Serial() object
+            """
+            self._serial = aio_port
+
+            # These will be set by `HamiltonPumpIO.initialize()`
+            self._initialized = False
+            self.num_pump_connected: int | None = None
+
+        @classmethod
+        def from_config(cls, config):
+            """Create HamiltonPumpIO from config."""
+            # Merge default settings, including serial, with provided ones.
+            configuration = HamiltonPumpIO.DEFAULT_CONFIG | config
+
+            try:
+                serial_object = aioserial.AioSerial(**configuration)
+            except aioserial.SerialException as serial_exception:
+                raise InvalidConfiguration(
+                    f"Cannot connect to the pump on the port <{configuration.get('port')}>"
+                ) from serial_exception
+
+            return cls(serial_object)
+
+        async def initialize(self, hw_initialization: bool = True):
+            """
+            Ensure connection with pump + initialize
+
+            Args:
+                hw_initialization: Whether each pump has to be initialized. Note that this might be undesired!
+            """
+            # This has to be run after each power cycle to assign addresses to pumps
+            self._initialized = True
+            self.num_pump_connected = await self._assign_pump_address()
+            if hw_initialization:
+                await self._hw_init()
+
+        async def _assign_pump_address(self) -> int:
+            """
+            To be run on init, auto assign addresses to pumps based on their position in the daisy chain.
+            A custom command syntax with no addresses is used here so read and write has been rewritten
+            """
+            try:
+                await self._write_async(b"1a\r")
+            except aioserial.SerialException as e:
+                raise InvalidConfiguration from e
+
+            reply = await self._read_reply_async()
+            if not reply or reply[:1] != "1":
+                raise InvalidConfiguration(f"No pump found on {self._serial.port}")
+            # reply[1:2] should be the address of the last pump. However, this does not work reliably.
+            # So here we enumerate the pumps explicitly instead
+            last_pump = 0
+            for pump_num, address in Protocol1Command.PUMP_ADDRESS.items():
+                await self._write_async(f"{address}UR\r".encode("ascii"))
+                if "NV01" in await self._read_reply_async():
+                    last_pump = pump_num
+                else:
+                    break
+            logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
+            return int(last_pump)
+
+        async def _hw_init(self):
+            """Send to all pumps the HW initialization command (i.e. homing)"""
+            await self._write_async(b":XR\r")  # Broadcast: initialize + execute
+            # Note: no need to consume reply here because there is none (since we are using broadcast)
+
+        async def _write_async(self, command: bytes):
+            """Writes a command to the pump"""
+            if not self._initialized:
+                raise DeviceError(
+                    "Pump not initialized!\n"
+                    "Have you called `initialize()` after object creation?"
+                )
+            await self._serial.write_async(command)
+            logger.debug(f"Command {repr(command)} sent!")
+
+        async def _read_reply_async(self) -> str:
+            """Reads the pump reply from serial communication"""
+            reply_string = await self._serial.readline_async()
+            logger.debug(f"Reply received: {reply_string}")
+            return reply_string.decode("ascii")
+
+        @staticmethod
+        def parse_response(response: str) -> str:
+            """Split a received line in its components: success, reply"""
+            status = response[:1]
+            assert status in (
+                HamiltonPumpIO.ACKNOWLEDGE,
+                HamiltonPumpIO.NEGATIVE_ACKNOWLEDGE,
+            ), "Invalid status reply!"
+
+            if status == HamiltonPumpIO.ACKNOWLEDGE:
+                logger.debug("Positive acknowledge received")
+            else:
+                logger.warning("Negative acknowledge received")
+                warnings.warn(
+                    "Negative acknowledge reply received from pump: check command validity!"
+                )
+
+            return response[1:].rstrip()
+
+        def reset_buffer(self):
+            """Reset input buffer before reading from serial. In theory not necessary if all replies are consumed..."""
+            self._serial.reset_input_buffer()
+
+        async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
+            """Main HamiltonPumpIO method.
+            Sends a command to the pump, read the replies and returns it, optionally parsed"""
+            self.reset_buffer()
+            await self._write_async(command.compile())
+            response = await self._read_reply_async()
+
+            if not response:
+                raise InvalidConfiguration(
+                    f"No response received from pump, check pump address! "
+                    f"(Currently set to {command.target_pump_num})"
+                )
+
+            return self.parse_response(response)
+
+        @property
+        def name(self) -> str:
+            """This is used to provide a nice-looking default name to pumps based on their serial connection."""
+            try:
+                return self._serial.name
+            except AttributeError:
+                return ""
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
     _io_instances: set[HamiltonPumpIO] = set()

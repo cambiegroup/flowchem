@@ -578,11 +578,14 @@ class Elite11InfuseOnly(SyringePump):
         while await self.is_moving():
             await asyncio.sleep(0.05)
 
-    async def get_flow_rate(self) -> str:
+    async def get_flow_rate(self) -> float:
         """Returns the infusion rate as str w/ units"""
-        return await self._send_command_and_read_reply(
+        flow_value = await self._send_command_and_read_reply(
             Elite11Commands.INFUSE_RATE
-        )  # e.g. '0.2 ml/min'
+        )
+        flowrate = flowchem_ureg(flow_value)
+        logger.debug(f"Current infusion flow rate is {flowrate}")
+        return flowrate.m_as("ml/min")
 
     async def set_flow_rate(self, rate: str):
         """Sets the infusion rate"""
@@ -790,9 +793,14 @@ class Elite11InfuseWithdraw(WithdrawMixin, Elite11InfuseOnly):
 
         logger.info("Pump movement started in withdraw direction!")
 
-    async def get_withdrawing_flow_rate(self) -> str:
-        """Returns the infusion rate as a string w/ units"""
-        return await self._send_command_and_read_reply(Elite11Commands.WITHDRAW_RATE)
+    async def get_withdrawing_flow_rate(self) -> float:
+        """Returns the withdrawing flow rate as ml/min"""
+        flow_value = await self._send_command_and_read_reply(
+            Elite11Commands.WITHDRAW_RATE
+        )
+        flowrate = flowchem_ureg(flow_value)
+        logger.debug(f"Current withdraw flow rate is {flowrate}")
+        return flowrate.m_as("ml/min")
 
     async def set_withdrawing_flow_rate(self, rate: str):
         """Sets the infusion rate"""

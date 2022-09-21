@@ -221,12 +221,12 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         self._headtype = head_type
         logger.debug(f"Head type set to {head_type}")
 
-    async def get_flow_rate(self) -> str:
-        """Gets flow rate."""
+    async def get_flow_rate(self) -> float:
+        """Gets flow rate in ml/min."""
         flow_value = await self.create_and_send_command(FLOW)
         flowrate = flowchem_ureg(f"{flow_value} ul/min")
         logger.debug(f"Current flow rate is {flowrate}")
-        return str(flowrate.to("ml/min"))
+        return flowrate.m_as("ml/min")
 
     async def set_flow_rate(self, rate: str):
         """Sets flow rate.
