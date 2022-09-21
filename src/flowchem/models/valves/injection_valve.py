@@ -50,7 +50,7 @@ class InjectionValve(BaseValve, ABC):
         await sleep(time_to_wait.to("s").magnitude)
         await self.set_position(initial_position)
 
-    def get_router(self) -> APIRouter:
+    def get_router(self, prefix: str | None = None) -> APIRouter:
         router = super().get_router()
         router.add_api_route("/timed_toggle", self.timed_toggle, methods=["PUT"])
         return router
