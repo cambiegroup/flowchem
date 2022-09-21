@@ -5,12 +5,11 @@ import warnings
 from typing import Literal
 
 import aioserial
-from loguru import logger
-
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
+from loguru import logger
 
 
 class MansonPowerSupply(BaseDevice):

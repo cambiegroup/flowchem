@@ -2,11 +2,10 @@
 import time
 
 import aioserial
-from loguru import logger
-
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
+from loguru import logger
 
 try:
     from devices import (

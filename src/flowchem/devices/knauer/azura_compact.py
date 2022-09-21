@@ -3,15 +3,15 @@ import asyncio
 import warnings
 from enum import Enum
 
-from loguru import logger
-
+from flowchem.exceptions import DeviceError
 from flowchem.models.base_device import BaseDevice
 from flowchem.models.pumps.base_pump import BasePump
-from ._common import KnauerEthernetDevice
-from flowchem.exceptions import DeviceError
 from flowchem.models.pumps.hplc_pump import HplcPump
 from flowchem.models.sensors.pressure_sensor import PressureSensor
 from flowchem.units import flowchem_ureg
+from loguru import logger
+
+from ._common import KnauerEthernetDevice
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to the highest flow rate in ml/min

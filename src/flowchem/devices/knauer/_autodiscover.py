@@ -7,9 +7,8 @@ import time
 from threading import Thread
 
 import rich_click as click
-from loguru import logger
-
 from flowchem.devices.knauer.getmac import get_mac_address
+from loguru import logger
 
 __all__ = ["main", "autodiscover_knauer"]
 

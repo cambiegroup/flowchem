@@ -6,11 +6,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import aioserial
-from loguru import logger
-
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.valves.injection_valve import InjectionValve
 from flowchem.units import flowchem_ureg
+from loguru import logger
 
 
 @dataclass

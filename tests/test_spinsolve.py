@@ -4,7 +4,6 @@ import time
 from pathlib import Path
 
 import pytest
-
 from flowchem.devices.magritek import Spinsolve
 
 

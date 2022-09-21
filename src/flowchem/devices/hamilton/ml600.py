@@ -11,12 +11,11 @@ from enum import IntEnum
 from typing import TYPE_CHECKING
 
 import aioserial
-from loguru import logger
-
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
+from loguru import logger
 
 if TYPE_CHECKING:
     import pint

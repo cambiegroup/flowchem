@@ -1,7 +1,6 @@
 from abc import ABC
 
 from fastapi import APIRouter
-
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
 
@@ -20,16 +19,15 @@ class BasePump(BaseDevice, ABC):
 
     def __init__(self, name: str | None = None):
         super().__init__(name=name)
-        self.rate = flowchem_ureg.parse_expression("0 ml/min")
         self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0001042")
 
     def set_flow_rate(self, rate: str):
-        """Sets the pump flow rate. In case of infusion/withdraw syringe pumps, sets infusion rate."""
-        self.rate = flowchem_ureg.parse_expression(rate)
+        """Sets the pump infusion flow rate."""
+        raise NotImplementedError
 
     def get_flow_rate(self) -> float:
-        """Gets the pump flow rate in the current moving direction. If not moving, default to infusion rate."""
-        return self.rate.m_as("ml/min")
+        """Gets the pump infusion flow rate."""
+        raise NotImplementedError
 
     def infuse(self):
         """Start infusion."""
@@ -39,17 +37,14 @@ class BasePump(BaseDevice, ABC):
         """Stop pumping."""
         raise NotImplementedError
 
-    def get_router(self) -> APIRouter:
+    def get_router(self, prefix: str | None = None) -> APIRouter:
         """Get the API router for this device."""
-        router = BaseDevice.get_router(self)
+        router = BaseDevice.get_router(self, prefix)
 
         router.add_api_route("/flow-rate", self.get_flow_rate, methods=["GET"])
         router.add_api_route("/flow-rate", self.set_flow_rate, methods=["PUT"])
         router.add_api_route("/infuse", self.infuse, methods=["PUT"])
         router.add_api_route("/stop", self.stop, methods=["PUT"])
-
-        if hasattr(self, "withdraw"):
-            router.add_api_route("/withdraw", self.withdraw, methods=["PUT"])  # type: ignore
 
         return router
 
@@ -58,3 +53,25 @@ class WithdrawMixin:
     def withdraw(self):
         """Pump in the opposite direction of infuse."""
         raise NotADirectoryError
+
+    def set_withdrawing_flow_rate(self, rate: str):
+        """Sets the pump withdraw flow rate."""
+        raise NotImplementedError
+
+    def get_withdrawing_flow_rate(self) -> float:
+        """Gets the pump withdraw flow rate."""
+        raise NotImplementedError
+
+    def get_router(self, prefix: str | None = None) -> APIRouter:
+        """Get the API router for this device."""
+        router = super().get_router(prefix)
+
+        router.add_api_route(
+            "/withdraw-flow-rate", self.get_withdrawing_flow_rate, methods=["GET"]
+        )
+        router.add_api_route(
+            "/withdraw-flow-rate", self.set_withdrawing_flow_rate, methods=["PUT"]
+        )
+        router.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
+
+        return router

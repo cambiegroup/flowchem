@@ -1,10 +1,10 @@
 """Module for communication with Knauer pumps and valves."""
 import asyncio
 
+from flowchem.exceptions import InvalidConfiguration
 from loguru import logger
 
 from ._autodiscover import autodiscover_knauer
-from flowchem.exceptions import InvalidConfiguration
 
 
 class KnauerEthernetDevice:

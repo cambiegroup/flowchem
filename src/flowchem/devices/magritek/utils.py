@@ -3,9 +3,8 @@ import ctypes.wintypes
 from collections.abc import Callable
 from pathlib import Path
 
-from loguru import logger
-
 from flowchem.exceptions import InvalidConfiguration
+from loguru import logger
 
 
 def get_my_docs_path():

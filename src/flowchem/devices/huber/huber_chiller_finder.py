@@ -5,10 +5,9 @@ import asyncio
 
 import rich_click as click
 import serial.tools.list_ports
-from loguru import logger
-
 from flowchem.devices.huber.chiller import HuberChiller
 from flowchem.exceptions import InvalidConfiguration
+from loguru import logger
 
 
 # noinspection PyProtectedMember

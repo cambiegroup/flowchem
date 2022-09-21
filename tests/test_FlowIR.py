@@ -4,7 +4,6 @@ import datetime
 import sys
 
 import pytest
-
 from flowchem.devices.mettlertoledo import IRSpectrum
 from flowchem.devices.mettlertoledo.flowir import FlowIR
 
