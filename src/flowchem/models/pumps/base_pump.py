@@ -2,7 +2,6 @@ from abc import ABC
 
 from fastapi import APIRouter
 from flowchem.models.base_device import BaseDevice
-from flowchem.units import flowchem_ureg
 
 
 class BasePump(BaseDevice, ABC):

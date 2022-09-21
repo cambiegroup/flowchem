@@ -15,7 +15,7 @@ async def move_infuse(pump):
     await pump.set_syringe_diameter(10)
     await pump.set_flow_rate(1)
     await pump.set_target_volume(1)
-    await pump.infuse_run()
+    await pump.infuse()
 
 
 @pytest.fixture(scope="session")
@@ -118,7 +118,7 @@ async def test_get_infused_volume(pump: Elite11InfuseWithdraw):
     await pump.set_syringe_diameter(30)
     await pump.set_flow_rate(5)
     await pump.set_target_volume(0.05)
-    await pump.infuse_run()
+    await pump.infuse()
     await asyncio.sleep(2)
     vol = flowchem_ureg.Quantity(await pump.get_infused_volume()).to("ml").magnitude
     assert math.isclose(vol, 0.05, abs_tol=1e-4)

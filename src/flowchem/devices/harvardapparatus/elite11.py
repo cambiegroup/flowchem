@@ -549,7 +549,7 @@ class Elite11InfuseOnly(SyringePump):
         await self._send_command_and_read_reply(Elite11Commands.RUN)
         logger.info("Pump movement started! (direction unspecified)")
 
-    async def infuse_run(self):
+    async def infuse(self):
         """Activates pump, runs in infuse mode."""
         if await self.is_moving():
             warnings.warn("Cannot start pump: already moving!")
@@ -709,9 +709,7 @@ class Elite11InfuseOnly(SyringePump):
         router = super().get_router()
         router.add_api_route("/parameters/force", self.get_force, methods=["PUT"])
         router.add_api_route("/parameters/force", self.set_force, methods=["PUT"])
-        router.add_api_route("/run", self.run, methods=["PUT"])
-        router.add_api_route("/run/infuse", self.infuse_run, methods=["PUT"])
-        router.add_api_route("/stop", self.stop, methods=["PUT"])
+        # router.add_api_route("/run", self.run, methods=["PUT"])
         router.add_api_route("/info/version", self.version, methods=["GET"])
         router.add_api_route(
             "/info/status", self.get_status, methods=["GET"], response_model=PumpStatus
@@ -834,7 +832,7 @@ if __name__ == "__main__":
         await pump.set_syringe_diameter("30 mm")
         await pump.set_flow_rate("0.1 ml/min")
         await pump.set_target_volume("0.05 ml")
-        await pump.infuse_run()
+        await pump.infuse()
         await asyncio.sleep(2)
         await pump.pump_info()
 
