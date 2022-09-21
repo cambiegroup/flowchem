@@ -5,6 +5,8 @@ from enum import Enum
 
 from loguru import logger
 
+from flowchem.models.base_device import BaseDevice
+from flowchem.models.pumps.base_pump import BasePump
 from ._common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
 from flowchem.models.pumps.hplc_pump import HplcPump
@@ -94,7 +96,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         # Place pump in remote control
         await self.set_remote()
         # Also ensure rest state is not pumping.
-        await self.stop_flow()
+        await self.stop()
 
         if self._pressure_limit is not None:
             await self.set_maximum_pressure(self._pressure_limit)
@@ -219,29 +221,29 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         self._headtype = head_type
         logger.debug(f"Head type set to {head_type}")
 
-    async def get_flow(self) -> str:
+    async def get_flow_rate(self) -> str:
         """Gets flow rate."""
         flow_value = await self.create_and_send_command(FLOW)
         flowrate = flowchem_ureg(f"{flow_value} ul/min")
         logger.debug(f"Current flow rate is {flowrate}")
         return str(flowrate.to("ml/min"))
 
-    async def set_flow(self, flowrate: str = None):
+    async def set_flow_rate(self, rate: str):
         """Sets flow rate.
 
         Args:
-            flowrate (str): value with units
+            rate (str): value with units
         """
-        if flowrate is None:
-            flowrate = "0 ml/min"
+        if rate is None:
+            rate = "0 ml/min"
 
-        parsed_flowrate = flowchem_ureg(flowrate)
+        parsed_flowrate = flowchem_ureg(rate)
         await self.create_and_send_command(
             FLOW,
             setpoint=round(parsed_flowrate.m_as("ul/min")),
             setpoint_range=(0, self.max_allowed_flow + 1),
         )
-        logger.info(f"Flow set to {flowrate}")
+        logger.info(f"Flow set to {rate}")
 
     async def get_minimum_pressure(self):
         """Gets minimum pressure. The pump stops if the measured P is lower than this."""
@@ -375,17 +377,17 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.debug(f"Motor current reading returns {current_percent} %")
         return current_percent
 
-    async def start_flow(self):
-        """Starts flow"""
+    async def infuse(self):
+        """Start running pump at the given rate."""
         await self._transmit_and_parse_reply(PUMP_ON)
         self._running = True
-        logger.info("Pump switched on")
+        logger.info("Pump started!")
 
-    async def stop_flow(self):
-        """Stops flow"""
+    async def stop(self):
+        """Stops flow."""
         await self._transmit_and_parse_reply(PUMP_OFF)
         self._running = False
-        logger.info("Pump not pumping")
+        logger.info("Pump stopped")
 
     def is_running(self):
         """Get pump state."""
@@ -425,29 +427,27 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.stop_flow()
+        await self.stop()
 
     async def _update(self):
         """Called automatically to change flow rate."""
 
         if self.rate == 0:
-            await self.stop_flow()
+            await self.stop()
         else:
-            await self.set_flow(self.rate)
-            await self.start_flow()
+            await self.set_flow_rate(self.rate)
+            await self.infuse()
 
     def get_router(self):
         """Creates an APIRouter for this object."""
+        # Basic pump methods
         router = super().get_router()
 
-        router.add_api_route("/flow", self.get_flow, methods=["GET"])
-        router.add_api_route("/flow", self.set_flow, methods=["PUT"])
-        router.add_api_route("/start", self.start_flow, methods=["PUT"])
-        router.add_api_route("/stop", self.stop_flow, methods=["PUT"])
-
         # Pressure sensor as sub-device following pressure sensors schema
-        router2 = super(PressureSensor).get_router()
-        router2.prefix += "/pressure-sensor/"
+        router2 = super(BasePump, self).get_router(prefix="/pressure-sensor")
+        # Note: This is super(BasePump) because the MRO of AzuraCompactPump is
+        # (KnauerEthernetDevice, HplcPump, BasePump, PressureSensor, Sensor, BaseDevice, ...)
+        # ---------------------------------^^^^^^^^ to get PressureSensor's router!
 
         return router, router2
 
@@ -464,9 +464,9 @@ if __name__ == "__main__":
     async def main(pump: AzuraCompactPump):
         """Test function"""
         await pump.initialize()
-        await pump.set_flow("0.1 ml/min")
-        await pump.start_flow()
+        await pump.set_flow_rate("0.1 ml/min")
+        await pump.infuse()
         await asyncio.sleep(5)
-        await pump.stop_flow()
+        await pump.stop()
 
     asyncio.run(main(p))

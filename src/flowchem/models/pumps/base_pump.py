@@ -41,7 +41,7 @@ class BasePump(BaseDevice, ABC):
 
     def get_router(self) -> APIRouter:
         """Get the API router for this device."""
-        router = super().get_router()
+        router = BaseDevice.get_router(self)
 
         router.add_api_route("/flow-rate", self.get_flow_rate, methods=["GET"])
         router.add_api_route("/flow-rate", self.set_flow_rate, methods=["PUT"])

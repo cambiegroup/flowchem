@@ -73,21 +73,21 @@ def parse_device(dev_settings, device_object_mapper) -> BaseDevice:
             f"Device type unknown for {device_name}! \n"
         ) from error
 
-    # If the object has a from_config method, use that for instantiation, otherwise try straight with the constructor.
-    to_be_called = (
-        obj_type.from_config if hasattr(obj_type, "from_config") else obj_type.__init__
-    )
-
-    # Instantiate it with the provided settings
+    # If the object has a 'from_config' method, use that for instantiation, otherwise try straight with the constructor.
     try:
-        device = to_be_called(**device_config)
+        if hasattr(obj_type, "from_config"):
+            called = obj_type.from_config
+            device = obj_type.from_config(**device_config, name=device_name)
+        else:
+            called = obj_type.__init__
+            device = obj_type(**device_config, name=device_name)
     except TypeError as error:
         logger.error(f"Wrong settings for device '{device_name}'!")
-        get_helpful_error_message(device_config, inspect.getfullargspec(to_be_called))
+        get_helpful_error_message(device_config, inspect.getfullargspec(called))
         raise ConnectionError(
-            f"Wrong configuration provided for device: {device_name} of type {obj_type.__name__}!\n"
+            f"Wrong configuration provided for device '{device_name}' of type {obj_type.__name__}!\n"
             f"Configuration: {device_config}\n"
-            f"Accepted parameters: {inspect.getfullargspec(obj_type.from_config).args}"
+            f"Accepted parameters: {inspect.getfullargspec(called).args}"
         ) from error
 
     logger.debug(f"Created device '{device.name}' instance: {device}")

@@ -1,6 +1,11 @@
 [device.socl2]
 type = "Elite11InfuseOnly"
 port = "COM4"
-diameter = "4.6 mm"
+syringe_diameter = "4.6 mm"
 syringe_volume = "1 ml"
 baudrate = 115200
+
+[device.hexyldecanoic]
+type = "AzuraCompactPump"
+ip_address = "192.168.1.116"
+max_pressure = "10 bar"

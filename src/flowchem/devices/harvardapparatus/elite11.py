@@ -696,9 +696,7 @@ class Elite11InfuseOnly(BaseDevice):
 
     def get_router(self):
         """Creates an APIRouter for this object."""
-        from fastapi import APIRouter
-
-        router = APIRouter()
+        router = super().get_router()
         router.add_api_route(
             "/parameters/syringe-volume", self.get_syringe_volume, methods=["GET"]
         )

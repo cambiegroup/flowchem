@@ -22,6 +22,8 @@ def autodiscover_device_classes():
 
 def is_device_class(test_object):
     """Return true if the object is a subclass of BaseDevice."""
+    if getattr(test_object, '__module__', None) is None:
+        return
     return (
         inspect.isclass(test_object)
         and issubclass(test_object, BaseDevice)

@@ -1,4 +1,6 @@
 """Connection reader + XML parser for Spinsolve replies."""
+from __future__ import annotations  # Still used for deferred evaluation of hints, PEP 563
+
 import queue
 import time
 import warnings

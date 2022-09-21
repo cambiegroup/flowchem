@@ -11,6 +11,8 @@ from loguru import logger
 
 from flowchem.devices.knauer.getmac import get_mac_address
 
+__all__ = ["main", "autodiscover_knauer"]
+
 Address = tuple[str, int]
 
 
