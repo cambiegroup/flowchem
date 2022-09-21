@@ -1,9 +1,11 @@
 """Connection reader + XML parser for Spinsolve replies."""
+from __future__ import (
+    annotations,
+)  # Still used for deferred evaluation of hints, PEP 563
+
 import queue
 import time
 import warnings
-from typing import List
-from typing import Optional
 
 from lxml import etree
 
@@ -32,7 +34,7 @@ class Reader:
             self.schema = xml_schema
 
         self.parser = etree.XMLParser()
-        self._replies: List[etree.Element] = []
+        self._replies: list[etree.Element] = []
         self._rcv_buffer = b""
 
     def wait_for_reply(self, reply_type="", timeout=1):
@@ -98,7 +100,7 @@ class Reader:
             if tree and self.schema:
                 self.validate_tree(tree)
 
-    def parse_tree(self, tree_string) -> Optional[etree.Element]:
+    def parse_tree(self, tree_string) -> etree.Element | None:
         """Parse an XML reply tree, add it to the replies and validate it (if the schema is available)."""
 
         try:

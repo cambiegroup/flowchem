@@ -8,14 +8,14 @@ As for all `flowchem` devices, the virtual instrument can be instantiated via a 
 openAPI endpoint.
 
 
-## Connection details
+## Connection
 Knauer valves are originally designed to be used with HPLC instruments, so they support ethernet communication.
-Moreover, they feature an autodiscovery mechanism that makes it possible to automatically find the device IP address
+Moreover, they feature an autodiscover mechanism that makes it possible to automatically find the device IP address
 of a device given its (immutable) MAC address.
 This enables the use of the valves with dynamic addresses (i.e. with a DHCP server) which simplify the setup procedure.
 
 
-## Configuration for API use
+## Configuration
 Configuration sample showing all possible parameters:
 
 ```toml

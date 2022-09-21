@@ -3,10 +3,6 @@ import asyncio
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
-from typing import Optional
-from typing import Set
-from typing import Tuple
 
 import aioserial
 from loguru import logger
@@ -26,7 +22,7 @@ class PumpInfo(BaseModel):
     infuse_only: bool
 
     @classmethod
-    def parse_pump_string(cls, metrics_text: List[str]):
+    def parse_pump_string(cls, metrics_text: list[str]):
         """Parse pump response string into model."""
         pump_type, pump_description, infuse_only = "", "", True
         for line in metrics_text:
@@ -105,7 +101,7 @@ class HarvardApparatusPumpIO:
             raise InvalidConfiguration from serial_exception
         logger.debug(f"Sent {repr(command_msg)}!")
 
-    async def _read_reply(self) -> List[str]:
+    async def _read_reply(self) -> list[str]:
         """Reads the pump reply from serial communication"""
         reply_string = []
 
@@ -122,7 +118,7 @@ class HarvardApparatusPumpIO:
         return reply_string
 
     @staticmethod
-    def parse_response_line(line: str) -> Tuple[int, PumpStatus, str]:
+    def parse_response_line(line: str) -> tuple[int, PumpStatus, str]:
         """Split a received line in its components: address, prompt and reply body"""
         assert len(line) >= 3
         pump_address = int(line[0:2])
@@ -135,8 +131,8 @@ class HarvardApparatusPumpIO:
 
     @staticmethod
     def parse_response(
-        response: List[str],
-    ) -> Tuple[List[int], List[PumpStatus], List[str]]:
+        response: list[str],
+    ) -> tuple[list[int], list[PumpStatus], list[str]]:
         """Aggregates address prompt and reply body from all the reply lines and return them."""
         parsed_lines = list(map(HarvardApparatusPumpIO.parse_response_line, response))
         # noinspection PyTypeChecker
@@ -176,7 +172,7 @@ class HarvardApparatusPumpIO:
 
     async def write_and_read_reply(
         self, command: Protocol11Command, return_parsed: bool = True
-    ) -> List[str]:
+    ) -> list[str]:
         """Main PumpIO method. Sends a command to the pump, read the replies and returns it, optionally parsed.
 
         If unparsed reply is a List[str] with raw replies.
@@ -212,7 +208,7 @@ class HarvardApparatusPumpIO:
         return parsed_response if return_parsed else response
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """This is used to provide a nice-looking default name to pumps based on their serial connection."""
         try:
             return self._serial.name
@@ -221,12 +217,12 @@ class HarvardApparatusPumpIO:
 
     def autodiscover_address(self) -> int:
         """Autodiscover pump address based on response received."""
-        self._serial.write("\r\n".encode("ascii"))
+        self._serial.write(b"\r\n")
         self._serial.readline()
         prompt = self._serial.readline()
         valid_status = [status.value for status in PumpStatus]
         address = 0 if prompt[0:2].decode() in valid_status else int(prompt[0:2])
-        logger.debug(f"Address autodetected as {address}")
+        logger.debug(f"Address detected as {address}")
         return address
 
 
@@ -302,7 +298,7 @@ class Elite11InfuseOnly(BaseDevice):
     """
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
-    _io_instances: Set[HarvardApparatusPumpIO] = set()
+    _io_instances: set[HarvardApparatusPumpIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
     # When several pumps are daisy-chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
@@ -332,10 +328,10 @@ class Elite11InfuseOnly(BaseDevice):
     def __init__(
         self,
         pump_io: HarvardApparatusPumpIO,
-        diameter: str,
+        syringe_diameter: str,
         syringe_volume: str,
-        address: Optional[int] = None,
-        name: Optional[str] = None,
+        address: int | None = None,
+        name: str | None = None,
     ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
@@ -354,12 +350,12 @@ class Elite11InfuseOnly(BaseDevice):
         self.address: int = address if address is not None else 0  # type: ignore
         self._version = None  # Set in initialize
 
-        # diameter and syringe volume - these will be set in initialize() - check values here though.
-        if diameter is None:
+        # syringe diameter and volume - these will be set in initialize() - check values here though.
+        if syringe_diameter is None:
             raise InvalidConfiguration(
                 "Please provide the syringe diameter explicitly!\nThis prevents errors :)"
             )
-        self._diameter = diameter
+        self._diameter = syringe_diameter
 
         if syringe_volume is None:
             raise InvalidConfiguration(
@@ -371,7 +367,7 @@ class Elite11InfuseOnly(BaseDevice):
     def from_config(
         cls,
         port: str,
-        diameter: str,
+        syringe_diameter: str,
         syringe_volume: str,
         address: int = None,
         name: str = None,
@@ -399,12 +395,12 @@ class Elite11InfuseOnly(BaseDevice):
             pumpio,
             address=address,
             name=name,
-            diameter=diameter,
+            syringe_diameter=syringe_diameter,
             syringe_volume=syringe_volume,
         )
 
     @staticmethod
-    def _parse_version(version_text: str) -> Tuple[int, int, int]:
+    def _parse_version(version_text: str) -> tuple[int, int, int]:
         """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4"""
 
         numbers = version_text.split(" ")[-1]
@@ -452,7 +448,7 @@ class Elite11InfuseOnly(BaseDevice):
 
     async def _send_command_and_read_reply_multiline(
         self, command: str, parameter="", parse=True
-    ) -> List[str]:
+    ) -> list[str]:
         """Sends a command based on its template and return the corresponding reply as str"""
 
         cmd = Protocol11Command(
@@ -700,9 +696,7 @@ class Elite11InfuseOnly(BaseDevice):
 
     def get_router(self):
         """Creates an APIRouter for this object."""
-        from fastapi import APIRouter
-
-        router = APIRouter()
+        router = super().get_router()
         router.add_api_route(
             "/parameters/syringe-volume", self.get_syringe_volume, methods=["GET"]
         )
@@ -744,10 +738,10 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
     def __init__(
         self,
         pump_io: HarvardApparatusPumpIO,
-        diameter: str,
+        syringe_diameter: str,
         syringe_volume: str,
-        address: Optional[int] = None,
-        name: Optional[str] = None,
+        address: int | None = None,
+        name: str | None = None,
     ):
         """Query model and version number of firmware to check pump is
         OK. Responds with a load of stuff, but the last three characters
@@ -757,7 +751,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
         The prompt is used to confirm that the address is correct.
         This acts as a check to see that the pump is connected and working."""
 
-        super().__init__(pump_io, diameter, syringe_volume, address, name)
+        super().__init__(pump_io, syringe_diameter, syringe_volume, address, name)
 
     async def initialize(self):
         """Ensure a valid connection with the pump has been established and sets parameters."""
@@ -830,7 +824,7 @@ class Elite11InfuseWithdraw(Elite11InfuseOnly):
 
 if __name__ == "__main__":
     pump = Elite11InfuseOnly.from_config(
-        port="COM4", syringe_volume="10 ml", diameter="10 mm"
+        port="COM4", syringe_volume="10 ml", syringe_diameter="10 mm"
     )
 
     async def main():

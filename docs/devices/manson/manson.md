@@ -1,26 +1,19 @@
-# Harvard Apparatus Syringe Pump Elite11
+# Manson Laboratory Power Supply
 
 ## Introduction
-Harvard-Apparatus Elite11 pumps connected via USB cables (which creates a virtual serial port) are supported in flowchem
-via the two device types: `Elite11InfuseOnly` and `Elite11InfuseWithdraw`.
-This difference reflect the existence in commerce of both variants, i.e. pumps only capable of infusion and pumps that
-support both infusion and withdrawing commands.
+The following models of Manson lab power supply are supported: "HCS-3102", "HCS-3014", "HCS-3204" and "HCS-3202".
+Once connected via USB, they are recognized as a virtual serial port and are supported in `flowchem` via the device type `MansonPowerSupply`.
 
-As for all `flowchem` devices, the virtual instrument can be instantiated via a configuration file that generates an
-openAPI endpoint.
+As for all `flowchem` devices, the virtual instrument can be instantiated via a configuration file that generates an openAPI endpoint.
 
 
 ## Configuration
 Configuration sample showing all possible parameters:
 
 ```toml
-[device.my-elite11-pump]  # This is the pump identifier
-type = "Elite11InfuseOnly"  # Either Elite11InfuseOnly or Elite11InfuseWithdraw depending on model
-port = "COM11"  # This will be /dev/tty* under linux/MacOS
-address = 0  # Only needed for daisy-chaining. The address can be set on the pump, see manufacturer manual.
-syringe_diameter = "4.6 mm"
-syringe_volume = "1 ml"
-baudrate = 115200  # Values between 9,600 and 115,200 can be selected on the pump! (115200 assumed if not specified)
+[device.my-power-supply]  # This is the device name
+type = "MansonPowerSupply"
+port = "COM12"  # This will be /dev/tty* under linux/MacOS
 ```
 
 ```{note} Serial connection parameters

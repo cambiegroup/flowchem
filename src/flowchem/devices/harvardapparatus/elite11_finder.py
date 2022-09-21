@@ -26,7 +26,7 @@ def elite11_finder() -> set:
         logger.info(f"Looking for pump on {serial_port}...")
         try:
             link = HarvardApparatusPumpIO(port=serial_port)
-            link._serial.write("\r\n".encode("ascii"))
+            link._serial.write(b"\r\n")
 
             if link._serial.readline() == b"\n":
                 valid_ports.add(serial_port)

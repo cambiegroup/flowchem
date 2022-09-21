@@ -8,6 +8,7 @@ import sys
 
 import pint
 import pytest
+
 from flowchem.devices.knauer.azura_compact import AzuraCompactPump
 from flowchem.devices.knauer.azura_compact import AzuraPumpHeads
 
@@ -55,15 +56,15 @@ async def test_headtype(pump: AzuraCompactPump):
 @pytest.mark.KPump
 @pytest.mark.asyncio
 async def test_flow_rate(pump: AzuraCompactPump):
-    await pump.set_flow("1.25 ml/min")
-    await pump.start_flow()
+    await pump.set_flow_rate("1.25 ml/min")
+    await pump.infuse()
     # FIXME
-    assert pint.Quantity(await pump.get_flow()).magnitude == 1.25
-    await pump.set_flow(f"{math.pi} ml/min")
+    assert pint.Quantity(await pump.get_flow_rate()).magnitude == 1.25
+    await pump.set_flow_rate(f"{math.pi} ml/min")
     assert math.isclose(
-        pint.Quantity(await pump.get_flow()).magnitude, math.pi, abs_tol=1e-3
+        pint.Quantity(await pump.get_flow_rate()).magnitude, math.pi, abs_tol=1e-3
     )
-    await pump.stop_flow()
+    await pump.stop()
 
 
 @pytest.mark.KPump
@@ -78,16 +79,16 @@ async def test_analog_control(pump: AzuraCompactPump):
 @pytest.mark.KPump
 @pytest.mark.asyncio
 async def test_is_running(pump: AzuraCompactPump):
-    await pump.set_flow("1 ml/min")
-    await pump.start_flow()
+    await pump.set_flow_rate("1 ml/min")
+    await pump.infuse()
     assert pump.is_running() is True
-    await pump.stop_flow()
+    await pump.stop()
 
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
 async def test_motor_current(pump: AzuraCompactPump):
-    await pump.stop_flow()
+    await pump.stop()
     assert await pump.read_motor_current() == 0
 
 

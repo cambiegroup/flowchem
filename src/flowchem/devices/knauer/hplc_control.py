@@ -7,9 +7,9 @@ import subprocess
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Union
 
 import tenacity
+
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 
@@ -194,7 +194,7 @@ class ClarityExecutioner:
     def execute_command(
         self,
         command: str,
-        folder_of_executable: Union[Path, str] = r"C:\claritychrom\bin\\",
+        folder_of_executable: Path | str = r"C:\claritychrom\bin\\",
     ):
         prefix = "claritychrom.exe"
         # sanitize input a bit

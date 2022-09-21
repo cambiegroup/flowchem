@@ -2,9 +2,8 @@
 import inspect
 import sys
 from pathlib import Path
-from typing import Dict
 
-from flowchem.devices.autodiscovery import autodiscover_device_classes
+from flowchem.devices.find_device_type import autodiscover_device_classes
 
 
 if sys.version_info >= (3, 11):
@@ -18,7 +17,7 @@ from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
 
-def load_configuration_file(file_path: Path) -> Dict:
+def load_configuration_file(file_path: Path) -> dict:
     """Read the TOML configuration file and returns it as a dict.
 
     Extensive exception handling due to the error-prone human editing needed in the configuration file."""
@@ -32,7 +31,7 @@ def load_configuration_file(file_path: Path) -> Dict:
             ) from parser_error
 
 
-def parse_config_file(file_path: Path | str) -> Dict:
+def parse_config_file(file_path: Path | str) -> dict:
     """Parse a config file."""
 
     file_path = Path(file_path)
@@ -41,7 +40,7 @@ def parse_config_file(file_path: Path | str) -> Dict:
     return parse_config(config)
 
 
-def parse_config(config: Dict) -> Dict:
+def parse_config(config: dict) -> dict:
     """Parse config."""
     # This creates a dict with device type as key and object to be instantiated as values.
     device_mapper = autodiscover_device_classes()
@@ -74,21 +73,21 @@ def parse_device(dev_settings, device_object_mapper) -> BaseDevice:
             f"Device type unknown for {device_name}! \n"
         ) from error
 
-    # If the object has a from_config method, use that for instantiation, otherwise try straight with the constructor.
-    to_be_called = (
-        obj_type.from_config if hasattr(obj_type, "from_config") else obj_type.__init__
-    )
-
-    # Instantiate it with the provided settings
+    # If the object has a 'from_config' method, use that for instantiation, otherwise try straight with the constructor.
     try:
-        device = to_be_called(**device_config)
+        if hasattr(obj_type, "from_config"):
+            called = obj_type.from_config
+            device = obj_type.from_config(**device_config, name=device_name)
+        else:
+            called = obj_type.__init__
+            device = obj_type(**device_config, name=device_name)
     except TypeError as error:
         logger.error(f"Wrong settings for device '{device_name}'!")
-        get_helpful_error_message(device_config, inspect.getfullargspec(to_be_called))
+        get_helpful_error_message(device_config, inspect.getfullargspec(called))
         raise ConnectionError(
-            f"Wrong configuration provided for device: {device_name} of type {obj_type.__name__}!\n"
+            f"Wrong configuration provided for device '{device_name}' of type {obj_type.__name__}!\n"
             f"Configuration: {device_config}\n"
-            f"Accepted parameters: {inspect.getfullargspec(obj_type.from_config).args}"
+            f"Accepted parameters: {inspect.getfullargspec(called).args}"
         ) from error
 
     logger.debug(f"Created device '{device.name}' instance: {device}")

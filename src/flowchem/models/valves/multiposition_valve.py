@@ -1,6 +1,4 @@
 """Generic multi-position valve."""
-from __future__ import annotations
-
 from abc import ABC
 
 from .base_valve import BaseValve

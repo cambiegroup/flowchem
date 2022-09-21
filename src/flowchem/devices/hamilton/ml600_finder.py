@@ -4,9 +4,10 @@ import asyncio
 import aioserial
 import rich_click as click
 import serial.tools.list_ports
+from loguru import logger
+
 from flowchem.devices.hamilton.ml600 import HamiltonPumpIO
 from flowchem.devices.hamilton.ml600 import InvalidConfiguration
-from loguru import logger
 
 
 def ml600_finder():
@@ -20,7 +21,7 @@ def ml600_finder():
         logger.info(f"Looking for pump on {serial_port}...")
         try:
             link = HamiltonPumpIO(aioserial.AioSerial(port=serial_port, timeout=0.1))
-        except IOError:
+        except OSError:
             logger.warning(f"Cannot open {serial_port}!")
             continue
 

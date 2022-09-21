@@ -5,16 +5,15 @@ import socket
 import sys
 import time
 from threading import Thread
-from typing import Dict
-from typing import Text
-from typing import Tuple
-from typing import Union
 
 import rich_click as click
-from flowchem.devices.knauer.getmac import get_mac_address
 from loguru import logger
 
-Address = Tuple[str, int]
+from flowchem.devices.knauer.getmac import get_mac_address
+
+__all__ = ["main", "autodiscover_knauer"]
+
+Address = tuple[str, int]
 
 
 class BroadcastProtocol(asyncio.DatagramProtocol):
@@ -31,7 +30,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # sets to broadcast
         transport.sendto(b"\x00\x01\x00\xf6", self.target)
 
-    def datagram_received(self, data: Union[bytes, Text], addr: Address):
+    def datagram_received(self, data: bytes | str, addr: Address):
         """Called on data received"""
         logger.trace(f"Received data from {addr}")
         self._queue.put(addr[0])
@@ -50,14 +49,14 @@ async def get_device_type(ip_address: str) -> str:
         return "TimeoutError"
 
     # Test Pump
-    writer.write("HEADTYPE:?\n\r".encode())
+    writer.write(b"HEADTYPE:?\n\r")
     reply = await reader.readuntil(separator=b"\r")
     if reply.startswith(b"HEADTYPE"):
         logger.debug(f"Device {ip_address} is a Pump")
         return "Pump"
 
     # Test Valve
-    writer.write("T:?\n\r".encode())
+    writer.write(b"T:?\n\r")
     reply = await reader.readuntil(separator=b"\r")
     if reply.startswith(b"VALVE"):
         logger.debug(f"Device {ip_address} is a Valve")
@@ -66,7 +65,7 @@ async def get_device_type(ip_address: str) -> str:
     return "Unknown"
 
 
-def autodiscover_knauer(source_ip: str = "") -> Dict[str, str]:
+def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     """
     Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
     Note that the MAC is the key here as it is the parameter used in configuration files.

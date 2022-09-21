@@ -37,12 +37,13 @@ class BaseDevice(ABC):
         """
         pass
 
-    def get_router(self) -> APIRouter:
-        router = APIRouter()
+    def get_router(self, prefix: str | None = None) -> APIRouter:
+        if prefix:
+            assert prefix.startswith("/"), "Prefix must start with '/'"
 
-        # Add prefix based on device name
+        # Add prefix based on device name + eventually additional prefix (subcomponents)
         router_name = self.name.replace(" ", "").lower()
-        router.prefix = f"/{router_name}"
+        router = APIRouter(prefix=f"/{router_name}{prefix or ''}")
         router.tags = [router_name]
 
         return router

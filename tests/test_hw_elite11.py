@@ -6,6 +6,7 @@ import asyncio
 import math
 
 import pytest
+
 from flowchem.devices.harvardapparatus.elite11 import Elite11InfuseWithdraw
 from flowchem.devices.harvardapparatus.elite11 import PumpStatus
 from flowchem.units import flowchem_ureg
@@ -29,7 +30,7 @@ def event_loop(request):
 async def pump():
     """Change to match your hardware ;)"""
     pump = Elite11InfuseWithdraw.from_config(
-        port="COM11", syringe_volume=5, diameter=20
+        port="COM11", syringe_volume=5, syringe_diameter=20
     )
     await pump.initialize()
     return pump

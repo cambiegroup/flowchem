@@ -1,13 +1,11 @@
 """ Represent a generic injection valve. """
-from __future__ import annotations
-
 from abc import ABC
 from asyncio import sleep
 
 from fastapi import APIRouter
-from flowchem.units import flowchem_ureg
 
 from .base_valve import BaseValve
+from flowchem.units import flowchem_ureg
 
 
 class InjectionValve(BaseValve, ABC):

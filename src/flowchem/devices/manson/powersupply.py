@@ -2,17 +2,15 @@
 # Note: Original code from Manson website with edits. No license originally specified.
 import re
 import warnings
-from typing import List
 from typing import Literal
-from typing import Tuple
-from typing import Union
 
 import aioserial
+from loguru import logger
+
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
-from loguru import logger
 
 
 class MansonPowerSupply(BaseDevice):
@@ -114,7 +112,7 @@ class MansonPowerSupply(BaseDevice):
 
     async def get_output_read(
         self,
-    ) -> Tuple[str, str, Union[Literal["CC"], Literal["CV"], Literal["NN"]]]:
+    ) -> tuple[str, str, Literal["CC"] | Literal["CV"] | Literal["NN"]]:
         """Returns actual values of voltage, current and mode"""
         response = await self._send_command("GETD")
 
@@ -152,7 +150,7 @@ class MansonPowerSupply(BaseDevice):
         power = flowchem_ureg(voltage) * flowchem_ureg(intensity)
         return str(power.to("W"))
 
-    async def get_max(self) -> Tuple[str, str]:
+    async def get_max(self) -> tuple[str, str]:
         """Returns maximum voltage and current, as tuple, or False."""
         response = await self._send_command("GMAX")
 
@@ -165,7 +163,7 @@ class MansonPowerSupply(BaseDevice):
         divider = 100 if model in self.MODEL_ALT_RANGE else 10
         return str(max_v), str(max_c_raw / divider)
 
-    async def get_setting(self) -> Tuple[str, str]:
+    async def get_setting(self) -> tuple[str, str]:
         """Returns current setting as tuple (voltage, current)."""
         response = await self._send_command("GETS")
 
@@ -193,7 +191,7 @@ class MansonPowerSupply(BaseDevice):
         response = await self._send_command(cmd)
         return response == "OK"
 
-    async def set_all_preset(self, preset: List[Tuple[str, str]]) -> bool:
+    async def set_all_preset(self, preset: list[tuple[str, str]]) -> bool:
         """Set all 3 preset memory position with voltage/current values"""
         command = "PROM"
 
@@ -219,7 +217,7 @@ class MansonPowerSupply(BaseDevice):
             return False
         return await self.set_all_preset(preset)
 
-    async def get_all_preset(self) -> List[Tuple[str, str]]:
+    async def get_all_preset(self) -> list[tuple[str, str]]:
         """Get voltage and current for all 3 memory preset position"""
         response = await self._send_command("GETM")
         response_lines = response.split("\r")
@@ -250,7 +248,7 @@ class MansonPowerSupply(BaseDevice):
 
         return list(zip(voltage_str, current_str))
 
-    async def get_preset(self, index) -> Tuple[str, str]:
+    async def get_preset(self, index) -> tuple[str, str]:
         """Get voltage and current for given preset position [0..2]"""
         all_preset = await self.get_all_preset()
         try:
@@ -285,20 +283,15 @@ class MansonPowerSupply(BaseDevice):
 
     def get_router(self):
         """Creates an APIRouter for this MansonPowerSupply instance."""
-        from fastapi import APIRouter
+        router = super().get_router()
 
-        router = APIRouter()
-        router.add_api_route("/output/on", self.output_on, methods=["GET"])
-        router.add_api_route("/output/off", self.output_off, methods=["GET"])
+        router.add_api_route("/on", self.output_on, methods=["GET"])
+        router.add_api_route("/off", self.output_off, methods=["GET"])
         router.add_api_route("/output/power", self.get_output_power, methods=["GET"])
         router.add_api_route("/output/mode", self.get_output_mode, methods=["GET"])
         router.add_api_route("/voltage/read", self.get_output_voltage, methods=["GET"])
         router.add_api_route("/voltage/max", self.set_voltage, methods=["PUT"])
         router.add_api_route("/current/read", self.get_output_current, methods=["GET"])
         router.add_api_route("/current/max", self.set_current, methods=["PUT"])
-        router.add_api_route("/protection/add", self.add_protection, methods=["GET"])
-        router.add_api_route(
-            "/protection/remove", self.remove_protection, methods=["GET"]
-        )
 
         return router

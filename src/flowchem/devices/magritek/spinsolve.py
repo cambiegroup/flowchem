@@ -5,8 +5,11 @@ import queue
 import threading
 import warnings
 from pathlib import Path
-from typing import Optional
-from typing import Union
+
+from loguru import logger
+from lxml import etree
+from packaging import version
+from unsync import unsync
 
 from flowchem.devices.magritek._msg_maker import create_message
 from flowchem.devices.magritek._msg_maker import create_protocol_message
@@ -18,10 +21,6 @@ from flowchem.devices.magritek.reader import Reader
 from flowchem.devices.magritek.xml_parser import parse_status_notification
 from flowchem.devices.magritek.xml_parser import StatusNotification
 from flowchem.models.base_device import BaseDevice
-from loguru import logger
-from lxml import etree
-from packaging import version
-from unsync import unsync
 
 
 @unsync
@@ -37,9 +36,7 @@ async def get_streams_for_connection(host: str, port: str):
 
 
 class Spinsolve(BaseDevice):
-    """
-    Spinsolve class, gives access to the spectrometer remote control API
-    """
+    """Spinsolve class, gives access to the spectrometer remote control API."""
 
     def __init__(
         self,
@@ -252,7 +249,7 @@ class Spinsolve(BaseDevice):
 
     async def run_protocol(
         self, protocol_name, protocol_options=None
-    ) -> Optional[Union[str, Path]]:
+    ) -> str | Path | None:
         """
         Runs a protocol
 

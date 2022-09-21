@@ -8,16 +8,15 @@ import time
 import warnings
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Optional
-from typing import Set
 from typing import TYPE_CHECKING
 
 import aioserial
+from loguru import logger
+
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 from flowchem.units import flowchem_ureg
-from loguru import logger
 
 if TYPE_CHECKING:
     import pint
@@ -54,8 +53,8 @@ class Protocol1Command(Protocol1CommandTemplate):
     # Note ':' is used for broadcast within the daisy chain.
 
     target_pump_num: int = 1
-    command_value: Optional[str] = None
-    argument_value: Optional[str] = None
+    command_value: str | None = None
+    argument_value: str | None = None
 
     def compile(self) -> bytes:
         """Create actual command byte by prepending pump address to command and appending executing command."""
@@ -100,7 +99,7 @@ class HamiltonPumpIO:
 
         # These will be set by `HamiltonPumpIO.initialize()`
         self._initialized = False
-        self.num_pump_connected: Optional[int] = None
+        self.num_pump_connected: int | None = None
 
     @classmethod
     def from_config(cls, config):
@@ -136,7 +135,7 @@ class HamiltonPumpIO:
         A custom command syntax with no addresses is used here so read and write has been rewritten
         """
         try:
-            await self._write_async("1a\r".encode("ascii"))
+            await self._write_async(b"1a\r")
         except aioserial.SerialException as e:
             raise InvalidConfiguration from e
 
@@ -236,7 +235,7 @@ class ML600(BaseDevice):
     """
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
-    _io_instances: Set[HamiltonPumpIO] = set()
+    _io_instances: set[HamiltonPumpIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
     # When several pumps are daisy-chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
@@ -273,7 +272,7 @@ class ML600(BaseDevice):
         pump_io: HamiltonPumpIO,
         syringe_volume: str,
         address: int = 1,
-        name: Optional[str] = None,
+        name: str | None = None,
     ):
         """
         Default constructor, needs an HamiltonPumpIO object. See from_config() class method for config-based init.
@@ -374,7 +373,7 @@ class ML600(BaseDevice):
             command_template.to_pump(self.address, command_value, argument_value)
         )
 
-    def _validate_speed(self, speed_value: Optional[str]) -> str:
+    def _validate_speed(self, speed_value: str | None) -> str:
         """Given a speed (seconds/stroke) returns a valid value for it, and a warning if out of bounds."""
 
         # Validated speeds are used as command argument, with empty string being the default for None
@@ -404,7 +403,7 @@ class ML600(BaseDevice):
 
         return str(round(speed.m_as("sec / stroke")))
 
-    async def initialize_pump(self, speed: Optional[str] = None):
+    async def initialize_pump(self, speed: str | None = None):
         """
         Initialize both syringe and valve
         speed: 2-3692 in seconds/stroke
@@ -420,7 +419,7 @@ class ML600(BaseDevice):
             Protocol1CommandTemplate(command="LX")
         )
 
-    async def initialize_syringe(self, speed: Optional[str] = None):
+    async def initialize_syringe(self, speed: str | None = None):
         """
         Initialize syringe only
         speed: 2-3692 in seconds/stroke
