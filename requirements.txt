@@ -24,7 +24,7 @@ asgiref==3.4.1
     # via uvicorn
 asteval==0.9.25
     # via lmfit
-asyncua==0.9.92
+asyncua==0.9.96
     # via flowchem (setup.py)
 attrs==21.2.0
     # via jsonschema
