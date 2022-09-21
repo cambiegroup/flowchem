@@ -76,13 +76,11 @@ MAC_RE_DARWIN = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
 
 # Used for mypy (a data type analysis tool)
 # If you're copying the code, this section can be safely removed
-try:
-    from typing import TYPE_CHECKING
 
-    if TYPE_CHECKING:
-        from typing import Optional
-except ImportError:
-    pass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Optional
 
 # Ensure we only log the Python compatibility warning once
 WARNED_UNSUPPORTED_PYTHONS = False

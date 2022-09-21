@@ -4,7 +4,6 @@ import warnings
 from enum import Enum
 
 from flowchem.exceptions import DeviceError
-from flowchem.models.base_device import BaseDevice
 from flowchem.models.pumps.base_pump import BasePump
 from flowchem.models.pumps.hplc_pump import HplcPump
 from flowchem.models.sensors.pressure_sensor import PressureSensor
@@ -446,7 +445,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
             await self.set_flow_rate(self.rate)
             await self.infuse()
 
-    def get_router(self):
+    def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this object."""
         # Basic pump methods
         router = super().get_router()

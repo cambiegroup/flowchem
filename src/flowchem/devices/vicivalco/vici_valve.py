@@ -230,7 +230,7 @@ class ViciValve(InjectionValve):
         time_toggle = ViciCommand(valve_id=self.address, command="TT")
         await self.valve_io.write_and_read_reply(time_toggle)
 
-    def get_router(self):
+    def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this object."""
         from fastapi import APIRouter
 

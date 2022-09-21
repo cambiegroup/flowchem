@@ -266,12 +266,12 @@ class MansonPowerSupply(BaseDevice):
         return response == "OK"
 
     async def remove_protection(self) -> bool:
-        """I guess it removes over voltage protection?"""
+        """I guess it removes overvoltage protection?"""
         response = await self._send_command("SPRO0")
         return bool(response)
 
     async def add_protection(self) -> bool:
-        """I guess it adds over voltage protection?"""
+        """I guess it adds overvoltage protection?"""
         response = await self._send_command("SPRO1")
         return bool(response)
 
@@ -280,7 +280,7 @@ class MansonPowerSupply(BaseDevice):
         await self.set_voltage(voltage)
         await self.set_current(current)
 
-    def get_router(self):
+    def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this MansonPowerSupply instance."""
         router = super().get_router()
 

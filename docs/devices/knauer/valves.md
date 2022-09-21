@@ -27,7 +27,7 @@ default_position = "LOAD"  # Valve position to be set upon initialization
 ```
 
 ## Valve positions
-The valve position naming follow the general convention of flowchem (see [Base Valve](../../models/valves/base_valvemd):
+The valve position naming follow the general convention of flowchem (see [Base Valve](../../models/valves/base_valve.md):
 * Injection valves have position named 'LOAD' and 'INJECT'
 * Multiposition valves have positions from '1' to 'n' where n is the total amount of port available.
 

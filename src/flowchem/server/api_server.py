@@ -44,7 +44,7 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
             app.include_router(router, tags=router.tags)
             logger.debug(f"Router <{router.prefix}> added to app!")
 
-    # Before server startup intialize all devices
+    # Before server startup initialize all devices
     @app.on_event("startup")
     async def startup_event():
         for device in dev_list:

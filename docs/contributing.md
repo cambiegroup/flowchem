@@ -17,7 +17,7 @@ The rest of this document discusses working on the flowchem code base and docume
 ## Development process
 1. If you are a first-time contributor:
 
-   * Go to [flowchem github repository](https://github.com/cambiegroup/flowchem) and click the “fork” button to create your own copy of the project.
+   * Go to [flowchem gitHub repository](https://github.com/cambiegroup/flowchem) and click the “fork” button to create your own copy of the project.
 
    * Clone the project to your local computer:
 
@@ -76,7 +76,7 @@ The rest of this document discusses working on the flowchem code base and docume
 
 6. Cross-referencing issues
 
-   * If the PR solves an issue, you can add the text closes xxxx, where xxxx is the number of the issue. Instead of closes you can use any of the other flavors [github accepts](https://help.github.com/en/articles/closing-issues-using-keywords) such as fix and resolve.
+   * If the PR solves an issue, you can add the text closes xxxx, where xxxx is the number of the issue. Instead of closes you can use any of the other flavors [gitHub accepts](https://help.github.com/en/articles/closing-issues-using-keywords) such as fix and resolve.
 
 ## Guidelines
 
