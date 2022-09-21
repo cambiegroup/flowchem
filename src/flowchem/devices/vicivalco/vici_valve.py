@@ -236,7 +236,7 @@ class ViciValve(InjectionValve):
 
         router = APIRouter()
         router.add_api_route("/firmware-version", self.version, methods=["GET"])
-        router.add_api_route("/initialize", self.home, methods=["PUT"])
+        router.add_api_route("/home", self.home, methods=["PUT"])
         router.add_api_route("/position", self.get_position, methods=["GET"])
         router.add_api_route("/position", self.set_position, methods=["PUT"])
         router.add_api_route("/timed-toggle", self.set_position, methods=["PUT"])

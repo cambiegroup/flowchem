@@ -33,8 +33,6 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
 
     # Parse list of devices and generate endpoints
     for device in dev_list:
-        # FIXME do initialization here
-
         # Get routers (some compounded devices can return multiple routers for the subcomponents, but most only 1!)
         routers = device.get_router()
 
