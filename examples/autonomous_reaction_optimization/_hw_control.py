@@ -3,6 +3,16 @@ import contextlib
 import requests
 from loguru import logger
 
+HOST = "127.0.0.1"
+PORT = 8000
+api_base = f"http://{HOST}:{PORT}"
+socl2_endpoint = f"{api_base}/socl2"
+hexyldecanoic_endpoint = f"{api_base}/hexyldecanoic"
+r4_channel = 0
+r4_endpoint = f"{api_base}/r4-heater/{r4_channel}"
+
+__all__ = ["socl2_endpoint", "hexyldecanoic_endpoint", "r4_endpoint", "command_session"]
+
 
 def check_for_errors(resp, *args, **kwargs):
     resp.raise_for_status()

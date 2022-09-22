@@ -1,9 +1,11 @@
 import time
 
+from _hw_control import *
 from gryffin import Gryffin
-
-from examples.autonomous_reaction_optimization._command_session import command_session
+from loguru import logger
 from run_experiment import run_experiment
+
+from examples.autonomous_reaction_optimization._hw_control import command_session
 
 # load config
 config = {
@@ -23,13 +25,19 @@ observations = []
 
 # Initialize hardware
 with command_session() as sess:
-    sess.put(
-        socl2_endpoint + "/infusion-rate", {"rate": f"{rates['socl2']} ml/min"}
-    )
-    sess.put(
-        hexyldecanoic_endpoint + "/flow",
-        {"flowrate": f"{rates['hexyldecanoic']} ml/min"},
-    )
+    # Heater to r.t.
+    sess.put(r4_endpoint + "/temperature", {"temperature": 21})
+    sess.put(r4_endpoint + "/power-on")
+
+    # Start pumps with low flow rate
+    sess.put(socl2_endpoint + "/flow-rate", {"rate": "5 ul/min"})
+    sess.put(socl2_endpoint + "/infuse")
+
+    sess.put(hexyldecanoic_endpoint + "/flow-rate", {"rate": "50 ul/min"})
+    sess.put(hexyldecanoic_endpoint + "/infuse")
+
+    # TODO start IR experiment acquisition here!
+
 
 # Run optimization for MAX_TIME
 MAX_TIME = 8 * 60 * 60
@@ -45,5 +53,7 @@ while time.monotonic() < (start_time + MAX_TIME):
     for conditions in conditions_to_test:
         # Get this from your experiment!
         conditions["product_ratio_IR"] = run_experiment(**conditions)
+
+        logger.info(f"Experiment ended: {conditions}")
 
     observations.extend(conditions_to_test)

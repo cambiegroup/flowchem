@@ -12,9 +12,13 @@ from loguru import logger
 @click.option(
     "-l", "--log", "logfile", type=click.Path(), default=None, help="Save logs to file."
 )
+@click.option(
+    "-h", "--host", "host", type=str, default="1127.0.0.1", help="Server host."
+)
+@click.option("-p", "--port", "port", type=int, default=8000, help="Server port.")
 @click.version_option()
 @click.command()
-def main(device_config_file, logfile):
+def main(device_config_file, logfile, host, port):
     """Flowchem main program.
 
     Parse DEVICE_CONFIG_FILE and starts a server exposing the devices via RESTful API."""
@@ -24,8 +28,4 @@ def main(device_config_file, logfile):
     logger.debug(f"Starting server with configuration file: '{device_config_file}'")
 
     myapp = create_server_from_file(Path(device_config_file))
-    uvicorn.run(myapp)
-
-
-if __name__ == "__main__":
-    main()
+    uvicorn.run(myapp, host=host, port=port)

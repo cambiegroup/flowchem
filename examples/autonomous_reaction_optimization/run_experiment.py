@@ -1,12 +1,7 @@
+import random
 import time
 
-from _command_session import command_session
-
-server = "http://localhost:9000"
-socl2_endpoint = f"{server}/socl2/"
-hexyldecanoic_endpoint = f"{server}/hexyldecanoic/"
-r4_endpoint = f"{server}/r4/"
-R4_CHANNEL = 1
+from _hw_control import *
 
 
 def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
@@ -59,14 +54,11 @@ def wait_stable_temperature():
     """Wait until the ste temperature has been reached."""
     with command_session() as sess:
         while True:
-            r = sess.get(
-                r4_endpoint + "/temperature/stable", data={"channel": R4_CHANNEL}
-            )
-            print(f"Heater stable: {r.text}")
-            if not r.text:
-                time.sleep(5)
-            else:
+            r = sess.get(r4_endpoint + "/target-reached")
+            if r.text == "true":
                 break
+            else:
+                time.sleep(5)
 
 
 def get_ir_once_stable():
@@ -78,7 +70,7 @@ def get_ir_once_stable():
 
 def calculate_peak_ratio(ir_spectrum):
     """Given the IR spectrum returns the product area / total area ratio."""
-    pass
+    return random.random()
 
 
 def run_experiment(
