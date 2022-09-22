@@ -50,11 +50,8 @@ def autodiscover_third_party() -> dict[str, Any]:
     device_classes = {}
 
     for ep in entry_points(group="flowchem.devices"):
-        logger.info(f"Loading third-party module: {ep.name}")
+        logger.info(f"Loading third-party module: {ep.name} [distribution {ep.module}]")
         new_device_classes = _autodiscover_devices_in_module(ep.load())
-        logger.info(
-            f"The following device-type have been found: {list(new_device_classes.keys())}"
-        )
         device_classes.update(new_device_classes)
 
     return device_classes
