@@ -3,6 +3,8 @@ from collections.abc import Iterable
 from importlib.metadata import metadata
 from pathlib import Path
 
+from starlette.responses import RedirectResponse
+
 import flowchem
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
@@ -30,6 +32,10 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
         description=flowchem_metadata["Summary"],
         version=flowchem.__version__,
     )
+
+    @app.route("/")
+    def home_redirect_to_docs(root_path):
+        return RedirectResponse(url='/docs')
 
     # Parse list of devices and generate endpoints
     for device in dev_list:

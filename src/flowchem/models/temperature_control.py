@@ -34,17 +34,17 @@ class TemperatureControl(BaseDevice, ABC):
         raise NotImplementedError
 
     def get_router(self, prefix: str | None = None):
-        router = super().get_router()
+        router = super().get_router(prefix)
 
-        router.add_api_route("temperature", self.set_temperature, methods=["PUT"])
-        router.add_api_route("temperature", self.get_temperature, methods=["GET"])
+        router.add_api_route("/temperature", self.set_temperature, methods=["PUT"])
+        router.add_api_route("/temperature", self.get_temperature, methods=["GET"])
 
-        router.add_api_route("power-on", self.power_on, methods=["PUT"])
-        router.add_api_route("power-off", self.power_off, methods=["PUT"])
+        router.add_api_route("/power-on", self.power_on, methods=["PUT"])
+        router.add_api_route("/power-off", self.power_off, methods=["PUT"])
 
-        router.add_api_route("target-reached", self.target_reached, methods=["GET"])
+        router.add_api_route("/target-reached", self.target_reached, methods=["GET"])
         router.add_api_route(
-            "temperature-limits", self.temperature_limits, methods=["GET"]
+            "/temperature-limits", self.temperature_limits, methods=["GET"]
         )
 
         return router
