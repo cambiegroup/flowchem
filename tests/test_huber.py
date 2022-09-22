@@ -4,24 +4,28 @@ import asyncio
 import aioserial
 import pytest
 from flowchem.devices.huber import HuberChiller
-from flowchem.devices.huber import PBCommand
 from flowchem.exceptions import InvalidConfiguration
 
 
 # TEST PBCommand parsers first
 def test_pbcommand_parse_temp():
-    assert PBCommand("{S00F2DF").parse_temperature() == "-33.61 degree_Celsius"
-    assert PBCommand("{S0004DA").parse_temperature() == "12.42 degree_Celsius"
+    assert (
+        HuberChiller.PBCommand("{S00F2DF").parse_temperature()
+        == "-33.61 degree_Celsius"
+    )
+    assert (
+        HuberChiller.PBCommand("{S0004DA").parse_temperature() == "12.42 degree_Celsius"
+    )
 
 
 def test_pbcommand_parse_int():
-    assert PBCommand("{S000000").parse_integer() == 0
-    assert PBCommand("{S00ffff").parse_integer() == 65535
-    assert PBCommand("{S001234").parse_integer() == 4660
+    assert HuberChiller.PBCommand("{S000000").parse_integer() == 0
+    assert HuberChiller.PBCommand("{S00ffff").parse_integer() == 65535
+    assert HuberChiller.PBCommand("{S001234").parse_integer() == 4660
 
 
 def test_pbcommand_parse_bits():
-    assert PBCommand("{S001234").parse_bits() == [
+    assert HuberChiller.PBCommand("{S001234").parse_bits() == [
         False,
         False,
         False,
@@ -42,8 +46,8 @@ def test_pbcommand_parse_bits():
 
 
 def test_pbcommand_parse_bool():
-    assert PBCommand("{S000001").parse_boolean() is True
-    assert PBCommand("{S000000").parse_boolean() is False
+    assert HuberChiller.PBCommand("{S000001").parse_boolean() is True
+    assert HuberChiller.PBCommand("{S000000").parse_boolean() is False
 
 
 def test_invalid_serial_port():

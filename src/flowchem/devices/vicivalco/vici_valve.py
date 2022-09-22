@@ -230,13 +230,13 @@ class ViciValve(InjectionValve):
         time_toggle = ViciCommand(valve_id=self.address, command="TT")
         await self.valve_io.write_and_read_reply(time_toggle)
 
-    def get_router(self):
+    def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this object."""
         from fastapi import APIRouter
 
         router = APIRouter()
         router.add_api_route("/firmware-version", self.version, methods=["GET"])
-        router.add_api_route("/initialize", self.home, methods=["PUT"])
+        router.add_api_route("/home", self.home, methods=["PUT"])
         router.add_api_route("/position", self.get_position, methods=["GET"])
         router.add_api_route("/position", self.set_position, methods=["PUT"])
         router.add_api_route("/timed-toggle", self.set_position, methods=["PUT"])

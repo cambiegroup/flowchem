@@ -33,8 +33,6 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
 
     # Parse list of devices and generate endpoints
     for device in dev_list:
-        # FIXME do initialization here
-
         # Get routers (some compounded devices can return multiple routers for the subcomponents, but most only 1!)
         routers = device.get_router()
 
@@ -44,6 +42,12 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
         for router in routers:
             app.include_router(router, tags=router.tags)
             logger.debug(f"Router <{router.prefix}> added to app!")
+
+    # Before server startup initialize all devices
+    @app.on_event("startup")
+    async def startup_event():
+        for device in dev_list:
+            await device.initialize()
 
     return app
 

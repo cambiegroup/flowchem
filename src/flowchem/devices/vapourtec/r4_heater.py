@@ -117,7 +117,7 @@ class R4Heater(BaseDevice):
         if wait:
             await self.wait_for_target_temp(channel)
 
-    def get_router(self):
+    def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this object."""
         from fastapi import APIRouter
 

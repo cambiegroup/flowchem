@@ -33,13 +33,16 @@ def elite11_finder() -> set:
                 logger.info(f"Pump found on <{serial_port}>")
 
                 pump = link._serial.readline().decode("ascii")
-                try:
+                if pump[0:2].isdigit():
                     address = int(pump[0:2])
-                except ValueError:
+                else:
                     address = 0
 
                 test_pump = Elite11InfuseOnly(
-                    link, syringe_diameter="20 mm", syringe_volume="10 ml", address=address
+                    link,
+                    syringe_diameter="20 mm",
+                    syringe_volume="10 ml",
+                    address=address,
                 )
                 info = asyncio.run(test_pump.pump_info())
 
@@ -53,7 +56,7 @@ def elite11_finder() -> set:
                 type = "{p_type}"
                 port = "{serial_port}"
                 address = {address}
-                diameter = "XXX mm"
+                syringe_diameter = "XXX mm"
                 syringe_volume = "YYY ml"
                 """
                 )

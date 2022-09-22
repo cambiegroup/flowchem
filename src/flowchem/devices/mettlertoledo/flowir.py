@@ -184,7 +184,7 @@ class FlowIR(iCIR_spectrometer, BaseDevice):
         while await self.is_running():
             await asyncio.sleep(0.2)
 
-    def get_router(self):
+    def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this HuberChiller instance."""
         from fastapi import APIRouter
 

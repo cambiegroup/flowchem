@@ -69,6 +69,6 @@ Ideally manufacturer communication manual is added to the docs
 
 :::{note}
 This is an implementation detail that user do not have to care about since the `flowchem.device` submodules will hide
-this nested layer via thier `__init__.py`. If you do not understand what this means it is not important, and you can
+this nested layer via their `__init__.py`. If you do not understand what this means it is not important, and you can
 safely skip this note if you follow this guide.
 :::

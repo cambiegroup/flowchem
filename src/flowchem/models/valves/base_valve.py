@@ -67,7 +67,7 @@ class BaseValve(BaseDevice, ABC):
         """
         return list(self.positions)
 
-    def get_router(self) -> APIRouter:
+    def get_router(self, prefix: str | None = None) -> APIRouter:
         """Get the API router for this device."""
         router = super().get_router()
         router.add_api_route("/position", self.get_position, methods=["GET"])

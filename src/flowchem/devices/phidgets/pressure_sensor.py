@@ -84,7 +84,7 @@ class PhidgetPressureSensor(PressureSensor):
         """Ensure connection closure upon deletion."""
         self.phidget.close()
 
-    def get_router(self):
+    def get_router(self, prefix: str | None = None):
         """Create an APIRouter for this object."""
         router = super().get_router()
         router.add_api_route("/attached", self.is_attached, methods=["GET"])

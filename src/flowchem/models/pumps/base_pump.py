@@ -20,19 +20,19 @@ class BasePump(BaseDevice, ABC):
         super().__init__(name=name)
         self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0001042")
 
-    def set_flow_rate(self, rate: str):
+    async def set_flow_rate(self, rate: str):
         """Sets the pump infusion flow rate."""
         raise NotImplementedError
 
-    def get_flow_rate(self) -> float:
+    async def get_flow_rate(self) -> float:
         """Gets the pump infusion flow rate."""
         raise NotImplementedError
 
-    def infuse(self):
+    async def infuse(self):
         """Start infusion."""
         raise NotImplementedError
 
-    def stop(self):
+    async def stop(self):
         """Stop pumping."""
         raise NotImplementedError
 
@@ -53,17 +53,17 @@ class WithdrawMixin:
         """Pump in the opposite direction of infuse."""
         raise NotADirectoryError
 
-    def set_withdrawing_flow_rate(self, rate: str):
+    async def set_withdrawing_flow_rate(self, rate: str):
         """Sets the pump withdraw flow rate."""
         raise NotImplementedError
 
-    def get_withdrawing_flow_rate(self) -> float:
+    async def get_withdrawing_flow_rate(self) -> float:
         """Gets the pump withdraw flow rate."""
         raise NotImplementedError
 
     def get_router(self, prefix: str | None = None) -> APIRouter:
         """Get the API router for this device."""
-        router = super().get_router(prefix)
+        router = super().get_router(prefix)  # type: ignore
 
         router.add_api_route(
             "/withdraw-flow-rate", self.get_withdrawing_flow_rate, methods=["GET"]

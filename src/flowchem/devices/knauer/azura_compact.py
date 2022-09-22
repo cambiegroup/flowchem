@@ -4,7 +4,6 @@ import warnings
 from enum import Enum
 
 from flowchem.exceptions import DeviceError
-from flowchem.models.base_device import BaseDevice
 from flowchem.models.pumps.base_pump import BasePump
 from flowchem.models.pumps.hplc_pump import HplcPump
 from flowchem.models.sensors.pressure_sensor import PressureSensor
@@ -72,7 +71,12 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
     }
 
     def __init__(
-        self, ip_address=None, mac_address=None, max_pressure: str = None, name=None
+        self,
+        ip_address=None,
+        mac_address=None,
+        max_pressure: str = None,
+        min_pressure: str = None,
+        name=None,
     ):
         super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"
@@ -81,7 +85,8 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         self.max_allowed_pressure, self.max_allowed_flow = 0, 0
         self._headtype = None
         self._running = None
-        self._pressure_limit = max_pressure
+        self._pressure_max = max_pressure
+        self._pressure_min = min_pressure
 
         self.rate = flowchem_ureg.parse_expression("0 ml/min")
         self._base_state = dict(rate="0 mL/min")
@@ -98,8 +103,10 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         # Also ensure rest state is not pumping.
         await self.stop()
 
-        if self._pressure_limit is not None:
-            await self.set_maximum_pressure(self._pressure_limit)
+        if self._pressure_max is not None:
+            await self.set_maximum_pressure(self._pressure_max)
+        if self._pressure_min is not None:
+            await self.set_minimum_pressure(self._pressure_min)
 
     @staticmethod
     def error_present(reply: str) -> bool:
@@ -221,12 +228,12 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         self._headtype = head_type
         logger.debug(f"Head type set to {head_type}")
 
-    async def get_flow_rate(self) -> str:
-        """Gets flow rate."""
+    async def get_flow_rate(self) -> float:
+        """Gets flow rate in ml/min."""
         flow_value = await self.create_and_send_command(FLOW)
         flowrate = flowchem_ureg(f"{flow_value} ul/min")
         logger.debug(f"Current flow rate is {flowrate}")
-        return str(flowrate.to("ml/min"))
+        return flowrate.m_as("ml/min")
 
     async def set_flow_rate(self, rate: str):
         """Sets flow rate.
