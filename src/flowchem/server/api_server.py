@@ -42,7 +42,6 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
             routers = (routers,)
 
         for router in routers:
-            # Add to App
             app.include_router(router, tags=router.tags)
             logger.debug(f"Router <{router.prefix}> added to app!")
 

@@ -422,23 +422,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         await self.create_and_send_command(EXTCONTR, setpoint=int(value))
         logger.debug(f"External control set to {value}")
 
-    async def __aenter__(self):
-        await self.initialize()
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.stop()
-
-    async def _update(self):
-        """Called automatically to change flow rate."""
-
-        if self.rate == 0:
-            await self.stop()
-        else:
-            await self.set_flow_rate(self.rate)
-            await self.infuse()
-
-    def get_router(self):
+    def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this object."""
         # Basic pump methods
         router = super().get_router()

@@ -39,7 +39,7 @@ def elite11_finder() -> set:
                     address = 0
 
                 test_pump = Elite11InfuseOnly(
-                    link, diameter="20 mm", syringe_volume="10 ml", address=address
+                    link, syringe_diameter="20 mm", syringe_volume="10 ml", address=address
                 )
                 info = asyncio.run(test_pump.pump_info())
 
@@ -55,7 +55,6 @@ def elite11_finder() -> set:
                 address = {address}
                 diameter = "XXX mm"
                 syringe_volume = "YYY ml"
-
                 """
                 )
             else:
@@ -63,7 +62,8 @@ def elite11_finder() -> set:
         except InvalidConfiguration:
             pass
 
-    logger.info(f"Pump configuration stub:\n{config}")
+    if valid_ports:
+        logger.info(f"Pump configuration stub:\n{config}")
 
     return valid_ports
 
