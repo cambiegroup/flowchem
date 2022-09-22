@@ -79,8 +79,18 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
 
     # Define source IP resolving local hostname.
     if not source_ip:
-        hostname = socket.gethostname()
-        source_ip = socket.gethostbyname(hostname)
+        machine_ips = [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
+        # 192.168 subnet 1st priority
+        if local_ip := next((ip for ip in machine_ips if ip.startswith("192.168.")), False):
+            source_ip = local_ip
+        # 10.0 subnet 2nd priority
+        elif local_ip := next((ip for ip in machine_ips if ip.startswith("10.")), False):
+            source_ip = local_ip
+        else:
+            hostname = socket.gethostname()
+            source_ip = socket.gethostbyname(hostname)
+            logger.warning(f"Could not reliably determine local IP! Using {source_ip}")
+
 
     try:
         loop = asyncio.get_running_loop()
@@ -122,7 +132,7 @@ def main():
 
     # Autodiscover devices (dict mac as index, IP as value)
     logger.info("Starting detection")
-    devices = autodiscover_knauer()
+    devices = autodiscover_knauer("192.168.1.114")
 
     for mac_address, ip in devices.items():
         logger.info(f"Determining device type for device at {ip} [{mac_address}]")
