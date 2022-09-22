@@ -1,6 +1,6 @@
 import time
 
-from command_session import command_session
+from _command_session import command_session
 
 server = "http://localhost:9000"
 socl2_endpoint = f"{server}/socl2/"

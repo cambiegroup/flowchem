@@ -12,4 +12,4 @@ max_pressure = "10 bar"
 
 [device.r4-heater]
 type = "R4Heater"
-port = "COM3"
+port = "COM1"

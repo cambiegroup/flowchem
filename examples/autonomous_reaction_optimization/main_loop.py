@@ -1,6 +1,8 @@
 import time
 
 from gryffin import Gryffin
+
+from examples.autonomous_reaction_optimization._command_session import command_session
 from run_experiment import run_experiment
 
 # load config
@@ -20,7 +22,14 @@ gryffin = Gryffin(config_dict=config)
 observations = []
 
 # Initialize hardware
-# TODO start
+with command_session() as sess:
+    sess.put(
+        socl2_endpoint + "/infusion-rate", {"rate": f"{rates['socl2']} ml/min"}
+    )
+    sess.put(
+        hexyldecanoic_endpoint + "/flow",
+        {"flowrate": f"{rates['hexyldecanoic']} ml/min"},
+    )
 
 # Run optimization for MAX_TIME
 MAX_TIME = 8 * 60 * 60
