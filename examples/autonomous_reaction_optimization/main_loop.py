@@ -11,8 +11,8 @@ from examples.autonomous_reaction_optimization._hw_control import command_sessio
 config = {
     "parameters": [
         {"name": "SOCl2_equivalent", "type": "continuous", "low": 1.0, "high": 1.5},
-        {"name": "temperature", "type": "continuous", "low": 20, "high": 100},
-        {"name": "residence_time", "type": "continuous", "low": 1, "high": 60},
+        {"name": "temperature", "type": "continuous", "low": 20, "high": 30},
+        {"name": "residence_time", "type": "continuous", "low": 1, "high": 2},
     ],
     "objectives": [
         {"name": "product_ratio_IR", "goal": "max"},
@@ -26,14 +26,14 @@ observations = []
 # Initialize hardware
 with command_session() as sess:
     # Heater to r.t.
-    sess.put(r4_endpoint + "/temperature", {"temperature": 21})
+    sess.put(r4_endpoint + "/temperature", params={"temperature": "21"})
     sess.put(r4_endpoint + "/power-on")
 
     # Start pumps with low flow rate
-    sess.put(socl2_endpoint + "/flow-rate", {"rate": "5 ul/min"})
+    sess.put(socl2_endpoint + "/flow-rate", params={"rate": "5 ul/min"})
     sess.put(socl2_endpoint + "/infuse")
 
-    sess.put(hexyldecanoic_endpoint + "/flow-rate", {"rate": "50 ul/min"})
+    sess.put(hexyldecanoic_endpoint + "/flow-rate", params={"rate": "50 ul/min"})
     sess.put(hexyldecanoic_endpoint + "/infuse")
 
     # TODO start IR experiment acquisition here!

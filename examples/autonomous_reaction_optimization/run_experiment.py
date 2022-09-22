@@ -38,16 +38,15 @@ def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
 def set_parameters(rates: dict, temperature: float):
     with command_session() as sess:
         sess.put(
-            socl2_endpoint + "/infusion-rate", {"rate": f"{rates['socl2']} ml/min"}
+            socl2_endpoint + "/flow-rate", params={"rate": f"{rates['socl2']} ml/min"}
         )
         sess.put(
-            hexyldecanoic_endpoint + "/flow",
-            {"flowrate": f"{rates['hexyldecanoic']} ml/min"},
+            hexyldecanoic_endpoint + "/flow-rate", params={"rate": f"{rates['hexyldecanoic']} ml/min"},
         )
 
         # Sets heater
-        heater_data = {"channel": R4_CHANNEL, "target_temperature": f"{temperature} C"}
-        sess.put(socl2_endpoint + "/temperature/set", heater_data)
+        heater_data = {"temperature": f"{temperature:.2f} °C"}
+        sess.put(r4_endpoint + "/temperature", params=heater_data)
 
 
 def wait_stable_temperature():

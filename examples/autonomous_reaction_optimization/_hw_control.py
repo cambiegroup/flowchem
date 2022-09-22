@@ -19,7 +19,7 @@ def check_for_errors(resp, *args, **kwargs):
 
 
 def log_responses(resp, *args, **kwargs):
-    logger.debug(resp.text)
+    logger.debug(f"Reply: {resp.text} on {resp.url}")
 
 
 @contextlib.contextmanager
