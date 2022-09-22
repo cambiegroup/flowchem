@@ -13,10 +13,20 @@ from flowchem.devices.harvardapparatus.elite11 import PumpStatus
 from flowchem.units import flowchem_ureg
 
 
+@pytest.fixture(scope="session")
+async def pump():
+    """Change to match your hardware ;)"""
+    pump = Elite11InfuseWithdraw.from_config(
+        port="COM4", syringe_volume="5 ml", syringe_diameter="20 mm"
+    )
+    await pump.initialize()
+    return pump
+
+
 async def move_infuse(pump):
-    await pump.set_syringe_diameter(10)
-    await pump.set_flow_rate(1)
-    await pump.set_target_volume(1)
+    await pump.set_syringe_diameter("10 mm")
+    await pump.set_flow_rate("1 ml/min")
+    await pump.set_target_volume("1 ml")
     await pump.infuse()
 
 
@@ -25,16 +35,6 @@ def event_loop(request):
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
-
-
-@pytest.fixture(scope="session")
-async def pump():
-    """Change to match your hardware ;)"""
-    pump = Elite11InfuseWithdraw.from_config(
-        port="COM11", syringe_volume="5 ml", syringe_diameter="20 ml"
-    )
-    await pump.initialize()
-    return pump
 
 
 @pytest.mark.HApump
