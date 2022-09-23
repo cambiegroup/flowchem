@@ -7,12 +7,14 @@ from run_experiment import run_experiment
 
 from examples.autonomous_reaction_optimization._hw_control import command_session
 
+logger.add("./xp.log", level="INFO")
+
 # load config
 config = {
     "parameters": [
         {"name": "SOCl2_equivalent", "type": "continuous", "low": 1.0, "high": 1.5},
-        {"name": "temperature", "type": "continuous", "low": 30, "high": 35},
-        {"name": "residence_time", "type": "continuous", "low": 0.2, "high": 0.5},
+        {"name": "temperature", "type": "continuous", "low": 30, "high": 65},
+        {"name": "residence_time", "type": "continuous", "low": 2, "high": 20},
     ],
     "objectives": [
         {"name": "product_ratio_IR", "goal": "max"},
@@ -41,7 +43,8 @@ with command_session() as sess:
         sess.get(flowir_endpoint + "/is-connected").text == "true"
     ), "iCIR app must be open on the control PC"
     # If IR is running I just reuse previous experiment. Because cleaning the probe for the BG is slow
-    if not sess.get(flowir_endpoint + "/probe-status").text == "Running":
+    status = sess.get(flowir_endpoint + "/probe-status")
+    if status == " Not running":
         # Start acquisition
         xp = {
             "template": "30sec_2days.iCIRTemplate",
@@ -68,3 +71,4 @@ while time.monotonic() < (start_time + MAX_TIME):
         logger.info(f"Experiment ended: {conditions}")
 
     observations.extend(conditions_to_test)
+    logger.info(observations)
