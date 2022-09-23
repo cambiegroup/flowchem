@@ -6,6 +6,7 @@ import warnings
 from asyncua import Client
 from asyncua import ua
 from flowchem.exceptions import DeviceError
+from flowchem.models.analytical_device import AnalyticalDevice
 from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
@@ -14,7 +15,7 @@ from ._icir_common import IRSpectrum
 from ._icir_common import ProbeInfo
 
 
-class FlowIR(iCIR_spectrometer, BaseDevice):
+class FlowIR(iCIR_spectrometer, AnalyticalDevice):
     """
     Object to interact with the iCIR software controlling the FlowIR and ReactIR.
     """
@@ -35,7 +36,7 @@ class FlowIR(iCIR_spectrometer, BaseDevice):
 
         # Default (local) url if none provided
         if url is None:
-            url = "opc.tcp://localhost:62552/iCOpcUaServer"
+            url = iCIR_spectrometer.iC_OPCUA_DEFAULT_SERVER_ADDRESS
 
         self.opcua = Client(url)
         self.version = None
@@ -186,9 +187,7 @@ class FlowIR(iCIR_spectrometer, BaseDevice):
 
     def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this HuberChiller instance."""
-        from fastapi import APIRouter
-
-        router = APIRouter()
+        router = super().get_router(prefix)
         router.add_api_route("/is-connected", self.is_iCIR_connected, methods=["GET"])
         router.add_api_route("/is-running", self.is_running, methods=["GET"])
         router.add_api_route("/probe/info", self.is_iCIR_connected, methods=["GET"])
