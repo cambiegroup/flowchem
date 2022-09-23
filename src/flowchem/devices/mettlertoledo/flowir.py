@@ -54,8 +54,9 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
 
     def is_local(self):
         """Returns true if the server is on the same machine running the python code."""
+
         return any(
-            x in self.opcua.aio_obj.server_url.netloc
+            x in self.opcua.server_url.netloc
             for x in ("localhost", "127.0.0.1")
         )
 
@@ -141,7 +142,8 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
         """Starts an experiment on iCIR.
 
         Args:
-            template: name of the experiment template, should be in the right folder on the PC running iCIR
+            template: name of the experiment template, should be in the Templtates folder on the PC running iCIR.
+                      That usually is C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates
             name: experiment name.
         """
         template = FlowIR._normalize_template_name(template)
@@ -171,6 +173,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
                 "Check iCIR status and close any open experiment."
             ) from error
         logger.info(f"FlowIR experiment {name} started with template {template}!")
+        return True
 
     async def stop_experiment(self):
         """Stop the experiment currently running.

@@ -10,8 +10,9 @@ socl2_endpoint = f"{api_base}/socl2"
 hexyldecanoic_endpoint = f"{api_base}/hexyldecanoic"
 r4_channel = 0
 r4_endpoint = f"{api_base}/r4-heater/{r4_channel}"
+flowir_endpoint = f"{api_base}/flowir"
 
-__all__ = ["socl2_endpoint", "hexyldecanoic_endpoint", "r4_endpoint", "command_session"]
+__all__ = ["socl2_endpoint", "hexyldecanoic_endpoint", "r4_endpoint", "command_session", "flowir_endpoint"]
 
 
 def check_for_errors(resp, *args, **kwargs):

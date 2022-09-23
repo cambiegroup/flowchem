@@ -1,5 +1,10 @@
-import random
 import time
+import json
+
+import numpy as np
+import pandas as pd
+from scipy import integrate
+from loguru import logger
 
 from _hw_control import *
 
@@ -63,13 +68,43 @@ def wait_stable_temperature():
 def get_ir_once_stable():
     """Keeps acquiring IR spectra until changes are small, then returns the spectrum."""
     with command_session() as sess:
-        # Get IR, check previous, return average when stable
-        pass
+        previous_spectrum = json.loads(sess.get(flowir_endpoint + "/sample/spectrum/last-treated"))
+
+    while True:
+        with command_session() as sess:
+            current_spectrum = json.loads(sess.get(flowir_endpoint + "/sample/spectrum/last-treated"))
+
+        delta = np.array(current_spectrum["intensity"]) - np.array(previous_spectrum["intensity"])
+        print(f"Max delta is {delta.max()}")
+        print(f"Avg delta is {delta.mean()}")
+
+        if delta.max() < 0.01 and delta.mean() < 0.001:
+            return current_spectrum
+
+        previous_spectrum = current_spectrum
 
 
-def calculate_peak_ratio(ir_spectrum):
-    """Given the IR spectrum returns the product area / total area ratio."""
-    return random.random()
+def intagrate_peaks(ir_specturm):
+    """Integrate areas from `limits.in` in the spectrum provided."""
+    # List of peaks to be integrated
+    peak_list = np.recfromtxt("limits.in", encoding="UTF-8")
+
+    # Process spectrum
+    df = pd.read_json(ir_specturm)
+    df = df.set_index("wavenumber")
+
+    peaks = {}
+    for name, start, end in peak_list:
+        # This is a common mistake since wavenumber are plot in reverse order
+        if start > end:
+            start, end = end, start
+
+        df_view = df.loc[(start <= df.index) & (df.index <= end)]
+        peaks[name] = integrate.trapezoid(df_view['intensity'])
+        logger.debug(f"Integral of {name} between {start} and {end} is {peaks[name]}")
+
+    # Normalize integrals
+    return {k: v/sum(peaks.values()) for k,v in peaks.items()}
 
 
 def run_experiment(
@@ -92,5 +127,6 @@ def run_experiment(
     time.sleep(residence_time * 60)  # wait at least 1 residence time
 
     ir_spectrum = get_ir_once_stable()
+    peaks = intagrate_peaks(ir_spectrum)
 
-    return calculate_peak_ratio(ir_spectrum)
+    return peaks["product"]

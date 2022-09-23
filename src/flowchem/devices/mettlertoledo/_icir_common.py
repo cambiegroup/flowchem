@@ -20,16 +20,16 @@ class ProbeInfo(BaseModel):
     """Dictionary returned from iCIR with probe info."""
 
     spectrometer: str
-    spectrometer_SN: str
-    probe_SN: str
+    spectrometer_SN: int
+    probe_SN: int
     detector: str
     apodization: str
     ip_address: str
     probe_type: str
     sampling_interval: str
-    resolution: str
+    resolution: int
     scan_option: str
-    gain: str
+    gain: int
 
 
 # noinspection PyPep8Naming

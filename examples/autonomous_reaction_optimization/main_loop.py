@@ -36,7 +36,16 @@ with command_session() as sess:
     sess.put(hexyldecanoic_endpoint + "/flow-rate", params={"rate": "50 ul/min"})
     sess.put(hexyldecanoic_endpoint + "/infuse")
 
-    # TODO start IR experiment acquisition here!
+    # Ensure iCIR is running
+    assert sess.get(flowir_endpoint + "/is-connected") == "true", "iCIR app must be open on the control PC"
+    assert sess.get(flowir_endpoint + "/is-running") == "false", "Spectrometer must be idle on startup"
+
+    # Start acquisition
+    xp = {
+        "template": "30sec_2days.iCIRTemplate",
+        "name": "hexyldecanoic acid chlorination - automated"
+    }
+    sess.put(flowir_endpoint + "/experiment/start", params=xp)
 
 
 # Run optimization for MAX_TIME
