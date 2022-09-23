@@ -11,8 +11,8 @@ from examples.autonomous_reaction_optimization._hw_control import command_sessio
 config = {
     "parameters": [
         {"name": "SOCl2_equivalent", "type": "continuous", "low": 1.0, "high": 1.5},
-        {"name": "temperature", "type": "continuous", "low": 20, "high": 30},
-        {"name": "residence_time", "type": "continuous", "low": 1, "high": 2},
+        {"name": "temperature", "type": "continuous", "low": 30, "high": 35},
+        {"name": "residence_time", "type": "continuous", "low": 0.2, "high": 0.5},
     ],
     "objectives": [
         {"name": "product_ratio_IR", "goal": "max"},
@@ -37,15 +37,15 @@ with command_session() as sess:
     sess.put(hexyldecanoic_endpoint + "/infuse")
 
     # Ensure iCIR is running
-    assert sess.get(flowir_endpoint + "/is-connected") == "true", "iCIR app must be open on the control PC"
-    assert sess.get(flowir_endpoint + "/is-running") == "false", "Spectrometer must be idle on startup"
-
-    # Start acquisition
-    xp = {
-        "template": "30sec_2days.iCIRTemplate",
-        "name": "hexyldecanoic acid chlorination - automated"
-    }
-    sess.put(flowir_endpoint + "/experiment/start", params=xp)
+    assert sess.get(flowir_endpoint + "/is-connected").text == "true", "iCIR app must be open on the control PC"
+    # If IR is running I just reuse previous experiment. Because cleaning the probe for the BG is slow
+    if sess.get(flowir_endpoint + "/is-running").text == "false":
+        # Start acquisition
+        xp = {
+            "template": "30sec_2days.iCIRTemplate",
+            "name": "hexyldecanoic acid chlorination - automated"
+        }
+        sess.put(flowir_endpoint + "/experiment/start", params=xp)
 
 
 # Run optimization for MAX_TIME
