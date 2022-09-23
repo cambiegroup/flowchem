@@ -28,7 +28,7 @@ def main(device_config_file, logfile, host, port):
     logger.debug(f"Starting server with configuration file: '{device_config_file}'")
 
     myapp = create_server_from_file(Path(device_config_file))
-    uvicorn.run(myapp, host=host, port=port)
+    uvicorn.run(myapp, host=host, port=port, timeout_keep_alive=3600)
 
 
 if __name__ == '__main__':
