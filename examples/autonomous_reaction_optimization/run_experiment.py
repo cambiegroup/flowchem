@@ -1,4 +1,3 @@
-import json
 import time
 
 import numpy as np
@@ -23,9 +22,9 @@ def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
     Returns: dict with pump names and flow rate in ml/min
 
     """
-    REACTOR_VOLUME = 1  # ml
-    HEXYLDECANOIC_ACID = 1.6  # Molar
-    SOCl2 = 13  # Molar
+    REACTOR_VOLUME = 10  # ml
+    HEXYLDECANOIC_ACID = 1.374  # Molar
+    SOCl2 = 13.768  # Molar
 
     total_flow_rate = REACTOR_VOLUME / residence_time  # ml/min
 
@@ -57,8 +56,8 @@ def set_parameters(rates: dict, temperature: float):
 def wait_stable_temperature():
     """Wait until the ste temperature has been reached."""
     logger.info("Waiting for the reactor temperature to stabilize")
-    with command_session() as sess:
-        while True:
+    while True:
+        with command_session() as sess:
             r = sess.get(r4_endpoint + "/target-reached")
             if r.text == "true":
                 logger.info("Stable temperature reached!")
@@ -71,9 +70,13 @@ def get_ir_once_stable():
     """Keeps acquiring IR spectra until changes are small, then returns the spectrum."""
     logger.info("Waiting for the IR spectrum to be stable")
     with command_session() as sess:
-        previous_spectrum = json.loads(
-            sess.get(flowir_endpoint + "/sample/spectrum-treated").text
-        )
+        # Wait for first spectrum to be available
+        while last_sample_id := int(sess.get(flowir_endpoint + "/sample-count").text) == 0:
+            time.sleep(1)
+        # Get spectrum
+        previous_spectrum = pd.read_json(sess.get(flowir_endpoint + "/sample/spectrum-treated").text)
+        previous_spectrum = previous_spectrum.set_index("wavenumber")
+        # In case the id has changed between requests (highly unlikely)
         last_sample_id = int(sess.get(flowir_endpoint + "/sample-count").text)
 
     while True:
@@ -86,35 +89,31 @@ def get_ir_once_stable():
             if current_sample_id > last_sample_id:
                 break
             else:
-                time.sleep(1)
+                time.sleep(2)
 
         with command_session() as sess:
-            current_spectrum = json.loads(
-                sess.get(flowir_endpoint + "/sample/spectrum-treated").text
-            )
+            current_spectrum = pd.read_json(sess.get(flowir_endpoint + "/sample/spectrum-treated").text)
+            current_spectrum = current_spectrum.set_index("wavenumber")
 
-        delta = np.array(current_spectrum["intensity"]) - np.array(
-            previous_spectrum["intensity"]
-        )
-        print(f"Max delta is {delta.max()}")
-        print(f"Avg delta is {delta.mean()}")
+        previous_peaks = integrate_peaks(previous_spectrum)
+        current_peaks = integrate_peaks(current_spectrum)
 
-        if delta.max() < 0.01 and delta.mean() < 0.001:
+        delta_product_ratio = abs(current_peaks["product"] - previous_peaks["product"])
+        logger.info(f"Current product ratio is {current_peaks['product']}")
+        logger.debug(f"Delta product ratio is {delta_product_ratio}")
+
+        if delta_product_ratio < 0.002:  # 0.2% error on ratio
             logger.info("IR spectrum stable!")
-            return current_spectrum
+            return current_peaks
 
         previous_spectrum = current_spectrum
         last_sample_id = current_sample_id
 
 
-def intagrate_peaks(ir_spectrum):
+def integrate_peaks(ir_spectrum):
     """Integrate areas from `limits.in` in the spectrum provided."""
     # List of peaks to be integrated
     peak_list = np.recfromtxt("limits.in", encoding="UTF-8")
-
-    # Process spectrum
-    df = pd.DataFrame.from_dict(ir_spectrum)
-    df = df.set_index("wavenumber")
 
     peaks = {}
     for name, start, end in peak_list:
@@ -122,11 +121,12 @@ def intagrate_peaks(ir_spectrum):
         if start > end:
             start, end = end, start
 
-        df_view = df.loc[(start <= df.index) & (df.index <= end)]
+        df_view = ir_spectrum.loc[(start <= ir_spectrum.index) & (ir_spectrum.index <= end)]
         peaks[name] = integrate.trapezoid(df_view["intensity"])
         logger.debug(f"Integral of {name} between {start} and {end} is {peaks[name]}")
 
     # Normalize integrals
+
     return {k: v / sum(peaks.values()) for k, v in peaks.items()}
 
 
@@ -147,12 +147,19 @@ def run_experiment(
     logger.info(
         f"Starting experiment with {SOCl2_equivalent:.2f} eq SOCl2, {temperature:.1f} degC and {residence_time:.2f} min"
     )
+    # Set stand-by flow-rate first
+    set_parameters({"hexyldecanoic": "0.1 ml/min", "socl2": "10 ul/min"}, temperature)
+    wait_stable_temperature()
+    # Set actual flow rate once the set temperature has been reached
     pump_flow_rates = calculate_flow_rates(SOCl2_equivalent, residence_time)
     set_parameters(pump_flow_rates, temperature)
-    wait_stable_temperature()
-    time.sleep(residence_time * 60)  # wait at least 1 residence time
-
-    ir_spectrum = get_ir_once_stable()
-    peaks = intagrate_peaks(ir_spectrum)
+    # Wait 1 residence time
+    time.sleep(residence_time * 60)
+    # Start monitoring IR
+    peaks = get_ir_once_stable()
 
     return peaks["product"]
+
+
+if __name__ == '__main__':
+    print(get_ir_once_stable())
