@@ -41,7 +41,7 @@ with command_session() as sess:
         sess.get(flowir_endpoint + "/is-connected").text == "true"
     ), "iCIR app must be open on the control PC"
     # If IR is running I just reuse previous experiment. Because cleaning the probe for the BG is slow
-    if not sess.get(flowir_endpoint + "/probe_status").text == "Running":
+    if not sess.get(flowir_endpoint + "/probe-status").text == "Running":
         # Start acquisition
         xp = {
             "template": "30sec_2days.iCIRTemplate",

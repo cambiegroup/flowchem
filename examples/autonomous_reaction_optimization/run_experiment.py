@@ -85,6 +85,8 @@ def get_ir_once_stable():
                 )
             if current_sample_id > last_sample_id:
                 break
+            else:
+                time.sleep(1)
 
         with command_session() as sess:
             current_spectrum = json.loads(
