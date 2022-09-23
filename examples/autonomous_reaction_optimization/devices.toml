@@ -13,3 +13,7 @@ max_pressure = "10 bar"
 [device.r4-heater]
 type = "R4Heater"
 port = "COM1"
+
+[device.flowir]
+type = "FlowIR"
+url = "opc.tcp://localhost:62552/iCOpcUaServer"
