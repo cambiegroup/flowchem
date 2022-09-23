@@ -99,7 +99,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         # Here it is checked that the device is a pump and not a valve
         await self.get_headtype()
         # Place pump in remote control
-        await self.set_remote()
+        await self.remote_control()
         # Also ensure rest state is not pumping.
         await self.stop()
 
@@ -405,9 +405,12 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         await self.create_and_send_command(LOCAL, setpoint=int(state))
         logger.debug(f"Local control set to {state}")
 
-    async def set_remote(self, state: bool = True):
+    async def remote_control(self, state: bool = True):
         """Set remote control on or off."""
-        await self.create_and_send_command(REMOTE, setpoint=int(state))
+        if state:
+            await self.create_and_send_command(REMOTE, setpoint=1)
+        else:
+            await self.create_and_send_command(LOCAL, setpoint=1)
         logger.debug(f"Remote control set to {state}")
 
     async def set_errio(self, param: bool):
@@ -433,6 +436,8 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         """Creates an APIRouter for this object."""
         # Basic pump methods
         router = super().get_router()
+        router.add_api_route("/remote-control", self.remote_control, methods=["PUT"])
+
 
         # Pressure sensor as sub-device following pressure sensors schema
         router2 = super(BasePump, self).get_router(prefix="/pressure-sensor")
