@@ -1,8 +1,8 @@
 [device.socl2]
 type = "Elite11InfuseWithdraw"
 port = "COM4"
-syringe_diameter = "4.6 mm"
-syringe_volume = "1 ml"
+syringe_diameter = "14.567 mm"
+syringe_volume = "10 ml"
 baudrate = 115200
 
 [device.hexyldecanoic]
