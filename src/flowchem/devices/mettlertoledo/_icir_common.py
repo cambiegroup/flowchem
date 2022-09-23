@@ -1,12 +1,22 @@
 """ Common iCIR code. """
 import warnings
 from pathlib import Path
-from typing import TypedDict
 
 from pydantic import BaseModel
 
 
-class ProbeInfo(TypedDict):
+class IRSpectrum(BaseModel):
+    """
+    IR spectrum class.
+    Consider rampy for advance features (baseline fit, etc.)
+    See e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb
+    """
+
+    wavenumber: list[float]
+    intensity: list[float]
+
+
+class ProbeInfo(BaseModel):
     """Dictionary returned from iCIR with probe info."""
 
     spectrometer: str
@@ -111,14 +121,3 @@ class iCIR_spectrometer:
                     ].strip()
 
         return probe_info  # type: ignore
-
-
-class IRSpectrum(BaseModel):
-    """
-    IR spectrum class.
-    Consider rampy for advance features (baseline fit, etc.)
-    See e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb
-    """
-
-    wavenumber: list[float]
-    intensity: list[float]
