@@ -13,7 +13,7 @@ from loguru import logger
     "-l", "--log", "logfile", type=click.Path(), default=None, help="Save logs to file."
 )
 @click.option(
-    "-h", "--host", "host", type=str, default="1127.0.0.1", help="Server host."
+    "-h", "--host", "host", type=str, default="127.0.0.1", help="Server host."
 )
 @click.option("-p", "--port", "port", type=int, default=8000, help="Server port.")
 @click.version_option()
@@ -29,3 +29,7 @@ def main(device_config_file, logfile, host, port):
 
     myapp = create_server_from_file(Path(device_config_file))
     uvicorn.run(myapp, host=host, port=port)
+
+
+if __name__ == '__main__':
+    main()
