@@ -37,13 +37,15 @@ with command_session() as sess:
     sess.put(hexyldecanoic_endpoint + "/infuse")
 
     # Ensure iCIR is running
-    assert sess.get(flowir_endpoint + "/is-connected").text == "true", "iCIR app must be open on the control PC"
+    assert (
+        sess.get(flowir_endpoint + "/is-connected").text == "true"
+    ), "iCIR app must be open on the control PC"
     # If IR is running I just reuse previous experiment. Because cleaning the probe for the BG is slow
-    if sess.get(flowir_endpoint + "/is-running").text == "false":
+    if not sess.get(flowir_endpoint + "/probe_status").text == "Running":
         # Start acquisition
         xp = {
             "template": "30sec_2days.iCIRTemplate",
-            "name": "hexyldecanoic acid chlorination - automated"
+            "name": "hexyldecanoic acid chlorination - automated",
         }
         sess.put(flowir_endpoint + "/experiment/start", params=xp)
 

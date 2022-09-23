@@ -54,25 +54,6 @@ async def test_probe_status(flowir):
 
 @pytest.mark.asyncio
 @pytest.mark.FlowIR
-async def test_is_running(flowir):
-    async with flowir as spectrometer:
-        # Check idle
-        assert await spectrometer.is_running() is False
-
-        # Make busy
-        template_name = "15_sec_integration.iCIRTemplate"
-        await spectrometer.start_experiment(template=template_name)
-
-        # Check busy
-        assert await spectrometer.is_running() is True
-
-        # Restore idle
-        await spectrometer.stop_experiment()
-        await spectrometer.wait_until_idle()
-
-
-@pytest.mark.asyncio
-@pytest.mark.FlowIR
 async def test_spectrum_acquisition(flowir):
     async with flowir as spectrometer:
         template_name = "15_sec_integration.iCIRTemplate"

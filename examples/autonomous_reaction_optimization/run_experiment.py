@@ -1,12 +1,11 @@
-import time
 import json
+import time
 
 import numpy as np
 import pandas as pd
-from scipy import integrate
-from loguru import logger
-
 from _hw_control import *
+from loguru import logger
+from scipy import integrate
 
 
 def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
@@ -46,7 +45,8 @@ def set_parameters(rates: dict, temperature: float):
             socl2_endpoint + "/flow-rate", params={"rate": f"{rates['socl2']} ml/min"}
         )
         sess.put(
-            hexyldecanoic_endpoint + "/flow-rate", params={"rate": f"{rates['hexyldecanoic']} ml/min"},
+            hexyldecanoic_endpoint + "/flow-rate",
+            params={"rate": f"{rates['hexyldecanoic']} ml/min"},
         )
 
         # Sets heater
@@ -71,13 +71,29 @@ def get_ir_once_stable():
     """Keeps acquiring IR spectra until changes are small, then returns the spectrum."""
     logger.info("Waiting for the IR spectrum to be stable")
     with command_session() as sess:
-        previous_spectrum = json.loads(sess.get(flowir_endpoint + "/sample/spectrum/last-treated").text)
+        previous_spectrum = json.loads(
+            sess.get(flowir_endpoint + "/sample/spectrum-treated").text
+        )
+        last_sample_id = int(sess.get(flowir_endpoint + "/sample-count").text)
 
     while True:
-        with command_session() as sess:
-            current_spectrum = json.loads(sess.get(flowir_endpoint + "/sample/spectrum/last-treated").text)
+        # Wait for a new spectrum
+        while True:
+            with command_session() as sess:
+                current_sample_id = int(
+                    sess.get(flowir_endpoint + "/sample-count").text
+                )
+            if current_sample_id > last_sample_id:
+                break
 
-        delta = np.array(current_spectrum["intensity"]) - np.array(previous_spectrum["intensity"])
+        with command_session() as sess:
+            current_spectrum = json.loads(
+                sess.get(flowir_endpoint + "/sample/spectrum-treated").text
+            )
+
+        delta = np.array(current_spectrum["intensity"]) - np.array(
+            previous_spectrum["intensity"]
+        )
         print(f"Max delta is {delta.max()}")
         print(f"Avg delta is {delta.mean()}")
 
@@ -86,15 +102,16 @@ def get_ir_once_stable():
             return current_spectrum
 
         previous_spectrum = current_spectrum
+        last_sample_id = current_sample_id
 
 
-def intagrate_peaks(ir_specturm):
+def intagrate_peaks(ir_spectrum):
     """Integrate areas from `limits.in` in the spectrum provided."""
     # List of peaks to be integrated
     peak_list = np.recfromtxt("limits.in", encoding="UTF-8")
 
     # Process spectrum
-    df = pd.read_json(ir_specturm)
+    df = pd.DataFrame.from_dict(ir_spectrum)
     df = df.set_index("wavenumber")
 
     peaks = {}
@@ -104,11 +121,11 @@ def intagrate_peaks(ir_specturm):
             start, end = end, start
 
         df_view = df.loc[(start <= df.index) & (df.index <= end)]
-        peaks[name] = integrate.trapezoid(df_view['intensity'])
+        peaks[name] = integrate.trapezoid(df_view["intensity"])
         logger.debug(f"Integral of {name} between {start} and {end} is {peaks[name]}")
 
     # Normalize integrals
-    return {k: v/sum(peaks.values()) for k, v in peaks.items()}
+    return {k: v / sum(peaks.values()) for k, v in peaks.items()}
 
 
 def run_experiment(
@@ -125,7 +142,9 @@ def run_experiment(
     Returns: IR product area / (SM + product areas)
 
     """
-    logger.info(f"Starting experiment with {SOCl2_equivalent:.2f} eq SOCl2, {temperature:.1f} degC and {residence_time:.2f} min")
+    logger.info(
+        f"Starting experiment with {SOCl2_equivalent:.2f} eq SOCl2, {temperature:.1f} degC and {residence_time:.2f} min"
+    )
     pump_flow_rates = calculate_flow_rates(SOCl2_equivalent, residence_time)
     set_parameters(pump_flow_rates, temperature)
     wait_stable_temperature()

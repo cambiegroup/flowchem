@@ -56,8 +56,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
         """Returns true if the server is on the same machine running the python code."""
 
         return any(
-            x in self.opcua.server_url.netloc
-            for x in ("localhost", "127.0.0.1")
+            x in self.opcua.server_url.netloc for x in ("localhost", "127.0.0.1")
         )
 
     async def check_version(self):
@@ -87,12 +86,8 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
         return self.parse_probe_info(probe_info)
 
     async def probe_status(self):
-        """Returns current probe status."""
+        """Returns current probe status. Possible values are 'Running', 'Not running' (+ more?)."""
         return await self.opcua.get_node(self.PROBE_STATUS).get_value()
-
-    async def is_running(self) -> bool:
-        """Is the probe currently measuring?"""
-        return await self.probe_status() == "Running"
 
     async def last_sample_time(self) -> datetime.datetime:
         """Returns date/time of latest scan."""
@@ -143,7 +138,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
 
         Args:
             template: name of the experiment template, should be in the Templtates folder on the PC running iCIR.
-                      That usually is C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates
+                      That usually is C:\\ProgramData\\METTLER TOLEDO\\iC OPC UA Server\1.2\\Templates
             name: experiment name.
         """
         template = FlowIR._normalize_template_name(template)
@@ -152,7 +147,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
                 f"Cannot start template {template}: name not valid! Check if is in: "
                 r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
             )
-        if await self.is_running():
+        if await self.probe_status() == "Running":
             warnings.warn(
                 "I was asked to start an experiment while a current experiment is already running!"
                 "I will have to stop that first! Sorry for that :)"
@@ -185,29 +180,30 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
 
     async def wait_until_idle(self):
         """Waits until no experiment is running."""
-        while await self.is_running():
+        while await self.probe_status() == "Running":
             await asyncio.sleep(0.2)
 
     def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this HuberChiller instance."""
         router = super().get_router(prefix)
         router.add_api_route("/is-connected", self.is_iCIR_connected, methods=["GET"])
-        router.add_api_route("/is-running", self.is_running, methods=["GET"])
+        router.add_api_route("/probe-status", self.probe_status, methods=["GET"])
         router.add_api_route(
-            "/probe/info", self.probe_info, methods=["GET"], response_model=ProbeInfo
+            "/probe-info", self.probe_info, methods=["GET"], response_model=ProbeInfo
         )
-        router.add_api_route("/probe/status", self.probe_status, methods=["GET"])
+
+        router.add_api_route("/sample-count", self.sample_count, methods=["GET"])
         router.add_api_route(
             "/sample/last-acquisition-time", self.last_sample_time, methods=["GET"]
         )
         router.add_api_route(
-            "/sample/spectrum/last-treated", self.last_spectrum_treated, methods=["GET"]
+            "/sample/spectrum-treated", self.last_spectrum_treated, methods=["GET"]
         )
         router.add_api_route(
-            "/sample/spectrum/last-raw", self.last_spectrum_raw, methods=["GET"]
+            "/sample/spectrum-raw", self.last_spectrum_raw, methods=["GET"]
         )
         router.add_api_route(
-            "/sample/spectrum/last-background",
+            "/sample/spectrum-background",
             self.last_spectrum_background,
             methods=["GET"],
         )

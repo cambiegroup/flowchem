@@ -31,5 +31,5 @@ def main(device_config_file, logfile, host, port):
     uvicorn.run(myapp, host=host, port=port, timeout_keep_alive=3600)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
