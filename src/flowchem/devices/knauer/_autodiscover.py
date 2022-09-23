@@ -81,16 +81,19 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     if not source_ip:
         machine_ips = [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
         # 192.168 subnet 1st priority
-        if local_ip := next((ip for ip in machine_ips if ip.startswith("192.168.")), False):
-            source_ip = local_ip
+        if local_ip := next(
+            (ip for ip in machine_ips if ip.startswith("192.168.")), False
+        ):
+            source_ip = local_ip  # type: ignore
         # 10.0 subnet 2nd priority
-        elif local_ip := next((ip for ip in machine_ips if ip.startswith("10.")), False):
-            source_ip = local_ip
+        elif local_ip := next(
+            (ip for ip in machine_ips if ip.startswith("10.")), False
+        ):
+            source_ip = local_ip  # type: ignore
         else:
             hostname = socket.gethostname()
             source_ip = socket.gethostbyname(hostname)
             logger.warning(f"Could not reliably determine local IP! Using {source_ip}")
-
 
     try:
         loop = asyncio.get_running_loop()
