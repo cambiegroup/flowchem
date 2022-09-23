@@ -190,8 +190,8 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
         router = super().get_router(prefix)
         router.add_api_route("/is-connected", self.is_iCIR_connected, methods=["GET"])
         router.add_api_route("/is-running", self.is_running, methods=["GET"])
-        router.add_api_route("/probe/info", self.is_iCIR_connected, methods=["GET"])
-        router.add_api_route("/probe/status", self.is_iCIR_connected, methods=["GET"])
+        router.add_api_route("/probe/info", self.probe_info, methods=["GET"])
+        router.add_api_route("/probe/status", self.probe_status, methods=["GET"])
         router.add_api_route(
             "/sample/last-acquisition-time", self.last_sample_time, methods=["GET"]
         )
