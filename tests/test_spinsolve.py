@@ -57,13 +57,13 @@ def test_user_data(nmr: Spinsolve):
 
 @pytest.mark.Spinsolve
 def test_hw_request(nmr: Spinsolve):
-    hw_tree = nmr.hw_request()
+    hw_tree = await nmr.hw_request()
     assert hw_tree.find(".//SpinsolveSoftware") is not None
 
 
 @pytest.mark.Spinsolve
 def test_request_available_protocols(nmr: Spinsolve):
-    protocols = nmr.request_available_protocols()
+    protocols = await nmr.request_available_protocols()
     assert isinstance(protocols, dict)
     assert "1D PROTON" in protocols
 

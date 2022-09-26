@@ -94,7 +94,7 @@ class Reader:
             tree = self.parse_tree(self._queue.get())
             self._queue.task_done()
 
-            if tree:
+            if tree is not None:
                 self._replies.append(tree)
 
             if tree and self.schema:

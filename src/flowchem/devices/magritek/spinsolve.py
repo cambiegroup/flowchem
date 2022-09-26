@@ -46,18 +46,18 @@ class Spinsolve(AnalyticalDevice):
         self._reader = Reader(self._replies, xml_schema)
 
         # Set experimental variable
-        self.data_folder = data_folder
+        self._data_folder = data_folder
 
         # An optional mapping between remote and local folder location can be used for remote use
         self._folder_mapper = create_folder_mapper(*remote_to_local_mapping)
         if self._folder_mapper is not None:
             assert (
-                self._folder_mapper(self.data_folder) is not None
+                self._folder_mapper(self._data_folder) is not None
             )  # Ensure mapper validity.
 
         # Sets default sample, solvent value and user data
         self.sample, self.solvent = sample_name, solvent
-        self.protocols_option = []
+        self.protocols_option = {}
         self.user_data = {"control_software": "flowchem"}
 
         # IOs (these are set upon initialization w/ initialize)
@@ -87,7 +87,7 @@ class Spinsolve(AnalyticalDevice):
         threading.Thread(target=self.connection_listener_thread, daemon=True).start()
 
         # Check if the instrument is connected
-        hw_info = self.hw_request()
+        hw_info = await self.hw_request()
 
         # If not raise ConnectionError
         if hw_info.find(".//ConnectedToHardware").text != "true":
@@ -101,13 +101,15 @@ class Spinsolve(AnalyticalDevice):
         logger.debug(f"Connected to model {hardware_type}, SW: {software_version}")
 
         # Load available protocols
-        self.protocols_option = self.request_available_protocols()
+        self.protocols_option = await self.request_available_protocols()
 
         # Finally, check version
         if version.parse(software_version) < version.parse("1.18.1.3062"):
             warnings.warn(
                 f"Spinsolve version {software_version} is older than the reference (1.18.1.3062)"
             )
+
+        await self.set_data_folder(self._data_folder)
 
     async def connection_listener(self):
         """
@@ -127,11 +129,10 @@ class Spinsolve(AnalyticalDevice):
         self._io_writer.write(message)
         await self._io_writer.drain()
 
-    @property
-    def solvent(self) -> str:
+    async def get_solvent(self) -> str:
         """Get current solvent"""
         # Send request
-        self.send_message(get_request("Solvent"))
+        await self.send_message(get_request("Solvent"))
 
         # Get reply
         reply = self._read_reply(reply_type="GetResponse")
@@ -139,16 +140,14 @@ class Spinsolve(AnalyticalDevice):
         # Parse and return
         return reply.find(".//Solvent").text
 
-    @solvent.setter
-    def solvent(self, solvent: str):
+    async def set_solvent(self, solvent: str):
         """Sets the solvent"""
-        self.send_message(set_attribute("Solvent", solvent))
+        await self.send_message(set_attribute("Solvent", solvent))
 
-    @property
-    def sample(self) -> str:
+    async def get_sample(self) -> str:
         """Get current solvent (appears in acqu.par)"""
         # Send request
-        self.send_message(get_request("Sample"))
+        await self.send_message(get_request("Sample"))
 
         # Get reply
         reply = self._read_reply(reply_type="GetResponse")
@@ -156,28 +155,20 @@ class Spinsolve(AnalyticalDevice):
         # Parse and return
         return reply.find(".//Sample").text
 
-    @sample.setter
-    def sample(self, sample: str):
+    def set_sample(self, sample: str):
         """Sets the sample name (appears in acqu.par)"""
-        self.send_message(set_attribute("Sample", sample))
+        await self.send_message(set_attribute("Sample", sample))
 
-    @property
-    def data_folder(self):
-        """Get current data_folder location"""
-        return self._data_folder  # No command available to directly query Spinsolve :(
-
-    @data_folder.setter
-    def data_folder(self, location: str):
+    async def set_data_folder(self, location: str):
         """Sets the location provided as data folder. optionally, with typeThese are included in `acq.par`"""
         if location is not None:
             self._data_folder = location
-            self.send_message(set_data_folder(location))
+            await self.send_message(set_data_folder(location))
 
-    @property
-    def user_data(self) -> dict:
+    async def get_user_data(self) -> dict:
         """Create a get user data request and parse result"""
         # Send request
-        self.send_message(get_request("UserData"))
+        await self.send_message(get_request("UserData"))
 
         # Get reply
         reply = self._read_reply(reply_type="GetResponse")
@@ -188,10 +179,9 @@ class Spinsolve(AnalyticalDevice):
             for data_item in reply.findall(".//Data")
         }
 
-    @user_data.setter
-    def user_data(self, data_to_be_set: dict):
+    async def set_user_data(self, data_to_be_set: dict):
         """Sets the user data proewqvided in the dict. These are included in `acq.par`"""
-        self.send_message(set_user_data(data_to_be_set))
+        await self.send_message(set_user_data(data_to_be_set))
 
     def _read_reply(self, reply_type="", timeout=5):
         """Looks in the received replies for one of type reply_type"""
@@ -205,7 +195,7 @@ class Spinsolve(AnalyticalDevice):
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self._read_reply, *args)
 
-    def send_message(self, root: etree.Element):
+    async def send_message(self, root: etree.Element):
         """
         Sends the tree connected XML etree.Element provided
         """
@@ -217,23 +207,23 @@ class Spinsolve(AnalyticalDevice):
 
         # Transmit
         logger.debug(f"Transmitting request to spectrometer: {message}")
-        self._transmit(message).result()
+        await self._transmit(message)
 
-    def hw_request(self):
+    async def hw_request(self):
         """
         Sends an HW request to the spectrometer, receive the reply and returns it
         """
-        self.send_message(create_message("HardwareRequest"))
+        await self.send_message(create_message("HardwareRequest"))
         # Larger timeout than usual as this is the first request sent to the spectrometer
         # When the PC/Spinsolve is in standby, the reply to the first req is slower than usual
         return self._read_reply(reply_type="HardwareResponse", timeout=15)
 
-    def request_available_protocols(self) -> dict:
+    async def request_available_protocols(self) -> dict:
         """
         Get a list of available protocol on the current spectrometer
         """
         # Request available protocols
-        self.send_message(create_message("AvailableProtocolOptionsRequest"))
+        await self.send_message(create_message("AvailableProtocolOptionsRequest"))
         # Get reply
         tree = self._read_reply(reply_type="AvailableProtocolOptionsResponse")
 
@@ -272,7 +262,7 @@ class Spinsolve(AnalyticalDevice):
 
         # Start protocol
         self._reader.clear_replies()
-        self.send_message(
+        await self.send_message(
             create_protocol_message(protocol_name, valid_protocol_options)
         )
 
@@ -306,14 +296,14 @@ class Spinsolve(AnalyticalDevice):
             if status is StatusNotification.ERROR:
                 # Usually device busy
                 warnings.warn("Error detected on running protocol -- aborting.")
-                self.abort()  # Abort running experiment
+                await self.abort()  # Abort running experiment
                 break
 
         return remote_folder
 
-    def abort(self):
+    async def abort(self):
         """Abort current running command"""
-        self.send_message(create_message("Abort"))
+        await self.send_message(create_message("Abort"))
 
     def is_protocol_available(self, desired_protocol):
         """Check if the desired protocol is available on the current instrument"""
