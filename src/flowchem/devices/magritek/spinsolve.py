@@ -49,11 +49,13 @@ class Spinsolve(AnalyticalDevice):
         self._data_folder = data_folder
 
         # An optional mapping between remote and local folder location can be used for remote use
-        self._folder_mapper = create_folder_mapper(*remote_to_local_mapping)
-        if self._folder_mapper is not None:
+        if remote_to_local_mapping is not None:
+            self._folder_mapper = create_folder_mapper(*remote_to_local_mapping)
             assert (
-                self._folder_mapper(self._data_folder) is not None
+                    self._folder_mapper(self._data_folder) is not None
             )  # Ensure mapper validity.
+        else:
+            self._folder_mapper = None
 
         # Sets default sample, solvent value and user data
         self.sample, self.solvent = sample_name, solvent
@@ -155,7 +157,7 @@ class Spinsolve(AnalyticalDevice):
         # Parse and return
         return reply.find(".//Sample").text
 
-    def set_sample(self, sample: str):
+    async def set_sample(self, sample: str):
         """Sets the sample name (appears in acqu.par)"""
         await self.send_message(set_attribute("Sample", sample))
 
