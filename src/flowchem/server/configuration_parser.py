@@ -35,6 +35,7 @@ def parse_config_file(file_path: Path | str) -> dict:
     """Parse a config file."""
 
     file_path = Path(file_path)
+    assert file_path.exists() and file_path.is_file(), f"Does the provided configuration file {file_path} exist?"
     config = load_configuration_file(file_path)
     config["filename"] = file_path.stem
     return parse_config(config)
