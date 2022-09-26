@@ -20,9 +20,13 @@ host = "127.0.0.1"  # IP address of the PC running Spinsolve, 127.0.0.1 for loca
 port = 13000
 sample_name = "automated-experiment"
 solvent = "chloroform-d"
+data_folder = "D:\\data2q\\my-experiment"
+remote_to_local_mapping = ["D:\\data2q", "\\BSMC-7WP43Y1\\data2q"]
 ```
-
 ## Remote control
-An optional parameter `remote_to_local_mapping` can be used to pass a mapping that translates spinsolve PC's path to the
-fowchem PC path assuming files are saved on a network drive.
-However, currently this is only possible with the programmatic use of Spinsolve object.
+When controlling a Spinsolve instance running on a remote PC, it is necessary that the FIDs are saved in a folder that
+is accessible from the PC running flowchem as the Spinsolve API does not natively allow for file transfer.
+If network drive are used, a location with the same name can be used on both PC.
+If that is not the case, a `remote_to_local_mapping` parameter can be used to translate the remote file hierarchy to the
+local (flowchem-accessible) one.
+Incidentally, this enables the file sharing across PC with different operative system, e.g. if flowchem is running on linux.

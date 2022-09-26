@@ -45,7 +45,6 @@ dependencies = [
     "rich_click>=0.3.0",
     "tenacity",
     'tomli; python_version<"3.11"',
-    "unsync>=1.0.0",
     "uvicorn>=0.13.4",
 ]
 

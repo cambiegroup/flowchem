@@ -1,5 +1,5 @@
-ignore-failures:
-  python:
+#ignore-failures:
+#  python:
 #    - aioserial
 #    - backcall
 #    - commonmark

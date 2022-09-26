@@ -13,53 +13,77 @@ from flowchem.devices.magritek._msg_maker import set_attribute
 from flowchem.devices.magritek._msg_maker import set_data_folder
 from flowchem.devices.magritek._msg_maker import set_user_data
 from flowchem.devices.magritek.reader import Reader
+from flowchem.devices.magritek.utils import create_folder_mapper
 from flowchem.devices.magritek.xml_parser import parse_status_notification
 from flowchem.devices.magritek.xml_parser import StatusNotification
-from flowchem.models.base_device import BaseDevice
+from flowchem.models.analytical_device import AnalyticalDevice
 from loguru import logger
 from lxml import etree
 from packaging import version
-from unsync import unsync
 
 
-@unsync
-async def get_streams_for_connection(host: str, port: str):
-    """
-    Given a target (host, port) returns the corresponding asyncio streams (I/O).
-    """
-    try:
-        read, write = await asyncio.open_connection(host, port)
-    except Exception as e:
-        raise ConnectionError(f"Error connecting to {host}:{port} -- {e}") from e
-    return read, write
-
-
-class Spinsolve(BaseDevice):
+class Spinsolve(AnalyticalDevice):
     """Spinsolve class, gives access to the spectrometer remote control API."""
 
     def __init__(
         self,
         host="127.0.0.1",
-        **kwargs,
+        port: int | None = 13000,
+        name: str | None = None,
+        xml_schema=None,
+        data_folder=None,
+        solvent: str | None = "Chloroform-d1",
+        sample_name: str | None = "Unnamed automated experiment",
+        remote_to_local_mapping: list[str, str] | None = None,
     ):
-        """
-        Constructor, actuates the connection upon instantiation.
+        """Controls a Spinsolve instance via HTTP XML API."""
+        super().__init__(name)
 
-        kwargs are: name, xml_schema
-        """
+        self.host, self.port = host, port
 
-        super().__init__(kwargs.get("name"))
-        # fourier transformation NMR instrument
-        # noinspection HttpUrlsUsage
-        self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0000487")
-        # IOs
-        self._io_reader, self._io_writer = get_streams_for_connection(
-            host, kwargs.get("port", "13000")
-        ).result()
-
-        # Queue needed for thread-safe operation, the reader is in a different thread
+        # Queue needed for thread-safe operation, the reader will be run in a different thread
         self._replies: queue.Queue = queue.Queue()
-        self._reader = Reader(self._replies, kwargs.get("xml_schema", None))
+        self._reader = Reader(self._replies, xml_schema)
+
+        # Set experimental variable
+        self.data_folder = data_folder
+
+        # An optional mapping between remote and local folder location can be used for remote use
+        self._folder_mapper = create_folder_mapper(*remote_to_local_mapping)
+        if self._folder_mapper is not None:
+            assert (
+                self._folder_mapper(self.data_folder) is not None
+            )  # Ensure mapper validity.
+
+        # Sets default sample, solvent value and user data
+        self.sample, self.solvent = sample_name, solvent
+        self.protocols_option = []
+        self.user_data = {"control_software": "flowchem"}
+
+        # IOs (these are set upon initialization w/ initialize)
+        self._io_reader, self._io_writer = None, None
+
+        # Ontology metadata
+        # fourier transformation NMR instrument
+        self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0000487")
+
+    def connection_listener_thread(self):
+        """Thread that listens to the connection and parses the reply"""
+        asyncio.run(self.connection_listener())
+
+    async def initialize(self):
+        """Initiate connection with a running Spinsolve instance."""
+        # Get IOs
+        try:
+            self._io_reader, self._io_writer = await asyncio.open_connection(
+                self.host, self.port
+            )
+        except Exception as e:
+            raise ConnectionError(
+                f"Error connecting to {self.host}:{self.port} -- {e}"
+            ) from e
+
+        # Start reader thread
         threading.Thread(target=self.connection_listener_thread, daemon=True).start()
 
         # Check if the instrument is connected
@@ -72,40 +96,19 @@ class Spinsolve(BaseDevice):
             )
 
         # If connected parse and log instrument info
-        self.software_version = hw_info.find(".//SpinsolveSoftware").text
-        self.hardware_type = hw_info.find(".//SpinsolveType").text
-        logger.debug(
-            f"Connected with Spinsolve model {self.hardware_type}, SW version: {self.software_version}"
-        )
+        software_version = hw_info.find(".//SpinsolveSoftware").text
+        hardware_type = hw_info.find(".//SpinsolveType").text
+        logger.debug(f"Connected to model {hardware_type}, SW: {software_version}")
 
         # Load available protocols
         self.protocols_option = self.request_available_protocols()
 
-        # Set experimental variable
-        self.data_folder = kwargs.get("data_folder")
-
-        # An optional mapping between remote and local folder location can be used for remote use
-        self._folder_mapper = kwargs.get("remote_to_local_mapping")
-        # Ensure mapper validity before starting. This will save you time later ;)
-        if self._folder_mapper is not None:
-            assert self._folder_mapper(self.data_folder) is not None
-
-        # Sets default sample, solvent value and user data
-        self.sample = kwargs.get("sample_name", "FlowChem Experiment")
-        self.solvent = kwargs.get("solvent", "Chloroform?")
-        self.user_data = {"control_software": "flowchem"}
-
         # Finally, check version
-        if version.parse(self.software_version) < version.parse("1.18.1.3062"):
+        if version.parse(software_version) < version.parse("1.18.1.3062"):
             warnings.warn(
-                f"Spinsolve version {self.software_version} is older than the reference (1.18.1.3062)"
+                f"Spinsolve version {software_version} is older than the reference (1.18.1.3062)"
             )
 
-    def connection_listener_thread(self):
-        """Thread that listens to the connection and parses the reply"""
-        self.connection_listener().result()
-
-    @unsync
     async def connection_listener(self):
         """
         Listen for replies and puts them in the queue
@@ -117,7 +120,6 @@ class Spinsolve(BaseDevice):
                 break
             self._replies.put(chunk)
 
-    @unsync
     async def _transmit(self, message: bytes):
         """
         Sends the message to the spectrometer

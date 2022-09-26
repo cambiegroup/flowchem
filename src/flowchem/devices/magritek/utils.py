@@ -40,6 +40,8 @@ def create_folder_mapper(
             path_to_be_translated = Path(path_to_be_translated)
 
         nonlocal remote_root, local_root
+        remote_root = Path(remote_root)
+        local_root = Path(local_root)
         # If relative translate is not error
         # NOTE: Path.is_relative_to() is available from Py 3.9 only. NBD as this is not often used.
         if not path_to_be_translated.is_relative_to(remote_root):
