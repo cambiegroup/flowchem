@@ -267,7 +267,7 @@ class Spinsolve(AnalyticalDevice):
         )
 
         # Follow status notifications and finally get location of remote data
-        remote_data_folder = await self.check_notifications()
+        remote_data_folder = await self._check_notifications()
         logger.info(f"Protocol over - remote data folder is {remote_data_folder}")
 
         # If a folder mapper is present use it to translate the location
@@ -275,7 +275,7 @@ class Spinsolve(AnalyticalDevice):
             return self._folder_mapper(remote_data_folder)
         return remote_data_folder
 
-    async def check_notifications(self) -> Path:
+    async def _check_notifications(self) -> Path:
         """
         Read all the StatusNotification and returns the dataFolder
         """
@@ -342,37 +342,26 @@ class Spinsolve(AnalyticalDevice):
         # Returns the dict with only valid options/value pairs
         return protocol_options
 
-    # def shim(self, shim_type="CheckShim") -> Tuple[float, float]:
-    #     """ Perform one of the standard shimming routine {CheckShim | QuickShim | PowerShim} """
-    #     # Check shim type
-    #     if shim_type not in self.STD_SHIM_REQUEST:
-    #         warnings.warn(f"Invalid shimming protocol: {shim_type} not in {self.STD_SHIM_REQUEST}. Assumed CheckShim")
-    #         shim_type = "CheckShim"
-    #
-    #     # Submit request
-    #     self.send_message(create_message(shim_type+"Request"))
-    #
-    #     # Wait for reply
-    #     response_tag = shim_type + "Response"
-    #     wait_time = {
-    #         "CheckShim": 180,
-    #         "QuickShim": 600,
-    #         "PowerShim": 3600,
-    #     }
-    #     reply = self._read_reply(reply_type=response_tag, timeout=wait_time[shim_type])
-    #
-    #     # Check for errors
-    #     error = reply.find(f".//{response_tag}").get("error")
-    #     if error:
-    #         warnings.warn(f"Error occurred during shimming: {error}")
-    #         return None, None
-    #
-    #     # Return LineWidth and BaseWidth
-    #     return float(reply.find(".//LineWidth").text), float(reply.find(".//BaseWidth").text)
-
     def shim(self):
         """Shim on sample."""
         raise NotImplementedError("Use run protocol with a shimming protocol instead!")
+
+    def get_router(self, prefix: str | None = None):
+        """Spinsolve-specific route"""
+
+        router = super().get_router(prefix)
+
+        router.add_api_route("/solvent", self.get_solvent, methods=["GET"])
+        router.add_api_route("/solvent", self.set_solvent, methods=["PUT"])
+
+        router.add_api_route("/sample-name", self.get_sample, methods=["GET"])
+        router.add_api_route("/sample-name", self.set_sample, methods=["PUT"])
+
+        router.add_api_route("/user-data", self.get_user_data, methods=["GET"])
+        router.add_api_route("/user-data", self.set_user_data, methods=["PUT"])
+
+        router.add_api_route("/run-protocol", self.run_protocol, methods=["PUT"])
+        router.add_api_route("/abort", self.abort, methods=["PUT"])
 
 
 if __name__ == "__main__":
