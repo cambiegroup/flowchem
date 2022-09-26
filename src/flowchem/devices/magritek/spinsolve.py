@@ -347,7 +347,7 @@ class Spinsolve(AnalyticalDevice):
         raise NotImplementedError("Use run protocol with a shimming protocol instead!")
 
     def get_router(self, prefix: str | None = None):
-        """Spinsolve-specific route"""
+        """Spinsolve-specific route."""
 
         router = super().get_router(prefix)
 
