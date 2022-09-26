@@ -38,10 +38,10 @@ class Reader:
         self._rcv_buffer = b""
 
     def wait_for_reply(self, reply_type="", timeout=1):
+        reply = self.get_next_reply(reply_type)
         """
         Awaits for a reply of type reply_type or up to timeout
         """
-        reply = self.get_next_reply(reply_type)
 
         # If already available just return
         if reply is not None:

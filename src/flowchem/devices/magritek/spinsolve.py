@@ -69,10 +69,6 @@ class Spinsolve(AnalyticalDevice):
         # fourier transformation NMR instrument
         self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0000487")
 
-    def connection_listener_thread(self):
-        """Thread that listens to the connection and parses the reply"""
-        asyncio.run(self.connection_listener())
-
     async def initialize(self):
         """Initiate connection with a running Spinsolve instance."""
         # Get IOs
@@ -86,7 +82,7 @@ class Spinsolve(AnalyticalDevice):
             ) from e
 
         # Start reader thread
-        threading.Thread(target=self.connection_listener_thread, daemon=True).start()
+        self.reader = asyncio.create_task(self.connection_listener(), name="Connection listener")
 
         # Check if the instrument is connected
         hw_info = await self.hw_request()
@@ -114,15 +110,16 @@ class Spinsolve(AnalyticalDevice):
         await self.set_data_folder(self._data_folder)
 
     async def connection_listener(self):
-        """
-        Listen for replies and puts them in the queue
-        """
+        """Listen for replies and puts them in the queue."""
         while True:
             try:
+                print("RUNNING LISTENER")
                 chunk = await self._io_reader.readuntil(b"</Message>")
+                print(f"read {chunk}")
+                self._replies.put(chunk)
+                await asyncio.sleep(0.1)
             except asyncio.CancelledError:
                 break
-            self._replies.put(chunk)
 
     async def _transmit(self, message: bytes):
         """
@@ -188,7 +185,8 @@ class Spinsolve(AnalyticalDevice):
     def _read_reply(self, reply_type="", timeout=5):
         """Looks in the received replies for one of type reply_type"""
         # Get reply of reply_type from the reader object that holds the StreamReader
-        reply = self._reader.wait_for_reply(reply_type=reply_type, timeout=timeout)
+        reply = self._replies.get()
+        # reply = self._reader.wait_for_reply(reply_type=reply_type, timeout=timeout)
         logger.debug(f"Got a reply from spectrometer: {etree.tostring(reply)}")
 
         return reply
@@ -263,7 +261,8 @@ class Spinsolve(AnalyticalDevice):
         )
 
         # Start protocol
-        self._reader.clear_replies()
+        self._replies.queue.clear()
+        # self._reader.clear_replies()
         await self.send_message(
             create_protocol_message(protocol_name, valid_protocol_options)
         )
