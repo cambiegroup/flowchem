@@ -1,16 +1,16 @@
 ignore-failures:
   python:
-    - aioserial
-    - backcall
-    - commonmark
-    - entrypoints
-    - future
-    - ipython-genutils
-    - pickleshare
-    - pyasn1
-    - pyasn1-modules
-    - webencodings
-    - wcwidth
+#    - aioserial
+#    - backcall
+#    - commonmark
+#    - entrypoints
+#    - future
+#    - ipython-genutils
+#    - pickleshare
+#    - pyasn1
+#    - pyasn1-modules
+#    - webencodings
+#    - wcwidth
 additional-deps:
   python:
     # name can be included so Deadpendency can load the package details in the registry
