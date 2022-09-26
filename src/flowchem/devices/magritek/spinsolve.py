@@ -363,6 +363,8 @@ class Spinsolve(AnalyticalDevice):
         router.add_api_route("/run-protocol", self.run_protocol, methods=["PUT"])
         router.add_api_route("/abort", self.abort, methods=["PUT"])
 
+        return router
+
 
 if __name__ == "__main__":
     hostname = "BSMC-YMEF002121"
