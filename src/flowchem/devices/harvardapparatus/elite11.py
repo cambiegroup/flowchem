@@ -719,7 +719,8 @@ class Elite11InfuseOnly(SyringePump):
 
     def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this object."""
-        router = super().get_router()
+        router = super().get_router(prefix)
+
         router.add_api_route("/parameters/force", self.get_force, methods=["PUT"])
         router.add_api_route("/parameters/force", self.set_force, methods=["PUT"])
         # router.add_api_route("/run", self.run, methods=["PUT"])

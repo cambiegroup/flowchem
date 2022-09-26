@@ -628,9 +628,8 @@ class ML600(BaseDevice):
 
     def get_router(self, prefix: str | None = None):
         """Creates an APIRouter for this object."""
-        from fastapi import APIRouter
+        router = super().get_router(prefix)
 
-        router = APIRouter()
         router.add_api_route("/firmware-version", self.version, methods=["GET"])
         router.add_api_route("/initialize/pump", self.initialize_pump, methods=["PUT"])
         router.add_api_route(
