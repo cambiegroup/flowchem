@@ -35,7 +35,7 @@ class Spinsolve(AnalyticalDevice):
         data_folder=None,
         solvent: str | None = "Chloroform-d1",
         sample_name: str | None = "Unnamed automated experiment",
-        remote_to_local_mapping: list[str, str] | None = None,
+        remote_to_local_mapping: list[str] | None = None,
     ):
         """Controls a Spinsolve instance via HTTP XML API."""
         super().__init__(name)
@@ -56,11 +56,11 @@ class Spinsolve(AnalyticalDevice):
                 self._folder_mapper(self._data_folder) is not None
             )  # Ensure mapper validity.
         else:
-            self._folder_mapper = None
+            self._folder_mapper = None  # type: ignore
 
         # Sets default sample, solvent value and user data
         self.sample, self.solvent = sample_name, solvent
-        self.protocols_option = {}
+        self.protocols_option: dict[str, dict] = {}
         self.user_data = {"control_software": "flowchem"}
 
         # XML schema for reply validation. Reply validation is completely optional!
@@ -160,6 +160,9 @@ class Spinsolve(AnalyticalDevice):
         """
         Sends the message to the spectrometer
         """
+        assert isinstance(
+            self._io_writer, asyncio.StreamWriter
+        ), "The connection was not initialized!"
         self._io_writer.write(message)
         await self._io_writer.drain()
 
@@ -252,7 +255,7 @@ class Spinsolve(AnalyticalDevice):
         reply = await self._read_reply(reply_type="HardwareResponse")
         return reply
 
-    async def request_available_protocols(self) -> dict:
+    async def request_available_protocols(self) -> dict[str, dict]:
         """
         Get a list of available protocol on the current spectrometer
         """
@@ -331,7 +334,7 @@ class Spinsolve(AnalyticalDevice):
         # If a folder mapper is present use it to translate the location
         self._result_folders.append(
             self._folder_mapper(remote_folder)
-        ) if self._folder_mapper else remote_folder
+        ) if self._folder_mapper is not None else remote_folder
 
         self._protocol_running = False
 

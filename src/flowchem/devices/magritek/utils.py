@@ -18,7 +18,7 @@ def get_my_docs_path() -> Path:
     csidl_personal = 5  # My Documents
     shgfp_type_current = 0  # Get current, not default value
     buf = ctypes.create_unicode_buffer(ctypes.wintypes.MAX_PATH)
-    ctypes.windll.shell32.SHGetFolderPathW(
+    ctypes.windll.shell32.SHGetFolderPathW(  # type: ignore
         None, csidl_personal, None, shgfp_type_current, buf
     )
     return Path(buf.value)
