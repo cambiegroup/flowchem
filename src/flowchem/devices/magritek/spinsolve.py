@@ -43,7 +43,7 @@ class Spinsolve(AnalyticalDevice):
 
         # The Qs must exist before the response is received to be awaited
         # Could be generated programmatically from RemoteControl.xsd, but it's not worth it
-        self._replies_by_type = {
+        self._replies_by_type: dict[str, asyncio.Queue] = {
             "HardwareResponse": asyncio.Queue(),
             "AvailableProtocolOptionsResponse": asyncio.Queue(),
             "GetResponse": asyncio.Queue(),
