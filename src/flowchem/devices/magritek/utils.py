@@ -25,7 +25,7 @@ def get_my_docs_path() -> Path:
 
 
 def create_folder_mapper(
-    remote_root: Path, local_root: Path
+    remote_root: str | Path, local_root: str | Path
 ) -> Callable[[Path | str], Path]:
     """Return a function that converts path relative to remote_root to their corresponding on local_root.
 
