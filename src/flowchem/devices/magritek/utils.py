@@ -3,8 +3,9 @@ import ctypes
 from collections.abc import Callable
 from pathlib import Path
 
-from flowchem.exceptions import InvalidConfiguration
 from loguru import logger
+
+from flowchem.exceptions import InvalidConfiguration
 
 
 def get_my_docs_path() -> Path:

@@ -9,6 +9,7 @@ from threading import Thread
 from time import sleep
 
 import tenacity
+
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 

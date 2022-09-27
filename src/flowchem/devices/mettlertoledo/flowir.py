@@ -5,14 +5,14 @@ import warnings
 
 from asyncua import Client
 from asyncua import ua
-from flowchem.exceptions import DeviceError
-from flowchem.models.analytical_device import AnalyticalDevice
-from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
 from ._icir_common import iCIR_spectrometer
 from ._icir_common import IRSpectrum
 from ._icir_common import ProbeInfo
+from flowchem.exceptions import DeviceError
+from flowchem.models.analytical_device import AnalyticalDevice
+from flowchem.models.base_device import BaseDevice
 
 
 class FlowIR(iCIR_spectrometer, AnalyticalDevice):

@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 import pytest
+
 from flowchem.devices.magritek import Spinsolve
 
 
@@ -63,14 +64,9 @@ def test_hw_request(nmr: Spinsolve):
 
 @pytest.mark.Spinsolve
 def test_request_available_protocols(nmr: Spinsolve):
-    protocols = await nmr.request_available_protocols()
+    protocols = await nmr.load_protocols()
     assert isinstance(protocols, dict)
     assert "1D PROTON" in protocols
-
-
-@pytest.mark.Spinsolve
-def test_is_protocol_available(nmr: Spinsolve):
-    assert nmr.is_protocol_available("1D PROTON")
 
 
 @pytest.mark.Spinsolve

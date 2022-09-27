@@ -1,13 +1,11 @@
-""" Functions related to the construction of instrument request """
+"""Functions for the construction of XML requests for Spinsolve."""
 from pathlib import WindowsPath
 
 from lxml import etree
 
 
 def create_message(sub_element_name, attributes=None):
-    """
-    Create a minimal XML tree with Message as root and sub_element as child tag
-    """
+    """Create a minimal XML tree with Message as root and sub_element as child tag."""
     if attributes is None:
         attributes = {}
 
@@ -17,10 +15,9 @@ def create_message(sub_element_name, attributes=None):
 
 
 def set_attribute(name, value="") -> etree.Element:
-    """
-    Creates a Set message.
-    Used for name = {Solvent | Sample} + indirectly by UserData and DataFolder
-    """
+    """Creates a Set message.
+
+    Used for name = {Solvent | Sample} + indirectly by UserData and DataFolder."""
     base = create_message("Set")
     attribute = etree.SubElement(base.find("./Set"), name)
     attribute.text = value
@@ -28,19 +25,16 @@ def set_attribute(name, value="") -> etree.Element:
 
 
 def get_request(name) -> etree.Element:
-    """
-    Creates a Get message.
-    Used for name = {Solvent | Sample | UserData} + indirectly by UserData and DataFolder
-    """
+    """Creates a Get message.
+
+    Used for name = {Solvent | Sample | UserData} + indirectly by UserData and DataFolder."""
     base = create_message("GetRequest")
     etree.SubElement(base.find("./GetRequest"), name)
     return base
 
 
 def set_data_folder(location) -> etree.Element:
-    """
-    Create a Set DataFolder message
-    """
+    """Create a Set DataFolder message."""
     # Get base request
     data_folder = set_attribute("DataFolder")
 
@@ -53,31 +47,13 @@ def set_data_folder(location) -> etree.Element:
     return data_folder
 
 
-def set_user_data(data: dict) -> etree.Element:
-    """
-    Given a dict with custom data, it creates a Set/UserData message.
-    Those data are saved in the file `acq.par`
-    """
-    user_data = set_attribute("UserData")
-    for key, value in data.items():
-        etree.SubElement(
-            user_data.find(".//UserData"), "Data", dict(key=key, value=value)
-        )
-    return user_data
-
-
-def create_protocol_message(
-    protocol_name: str, protocol_options: dict
-) -> etree.Element:
-    """
-    Create an XML request to run a protocol
-    """
-    xml_root = create_message("Start", {"protocol": protocol_name})
-
+def create_protocol_message(name: str, options: dict) -> etree.Element:
+    """Create an XML request to run a protocol."""
+    xml_root = create_message("Start", {"protocol": name})
     start_tag = xml_root.find("Start")
 
-    for key, value in protocol_options.items():
-        # All options are SubElements of the Start tag!
+    # All options are sent as Start tag SubElements
+    for key, value in options.items():
         etree.SubElement(start_tag, "Option", {"name": f"{key}", "value": f"{value}"})
 
     return xml_root

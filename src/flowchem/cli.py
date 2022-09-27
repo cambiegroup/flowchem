@@ -3,9 +3,10 @@ from pathlib import Path
 
 import rich_click as click
 import uvicorn
+from loguru import logger
+
 from flowchem import __version__
 from flowchem.server.api_server import create_server_from_file
-from loguru import logger
 
 
 @click.argument("device_config_file", type=click.Path(), required=True)

@@ -4,9 +4,10 @@ import asyncio
 import aioserial
 import rich_click as click
 import serial.tools.list_ports
+from loguru import logger
+
 from flowchem.devices.hamilton.ml600 import InvalidConfiguration
 from flowchem.devices.hamilton.ml600 import ML600
-from loguru import logger
 
 
 def ml600_finder():

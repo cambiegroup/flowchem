@@ -1,25 +1,24 @@
-""" Spinsolve module """
+"""Spinsolve module."""
 import asyncio
 import pprint as pp
 import warnings
 from pathlib import Path
 
 from fastapi import BackgroundTasks
+from loguru import logger
+from lxml import etree
+from packaging import version
+
+from .utils import create_folder_mapper
+from .utils import get_my_docs_path
 from flowchem.devices.magritek._msg_maker import create_message
 from flowchem.devices.magritek._msg_maker import create_protocol_message
 from flowchem.devices.magritek._msg_maker import get_request
 from flowchem.devices.magritek._msg_maker import set_attribute
 from flowchem.devices.magritek._msg_maker import set_data_folder
-from flowchem.devices.magritek._msg_maker import set_user_data
-from flowchem.devices.magritek.utils import create_folder_mapper
 from flowchem.devices.magritek.xml_parser import parse_status_notification
 from flowchem.devices.magritek.xml_parser import StatusNotification
 from flowchem.models.analytical_device import AnalyticalDevice
-from loguru import logger
-from lxml import etree
-from packaging import version
-
-from .utils import get_my_docs_path
 
 
 class Spinsolve(AnalyticalDevice):
@@ -64,7 +63,7 @@ class Spinsolve(AnalyticalDevice):
 
         # Sets default sample, solvent value and user data
         self.sample, self.solvent = sample_name, solvent
-        self.protocols_option: dict[str, dict] = {}
+        self.protocols: dict[str, dict] = {}
         self.user_data = {"control_software": "flowchem"}
 
         # XML schema for reply validation. Reply validation is completely optional!
@@ -92,13 +91,13 @@ class Spinsolve(AnalyticalDevice):
 
     async def initialize(self):
         """Initiate connection with a running Spinsolve instance."""
-        # Get IOs
+        # Initialize connection
         try:
             self._io_reader, self._io_writer = await asyncio.open_connection(
                 self.host, self.port
             )
             logger.debug(f"Connected to {self.host}:{self.port}")
-        except Exception as e:
+        except OSError as e:
             raise ConnectionError(
                 f"Error connecting to {self.host}:{self.port} -- {e}"
             ) from e
@@ -108,14 +107,10 @@ class Spinsolve(AnalyticalDevice):
             self.connection_listener(), name="Connection listener"
         )
 
-        # Check if the instrument is connected
+        # This request is used to check if the instrument is connected
         hw_info = await self.hw_request()
-
-        # If not raise ConnectionError
         if hw_info.find(".//ConnectedToHardware").text != "true":
-            raise ConnectionError(
-                "The spectrometer is not connected to the control PC running Spinsolve software!"
-            )
+            raise ConnectionError("Spectrometer not connected to Spinsolve's PC!")
 
         # If connected parse and log instrument info
         software_version = hw_info.find(".//SpinsolveSoftware").text
@@ -123,12 +118,13 @@ class Spinsolve(AnalyticalDevice):
         logger.debug(f"Connected to model {hardware_type}, SW: {software_version}")
 
         # Load available protocols
-        self.protocols_option = await self.request_available_protocols()
+        await self.load_protocols()
 
         # Finally, check version
         if version.parse(software_version) < version.parse("1.18.1.3062"):
             warnings.warn(
-                f"Spinsolve version {software_version} is older than the reference (1.18.1.3062)"
+                f"Spinsolve v. {software_version} is not supported!"
+                f"Upgrade to a more recent version! (at least 1.18.1.3062)"
             )
 
         await self.set_data_folder(self._data_folder)
@@ -160,44 +156,34 @@ class Spinsolve(AnalyticalDevice):
             # Add to reply queue of the given tag-type
             await self._replies_by_type[parsed_tree[0].tag].put(parsed_tree)
 
-    async def _transmit(self, message: bytes):
-        """
-        Sends the message to the spectrometer
-        """
-        assert isinstance(
-            self._io_writer, asyncio.StreamWriter
-        ), "The connection was not initialized!"
-        self._io_writer.write(message)
-        await self._io_writer.drain()
-
     async def get_solvent(self) -> str:
-        """Get current solvent"""
+        """Get current solvent."""
         await self.send_message(get_request("Solvent"))
         reply = await self._replies_by_type["GetResponse"].get()
         return reply.find(".//Solvent").text
 
     async def set_solvent(self, solvent: str):
-        """Sets the solvent"""
+        """Set solvent."""
         await self.send_message(set_attribute("Solvent", solvent))
 
     async def get_sample(self) -> str:
-        """Get current solvent (appears in acqu.par)"""
+        """Get current sample."""
         await self.send_message(get_request("Sample"))
         reply = await self._replies_by_type["GetResponse"].get()
         return reply.find(".//Sample").text
 
     async def set_sample(self, sample: str):
-        """Sets the sample name (appears in acqu.par)"""
+        """Set the sample name (it will appear in `acqu.par`)."""
         await self.send_message(set_attribute("Sample", sample))
 
     async def set_data_folder(self, location: str):
-        """Sets the location provided as data folder. optionally, with typeThese are included in `acq.par`"""
+        """Set location of the data folder (where FIDs are saved to)."""
         if location is not None:
             self._data_folder = location
             await self.send_message(set_data_folder(location))
 
     async def get_user_data(self) -> dict:
-        """Create a get user data request and parse result."""
+        """Get user data. These will appear in `acqu.par`."""
         await self.send_message(get_request("UserData"))
         reply = await self._replies_by_type["GetResponse"].get()
         return {
@@ -205,78 +191,79 @@ class Spinsolve(AnalyticalDevice):
             for data_item in reply.findall(".//Data")
         }
 
-    async def set_user_data(self, data_to_be_set: dict):
-        """Set the user data provided in the dict. These are included in `acq.par`."""
-        await self.send_message(set_user_data(data_to_be_set))
+    async def set_user_data(self, data: dict):
+        """Set user data. The items provide will appear in `acqu.par`."""
+        user_data = set_attribute("UserData")
+        for key, value in data.items():
+            etree.SubElement(
+                user_data.find(".//UserData"), "Data", dict(key=key, value=value)
+            )
+        await self.send_message(user_data)
+
+    async def _transmit(self, message: bytes):
+        """Sends the message to the spectrometer."""
+        # This assertion is here for mypy ;)
+        assert isinstance(
+            self._io_writer, asyncio.StreamWriter
+        ), "The connection was not initialized!"
+        self._io_writer.write(message)
+        await self._io_writer.drain()
 
     async def send_message(self, root: etree.Element):
-        """
-        Sends the tree connected XML etree.Element provided
-        """
+        """Send the tree connected XML etree.Element provided."""
         # Turn the etree.Element provided into an ElementTree
         tree = etree.ElementTree(root)
 
-        # Message must include XML declaration
+        # The request must include the XML declaration
         message = etree.tostring(tree, xml_declaration=True, encoding="utf-8")
 
+        # Send request
         logger.debug(f"Transmitting request to spectrometer: {message}")
         await self._transmit(message)
 
     async def hw_request(self):
-        """
-        Sends an HW request to the spectrometer, receive the reply and returns it
-        """
+        """Send an HW request to the spectrometer, receive the reply and returns it."""
         await self.send_message(create_message("HardwareRequest"))
         return await self._replies_by_type["HardwareResponse"].get()
 
-    async def request_available_protocols(self) -> dict[str, dict]:
-        """
-        Get a list of available protocol on the current spectrometer
-        """
+    async def load_protocols(self):
+        """Get a list of available protocol on the current spectrometer."""
         await self.send_message(create_message("AvailableProtocolOptionsRequest"))
         reply = await self._replies_by_type["AvailableProtocolOptionsResponse"].get()
 
         # Parse reply and construct the dict with protocols available
-        protocols = {}
         for element in reply.findall(".//Protocol"):
             protocol_name = element.get("protocol")
-            protocols[protocol_name] = {
+            self.protocols[protocol_name] = {
                 option.get("name"): [value.text for value in option.findall("Value")]
                 for option in element.findall("Option")
             }
-        return protocols
 
     async def run_protocol(
-        self, protocol_name, background_tasks: BackgroundTasks, protocol_options=None
+        self, name, background_tasks: BackgroundTasks, options=None
     ) -> int:
         """Run a protocol.
 
-        Returns the ID of the protocol (needed to get folder once ready). -1 for errors.
-        The validation is performed before the response is sent, the actual protocol later, as it may take a long time.
-        """
+        Return the ID of the protocol (needed to get results via `get_result_folder`). -1 for errors."""
         # All protocol names are UPPERCASE, so force upper here to avoid case issues
-        protocol_name = protocol_name.upper()
-        if not self.is_protocol_available(protocol_name):
+        name = name.upper()
+        if name not in self.protocols:
             warnings.warn(
-                f"The protocol requested '{protocol_name}' is not available on the spectrometer!\n"
-                f"Valid options are: {pp.pformat(sorted(self.protocols_option.keys()))}"
+                f"The protocol requested '{name}' is not available on the spectrometer!\n"
+                f"Valid options are: {pp.pformat(sorted(self.protocols.keys()))}"
             )
             return -1
 
         # Validate protocol options (check values and remove invalid ones, with warning)
-        valid_protocol_options = self._validate_protocol_request(
-            protocol_name, protocol_options
-        )
+        options_validated = self._validate_protocol_request(name, options)
 
-        # Flush all previous StatusNotification replies from queue
-        notificaiton_q = self._replies_by_type["StatusNotification"]
-        for _ in range(notificaiton_q.qsize()):
-            notificaiton_q.get_nowait()
+        # Flush all previous StatusNotification replies from queue.
+        # This is needed as sometimes FINISHED is received before other notification that remain unconsumed
+        for _ in range(self._replies_by_type["StatusNotification"].qsize()):
+            self._replies_by_type["StatusNotification"].get_nowait()
 
         # Start protocol
-        await self.send_message(
-            create_protocol_message(protocol_name, valid_protocol_options)
-        )
+        await self.send_message(create_protocol_message(name, options_validated))
 
         # Rest of protocol as bg task to avoid timeout on API reply
         # See https://fastapi.tiangolo.com/tutorial/background-tasks/
@@ -308,7 +295,7 @@ class Spinsolve(AnalyticalDevice):
                 break
 
         logger.info(f"Protocol over - remote data folder is {remote_folder}")
-        # If a folder mapper is present use it to translate the location
+        # Add result folder to self._result_folders
         if self._folder_mapper is not None:
             self._result_folders.append(self._folder_mapper(remote_folder))
         else:
@@ -317,7 +304,7 @@ class Spinsolve(AnalyticalDevice):
         self._protocol_running = False
 
     async def is_protocol_running(self) -> bool:
-        """Return true if a protocol is currently running."""
+        """True if a protocol is currently running, otherwise False."""
         return self._protocol_running
 
     async def get_result_folder(self, result_id: int | None = None) -> str:
@@ -333,17 +320,17 @@ class Spinsolve(AnalyticalDevice):
         return folder
 
     async def abort(self):
-        """Abort current running command"""
+        """Abort running command."""
         await self.send_message(create_message("Abort"))
 
-    def is_protocol_available(self, protocol):
-        """Check if the desired protocol is available on the current instrument"""
-        return protocol in self.protocols_option
+    def list_protocols(self) -> list[str]:
+        """Return known protocol names."""
+        return list(self.protocols.keys())
 
     def _validate_protocol_request(self, protocol_name, protocol_options) -> dict:
-        """Ensures the protocol names, option name and option values are valid."""
+        """Ensure the validity of protocol name and options based on spectrometer reported parameters."""
         # Valid option for protocol
-        valid_options = self.protocols_option.get(protocol_name)
+        valid_options = self.protocols.get(protocol_name)
         if valid_options is None or protocol_options is None:
             return {}
 
@@ -392,7 +379,7 @@ class Spinsolve(AnalyticalDevice):
         router.add_api_route("/user-data", self.set_user_data, methods=["PUT"])
 
         router.add_api_route(
-            "/protocol/is-available", self.is_protocol_available, methods=["GET"]
+            "/protocol/list-available", self.list_protocols, methods=["GET"]
         )
         router.add_api_route("/protocol/run", self.run_protocol, methods=["PUT"])
         router.add_api_route(
@@ -407,13 +394,11 @@ class Spinsolve(AnalyticalDevice):
 
 
 if __name__ == "__main__":
-    hostname = "127.0.0.1"
 
     async def main():
-        nmr: Spinsolve = Spinsolve(host=hostname, port=13000)
-        print(nmr.sample)
+        nmr: Spinsolve = Spinsolve()
         await nmr.initialize()
         s = await nmr.get_solvent()
-        print(f"sovlent sis {s}")
+        print(f"The current solvent is set to '{s}'.")
 
     asyncio.run(main())

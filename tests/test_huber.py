@@ -3,6 +3,7 @@ import asyncio
 
 import aioserial
 import pytest
+
 from flowchem.devices.huber import HuberChiller
 from flowchem.exceptions import InvalidConfiguration
 

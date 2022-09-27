@@ -5,13 +5,14 @@ from dataclasses import dataclass
 from enum import Enum
 
 import aioserial
+from loguru import logger
+from pydantic import BaseModel
+
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.pumps.base_pump import WithdrawMixin
 from flowchem.models.pumps.syringe_pump import SyringePump
 from flowchem.units import flowchem_ureg
-from loguru import logger
-from pydantic import BaseModel
 
 
 class PumpInfo(BaseModel):

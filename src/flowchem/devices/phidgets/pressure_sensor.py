@@ -2,8 +2,9 @@
 import time
 import warnings
 
-from flowchem.models.sensors.pressure_sensor import PressureSensor
 from loguru import logger
+
+from flowchem.models.sensors.pressure_sensor import PressureSensor
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
