@@ -7,7 +7,7 @@ from flowchem.exceptions import InvalidConfiguration
 from loguru import logger
 
 
-def get_my_docs_path():
+def get_my_docs_path() -> Path:
     """
     Spinsolve control software is only available on Windows, so lack of cross-platform support is unavoidable.
     XSD and XML schema are installed in my documents, whose location, if custom, can be obtained as follows.

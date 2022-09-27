@@ -438,7 +438,6 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         router = super().get_router()
         router.add_api_route("/remote-control", self.remote_control, methods=["PUT"])
 
-
         # Pressure sensor as sub-device following pressure sensors schema
         router2 = super(BasePump, self).get_router(prefix="/pressure-sensor")
         # Note: This is super(BasePump) because the MRO of AzuraCompactPump is

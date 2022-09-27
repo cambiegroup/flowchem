@@ -71,10 +71,14 @@ def get_ir_once_stable():
     logger.info("Waiting for the IR spectrum to be stable")
     with command_session() as sess:
         # Wait for first spectrum to be available
-        while last_sample_id := int(sess.get(flowir_endpoint + "/sample-count").text) == 0:
+        while (
+            last_sample_id := int(sess.get(flowir_endpoint + "/sample-count").text) == 0
+        ):
             time.sleep(1)
         # Get spectrum
-        previous_spectrum = pd.read_json(sess.get(flowir_endpoint + "/sample/spectrum-treated").text)
+        previous_spectrum = pd.read_json(
+            sess.get(flowir_endpoint + "/sample/spectrum-treated").text
+        )
         previous_spectrum = previous_spectrum.set_index("wavenumber")
         # In case the id has changed between requests (highly unlikely)
         last_sample_id = int(sess.get(flowir_endpoint + "/sample-count").text)
@@ -92,7 +96,9 @@ def get_ir_once_stable():
                 time.sleep(2)
 
         with command_session() as sess:
-            current_spectrum = pd.read_json(sess.get(flowir_endpoint + "/sample/spectrum-treated").text)
+            current_spectrum = pd.read_json(
+                sess.get(flowir_endpoint + "/sample/spectrum-treated").text
+            )
             current_spectrum = current_spectrum.set_index("wavenumber")
 
         previous_peaks = integrate_peaks(previous_spectrum)
@@ -121,7 +127,9 @@ def integrate_peaks(ir_spectrum):
         if start > end:
             start, end = end, start
 
-        df_view = ir_spectrum.loc[(start <= ir_spectrum.index) & (ir_spectrum.index <= end)]
+        df_view = ir_spectrum.loc[
+            (start <= ir_spectrum.index) & (ir_spectrum.index <= end)
+        ]
         peaks[name] = integrate.trapezoid(df_view["intensity"])
         logger.debug(f"Integral of {name} between {start} and {end} is {peaks[name]}")
 
@@ -161,5 +169,5 @@ def run_experiment(
     return peaks["product"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(get_ir_once_stable())

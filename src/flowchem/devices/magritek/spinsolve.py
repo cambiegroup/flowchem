@@ -2,7 +2,6 @@
 import asyncio
 import pprint as pp
 import queue
-import threading
 import warnings
 from pathlib import Path
 
@@ -12,7 +11,6 @@ from flowchem.devices.magritek._msg_maker import get_request
 from flowchem.devices.magritek._msg_maker import set_attribute
 from flowchem.devices.magritek._msg_maker import set_data_folder
 from flowchem.devices.magritek._msg_maker import set_user_data
-from flowchem.devices.magritek.reader import Reader
 from flowchem.devices.magritek.utils import create_folder_mapper
 from flowchem.devices.magritek.xml_parser import parse_status_notification
 from flowchem.devices.magritek.xml_parser import StatusNotification
@@ -20,6 +18,8 @@ from flowchem.models.analytical_device import AnalyticalDevice
 from loguru import logger
 from lxml import etree
 from packaging import version
+
+from .utils import get_my_docs_path
 
 
 class Spinsolve(AnalyticalDevice):
@@ -42,8 +42,8 @@ class Spinsolve(AnalyticalDevice):
         self.host, self.port = host, port
 
         # Queue needed for thread-safe operation, the reader will be run in a different thread
-        self._replies: queue.Queue = queue.Queue()
-        self._reader = Reader(self._replies, xml_schema)
+        self._replies_by_type: dict[str, queue.Queue] = {}
+        # self._reader = Reader(self._replies, xml_schema)
 
         # Set experimental variable
         self._data_folder = data_folder
@@ -52,7 +52,7 @@ class Spinsolve(AnalyticalDevice):
         if remote_to_local_mapping is not None:
             self._folder_mapper = create_folder_mapper(*remote_to_local_mapping)
             assert (
-                    self._folder_mapper(self._data_folder) is not None
+                self._folder_mapper(self._data_folder) is not None
             )  # Ensure mapper validity.
         else:
             self._folder_mapper = None
@@ -62,8 +62,22 @@ class Spinsolve(AnalyticalDevice):
         self.protocols_option = {}
         self.user_data = {"control_software": "flowchem"}
 
+        # XML schema for reply validation. Reply validation is completely optional!
+        if xml_schema is None:
+            # This is the default location upon Spinsolve installation.
+            # However, remote control can be from remote, i.e. not Spinsolve PC so this ;)
+            default_schema = (
+                get_my_docs_path() / "Magritek" / "Spinsolve" / "RemoteControl.xsd"
+            )
+            try:
+                self.schema = etree.XMLSchema(default_schema)
+            except etree.XMLSchemaParseError:  # i.e. not found
+                self.schema = None
+        else:
+            self.schema = xml_schema
+
         # IOs (these are set upon initialization w/ initialize)
-        self._io_reader, self._io_writer = None, None
+        self._io_reader, self._io_writer, self.reader = None, None, None
 
         # Ontology metadata
         # fourier transformation NMR instrument
@@ -76,13 +90,16 @@ class Spinsolve(AnalyticalDevice):
             self._io_reader, self._io_writer = await asyncio.open_connection(
                 self.host, self.port
             )
+            logger.debug(f"Connected to {self.host}:{self.port}")
         except Exception as e:
             raise ConnectionError(
                 f"Error connecting to {self.host}:{self.port} -- {e}"
             ) from e
 
         # Start reader thread
-        self.reader = asyncio.create_task(self.connection_listener(), name="Connection listener")
+        self.reader = asyncio.create_task(
+            self.connection_listener(), name="Connection listener"
+        )
 
         # Check if the instrument is connected
         hw_info = await self.hw_request()
@@ -111,15 +128,30 @@ class Spinsolve(AnalyticalDevice):
 
     async def connection_listener(self):
         """Listen for replies and puts them in the queue."""
+        logger.debug("Spinsolve connection listener started!")
+        parser = etree.XMLParser()
         while True:
+            raw_tree = await self._io_reader.readuntil(b"</Message>")
+            logger.debug(f"Read reply {raw_tree}")
+
+            # Try parsing reply and skip if not valid
             try:
-                print("RUNNING LISTENER")
-                chunk = await self._io_reader.readuntil(b"</Message>")
-                print(f"read {chunk}")
-                self._replies.put(chunk)
-                await asyncio.sleep(0.1)
-            except asyncio.CancelledError:
-                break
+                parsed_tree = etree.fromstring(raw_tree, parser)
+            except etree.XMLSyntaxError:
+                warnings.warn(f"Cannot parse response XML {raw_tree}")
+                continue
+
+            # Validate reply if schema was provided
+            if self.schema:
+                try:
+                    self.schema.validate(parsed_tree)
+                except etree.XMLSyntaxError as syntax_error:
+                    warnings.warn(
+                        f"Invalid XML received! [Validation error: {syntax_error}]"
+                    )
+
+            # Add to reply queue of the given tag-type
+            self._replies_by_type[parsed_tree[0].tag].put(parsed_tree)
 
     async def _transmit(self, message: bytes):
         """
@@ -134,7 +166,7 @@ class Spinsolve(AnalyticalDevice):
         await self.send_message(get_request("Solvent"))
 
         # Get reply
-        reply = self._read_reply(reply_type="GetResponse")
+        reply = await self._read_reply(reply_type="GetResponse")
 
         # Parse and return
         return reply.find(".//Solvent").text
@@ -149,7 +181,7 @@ class Spinsolve(AnalyticalDevice):
         await self.send_message(get_request("Sample"))
 
         # Get reply
-        reply = self._read_reply(reply_type="GetResponse")
+        reply = await self._read_reply(reply_type="GetResponse")
 
         # Parse and return
         return reply.find(".//Sample").text
@@ -170,7 +202,7 @@ class Spinsolve(AnalyticalDevice):
         await self.send_message(get_request("UserData"))
 
         # Get reply
-        reply = self._read_reply(reply_type="GetResponse")
+        reply = await self._read_reply(reply_type="GetResponse")
 
         # Parse and return
         return {
@@ -179,21 +211,19 @@ class Spinsolve(AnalyticalDevice):
         }
 
     async def set_user_data(self, data_to_be_set: dict):
-        """Sets the user data proewqvided in the dict. These are included in `acq.par`"""
+        """Sets the user data provided in the dict. These are included in `acq.par`"""
         await self.send_message(set_user_data(data_to_be_set))
 
-    def _read_reply(self, reply_type="", timeout=5):
-        """Looks in the received replies for one of type reply_type"""
-        # Get reply of reply_type from the reader object that holds the StreamReader
-        reply = self._replies.get()
-        # reply = self._reader.wait_for_reply(reply_type=reply_type, timeout=timeout)
+    async def _read_reply(self, reply_type=""):
+        """Looks in the received replies for one of type reply_type."""
+        while (
+            relevant_queue := self._replies_by_type.get(reply_type, queue.Queue())
+        ).empty():
+            await asyncio.sleep(0.1)
+
+        reply = relevant_queue.get()
         logger.debug(f"Got a reply from spectrometer: {etree.tostring(reply)}")
-
         return reply
-
-    async def _async_read_reply(self, *args):
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, self._read_reply, *args)
 
     async def send_message(self, root: etree.Element):
         """
@@ -202,10 +232,9 @@ class Spinsolve(AnalyticalDevice):
         # Turn the etree.Element provided into an ElementTree
         tree = etree.ElementTree(root)
 
-        # Export to string with declaration
+        # Message must include XML declaration
         message = etree.tostring(tree, xml_declaration=True, encoding="utf-8")
 
-        # Transmit
         logger.debug(f"Transmitting request to spectrometer: {message}")
         await self._transmit(message)
 
@@ -214,18 +243,18 @@ class Spinsolve(AnalyticalDevice):
         Sends an HW request to the spectrometer, receive the reply and returns it
         """
         await self.send_message(create_message("HardwareRequest"))
+        # await self.send_message(create_message("AvailableProtocolOptionsRequest"))
         # Larger timeout than usual as this is the first request sent to the spectrometer
         # When the PC/Spinsolve is in standby, the reply to the first req is slower than usual
-        return self._read_reply(reply_type="HardwareResponse", timeout=15)
+        reply = await self._read_reply(reply_type="HardwareResponse")
+        return reply
 
     async def request_available_protocols(self) -> dict:
         """
         Get a list of available protocol on the current spectrometer
         """
-        # Request available protocols
         await self.send_message(create_message("AvailableProtocolOptionsRequest"))
-        # Get reply
-        tree = self._read_reply(reply_type="AvailableProtocolOptionsResponse")
+        tree = await self._read_reply(reply_type="AvailableProtocolOptionsResponse")
 
         # Parse reply and construct the dict with protocols available
         protocols = {}
@@ -260,9 +289,10 @@ class Spinsolve(AnalyticalDevice):
             protocol_name, protocol_options
         )
 
+        # Flush all previous StatusNotification replies from queue
+        self._replies_by_type["StatusNotification"].queue.clear()
+        # FIXME https://fastapi.tiangolo.com/tutorial/background-tasks/
         # Start protocol
-        self._replies.queue.clear()
-        # self._reader.clear_replies()
         await self.send_message(
             create_protocol_message(protocol_name, valid_protocol_options)
         )
@@ -277,13 +307,11 @@ class Spinsolve(AnalyticalDevice):
         return remote_data_folder
 
     async def _check_notifications(self) -> Path:
-        """
-        Read all the StatusNotification and returns the dataFolder
-        """
+        """Read all the StatusNotification and returns the dataFolder."""
         remote_folder = Path()
         while True:
             # Get all StatusNotification
-            status_update = await self._async_read_reply("StatusNotification", 6000)
+            status_update = await self._read_reply("StatusNotification")
 
             # Parse them
             status, folder = parse_status_notification(status_update)
@@ -368,7 +396,13 @@ class Spinsolve(AnalyticalDevice):
 
 
 if __name__ == "__main__":
-    hostname = "BSMC-YMEF002121"
+    hostname = "127.0.0.1"
 
-    nmr: Spinsolve = Spinsolve(host=hostname)
-    print(nmr.sample)
+    async def main():
+        nmr: Spinsolve = Spinsolve(host=hostname, port=13000)
+        print(nmr.sample)
+        await nmr.initialize()
+        s = await nmr.get_solvent()
+        print(f"sovlent sis {s}")
+
+    asyncio.run(main())
