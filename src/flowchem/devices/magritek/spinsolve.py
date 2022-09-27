@@ -5,6 +5,7 @@ import queue
 import warnings
 from pathlib import Path
 
+from fastapi import BackgroundTasks
 from flowchem.devices.magritek._msg_maker import create_message
 from flowchem.devices.magritek._msg_maker import create_protocol_message
 from flowchem.devices.magritek._msg_maker import get_request
@@ -78,6 +79,8 @@ class Spinsolve(AnalyticalDevice):
 
         # IOs (these are set upon initialization w/ initialize)
         self._io_reader, self._io_writer, self.reader = None, None, None
+        # Each protocol adds a new Path to the list, run_protocol returns the ID of the next protocol
+        self._result_folders: list[Path] = []
 
         # Ontology metadata
         # fourier transformation NMR instrument
@@ -268,12 +271,12 @@ class Spinsolve(AnalyticalDevice):
         return protocols
 
     async def run_protocol(
-        self, protocol_name, protocol_options=None
-    ) -> str | Path | None:
-        """
-        Runs a protocol
+        self, protocol_name, background_tasks: BackgroundTasks, protocol_options=None
+    ) -> int:
+        """Run a protocol.
 
-        Returns true if the protocol is started correctly, false otherwise.
+        Returns the ID of the protocol (needed to get folder once ready). -1 for errors.
+        The validation is performed before the response is sent, the actual protocol later, as it may take a long time.
         """
         # All protocol names are UPPERCASE, so force upper here to avoid case issues
         protocol_name = protocol_name.upper()
@@ -282,7 +285,7 @@ class Spinsolve(AnalyticalDevice):
                 f"The protocol requested '{protocol_name}' is not available on the spectrometer!\n"
                 f"Valid options are: {pp.pformat(sorted(self.protocols_option.keys()))}"
             )
-            return None
+            return -1
 
         # Validate protocol options (check values and remove invalid ones, with warning)
         valid_protocol_options = self._validate_protocol_request(
@@ -297,17 +300,13 @@ class Spinsolve(AnalyticalDevice):
             create_protocol_message(protocol_name, valid_protocol_options)
         )
 
-        # Follow status notifications and finally get location of remote data
-        remote_data_folder = await self._check_notifications()
-        logger.info(f"Protocol over - remote data folder is {remote_data_folder}")
+        background_tasks.add_task(self._check_notifications)
 
-        # If a folder mapper is present use it to translate the location
-        if self._folder_mapper:
-            return self._folder_mapper(remote_data_folder)
-        return remote_data_folder
+        return len(self._result_folders)
 
-    async def _check_notifications(self) -> Path:
+    async def _check_notifications(self):
         """Read all the StatusNotification and returns the dataFolder."""
+        self._protocol_running = True
         remote_folder = Path()
         while True:
             # Get all StatusNotification
@@ -328,15 +327,38 @@ class Spinsolve(AnalyticalDevice):
                 await self.abort()  # Abort running experiment
                 break
 
-        return remote_folder
+        logger.info(f"Protocol over - remote data folder is {remote_folder}")
+        # If a folder mapper is present use it to translate the location
+        self._result_folders.append(
+            self._folder_mapper(remote_folder)
+        ) if self._folder_mapper else remote_folder
+
+        self._protocol_running = False
+
+    async def is_protocol_running(self) -> bool:
+        """Return true if a protocol is currently running."""
+        return self._protocol_running
+
+    async def get_result_folder(self, result_id: int | None = None) -> str:
+        """Get the result folder with the given ID or the last one if no ID is specified. Empty str if not existing."""
+        try:
+            return (
+                str(self._result_folders[result_id])
+                if result_id is not None
+                else str(self._result_folders[:-1])
+            )
+        except IndexError:
+            return ""
 
     async def abort(self):
         """Abort current running command"""
+        if self._protocol_running:
+            self._result_folders = Path("")
         await self.send_message(create_message("Abort"))
 
-    def is_protocol_available(self, desired_protocol):
+    def is_protocol_available(self, protocol):
         """Check if the desired protocol is available on the current instrument"""
-        return desired_protocol in self.protocols_option
+        return protocol in self.protocols_option
 
     def _validate_protocol_request(self, protocol_name, protocol_options) -> dict:
         """Ensures the protocol names, option name and option values are valid."""
@@ -389,8 +411,17 @@ class Spinsolve(AnalyticalDevice):
         router.add_api_route("/user-data", self.get_user_data, methods=["GET"])
         router.add_api_route("/user-data", self.set_user_data, methods=["PUT"])
 
-        router.add_api_route("/run-protocol", self.run_protocol, methods=["PUT"])
-        router.add_api_route("/abort", self.abort, methods=["PUT"])
+        router.add_api_route(
+            "/protocol/is-available", self.is_protocol_available, methods=["GET"]
+        )
+        router.add_api_route("/protocol/run", self.run_protocol, methods=["PUT"])
+        router.add_api_route(
+            "/protocol/is-running", self.is_protocol_running, methods=["GET"]
+        )
+        router.add_api_route(
+            "/protocol/get_result", self.get_result_folder, methods=["GET"]
+        )
+        router.add_api_route("/protocol/abort", self.abort, methods=["PUT"])
 
         return router
 
