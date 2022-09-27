@@ -1,7 +1,6 @@
 """ Spinsolve module """
 import asyncio
 import pprint as pp
-import queue
 import warnings
 from pathlib import Path
 
@@ -42,9 +41,14 @@ class Spinsolve(AnalyticalDevice):
 
         self.host, self.port = host, port
 
-        # Queue needed for thread-safe operation, the reader will be run in a different thread
-        self._replies_by_type: dict[str, queue.Queue] = {}
-        # self._reader = Reader(self._replies, xml_schema)
+        # The Qs must exist before the response is received to be awaited
+        # Could be generated programmatically from RemoteControl.xsd, but it's not worth it
+        self._replies_by_type = {
+            "HardwareResponse": asyncio.Queue(),
+            "AvailableProtocolOptionsResponse": asyncio.Queue(),
+            "GetResponse": asyncio.Queue(),
+            "StatusNotification": asyncio.Queue(),
+        }
 
         # Set experimental variable
         self._data_folder = data_folder
@@ -71,7 +75,7 @@ class Spinsolve(AnalyticalDevice):
                 get_my_docs_path() / "Magritek" / "Spinsolve" / "RemoteControl.xsd"
             )
             try:
-                self.schema = etree.XMLSchema(default_schema)
+                self.schema = etree.XMLSchema(file=str(default_schema))
             except etree.XMLSchemaParseError:  # i.e. not found
                 self.schema = None
         else:
@@ -154,7 +158,7 @@ class Spinsolve(AnalyticalDevice):
                     )
 
             # Add to reply queue of the given tag-type
-            self._replies_by_type[parsed_tree[0].tag].put(parsed_tree)
+            await self._replies_by_type[parsed_tree[0].tag].put(parsed_tree)
 
     async def _transmit(self, message: bytes):
         """
@@ -168,13 +172,8 @@ class Spinsolve(AnalyticalDevice):
 
     async def get_solvent(self) -> str:
         """Get current solvent"""
-        # Send request
         await self.send_message(get_request("Solvent"))
-
-        # Get reply
-        reply = await self._read_reply(reply_type="GetResponse")
-
-        # Parse and return
+        reply = await self._replies_by_type["GetResponse"].get()
         return reply.find(".//Solvent").text
 
     async def set_solvent(self, solvent: str):
@@ -183,13 +182,8 @@ class Spinsolve(AnalyticalDevice):
 
     async def get_sample(self) -> str:
         """Get current solvent (appears in acqu.par)"""
-        # Send request
         await self.send_message(get_request("Sample"))
-
-        # Get reply
-        reply = await self._read_reply(reply_type="GetResponse")
-
-        # Parse and return
+        reply = await self._replies_by_type["GetResponse"].get()
         return reply.find(".//Sample").text
 
     async def set_sample(self, sample: str):
@@ -203,33 +197,17 @@ class Spinsolve(AnalyticalDevice):
             await self.send_message(set_data_folder(location))
 
     async def get_user_data(self) -> dict:
-        """Create a get user data request and parse result"""
-        # Send request
+        """Create a get user data request and parse result."""
         await self.send_message(get_request("UserData"))
-
-        # Get reply
-        reply = await self._read_reply(reply_type="GetResponse")
-
-        # Parse and return
+        reply = await self._replies_by_type["GetResponse"].get()
         return {
             data_item.get("key"): data_item.get("value")
             for data_item in reply.findall(".//Data")
         }
 
     async def set_user_data(self, data_to_be_set: dict):
-        """Sets the user data provided in the dict. These are included in `acq.par`"""
+        """Set the user data provided in the dict. These are included in `acq.par`."""
         await self.send_message(set_user_data(data_to_be_set))
-
-    async def _read_reply(self, reply_type=""):
-        """Looks in the received replies for one of type reply_type."""
-        while (
-            relevant_queue := self._replies_by_type.get(reply_type, queue.Queue())
-        ).empty():
-            await asyncio.sleep(0.1)
-
-        reply = relevant_queue.get()
-        logger.debug(f"Got a reply from spectrometer: {etree.tostring(reply)}")
-        return reply
 
     async def send_message(self, root: etree.Element):
         """
@@ -249,28 +227,23 @@ class Spinsolve(AnalyticalDevice):
         Sends an HW request to the spectrometer, receive the reply and returns it
         """
         await self.send_message(create_message("HardwareRequest"))
-        # await self.send_message(create_message("AvailableProtocolOptionsRequest"))
-        # Larger timeout than usual as this is the first request sent to the spectrometer
-        # When the PC/Spinsolve is in standby, the reply to the first req is slower than usual
-        reply = await self._read_reply(reply_type="HardwareResponse")
-        return reply
+        return await self._replies_by_type["HardwareResponse"].get()
 
     async def request_available_protocols(self) -> dict[str, dict]:
         """
         Get a list of available protocol on the current spectrometer
         """
         await self.send_message(create_message("AvailableProtocolOptionsRequest"))
-        tree = await self._read_reply(reply_type="AvailableProtocolOptionsResponse")
+        reply = await self._replies_by_type["AvailableProtocolOptionsResponse"].get()
 
         # Parse reply and construct the dict with protocols available
         protocols = {}
-        for element in tree.findall(".//Protocol"):
+        for element in reply.findall(".//Protocol"):
             protocol_name = element.get("protocol")
             protocols[protocol_name] = {
                 option.get("name"): [value.text for value in option.findall("Value")]
                 for option in element.findall("Option")
             }
-
         return protocols
 
     async def run_protocol(
@@ -296,13 +269,17 @@ class Spinsolve(AnalyticalDevice):
         )
 
         # Flush all previous StatusNotification replies from queue
-        self._replies_by_type["StatusNotification"].queue.clear()
-        # FIXME https://fastapi.tiangolo.com/tutorial/background-tasks/
+        notificaiton_q = self._replies_by_type["StatusNotification"]
+        for _ in range(notificaiton_q.qsize()):
+            notificaiton_q.get_nowait()
+
         # Start protocol
         await self.send_message(
             create_protocol_message(protocol_name, valid_protocol_options)
         )
 
+        # Rest of protocol as bg task to avoid timeout on API reply
+        # See https://fastapi.tiangolo.com/tutorial/background-tasks/
         background_tasks.add_task(self._check_notifications)
 
         return len(self._result_folders)
@@ -313,7 +290,7 @@ class Spinsolve(AnalyticalDevice):
         remote_folder = Path()
         while True:
             # Get all StatusNotification
-            status_update = await self._read_reply("StatusNotification")
+            status_update = await self._replies_by_type["StatusNotification"].get()
 
             # Parse them
             status, folder = parse_status_notification(status_update)
@@ -332,9 +309,10 @@ class Spinsolve(AnalyticalDevice):
 
         logger.info(f"Protocol over - remote data folder is {remote_folder}")
         # If a folder mapper is present use it to translate the location
-        self._result_folders.append(
-            self._folder_mapper(remote_folder)
-        ) if self._folder_mapper is not None else remote_folder
+        if self._folder_mapper is not None:
+            self._result_folders.append(self._folder_mapper(remote_folder))
+        else:
+            self._result_folders.append(remote_folder)
 
         self._protocol_running = False
 
@@ -344,19 +322,18 @@ class Spinsolve(AnalyticalDevice):
 
     async def get_result_folder(self, result_id: int | None = None) -> str:
         """Get the result folder with the given ID or the last one if no ID is specified. Empty str if not existing."""
+        # If no result_id get last
+        if result_id is None:
+            result_id = -1
         try:
-            return (
-                str(self._result_folders[result_id])
-                if result_id is not None
-                else str(self._result_folders[:-1])
-            )
+            folder = str(self._result_folders[result_id])
         except IndexError:
-            return ""
+            folder = ""
+
+        return folder
 
     async def abort(self):
         """Abort current running command"""
-        if self._protocol_running:
-            self._result_folders = Path("")
         await self.send_message(create_message("Abort"))
 
     def is_protocol_available(self, protocol):
