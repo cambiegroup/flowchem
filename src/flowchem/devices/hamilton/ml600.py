@@ -171,11 +171,6 @@ class ML600(BaseDevice):
 
         async def _write_async(self, command: bytes):
             """Write a command to the pump."""
-            if not self._initialized:
-                raise DeviceError(
-                    "Pump not initialized!\n"
-                    "Have you called `initialize()` after object creation?"
-                )
             await self._serial.write_async(command)
             logger.debug(f"Command {repr(command)} sent!")
 
@@ -344,12 +339,14 @@ class ML600(BaseDevice):
         return cls(
             pumpio,
             syringe_volume=config.get("syringe_volume"),
-            address=config.get("address"),
+            address=config.get("address", 1),
             name=config.get("name"),
         )
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Must be called after init before anything else."""
+        if not self.pump_io._initialized:
+            await self.pump_io.initialize()
         # Test connectivity by querying the pump's firmware version
         fw_cmd = ML600.Protocol1CommandTemplate(command="U").to_pump(self.address)
         firmware_version = await self.pump_io.write_and_read_reply_async(fw_cmd)
@@ -533,7 +530,7 @@ class ML600(BaseDevice):
         """Pump is not idle."""
         return not await self.is_idle()
 
-    async def get_valve_position(self) -> ValvePositionName:
+    async def get_valve_position(self) -> ML600.ValvePositionName:
         """Represent the position of the valve: getter returns Enum, setter needs Enum."""
         valve_pos = await self.send_command_and_read_reply(
             ML600.Protocol1CommandTemplate(command="LQP")
@@ -541,7 +538,9 @@ class ML600(BaseDevice):
         return ML600.ValvePositionName(int(valve_pos))
 
     async def set_valve_position(
-        self, target_position: ValvePositionName, wait_for_movement_end: bool = True
+        self,
+        target_position: ML600.ValvePositionName,
+        wait_for_movement_end: bool = True,
     ):
         """Set valve position. wait_for_movement_end is defaulted to True as it is a common mistake not to wait..."""
         valve_by_name_cw = ML600.Protocol1CommandTemplate(command="LP0")
@@ -569,7 +568,7 @@ class ML600(BaseDevice):
     async def pickup(
         self,
         volume: str,
-        from_valve: ValvePositionName,
+        from_valve: ML600.ValvePositionName,
         flowrate: str = "1 ml/min",
         wait: bool = False,
     ):
@@ -596,7 +595,7 @@ class ML600(BaseDevice):
     async def deliver(
         self,
         volume: str,
-        to_valve: ValvePositionName,
+        to_valve: ML600.ValvePositionName,
         flowrate: str,
         wait: bool = False,
     ):
@@ -622,8 +621,8 @@ class ML600(BaseDevice):
     async def transfer(
         self,
         volume: str,
-        from_valve: ValvePositionName,
-        to_valve: ValvePositionName,
+        from_valve: ML600.ValvePositionName,
+        to_valve: ML600.ValvePositionName,
         flowrate_in: str = "1 ml/min",
         flowrate_out: str = "1 ml/min",
         wait: bool = False,

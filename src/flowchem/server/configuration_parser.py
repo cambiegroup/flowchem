@@ -16,7 +16,7 @@ from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
 
-def load_configuration_file(file_path: Path) -> dict:
+def parse_toml_file(file_path: Path) -> dict:
     """
     Read the TOML configuration file and returns it as a dict.
 
@@ -35,20 +35,21 @@ def load_configuration_file(file_path: Path) -> dict:
 def parse_config_file(file_path: Path | str) -> dict:
     """Parse a config file."""
     file_path = Path(file_path)
-    assert (
-        file_path.exists() and file_path.is_file()
-    ), f"Does the provided configuration file {file_path} exist?"
-    config = load_configuration_file(file_path)
+    assert file_path.exists() and file_path.is_file(), f"{file_path} is a valid file"
+    config = parse_toml_file(file_path)
     config["filename"] = file_path.stem
     return parse_config(config)
 
 
 def parse_config(config: dict) -> dict:
     """Parse config."""
-    # This creates a dict with device type as key and object to be instantiated as values.
+    # Create a dict with device type (str) as key and the device class as value.
+    # e.g. device_mapper["Spinsolve"] = Spinsolve
+    # This is later use for the programmatic instantiation of devices
     device_mapper = autodiscover_device_classes()
 
     # Iterate on all devices, parse device-specific settings and instantiate the relevant objects
+    assert "device" in config, "The configuration file must include a device section"
     config["device"] = [
         parse_device(dev_settings, device_mapper)
         for dev_settings in config["device"].items()
@@ -111,7 +112,8 @@ def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
             )
 
     # Then check if a mandatory arguments was not satisfied. [1 to skip cls/self, -n to remove args w/ default]
-    mandatory_args = arg_spec.args[1 : -len(arg_spec.defaults)]  # type: ignore
+    num_default = 0 if arg_spec.defaults is None else len(arg_spec.defaults)
+    mandatory_args = arg_spec.args[1:-num_default]
     missing_parameters = list(set(mandatory_args).difference(called_with.keys()))
     if missing_parameters:
         logger.error(

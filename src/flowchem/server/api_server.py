@@ -4,7 +4,6 @@ from importlib.metadata import metadata
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
 from loguru import logger
 from starlette.responses import RedirectResponse
 
@@ -19,25 +18,31 @@ def create_server_from_file(config_file: Path) -> FastAPI:
     config: Path to the yaml file with the device config or dict.
     """
     parsed_config = parse_config_file(config_file)
-    return create_server_for_devices(parsed_config["device"])
+    return create_server_for_devices(parsed_config)
 
 
-def create_server_for_devices(dev_list: list) -> FastAPI:
+def create_server_for_devices(config: dict) -> FastAPI:
     """Initialize and create API endpoints for device object provided."""
     flowchem_metadata = metadata("flowchem")
+    dev_list = config["device"]
 
     # FastAPI server
     app = FastAPI(
-        title="flowchem",
+        title=f"Flowchem - {config.get('filename')}",
         description=flowchem_metadata["Summary"],
         version=flowchem.__version__,
+        license_info={
+            "name": "MIT License",
+            "url": "https://opensource.org/licenses/MIT",
+        },
     )
 
     @app.route("/")
     def home_redirect_to_docs(root_path):
+        """Redirect root to `/docs` to enable interaction w/ API."""
         return RedirectResponse(url="/docs")
 
-    # Parse list of devices and generate endpoints
+    # For each device get the relevant APIRouter(s) and add them to the app
     for device in dev_list:
         # Get routers (some compounded devices can return multiple routers for the subcomponents, but most only 1!)
         routers = device.get_router()
@@ -49,26 +54,18 @@ def create_server_for_devices(dev_list: list) -> FastAPI:
             app.include_router(router, tags=router.tags)
             logger.debug(f"Router <{router.prefix}> added to app!")
 
-    # Before server startup initialize all devices
     @app.on_event("startup")
     async def startup_event():
-        for device in dev_list:
-            await device.initialize()
+        """Call all device initialize async methods upon startup."""
+        [await dev.initialize() for dev in dev_list]
+        logger.info(f"Device initialization completed, server ready!")
 
     return app
 
 
 if __name__ == "__main__":
-    myapp = create_server_from_file(
-        config_file=Path(
-            "../../../examples/autonomous_reaction_optimization/devices.toml"
-        )
-    )
-
-    @myapp.get("/", response_class=HTMLResponse, include_in_schema=False)
-    def root():
-        """Server root."""
-        return "<h1>Flowchem Device Server!</h1>" "<a href='./docs/'>API Reference</a>"
+    test_conf = Path("../../../examples/autonomous_reaction_optimization/devices.toml")
+    myapp = create_server_from_file(config_file=test_conf)
 
     import uvicorn
 
