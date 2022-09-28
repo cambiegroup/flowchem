@@ -11,27 +11,27 @@ class TemperatureControl(BaseDevice, ABC):
         """Just call superclass constructor."""
         super().__init__(name)
 
-    def set_temperature(self, temp: str):
+    async def set_temperature(self, temp: str):
         """Set the target temperature to the given string in natural language."""
         raise NotImplementedError
 
-    def get_temperature(self) -> float:
+    async def get_temperature(self) -> float:
         """Return temperature in Celsius."""
         raise NotImplementedError
 
-    def target_reached(self) -> bool:
+    async def target_reached(self) -> bool:
         """Return True if the set temperature target has been reached."""
         raise NotImplementedError
 
-    def temperature_limits(self) -> dict[str, float]:
+    async def temperature_limits(self) -> dict[str, float]:
         """Return a dict with `min` and `max` temperature in Celsius."""
         raise NotImplementedError
 
-    def power_on(self) -> dict[str, float]:
+    async def power_on(self) -> dict[str, float]:
         """Turn on temperature control."""
         raise NotImplementedError
 
-    def power_off(self) -> dict[str, float]:
+    async def power_off(self) -> dict[str, float]:
         """Turn off temperature control."""
         raise NotImplementedError
 
