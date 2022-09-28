@@ -65,6 +65,24 @@ async def get_device_type(ip_address: str) -> str:
     return "Unknown"
 
 
+def _get_local_ip() -> str:
+    """Guess the most suitable local IP for autodiscovery."""
+    # These are all the local IPs (different interfaces)
+    machine_ips = [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
+
+    # 192.168 subnet 1st priority
+    if local_ip := next((ip for ip in machine_ips if ip.startswith("192.168.")), False):
+        return local_ip
+
+    # 10.0 subnet 2nd priority
+    if local_ip := next((ip for ip in machine_ips if ip.startswith("10.")), False):
+        return local_ip
+
+    logger.warning(f"Could not reliably determine local IP!")
+    hostname = socket.gethostname()
+    return socket.gethostbyname(hostname)
+
+
 def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     """
     Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
@@ -79,26 +97,13 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     """
     # Define source IP resolving local hostname.
     if not source_ip:
-        machine_ips = [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
-        # 192.168 subnet 1st priority
-        if local_ip := next(
-            (ip for ip in machine_ips if ip.startswith("192.168.")), False
-        ):
-            source_ip = local_ip  # type: ignore
-        # 10.0 subnet 2nd priority
-        elif local_ip := next(
-            (ip for ip in machine_ips if ip.startswith("10.")), False
-        ):
-            source_ip = local_ip  # type: ignore
-        else:
-            hostname = socket.gethostname()
-            source_ip = socket.gethostbyname(hostname)
-            logger.warning(f"Could not reliably determine local IP! Using {source_ip}")
+        source_ip = _get_local_ip()
 
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = asyncio.new_event_loop()
+
     device_q: queue.Queue = queue.Queue()
     coro = loop.create_datagram_endpoint(
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
@@ -111,15 +116,8 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     loop.call_soon_threadsafe(loop.stop)  # here
     thread.join()
 
-    device_list = []
-    for _ in range(40):
-        try:
-            device_list.append(device_q.get_nowait())
-        except queue.Empty:
-            break
-
     device_info = {}
-    for device_ip in device_list:
+    for device_ip in iter(device_q.get, None):
         # MAC address
         mac = get_mac_address(ip=device_ip)
         if mac:
