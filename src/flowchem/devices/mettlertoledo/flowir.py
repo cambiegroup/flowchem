@@ -1,4 +1,4 @@
-""" Async implementation of FlowIR """
+"""Async implementation of FlowIR."""
 import asyncio
 import datetime
 import warnings
@@ -16,17 +16,12 @@ from flowchem.models.base_device import BaseDevice
 
 
 class FlowIR(iCIR_spectrometer, AnalyticalDevice):
-    """
-    Object to interact with the iCIR software controlling the FlowIR and ReactIR.
-    """
+    """Object to interact with the iCIR software controlling the FlowIR and ReactIR."""
 
     counter = 0
 
     def __init__(self, url: str = None, name: str = None):
-        """
-        Initiate connection with OPC UA server.
-        Intended to be used as context-manager!
-        """
+        """Initiate connection with OPC UA server."""
         BaseDevice.__init__(self, name)
 
         if name is None:
@@ -42,7 +37,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
         self.version = None
 
     async def initialize(self):
-        """Initialize and check connection"""
+        """Initialize and check connection."""
         try:
             await self.opcua.connect()
         except asyncio.TimeoutError as timeout_error:
@@ -53,8 +48,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
         logger.debug("FlowIR initialized!")
 
     def is_local(self):
-        """Returns true if the server is on the same machine running the python code."""
-
+        """Return true if the server is on the same machine running the python code."""
         return any(
             x in self.opcua.server_url.netloc for x in ("localhost", "127.0.0.1")
         )
@@ -77,20 +71,20 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
 
     # noinspection PyPep8Naming
     async def is_iCIR_connected(self) -> bool:
-        """Check connection with instrument"""
+        """Check connection with instrument."""
         return await self.opcua.get_node(self.CONNECTION_STATUS).get_value()
 
     async def probe_info(self) -> ProbeInfo:
-        """Return FlowIR probe information"""
+        """Return FlowIR probe information."""
         probe_info = await self.opcua.get_node(self.PROBE_DESCRIPTION).get_value()
         return self.parse_probe_info(probe_info)
 
     async def probe_status(self):
-        """Returns current probe status. Possible values are 'Running', 'Not running' (+ more?)."""
+        """Return current probe status. Possible values are 'Running', 'Not running' (+ more?)."""
         return await self.opcua.get_node(self.PROBE_STATUS).get_value()
 
     async def last_sample_time(self) -> datetime.datetime:
-        """Returns date/time of latest scan."""
+        """Return date/time of the latest scan."""
         return await self.opcua.get_node(self.LAST_SAMPLE_TIME).get_value()
 
     async def sample_count(self) -> int | None:
@@ -99,7 +93,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
 
     @staticmethod
     async def _wavenumber_from_spectrum_node(node) -> list[float]:
-        """Gets the X-axis value of a spectrum. This is necessary as they change e.g. with resolution."""
+        """Get the X-axis value of a spectrum. This is necessary as they change e.g. with resolution."""
         node_property = await node.get_properties()
         x_axis = await node_property[0].get_value()
         return x_axis.AxisSteps
@@ -116,7 +110,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
             return IRSpectrum(wavenumber=[], intensity=[])
 
     async def last_spectrum_treated(self) -> IRSpectrum:
-        """Returns an IRSpectrum element for the last acquisition."""
+        """Return an IRSpectrum element for the last acquisition."""
         return await FlowIR.spectrum_from_node(
             self.opcua.get_node(self.SPECTRA_TREATED)
         )
@@ -134,7 +128,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
     async def start_experiment(
         self, template: str, name: str = "Unnamed flowchem exp."
     ):
-        """Starts an experiment on iCIR.
+        r"""Start an experiment on iCIR.
 
         Args:
             template: name of the experiment template, should be in the Templtates folder on the PC running iCIR.
@@ -171,20 +165,22 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
         return True
 
     async def stop_experiment(self):
-        """Stop the experiment currently running.
+        """
+        Stop the experiment currently running.
 
-        Note: the call does not make the instrument idle: you need to wait for the current scan to end!"""
+        Note: the call does not make the instrument idle: you need to wait for the current scan to end!
+        """
         method_parent = self.opcua.get_node(self.METHODS)
         stop_nodeid = self.opcua.get_node(self.STOP_EXPERIMENT).nodeid
         await method_parent.call_method(stop_nodeid)
 
     async def wait_until_idle(self):
-        """Waits until no experiment is running."""
+        """Wait until no experiment is running."""
         while await self.probe_status() == "Running":
             await asyncio.sleep(0.2)
 
     def get_router(self, prefix: str | None = None):
-        """Creates an APIRouter for this HuberChiller instance."""
+        """Create an APIRouter for this FlowIR instance."""
         router = super().get_router(prefix)
         router.add_api_route("/is-connected", self.is_iCIR_connected, methods=["GET"])
         router.add_api_route("/probe-status", self.probe_status, methods=["GET"])

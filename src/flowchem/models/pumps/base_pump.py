@@ -1,3 +1,4 @@
+"""Base pump."""
 from abc import ABC
 
 from fastapi import APIRouter
@@ -6,27 +7,19 @@ from flowchem.models.base_device import BaseDevice
 
 
 class BasePump(BaseDevice, ABC):
-    """
-    A generic pumping device whose primary feature is that it moves fluid.
-
-    Arguments:
-    - `name`: The name of the pump.
-
-    Attributes:
-    - `name`: The name of the pump.
-    - `rate`: The flow rate of the pump as a `pint.Quantity`. Must be of the dimensionality of volume/time.
-    """
+    """A generic pumping device."""
 
     def __init__(self, name: str | None = None):
+        """Add ontology class and call superclass constructor."""
         super().__init__(name=name)
         self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0001042")
 
     async def set_flow_rate(self, rate: str):
-        """Sets the pump infusion flow rate."""
+        """Set pump infusion flow rate."""
         raise NotImplementedError
 
     async def get_flow_rate(self) -> float:
-        """Gets the pump infusion flow rate."""
+        """Get pump infusion flow rate."""
         raise NotImplementedError
 
     async def infuse(self):
@@ -50,16 +43,23 @@ class BasePump(BaseDevice, ABC):
 
 
 class WithdrawMixin:
+    """
+    This mixin represent the capability of a pump to invert the flow direction.
+
+    Most of the methods are mutuated from BasePump.
+    Note that withdraw as it is defined here applies both to peristaltic and syringe pumps.
+    """
+
     def withdraw(self):
         """Pump in the opposite direction of infuse."""
         raise NotADirectoryError
 
     async def set_withdrawing_flow_rate(self, rate: str):
-        """Sets the pump withdraw flow rate."""
+        """Set pump withdraw flow rate."""
         raise NotImplementedError
 
     async def get_withdrawing_flow_rate(self) -> float:
-        """Gets the pump withdraw flow rate."""
+        """Get pump withdraw flow rate."""
         raise NotImplementedError
 
     def get_router(self, prefix: str | None = None) -> APIRouter:

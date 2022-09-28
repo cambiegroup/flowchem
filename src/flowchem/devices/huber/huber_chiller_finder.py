@@ -1,6 +1,4 @@
-"""
-This module is used to discover the serial address of any ML600 connected to the PC.
-"""
+"""This module is used to discover the serial address of any ML600 connected to the PC."""
 import asyncio
 
 import rich_click as click
@@ -41,6 +39,7 @@ def chiller_finder():
 
 @click.command()
 def main():
+    """Autofind Huber Chiller. This is the entry point for the CLI app `huber-finder`."""
     huber_chillers = chiller_finder()
     if len(huber_chillers) > 0:
         logger.info(

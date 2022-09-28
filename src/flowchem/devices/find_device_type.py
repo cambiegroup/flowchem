@@ -44,10 +44,12 @@ def autodiscover_first_party() -> dict[str, Any]:
 
 
 def autodiscover_third_party() -> dict[str, Any]:
-    """Get classes from packages with a `flowchem.devices` entrypoint.
+    """
+    Get classes from packages with a `flowchem.devices` entrypoint.
 
     A plugin structure can be used to add devices from an external package via setuptools entry points.
-    See https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/#using-package-metadata"""
+    See https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/#using-package-metadata
+    """
     device_classes = {}
 
     for ep in entry_points(group="flowchem.devices"):

@@ -24,6 +24,7 @@ class BaseValve(BaseDevice, ABC):
 
     def __init__(self, positions, default_position=None, name=None):
         """
+        Create a valve object.
 
         Args:
             positions: list/tuple/set of string representing the valve ports.

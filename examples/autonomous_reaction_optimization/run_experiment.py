@@ -71,9 +71,7 @@ def get_ir_once_stable():
     logger.info("Waiting for the IR spectrum to be stable")
     with command_session() as sess:
         # Wait for first spectrum to be available
-        while (
-            last_sample_id := int(sess.get(flowir_endpoint + "/sample-count").text) == 0
-        ):
+        while int(sess.get(flowir_endpoint + "/sample-count").text) == 0:
             time.sleep(1)
         # Get spectrum
         previous_spectrum = pd.read_json(

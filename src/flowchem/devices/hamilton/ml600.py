@@ -1,6 +1,4 @@
-"""
-This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO+.
-"""
+"""This module is used to control Hamilton ML600 syringe pump via the protocol1/RNO+."""
 from __future__ import annotations
 
 import string
@@ -35,7 +33,7 @@ class ML600(BaseDevice):
 
     @dataclass
     class Protocol1CommandTemplate:
-        """Class representing a pump command and its expected reply, but without target pump number"""
+        """Class representing a pump command and its expected reply, but without target pump number."""
 
         command: str
         optional_parameter: str = ""
@@ -44,7 +42,7 @@ class ML600(BaseDevice):
         def to_pump(
             self, address: int, command_value: str = "", argument_value: str = ""
         ) -> ML600.Protocol1Command:
-            """Returns a Protocol11Command by adding to the template pump address and command arguments"""
+            """Return a Protocol11Command by adding to the template pump address and command arguments."""
             return ML600.Protocol1Command(
                 target_pump_num=address,
                 command=self.command,
@@ -56,7 +54,7 @@ class ML600(BaseDevice):
 
     @dataclass
     class Protocol1Command(Protocol1CommandTemplate):
-        """Class representing a pump command and its expected reply"""
+        """Class representing a pump command and its expected reply."""
 
         PUMP_ADDRESS = dict(enumerate(string.ascii_lowercase[:16], start=1))
         # i.e. PUMP_ADDRESS = {1: 'a', 2: 'b', 3: 'c', 4: 'd', ..., 16: 'p'}
@@ -86,7 +84,7 @@ class ML600(BaseDevice):
             return (compiled_command + "\r").encode("ascii")
 
     class HamiltonPumpIO:
-        """Setup with serial parameters, low level IO"""
+        """Setup with serial parameters, low level IO."""
 
         ACKNOWLEDGE = chr(6)
         NEGATIVE_ACKNOWLEDGE = chr(21)
@@ -100,7 +98,8 @@ class ML600(BaseDevice):
 
         def __init__(self, aio_port: aioserial.Serial):
             """
-            Initialize communication on the serial port where the pumps are located and initialize them
+            Initialize communication on the serial port where the pumps are located and initialize them.
+
             Args:
                 aio_port: aioserial.Serial() object
             """
@@ -127,7 +126,7 @@ class ML600(BaseDevice):
 
         async def initialize(self, hw_initialization: bool = True):
             """
-            Ensure connection with pump + initialize
+            Ensure connection with pump + initialize.
 
             Args:
                 hw_initialization: Whether each pump has to be initialized. Note that this might be undesired!
@@ -140,6 +139,8 @@ class ML600(BaseDevice):
 
         async def _assign_pump_address(self) -> int:
             """
+            Auto assign pump addresses.
+
             To be run on init, auto assign addresses to pumps based on their position in the daisy chain.
             A custom command syntax with no addresses is used here so read and write has been rewritten
             """
@@ -164,12 +165,12 @@ class ML600(BaseDevice):
             return int(last_pump)
 
         async def _hw_init(self):
-            """Send to all pumps the HW initialization command (i.e. homing)"""
+            """Send to all pumps the HW initialization command (i.e. homing)."""
             await self._write_async(b":XR\r")  # Broadcast: initialize + execute
             # Note: no need to consume reply here because there is none (since we are using broadcast)
 
         async def _write_async(self, command: bytes):
-            """Writes a command to the pump"""
+            """Write a command to the pump."""
             if not self._initialized:
                 raise DeviceError(
                     "Pump not initialized!\n"
@@ -179,14 +180,14 @@ class ML600(BaseDevice):
             logger.debug(f"Command {repr(command)} sent!")
 
         async def _read_reply_async(self) -> str:
-            """Reads the pump reply from serial communication"""
+            """Read the pump reply from serial communication."""
             reply_string = await self._serial.readline_async()
             logger.debug(f"Reply received: {reply_string}")
             return reply_string.decode("ascii")
 
         @staticmethod
         def parse_response(response: str) -> str:
-            """Split a received line in its components: success, reply"""
+            """Split a received line in its components: success, reply."""
             status = response[:1]
             assert status in (
                 ML600.HamiltonPumpIO.ACKNOWLEDGE,
@@ -210,8 +211,7 @@ class ML600(BaseDevice):
         async def write_and_read_reply_async(
             self, command: ML600.Protocol1Command
         ) -> str:
-            """Main HamiltonPumpIO method.
-            Sends a command to the pump, read the replies and returns it, optionally parsed"""
+            """Send a command to the pump, read the replies and returns it, optionally parsed."""
             self.reset_buffer()
             await self._write_async(command.compile())
             response = await self._read_reply_async()
@@ -240,7 +240,7 @@ class ML600(BaseDevice):
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
 
     class ValvePositionName(IntEnum):
-        """Maps valve position to the corresponding number"""
+        """Maps valve position to the corresponding number."""
 
         POSITION_1 = 1
         # POSITION_2 = 2
@@ -366,14 +366,17 @@ class ML600(BaseDevice):
         command_value="",
         argument_value="",
     ) -> str:
-        """Sends a command based on its template by adding pump address and parameters, returns reply"""
+        """Send a command based on its template by adding pump address and parameters, returns reply."""
         return await self.pump_io.write_and_read_reply_async(
             command_template.to_pump(self.address, command_value, argument_value)
         )
 
     def _validate_speed(self, speed_value: str | None) -> str:
-        """Given a speed (seconds/stroke) returns a valid value for it, and a warning if out of bounds."""
+        """
+        Validate the speed.
 
+        Given a speed (seconds/stroke) returns a valid value for it, and a warning if out of bounds.
+        """
         # Validated speeds are used as command argument, with empty string being the default for None
         if speed_value is None:
             return ""
@@ -403,7 +406,8 @@ class ML600(BaseDevice):
 
     async def initialize_pump(self, speed: str | None = None):
         """
-        Initialize both syringe and valve
+        Initialize both syringe and valve.
+
         speed: 2-3692 in seconds/stroke
         """
         init_cmd = ML600.Protocol1CommandTemplate(command="X", optional_parameter="S")
@@ -412,14 +416,15 @@ class ML600(BaseDevice):
         )
 
     async def initialize_valve(self):
-        """Initialize valve only"""
+        """Initialize valve only."""
         return await self.send_command_and_read_reply(
             ML600.Protocol1CommandTemplate(command="LX")
         )
 
     async def initialize_syringe(self, speed: str | None = None):
         """
-        Initialize syringe only
+        Initialize syringe only.
+
         speed: 2-3692 in seconds/stroke
         """
         init_syringe_cmd = ML600.Protocol1CommandTemplate(
@@ -431,7 +436,7 @@ class ML600(BaseDevice):
 
     def flowrate_to_seconds_per_stroke(self, flowrate: str):
         """
-        Convert flow rates to steps per seconds
+        Convert flow rates to steps per seconds.
 
         To determine the volume dispensed per step the total syringe volume is divided by
         48,000 steps. All Hamilton instrument syringes are designed with a 60 mm stroke
@@ -448,12 +453,12 @@ class ML600(BaseDevice):
     def _seconds_per_stroke_to_flowrate(
         self, second_per_stroke: pint.Quantity
     ) -> float:
-        """The inverse of flowrate_to_seconds_per_stroke(). Only internal use."""
+        """Converts seconds per stroke to flow rate. Only internal use."""
         flowrate = 1 / (second_per_stroke * self._steps_per_ml)
         return flowrate.to("ml/min")
 
     def _volume_to_step_position(self, volume_w_units: str) -> int:
-        """Converts a volume to a step position."""
+        """Convert a volume to a step position."""
         # noinspection PyArgumentEqualDefault
         volume = flowchem_ureg(volume_w_units)
         steps = volume * self._steps_per_ml
@@ -496,27 +501,27 @@ class ML600(BaseDevice):
         )
 
     async def stop(self):
-        """Stops and abort any running command."""
+        """Stop and abort any running command."""
         await self.pause()
         return await self.send_command_and_read_reply(
             ML600.Protocol1CommandTemplate(command="V", execute_command=False)
         )
 
     async def wait_until_idle(self):
-        """Returns when no more commands are present in the pump buffer."""
+        """Return when no more commands are present in the pump buffer."""
         logger.debug(f"ML600 pump {self.name} wait until idle...")
         while self.is_busy:
             time.sleep(0.1)
         logger.debug(f"...ML600 pump {self.name} idle now!")
 
     async def version(self) -> str:
-        """Returns the current firmware version reported by the pump."""
+        """Return the current firmware version reported by the pump."""
         return await self.send_command_and_read_reply(
             ML600.Protocol1CommandTemplate(command="U")
         )
 
     async def is_idle(self) -> bool:
-        """Checks if the pump is idle (actually check if the last command has ended)."""
+        """Check if the pump is idle (actually check if the last command has ended)."""
         return (
             await self.send_command_and_read_reply(
                 ML600.Protocol1CommandTemplate(command="F")
@@ -568,7 +573,7 @@ class ML600(BaseDevice):
         flowrate: str = "1 ml/min",
         wait: bool = False,
     ):
-        """Get volume from valve specified at given flowrate."""
+        """Get volume from valve specified at given flow rate."""
         cur_vol = flowchem_ureg(await self.get_current_volume())
         if (cur_vol + volume) > self._max_vol:
             warnings.warn(
@@ -595,7 +600,7 @@ class ML600(BaseDevice):
         flowrate: str,
         wait: bool = False,
     ):
-        """Delivers volume to valve specified at given flow rate."""
+        """Deliver volume to valve specified at given flow rate."""
         cur_vol = flowchem_ureg(await self.get_current_volume())
         if volume > cur_vol:
             warnings.warn(
@@ -628,7 +633,7 @@ class ML600(BaseDevice):
         await self.deliver(volume, to_valve, flowrate_out, wait=wait)
 
     def get_router(self, prefix: str | None = None):
-        """Creates an APIRouter for this object."""
+        """Create an APIRouter for this object."""
         router = super().get_router(prefix)
 
         router.add_api_route("/firmware-version", self.version, methods=["GET"])
@@ -667,133 +672,6 @@ class ML600(BaseDevice):
         # router.add_api_route("/transfer", self.transfer, methods=["PUT"])  # Might go in timeout
 
         return router
-
-
-# class TwoPumpAssembly(Thread):
-#     """
-#     Thread to control two pumps and have them generating a continuous flow.
-#     Note that the pumps should not be accessed directly when used in a TwoPumpAssembly!
-#
-#     Notes: this needs to start a thread owned by the instance to control the pumps.
-#     The async version of this being possibly simpler w/ tasks and callback :)
-#     """
-#
-#     def __init__(
-#         self, pump1: ML600, pump2: ML600, target_flowrate: str, init_seconds: int = 10
-#     ):
-#         super(TwoPumpAssembly, self).__init__()
-#         self._p1 = pump1
-#         self._p2 = pump2
-#         self.daemon = True
-#         self.cancelled = threading.Event()
-#         self._flowrate = ensure_quantity(target_flowrate, "ml/min")
-#         logger = logging.getLogger(__name__).getChild("TwoPumpAssembly")
-#         # How many seconds per stroke for first filling? application dependent, as fast as possible, but not too much.
-#         self.init_secs = init_seconds
-#
-#         # While in principle possible, using syringes of different volumes is discouraged, hence...
-#         assert (
-#             pump1.syringe_volume == pump2.syringe_volume
-#         ), "Syringes w/ equal volume are needed for continuous flow!"
-#
-#     async def initialize(self):
-#         """ Initialize multi-pump """
-#         await self._p1.initialize()
-#         await self._p2.initialize()
-#
-#     @property
-#     def flowrate(self):
-#         """ Returns/sets flowrate. """
-#         return self._flowrate
-#
-#     @flowrate.setter
-#     def flowrate(self, target_flowrate):
-#         if target_flowrate == 0:
-#             warnings.warn(
-#                 "Cannot set flowrate to 0! Pump stopped instead, restart previous flowrate with resume!"
-#             )
-#             self.cancel()
-#         else:
-#             self._flowrate = target_flowrate
-#
-#         # This will stop current movement, make wait_for_both_pumps() return and move on w/ updated speed
-#         self._p1.stop()
-#         self._p2.stop()
-#
-#     async def wait_for_both_pumps(self):
-#         """ Custom waiting method to wait a shorter time than normal (for better sync) """
-#         while await self._p1.is_busy() or await self._p2.is_busy():
-#             await asyncio.sleep(0.01)  # 10ms sounds reasonable to me
-#         logger.debug("Both pumps are ready!")
-#
-#     def _speed(self):
-#         speed = self._p1.flowrate_to_seconds_per_stroke(self._flowrate)
-#         logger.debug(f"Speed calculated as {speed}")
-#         return speed
-#
-#     async def execute_stroke(
-#         self, pump_full: ML600, pump_empty: ML600, speed_s_per_stroke: int
-#     ):
-#         """ Perform a cycle (1 syringe stroke) in the continuous-operation mode. See also run(). """
-#         # Logic is a bit complex here to ensure pause-less pumping
-#         # This needs the pump that withdraws to move faster than the pumping one. no way around.
-#
-#         # First start pumping with the full syringe already prepared
-#         pump_full.to_volume(0, speed=speed_s_per_stroke)
-#         logger.debug("Pumping...")
-#         # Then start refilling the empty one
-#         pump_empty.set_valve_position(pump_empty.ValvePositionName.INPUT)
-#         # And do that fast so that we finish refill before the pumping is over
-#         pump_empty.to_volume(pump_empty.syringe_volume, speed=speed_s_per_stroke - 5)
-#         pump_empty.wait_until_idle()
-#         # This allows us to set the right pump position on the pump that was empty (not full and ready for next cycle)
-#         pump_empty.set_valve_position(pump_empty.ValvePositionName.OUTPUT)
-#         pump_full.wait_until_idle()
-#
-#     def run(self):
-#         """Overloaded Thread.run, runs the update
-#         method once per every 10 milliseconds."""
-#         # First initialize with init_secs speed...
-#         self._p1.to_volume(self._p1.syringe_volume, speed=self.init_secs)
-#         self._p1.wait_until_idle()
-#         self._p1.valve_position = self._p1.ValvePositionName.OUTPUT
-#         logger.info("Pumps initialized for continuous pumping!")
-#
-#         while True:
-#             while not self.cancelled.is_set():
-#                 self.execute_stroke(
-#                     self._p1, self._p2, speed_s_per_stroke=self._speed()
-#                 )
-#                 self.execute_stroke(
-#                     self._p2, self._p1, speed_s_per_stroke=self._speed()
-#                 )
-#
-#     def cancel(self):
-#         """ Cancel continuous-pumping assembly """
-#         self.cancelled.set()
-#         self._p1.stop()
-#         self._p2.stop()
-#
-#     def resume(self):
-#         """ Resume continuous-pumping assembly """
-#         self.cancelled.clear()
-#
-#     def stop_and_return_solution_to_container(self):
-#         """ Let´s not waste our precious stock solutions ;) """
-#         self.cancel()
-#         logger.info(
-#             "Returning the solution currently loaded in the syringes back to the inlet.\n"
-#             "Make sure the container is not removed yet!"
-#         )
-#         # Valve to input
-#         self._p1.valve_position = self._p1.ValvePositionName.INPUT
-#         self._p2.valve_position = self._p2.ValvePositionName.INPUT
-#         self.wait_for_both_pumps()
-#         # Volume to 0 with the init speed (supposedly safe for this application)
-#         self._p1.to_volume(0, speed=self.init_secs)
-#         self._p2.to_volume(0, speed=self.init_secs)
-#         self.wait_for_both_pumps()
-#         logger.info("Pump flushing completed!")
 
 
 if __name__ == "__main__":

@@ -6,9 +6,7 @@ from lxml import etree
 
 
 class StatusNotification(Enum):
-    """
-    Represent the type of the status notification
-    """
+    """Represent the type of the status notification."""
 
     STARTED = 1  # <State status="Ready"> received, starting protocol
     RUNNING = 2  # All good, <Progress> received, protocol is running
@@ -21,38 +19,25 @@ class StatusNotification(Enum):
 
 def parse_status_notification(xml_message: etree.Element):
     """Parse a status notification reply."""
-    status = xml_message.find(".//StatusNotification")
-    assert status is not None, "a StatusNotification tree is needed for parsing"
+    status_notification = xml_message.find(".//StatusNotification")
+    assert status_notification is not None, "a StatusNotification tree is needed"
 
     # StatusNotification child can be <State> (w/ submsg), <Progress>, <Completed> or <Error>
-    child = status[0]
-
-    match child.tag:
-        case "State":
-            return parse_state(child)
-        case "Progress":
-            return StatusNotification.RUNNING, None
-        case "Completed":
-            return StatusNotification.COMPLETED, None
-        case "Error":
-            return StatusNotification.ERROR, None
+    match status_notification[0].tag, status_notification[0].get("status"):
+        case ["State", "Running"]:
+            status = StatusNotification.STARTED
+        case ["State", "Ready"]:
+            status = StatusNotification.FINISHING
+        case ["State", "Stopping"]:
+            status = StatusNotification.STOPPING
+        case ["Progress", None]:
+            status = StatusNotification.RUNNING
+        case ["Completed", None]:
+            status = StatusNotification.COMPLETED
+        case ["Error", None]:
+            status = StatusNotification.ERROR
         case _:
-            warnings.warn("Could not detect StatusNotification state!")
-            return StatusNotification.UNKNOWN, None
+            warnings.warn("Could not recognize StatusNotification state!")
+            status = StatusNotification.UNKNOWN
 
-
-def parse_state(xml_message: etree.Element):
-    """Parse state message"""
-    match status := xml_message.get("status"):
-        case "Running":
-            status_type = StatusNotification.STARTED
-        case "Ready":
-            status_type = StatusNotification.FINISHING
-        case "Stopping":
-            status_type = StatusNotification.STOPPING
-        case _:
-            status_type = StatusNotification.UNKNOWN
-            warnings.warn(f"Unidentified notification status: {status}")
-
-    # dataFolder only present at experiment end, generally None
-    return status_type, xml_message.get("dataFolder")
+    return status, status_notification[0].get("dataFolder")

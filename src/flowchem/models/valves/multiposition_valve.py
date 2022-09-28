@@ -11,6 +11,7 @@ class MultiPositionValve(BaseValve, ABC):
 
     def __init__(self, port_count: int = 16, default_position: int = 1, name=None):
         """
+        Abstract base class for multi-position valves.
 
         Args:
             port_count (int): number of available positions, automatically create port names based on this.

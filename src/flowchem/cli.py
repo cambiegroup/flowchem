@@ -1,4 +1,4 @@
-""" Shell script executor """
+"""Shell script executor."""
 from pathlib import Path
 
 import rich_click as click
@@ -20,9 +20,11 @@ from flowchem.server.api_server import create_server_from_file
 @click.version_option()
 @click.command()
 def main(device_config_file, logfile, host, port):
-    """Flowchem main program.
+    """
+    Flowchem main program.
 
-    Parse DEVICE_CONFIG_FILE and starts a server exposing the devices via RESTful API."""
+    Parse DEVICE_CONFIG_FILE and starts a server exposing the devices via RESTful API.
+    """
     print(f"Starting flowchem v. {__version__}!")
     if logfile:
         logger.add(Path(logfile))

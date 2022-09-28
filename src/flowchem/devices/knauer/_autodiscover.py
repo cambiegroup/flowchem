@@ -1,4 +1,4 @@
-""" Autodiscover Knauer devices on network """
+"""Autodiscover Knauer devices on network."""
 import asyncio
 import queue
 import socket
@@ -17,7 +17,7 @@ Address = tuple[str, int]
 
 
 class BroadcastProtocol(asyncio.DatagramProtocol):
-    """From https://gist.github.com/yluthu/4f785d4546057b49b56c"""
+    """See `https://gist.github.com/yluthu/4f785d4546057b49b56c`."""
 
     def __init__(self, target: Address, response_queue: queue.Queue):
         self.target = target
@@ -25,19 +25,19 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
         self._queue = response_queue
 
     def connection_made(self, transport: asyncio.transports.DatagramTransport):  # type: ignore
-        """Called upon connection."""
+        """Send the magic broadcast package for autodiscovery."""
         sock = transport.get_extra_info("socket")  # type: socket.socket
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)  # sets to broadcast
         transport.sendto(b"\x00\x01\x00\xf6", self.target)
 
     def datagram_received(self, data: bytes | str, addr: Address):
-        """Called on data received"""
+        """Add received data to queue."""
         logger.trace(f"Received data from {addr}")
         self._queue.put(addr[0])
 
 
 async def get_device_type(ip_address: str) -> str:
-    """Returns either 'Pump', 'Valve' or 'Unknown'"""
+    """Return either 'Pump', 'Valve' or 'Unknown'."""
     fut = asyncio.open_connection(host=ip_address, port=10001)
     try:
         reader, writer = await asyncio.wait_for(fut, timeout=3)
@@ -68,16 +68,15 @@ async def get_device_type(ip_address: str) -> str:
 def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     """
     Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
+
     Note that the MAC is the key here as it is the parameter used in configuration files.
     Knauer devices only support DHCP so static IPs are not an option.
-
 
     Args:
         source_ip: source IP for autodiscover (only relevant if multiple network interfaces are available!)
     Returns:
         List of tuples (IP, MAC, device_type), one per device replying to autodiscover
     """
-
     # Define source IP resolving local hostname.
     if not source_ip:
         machine_ips = [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
@@ -119,7 +118,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
         except queue.Empty:
             break
 
-    device_info = dict()
+    device_info = {}
     for device_ip in device_list:
         # MAC address
         mac = get_mac_address(ip=device_ip)
@@ -130,6 +129,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
 
 @click.command()
 def main():
+    """Execute autodiscovery. This is the entry point of the `knauer-finder` CLI command."""
     # This is a bug of asyncio on Windows :|
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

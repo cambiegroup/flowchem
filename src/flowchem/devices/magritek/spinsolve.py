@@ -35,7 +35,7 @@ class Spinsolve(AnalyticalDevice):
         sample_name: str | None = "Unnamed automated experiment",
         remote_to_local_mapping: list[str] | None = None,
     ):
-        """Controls a Spinsolve instance via HTTP XML API."""
+        """Control a Spinsolve instance via HTTP XML API."""
         super().__init__(name)
 
         self.host, self.port = host, port
@@ -195,13 +195,11 @@ class Spinsolve(AnalyticalDevice):
         """Set user data. The items provide will appear in `acqu.par`."""
         user_data = set_attribute("UserData")
         for key, value in data.items():
-            etree.SubElement(
-                user_data.find(".//UserData"), "Data", dict(key=key, value=value)
-            )
+            etree.SubElement(user_data.find(".//UserData"), "Data", {key: value})
         await self.send_message(user_data)
 
     async def _transmit(self, message: bytes):
-        """Sends the message to the spectrometer."""
+        """Send the message to the spectrometer."""
         # This assertion is here for mypy ;)
         assert isinstance(
             self._io_writer, asyncio.StreamWriter
@@ -242,9 +240,11 @@ class Spinsolve(AnalyticalDevice):
     async def run_protocol(
         self, name, background_tasks: BackgroundTasks, options=None
     ) -> int:
-        """Run a protocol.
+        """
+        Run a protocol.
 
-        Return the ID of the protocol (needed to get results via `get_result_folder`). -1 for errors."""
+        Return the ID of the protocol (needed to get results via `get_result_folder`). -1 for errors.
+        """
         # All protocol names are UPPERCASE, so force upper here to avoid case issues
         name = name.upper()
         if name not in self.protocols:
@@ -304,7 +304,7 @@ class Spinsolve(AnalyticalDevice):
         self._protocol_running = False
 
     async def is_protocol_running(self) -> bool:
-        """True if a protocol is currently running, otherwise False."""
+        """Return True if a protocol is running, otherwise False."""
         return self._protocol_running
 
     async def get_result_folder(self, result_id: int | None = None) -> str:
@@ -366,7 +366,6 @@ class Spinsolve(AnalyticalDevice):
 
     def get_router(self, prefix: str | None = None):
         """Spinsolve-specific route."""
-
         router = super().get_router(prefix)
 
         router.add_api_route("/solvent", self.get_solvent, methods=["GET"])
@@ -396,6 +395,7 @@ class Spinsolve(AnalyticalDevice):
 if __name__ == "__main__":
 
     async def main():
+        """Test connection."""
         nmr: Spinsolve = Spinsolve()
         await nmr.initialize()
         s = await nmr.get_solvent()

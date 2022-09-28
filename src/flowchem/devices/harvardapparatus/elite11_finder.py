@@ -1,6 +1,4 @@
-"""
-This module is used to discover the serial address of any ML600 connected to the PC.
-"""
+"""This module is used to discover the serial address of any ML600 connected to the PC."""
 import asyncio
 import textwrap
 

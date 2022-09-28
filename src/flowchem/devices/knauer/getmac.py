@@ -111,7 +111,6 @@ def get_mac_address(
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error.
     """
-
     if (hostname and hostname == "localhost") or (ip and ip == "127.0.0.1"):
         return "00:00:00:00:00:00"
 
@@ -515,7 +514,9 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
 def _try_methods(methods, to_find=None):
     # type: (list, Optional[str]) -> Optional[str]
-    """Runs the methods specified by _hunt_for_mac().
+    """
+    Runs the methods specified by _hunt_for_mac().
+
     We try every method and see if it returned a MAC address. If it returns
     None or raises an exception, we continue and try the next method.
     """

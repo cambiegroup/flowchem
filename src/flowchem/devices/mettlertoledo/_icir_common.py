@@ -1,4 +1,4 @@
-""" Common iCIR code. """
+"""Common iCIR code."""
 import warnings
 from pathlib import Path
 
@@ -8,6 +8,7 @@ from pydantic import BaseModel
 class IRSpectrum(BaseModel):
     """
     IR spectrum class.
+
     Consider rampy for advance features (baseline fit, etc.)
     See e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb
     """
@@ -34,7 +35,7 @@ class ProbeInfo(BaseModel):
 
 # noinspection PyPep8Naming
 class iCIR_spectrometer:
-    """Common code between sync and async implementations"""
+    """Common code between sync and async implementations."""
 
     iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
     _supported_versions = {"7.1.91.0"}
@@ -53,7 +54,7 @@ class iCIR_spectrometer:
 
     @staticmethod
     def _normalize_template_name(template_name) -> str:
-        """Adds .iCIRTemplate extension from string if not already present"""
+        """Add `.iCIRTemplate` extension to string if not already present."""
         return (
             template_name
             if template_name.endswith(".iCIRTemplate")
@@ -62,7 +63,9 @@ class iCIR_spectrometer:
 
     @staticmethod
     def is_template_name_valid(template_name: str) -> bool:
-        """
+        r"""
+        Check template name validity. For the template folder location read below.
+
         From Mettler Toledo docs:
         You can use the Start method to create and run a new experiment in one of the iC analytical applications
         (i.e. iC IR, iC FBRM, iC Vision, iC Raman). Note that you must provide the name of an existing experiment
@@ -70,24 +73,24 @@ class iCIR_spectrometer:
         The template file must be located in a specific folder on the iC OPC UA Server computer.
         This is usually C:\\ProgramData\\METTLER TOLEDO\\iC OPC UA Server\\1.2\\Templates.
         """
-
-        template_directory = Path(
+        template_dir = Path(
             r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
         )
-        if not template_directory.exists() or not template_directory.is_dir():
+        if not template_dir.exists() or not template_dir.is_dir():
             warnings.warn("iCIR template folder not found on the local PC!")
             return False
 
         # Ensures the name has been provided with no extension (common mistake)
         template_name = iCIR_spectrometer._normalize_template_name(template_name)
-        for existing_template in template_directory.glob("*.iCIRTemplate"):
-            if existing_template.name == template_name:
-                return True
-        return False
+
+        return any(
+            existing_tmpl.name == template_name
+            for existing_tmpl in template_dir.glob("*.iCIRTemplate")
+        )
 
     @staticmethod
     def parse_probe_info(probe_info_reply: str) -> ProbeInfo:
-        """Convert the device reply into a ProbeInfo dictionary
+        """Convert the device reply into a ProbeInfo dictionary.
 
         Example probe_info_reply reply is:
         'FlowIR; SN: 2989; Detector: DTGS; Apodization: HappGenzel; IP Address: 192.168.1.2;

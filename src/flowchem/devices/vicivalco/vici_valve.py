@@ -1,6 +1,4 @@
-"""
-This module is used to control Vici Valco Universal Electronic Actuators.
-"""
+"""This module is used to control Vici Valco Universal Electronic Actuators."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,10 +13,7 @@ from flowchem.units import flowchem_ureg
 
 @dataclass
 class ViciCommand:
-    """
-    This class represent a command.
-    Its bytes() method is transmitted to the valve.
-    """
+    """This class represent a command. Its bytes() method is transmitted to the valve."""
 
     command: str
     valve_id: int | None = None
@@ -26,7 +21,7 @@ class ViciCommand:
     reply_lines: int = 1
 
     def __str__(self):
-        """String representation of the command used for logs."""
+        """Provide a string representation of the command used, nice for logs."""
         address = str(self.valve_id) if self.valve_id is not None else ""
         return f"{address} {self.command}{self.value}"
 
@@ -36,7 +31,7 @@ class ViciCommand:
 
 
 class ViciValcoValveIO:
-    """Setup with serial parameters, low level IO"""
+    """Setup with serial parameters, low level IO."""
 
     DEFAULT_CONFIG = {
         "timeout": 0.5,
@@ -48,11 +43,11 @@ class ViciValcoValveIO:
 
     def __init__(self, aio_port: aioserial.Serial):
         """
-        Initialize communication on the serial port where the valves are located and initialize them
+        Initialize communication on the serial port where the valves are located and initialize them.
+
         Args:
             aio_port: aioserial.Serial() object
         """
-
         self._serial = aio_port
 
     @classmethod
@@ -71,7 +66,7 @@ class ViciValcoValveIO:
         return cls(serial_object)
 
     async def _read_reply(self, lines: int) -> str:
-        """Reads the valve reply from serial communication"""
+        """Read the valve reply from serial communication."""
         reply_string = ""
         for _ in range(lines):
             line = await self._serial.readline_async()
@@ -87,10 +82,7 @@ class ViciValcoValveIO:
         return reply_string.rstrip()
 
     async def write_and_read_reply(self, command: ViciCommand) -> str:
-        """
-        Main ViciValcoValveIO method.
-        Sends a command to the valve, read the replies and returns it, optionally parsed.
-        """
+        """Write command to valve and read reply."""
         # Make sure input buffer is empty
         self._serial.reset_input_buffer()
 
@@ -105,7 +97,7 @@ class ViciValcoValveIO:
 
     @property
     def name(self) -> str:
-        """This is used to provide a nice-looking default name to valve based on its serial connection."""
+        """Provide a nice-looking default name to valve based on its serial connection."""
         try:
             return self._serial.name
         except AttributeError:
@@ -113,9 +105,7 @@ class ViciValcoValveIO:
 
 
 class ViciValve(InjectionValve):
-    """
-    ViciValco injection valves.
-    """
+    """ViciValco injection valves."""
 
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
     _io_instances: set[ViciValcoValveIO] = set()
@@ -135,18 +125,20 @@ class ViciValve(InjectionValve):
         name: str = None,
     ):
         """
-        Default constructor, needs an ViciValcoValveIO object. See from_config() class method for config-based init.
+        Create instance from an existing ViciValcoValveIO object. This allows dependency injection.
+
+        See from_config() class method for config-based init.
+
         Args:
             valve_io: An ViciValcoValveIO w/ serial connection to the daisy chain w/ target valve.
             address: number of valve in array, 1 for first one, auto-assigned on init based on position.
             name: 'cause naming stuff is important.
         """
-
         self.valve_io = valve_io
         ViciValve._io_instances.add(self.valve_io)
 
         # The valve name is used for logs and error messages.
-        self.name = f"Valve {self.valve_io.name}:{address}" if name is None else name
+        self.name = name if name else f"Valve {self.valve_io.name}:{address}"
         super().__init__(loop_volume=loop_volume, name=name)
 
         self.address = address
@@ -160,7 +152,7 @@ class ViciValve(InjectionValve):
         name: str = None,
         **serial_kwargs,
     ):
-        """This class method is used to create instances via config file by the server for HTTP interface."""
+        """Create instances via provided parameters to enable programmatic instantiation."""
         existing_io = [v for v in ViciValve._io_instances if v._serial.port == port]
 
         # If no existing serial object are available for the port provided, create a new one
@@ -186,12 +178,12 @@ class ViciValve(InjectionValve):
         logger.info(f"Connected to {self.name} - FW ver.: {firmware_version}!")
 
     async def learn_positions(self) -> None:
-        """Initialize valve only, there is no reply -> reply_lines = 0"""
+        """Initialize valve only, there is no reply -> reply_lines = 0."""
         learn = ViciCommand(valve_id=self.address, command="LRN")
         await self.valve_io.write_and_read_reply(learn)
 
     async def home(self) -> None:
-        """Initialize valve only: Move to Home position"""
+        """Initialize valve only: Move to Home position."""
         home = ViciCommand(valve_id=self.address, command="HM")
         await self.valve_io.write_and_read_reply(home)
 
@@ -199,7 +191,7 @@ class ViciValve(InjectionValve):
         await self.get_position()
 
     async def version(self) -> str:
-        """Returns the current firmware version reported by the valve."""
+        """Return the current firmware version reported by the valve."""
         version = ViciCommand(valve_id=self.address, command="VR", reply_lines=5)
         return await self.valve_io.write_and_read_reply(version)
 
@@ -212,7 +204,6 @@ class ViciValve(InjectionValve):
 
     async def set_position(self, position: str | str):
         """Set valve position. Switches really quick and doesn't reply, so waiting does not make sense."""
-
         # FIXME check position validity
         valve_by_name_cw = ViciCommand(
             valve_id=self.address, command="GO", value=position, reply_lines=0
@@ -221,7 +212,6 @@ class ViciValve(InjectionValve):
 
     async def timed_toggle(self, injection_time: str):
         """Switch valve to a position for a given time."""
-
         delay = flowchem_ureg(injection_time).to("ms")
         set_delay = ViciCommand(
             valve_id=self.address, command="DT", value=delay.magnitude
@@ -232,7 +222,7 @@ class ViciValve(InjectionValve):
         await self.valve_io.write_and_read_reply(time_toggle)
 
     def get_router(self, prefix: str | None = None):
-        """Creates an APIRouter for this object."""
+        """Create an APIRouter for this object."""
         from fastapi import APIRouter
 
         router = APIRouter()

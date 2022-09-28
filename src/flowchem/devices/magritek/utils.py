@@ -1,4 +1,4 @@
-""" Various utility functions for the Magritek device. """
+"""Various utility functions for the Magritek device."""
 import ctypes
 from collections.abc import Callable
 from pathlib import Path
@@ -34,9 +34,7 @@ def create_folder_mapper(
     """
 
     def folder_mapper(path_to_be_translated: Path | str):
-        """
-        Given a remote path converts it to the corresponding local location, or None + warning if not possible.
-        """
+        """Convert remote path to the corresponding local location, or None + warning if not possible."""
         # Ensures it is a Path object
         if isinstance(path_to_be_translated, str):
             path_to_be_translated = Path(path_to_be_translated)

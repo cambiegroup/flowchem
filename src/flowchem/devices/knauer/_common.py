@@ -44,7 +44,7 @@ class KnauerEthernetDevice:
         self.eol = b""
 
     def _ip_from_mac(self, mac_address: str) -> str:
-        """Gets IP from MAC."""
+        """Get IP from MAC."""
         # Autodiscover IP from MAC address
         available_devices = autodiscover_knauer()
         # IP if found, None otherwise
@@ -63,7 +63,7 @@ class KnauerEthernetDevice:
         future = asyncio.open_connection(host=self.ip_address, port=10001)
         try:
             self._reader, self._writer = await asyncio.wait_for(future, timeout=3)
-        except (ConnectionError, OSError) as connection_error:
+        except OSError as connection_error:
             logger.exception(connection_error)
             raise InvalidConfiguration(
                 f"Cannot open connection with device {self.__class__.__name__} at IP={self.ip_address}"

@@ -1,10 +1,9 @@
-""" Parse a device config file. """
+"""Parse a device config file."""
 import inspect
 import sys
 from pathlib import Path
 
 from flowchem.devices.find_device_type import autodiscover_device_classes
-
 
 if sys.version_info >= (3, 11):
     # noinspection PyUnresolvedReferences
@@ -18,9 +17,11 @@ from loguru import logger
 
 
 def load_configuration_file(file_path: Path) -> dict:
-    """Read the TOML configuration file and returns it as a dict.
+    """
+    Read the TOML configuration file and returns it as a dict.
 
-    Extensive exception handling due to the error-prone human editing needed in the configuration file."""
+    Extensive exception handling due to the error-prone human editing needed in the configuration file.
+    """
     with file_path.open("rb") as stream:
         try:
             return tomllib.load(stream)
@@ -33,7 +34,6 @@ def load_configuration_file(file_path: Path) -> dict:
 
 def parse_config_file(file_path: Path | str) -> dict:
     """Parse a config file."""
-
     file_path = Path(file_path)
     assert (
         file_path.exists() and file_path.is_file()
@@ -59,9 +59,11 @@ def parse_config(config: dict) -> dict:
 
 
 def parse_device(dev_settings, device_object_mapper) -> BaseDevice:
-    """Parse device config and return a device object.
+    """
+    Parse device config and return a device object.
 
-    Exception handling to provide more specific and diagnostic messages upon errors in the configuration file."""
+    Exception handling to provide more specific and diagnostic messages upon errors in the configuration file.
+    """
     device_name, device_config = dev_settings
 
     # Get device class
@@ -100,9 +102,8 @@ def parse_device(dev_settings, device_object_mapper) -> BaseDevice:
 def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
     """Give helpful debugging text on configuration errors."""
     # First check if we have provided an argument that is not supported.
-    if (
-        arg_spec.varkw is None
-    ):  # Clearly no **kwargs should be defined in the signature otherwise all kwargs are ok
+    # Clearly no **kwargs should be defined in the signature otherwise all kwargs are ok
+    if arg_spec.varkw is None:
         invalid_parameters = list(set(called_with.keys()).difference(arg_spec.args))
         if invalid_parameters:
             logger.error(

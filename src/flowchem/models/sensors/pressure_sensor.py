@@ -1,3 +1,4 @@
+"""Pressure sensor."""
 from abc import ABC
 
 from fastapi import APIRouter
@@ -9,6 +10,7 @@ class PressureSensor(Sensor, ABC):
     """A pressure sensor."""
 
     def __init__(self, name: str | None = None):
+        """Just call the superclass constructor."""
         super().__init__(name=name)
 
     async def read_pressure(self, units: str | None = "bar"):

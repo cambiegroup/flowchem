@@ -11,9 +11,7 @@ from flowchem.models.valves.multiposition_valve import MultiPositionValve
 
 
 class KnauerValveHeads(Enum):
-    """
-    Four different valve types can be used. 6port2position valve, and 6, 12, 16 multi-position valves
-    """
+    """Four different valve types can be used. 6port2position valve, and 6, 12, 16 multi-position valves."""
 
     SIX_PORT_TWO_POSITION = "LI"
     SIX_PORT_SIX_POSITION = "6"
@@ -48,8 +46,7 @@ class KnauerValve(KnauerEthernetDevice):
 
     @staticmethod
     def handle_errors(reply: str):
-        """True if there are errors, False otherwise. Warns for errors."""
-
+        """Return True if there are errors, False otherwise. Warns for errors."""
         if not reply.startswith("E"):
             return
 
@@ -89,7 +86,7 @@ class KnauerValve(KnauerEthernetDevice):
 
     async def _transmit_and_parse_reply(self, message: str) -> str:
         """
-        Sends command, receives reply and parse it.
+        Send command, receive reply and parse it.
 
         Args:
             message (str): command to be sent
@@ -121,7 +118,7 @@ class KnauerValve(KnauerEthernetDevice):
 
     async def get_valve_type(self):
         """
-        Gets valve type, if returned value is not supported throws an error.
+        Get valve type, if returned value is not supported throws an error.
 
         Note that this method is called during initialize(), therefore it is in line
         with the general philosophy of the module to 'fail early' upon init and avoiding
@@ -151,7 +148,7 @@ class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
     _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
     async def initialize(self):
-        """Ensure valve type"""
+        """Ensure valve type."""
         await super().initialize()
         assert self.valve_type == KnauerValveHeads.SIX_PORT_TWO_POSITION
 
@@ -180,7 +177,7 @@ class Knauer6Port6PositionValve(KnauerValve, MultiPositionValve):
         )
 
     async def initialize(self):
-        """Ensure valve type"""
+        """Ensure valve type."""
         await super().initialize()
         assert self.valve_type == KnauerValveHeads.SIX_PORT_SIX_POSITION
 
@@ -231,7 +228,7 @@ if __name__ == "__main__":
     v = Knauer6Port6PositionValve(ip_address="192.168.1.176")
 
     async def main(valve: KnauerValve):
-        """test function."""
+        """Test function."""
         await valve.initialize()
         await valve.set_position("I")
         print(await valve.get_position())

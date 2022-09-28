@@ -1,3 +1,4 @@
+"""Temperature control, either for heating or cooling."""
 from abc import ABC
 
 from flowchem.models.base_device import BaseDevice
@@ -7,6 +8,7 @@ class TemperatureControl(BaseDevice, ABC):
     """A generic temperature controller."""
 
     def __init__(self, name: str | None = None):
+        """Just call superclass constructor."""
         super().__init__(name)
 
     def set_temperature(self, temp: str):
@@ -14,26 +16,27 @@ class TemperatureControl(BaseDevice, ABC):
         raise NotImplementedError
 
     def get_temperature(self) -> float:
-        """Returns temperature in Celsius."""
+        """Return temperature in Celsius."""
         raise NotImplementedError
 
     def target_reached(self) -> bool:
-        """Returns True if the set temperature target has been reached."""
+        """Return True if the set temperature target has been reached."""
         raise NotImplementedError
 
     def temperature_limits(self) -> dict[str, float]:
-        """Returns a dict with `min` and `max` temperature in Celsius."""
+        """Return a dict with `min` and `max` temperature in Celsius."""
         raise NotImplementedError
 
     def power_on(self) -> dict[str, float]:
-        """Turns on temperature control."""
+        """Turn on temperature control."""
         raise NotImplementedError
 
     def power_off(self) -> dict[str, float]:
-        """Turns off temperature control."""
+        """Turn off temperature control."""
         raise NotImplementedError
 
     def get_router(self, prefix: str | None = None):
+        """Return device APIRouter."""
         router = super().get_router(prefix)
 
         router.add_api_route("/temperature", self.set_temperature, methods=["PUT"])

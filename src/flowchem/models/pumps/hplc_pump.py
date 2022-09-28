@@ -1,3 +1,4 @@
+"""HPLC pump."""
 from abc import ABC
 
 from flowchem.models.pumps.base_pump import BasePump
@@ -16,6 +17,7 @@ class HplcPump(BasePump, ABC):
     """
 
     def __init__(self, *args, **kwargs):
+        """Add ontology class and call superclass constructor."""
         super().__init__(*args, **kwargs)
         # HPLC isocratic pump
         self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0000556")

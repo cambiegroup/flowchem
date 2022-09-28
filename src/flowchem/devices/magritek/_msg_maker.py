@@ -15,9 +15,11 @@ def create_message(sub_element_name, attributes=None):
 
 
 def set_attribute(name, value="") -> etree.Element:
-    """Creates a Set message.
+    """
+    Create a Set <Message>.
 
-    Used for name = {Solvent | Sample} + indirectly by UserData and DataFolder."""
+    Used for name = {Solvent | Sample} + indirectly by UserData and DataFolder.
+    """
     base = create_message("Set")
     attribute = etree.SubElement(base.find("./Set"), name)
     attribute.text = value
@@ -25,9 +27,11 @@ def set_attribute(name, value="") -> etree.Element:
 
 
 def get_request(name) -> etree.Element:
-    """Creates a Get message.
+    """
+    Create a Get <Message> element.
 
-    Used for name = {Solvent | Sample | UserData} + indirectly by UserData and DataFolder."""
+    Used for name = {Solvent | Sample | UserData} + indirectly by UserData and DataFolder.
+    """
     base = create_message("GetRequest")
     etree.SubElement(base.find("./GetRequest"), name)
     return base

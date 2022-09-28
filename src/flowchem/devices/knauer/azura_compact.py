@@ -89,10 +89,9 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         self._pressure_min = min_pressure
 
         self.rate = flowchem_ureg.parse_expression("0 ml/min")
-        self._base_state = dict(rate="0 mL/min")
 
     async def initialize(self):
-        """Initialize connection"""
+        """Initialize connection."""
         # Here the magic happens...
         await super().initialize()
 
@@ -110,8 +109,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
 
     @staticmethod
     def error_present(reply: str) -> bool:
-        """True if there are errors, False otherwise. Warns for errors."""
-
+        """Return True if there are errors, False otherwise. Warns for errors."""
         # ERRORS: is the expected answer to read_errors()
         if not reply.startswith("ERROR") or reply.startswith("ERRORS:"):
             return False
@@ -129,8 +127,9 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
 
     async def _transmit_and_parse_reply(self, message: str) -> str:
         """
-        sends command and receives reply, deals with all communication based stuff and checks
-        that the valve is of expected type
+        Send command and receive reply.
+
+        Deals with all communication based stuff and checks that the valve is of expected type.
         :param message:
         :return: reply: str
         """
@@ -193,7 +192,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
 
     @property
     def _headtype(self):
-        """Internal state reflecting pump one, use set_headtype() to change in pump!"""
+        """Return internal head type. Use `set_headtype()` to change in pump."""
         return self.__headtype
 
     @_headtype.setter
@@ -206,7 +205,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
             self.max_allowed_pressure, self.max_allowed_flow = 150, 50000
 
     async def get_headtype(self) -> AzuraPumpHeads:
-        """Returns pump's head type."""
+        """Return pump's head type."""
         head_type_id = await self.create_and_send_command(HEADTYPE)
         try:
             headtype = AzuraPumpHeads(int(head_type_id))
@@ -222,21 +221,21 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         return headtype
 
     async def set_headtype(self, head_type: AzuraPumpHeads):
-        """Sets pump's head type."""
+        """Set pump's head type."""
         await self.create_and_send_command(HEADTYPE, setpoint=head_type.value)
         # Update internal property (changes max flowrate etc.)
         self._headtype = head_type
         logger.debug(f"Head type set to {head_type}")
 
     async def get_flow_rate(self) -> float:
-        """Gets flow rate in ml/min."""
+        """Get flow rate in ml/min."""
         flow_value = await self.create_and_send_command(FLOW)
         flowrate = flowchem_ureg(f"{flow_value} ul/min")
         logger.debug(f"Current flow rate is {flowrate}")
         return flowrate.m_as("ml/min")
 
     async def set_flow_rate(self, rate: str):
-        """Sets flow rate.
+        """Set flow rate.
 
         Args:
             rate (str): value with units
@@ -253,15 +252,13 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.info(f"Flow set to {rate}")
 
     async def get_minimum_pressure(self):
-        """Gets minimum pressure. The pump stops if the measured P is lower than this."""
-
+        """Get minimum pressure. The pump stops if the measured P is lower than this."""
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
         p_min = await self.create_and_send_command(command) * flowchem_ureg.bar
         return str(p_min)
 
     async def set_minimum_pressure(self, value: str = "0 bar"):
-        """Sets minimum pressure. The pump stops if the measured P is lower than this."""
-
+        """Set minimum pressure. The pump stops if the measured P is lower than this."""
         pressure = flowchem_ureg(value)
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
         await self.create_and_send_command(
@@ -272,15 +269,13 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.info(f"Minimum pressure set to {pressure}")
 
     async def get_maximum_pressure(self) -> str:
-        """Gets maximum pressure. The pumps stop if the measured P is higher than this."""
-
+        """Get maximum pressure. The pumps stop if the measured P is higher than this."""
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         p_max = await self.create_and_send_command(command) * flowchem_ureg.bar
         return str(p_max)
 
     async def set_maximum_pressure(self, value: str):
-        """Sets maximum pressure. The pumps stop if the measured P is higher than this."""
-
+        """Set maximum pressure. The pumps stop if the measured P is higher than this."""
         pressure = flowchem_ureg(value)
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         await self.create_and_send_command(
@@ -291,7 +286,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.info(f"Maximum pressure set to {pressure}")
 
     async def set_minimum_motor_current(self, setpoint=None):
-        """Sets minimum motor current."""
+        """Set minimum motor current."""
         command = IMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else IMIN50
 
         reply = await self.create_and_send_command(
@@ -300,15 +295,13 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.debug(f"Minimum motor current set to {setpoint}, returns {reply}")
 
     async def is_start_in_required(self):
-        """
-        Check state of START IN. See require_start_in() for details.
-        """
+        """Check state of START IN. See require_start_in() for details."""
         runlevel = await self.create_and_send_command(STARTLEVEL)
         return not bool(int(runlevel))
 
     async def require_start_in(self, value: bool = True):
         """
-        Configures START IN. If required, the pump starts only if the STARTIN pin is shortened to GND.
+        Configure START IN. If required, the pump starts only if the STARTIN pin is shortened to GND.
 
         True = Pump starts the flow at short circuit contact only. (Start In <> Ground). [0]
         False = Pump starts the flow without a short circuit contact. (Start In <> Ground). [1]
@@ -318,13 +311,13 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.debug(f"Start in required set to {value}")
 
     async def is_autostart_enabled(self):
-        """Returns the default behaviour of the pump upon power on."""
+        """Return the default behaviour of the pump upon power on."""
         reply = await self.create_and_send_command(STARTMODE)
         return bool(int(reply))
 
     async def enable_autostart(self, value: bool = True):
         """
-        Sets the default behaviour of the pump upon power on.
+        Set the default behaviour of the pump upon power on.
 
         :param value: False: pause pump after switch on. True: start pumping with previous flow rate at startup
         :return: device message
@@ -333,13 +326,13 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.debug(f"Autostart set to {value}")
 
     async def get_adjusting_factor(self):
-        """Gets the adjust parameter. Not clear what it is."""
+        """Get the adjust parameter. Not clear what it is."""
         command = ADJ10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else ADJ50
         reply = await self.create_and_send_command(command)
         return int(reply)
 
     async def set_adjusting_factor(self, setpoint: int = None):
-        """Sets the adjust parameter. Not clear what it is."""
+        """Set the adjust parameter. Not clear what it is."""
         command = ADJ10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else ADJ50
         reply = await self.create_and_send_command(
             command, setpoint=setpoint, setpoint_range=(0, 2001)
@@ -347,12 +340,12 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.debug(f"Adjusting factor of set to {setpoint}, returns {reply}")
 
     async def get_correction_factor(self):
-        """Gets the correction factor. Not clear what it is."""
+        """Get the correction factor. Not clear what it is."""
         command = CORR10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else CORR50
         return int(await self.create_and_send_command(command))
 
     async def set_correction_factor(self, setpoint=None):
-        """Sets the correction factor. Not clear what it is."""
+        """Set the correction factor. Not clear what it is."""
         command = CORR10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else CORR50
         reply = await self.create_and_send_command(
             command, setpoint=setpoint, setpoint_range=(0, 301)
@@ -360,7 +353,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
     async def read_pressure(self, units: str | None = "bar") -> float:
-        """If the pump has a pressure sensor, returns pressure. Read-only property of course."""
+        """Return pressure if the pump has a pressure sensor."""
         pressure = await self._transmit_and_parse_reply(PRESSURE) * flowchem_ureg.bar
         logger.debug(f"Pressure measured = {pressure}")
         return pressure.m_as(units)
@@ -372,14 +365,13 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         return float(ext_flow)
 
     async def read_errors(self) -> list[int]:
-        """Returns the last 5 errors."""
+        """Return the last 5 errors."""
         last_5_errors = await self.create_and_send_command(ERRORS)
         logger.debug(f"Error reading returns {last_5_errors}")
-        parsed_errors = [int(err_code) for err_code in last_5_errors.split(",")]
-        return parsed_errors
+        return [int(err_code) for err_code in last_5_errors.split(",")]
 
     async def read_motor_current(self):
-        """Returns motor current, relative in percent 0-100."""
+        """Return motor current, relative in percent 0-100."""
         current_percent = int(await self.create_and_send_command(IMOTOR))
         logger.debug(f"Motor current reading returns {current_percent} %")
         return current_percent
@@ -391,7 +383,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.info("Pump started!")
 
     async def stop(self):
-        """Stops flow."""
+        """Stop flow."""
         await self._transmit_and_parse_reply(PUMP_OFF)
         self._running = False
         logger.info("Pump stopped")
@@ -401,7 +393,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         return self._running
 
     async def set_local(self, state: bool = True):
-        """Relinquish remote control"""
+        """Relinquish remote control."""
         await self.create_and_send_command(LOCAL, setpoint=int(state))
         logger.debug(f"Local control set to {state}")
 
@@ -413,13 +405,8 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
             await self.create_and_send_command(LOCAL, setpoint=1)
         logger.debug(f"Remote control set to {state}")
 
-    async def set_errio(self, param: bool):
-        """no idea what this exactly does..."""
-        await self.create_and_send_command(ERRIO, setpoint=int(param))
-        logger.debug(f"Set errio {param}")
-
     async def is_analog_control_enabled(self):
-        """Returns the status of the external flow control via analog input."""
+        """Return the status of the external flow control via analog input."""
         reply = await self.create_and_send_command(EXTCONTR)
         return bool(int(reply))
 
@@ -433,7 +420,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         logger.debug(f"External control set to {value}")
 
     def get_router(self, prefix: str | None = None):
-        """Creates an APIRouter for this object."""
+        """Create an APIRouter for this object."""
         # Basic pump methods
         router = super().get_router()
         router.add_api_route("/remote-control", self.remote_control, methods=["PUT"])
@@ -457,7 +444,7 @@ if __name__ == "__main__":
     p = AzuraCompactPump(ip_address="192.168.10.113")
 
     async def main(pump: AzuraCompactPump):
-        """Test function"""
+        """Test function."""
         await pump.initialize()
         await pump.set_flow_rate("0.1 ml/min")
         await pump.infuse()

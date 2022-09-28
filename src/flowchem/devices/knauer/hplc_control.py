@@ -67,16 +67,7 @@ class ClarityInterface(BaseDevice):
     # bit displaced convenience function to switch on the lamps of hplc detector.
     # TODO remove if published
     def switch_lamp_on(self, address="192.168.10.111", port=10001):
-        """
-        Has to be performed BEFORE starting clarity, otherwise sockets get blocked
-        Args:
-            address:
-            port:
-
-        Returns:
-
-        """
-
+        """Has to be performed BEFORE starting clarity, otherwise sockets get blocked."""
         # send the  respective two commands and check return. Send to socket
         message_sender = MessageSender(address, port)
         message_sender.open_socket_and_send(Lamp_Command.deut_lamp_on)
@@ -89,6 +80,8 @@ class ClarityInterface(BaseDevice):
         self, user: str, config_file: str, password: str = None, start_method: str = ""
     ):
         """
+        Open ClarityChrom.
+
         start_method: supply the path to the method to start with, this is important for a soft column start
         config file: if you want to start with specific instrument configuration, specify location of config file here
         """
@@ -105,6 +98,8 @@ class ClarityInterface(BaseDevice):
     # TODO should be OS agnostic
     def slow_flowrate_ramp(self, path: str, method_list: tuple = ()):
         """
+        Slowly ramp flow rate.
+
         path: path where the methods are located
         method list
         """
@@ -114,23 +109,31 @@ class ClarityInterface(BaseDevice):
             sleep(20)
 
     def load_file(self, path_to_file: str):
-        """has to be done to open project, then method. Take care to select 'Send Method to Instrument' option in Method
-        Sending Options dialog in System Configuration."""
+        """
+        Load method file.
+
+        has to be done to open project, then method. Take care to select 'Send Method to Instrument' option in Method
+        Sending Options dialog in System Configuration.
+        """
         self.execute_command(f"i={self.instrument} {path_to_file}")
         sleep(10)
 
     def set_sample_name(self, sample_name):
-        """Sets the sample name for the next single run"""
+        """Set the sample name for the next single run."""
         self.execute_command(f"i={self.instrument} set_sample_name={sample_name}")
         sleep(1)
 
     def run(self):
-        """Runs the instrument. Care should be taken to activate automatic data export on HPLC. (can be done via command,
-        but that only makes it more complicated). Takes at least 2 sec until run starts"""
+        """
+        Run the instrument.
+
+        Care should be taken to activate automatic data export on HPLC. (can be done via command,
+        but that only makes it more complicated). Takes at least 2 sec until run starts.
+        """
         self.execute_command(f"run={self.instrument}")
 
     def exit(self):
-        """Exit Clarity Chrom"""
+        """Exit Clarity Chrom."""
         self.execute_command("exit")
         sleep(10)
 
@@ -153,9 +156,13 @@ class MessageSender:
 
 
 class ClarityExecutioner:
-    """This needs to run on the computer having claritychrom installed, except for one uses the same PC. However,
+    """
+    Control a CLarityChrom instance via CLI commands.
+
+    This needs to run on the computer having claritychrom installed, except for one uses the same PC. However,
     going via socket and localhost would also work, but seems a bit cumbersome.
-    open up server socket. Everything coming in will be prepended with claritychrom.exe (if it is not already)"""
+    open up server socket. Everything coming in will be prepended with claritychrom.exe (if it is not already)
+    """
 
     command_prepend = "claritychrom.exe"
 
@@ -178,7 +185,7 @@ class ClarityExecutioner:
 
     def accept_new_connection(self):
         client_socket, address = self.server_socket.accept()
-        if not address[0] == self.allowed_client:
+        if address[0] != self.allowed_client:
             client_socket.close()
             print(f"nice try {client_socket, address}")
         else:

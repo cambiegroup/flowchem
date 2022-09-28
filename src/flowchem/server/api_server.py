@@ -1,4 +1,4 @@
-"""" Run with uvicorn main:app """
+"""Run with `uvicorn main:app`."""
 from collections.abc import Iterable
 from importlib.metadata import metadata
 from pathlib import Path
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     @myapp.get("/", response_class=HTMLResponse, include_in_schema=False)
     def root():
-        """Server root"""
+        """Server root."""
         return "<h1>Flowchem Device Server!</h1>" "<a href='./docs/'>API Reference</a>"
 
     import uvicorn

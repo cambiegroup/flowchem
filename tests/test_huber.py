@@ -106,7 +106,7 @@ def chiller():
 @pytest.mark.asyncio
 async def test_no_reply(chiller):
     with pytest.warns(UserWarning):
-        reply = await chiller.send_command_and_read_reply("{MFFFFFF")
+        reply = await chiller._send_command_and_read_reply("{MFFFFFF")
     assert reply == "{SFFFFFF"
 
 
@@ -141,11 +141,11 @@ async def test_status2(chiller):
 @pytest.mark.asyncio
 async def test_get_temperature_setpoint(chiller):
     chiller._serial.fixed_reply = None
-    temp = await chiller.get_temperature_setpoint()
+    temp = await chiller.get_temperature()
     assert temp == "12.42 degree_Celsius"
 
     chiller._serial.fixed_reply = b"{S00F2DF"
-    temp = await chiller.get_temperature_setpoint()
+    temp = await chiller.get_temperature()
     assert temp == "-33.61 degree_Celsius"
 
 
@@ -153,19 +153,19 @@ async def test_get_temperature_setpoint(chiller):
 @pytest.mark.asyncio
 async def test_set_temperature_setpoint(chiller):
     chiller._serial.fixed_reply = None
-    await chiller.set_temperature_setpoint("20 °C")
+    await chiller.set_temperature("20 °C")
     print(chiller._serial.last_command)
     assert chiller._serial.last_command == b"{M0007D0\r\n"
 
-    await chiller.set_temperature_setpoint("-20 °C")
+    await chiller.set_temperature("-20 °C")
     assert chiller._serial.last_command == b"{M00F830\r\n"
 
     with pytest.warns(Warning):
-        await chiller.set_temperature_setpoint("-400 °C")
+        await chiller.set_temperature("-400 °C")
         assert chiller._serial.last_command == b"{M00EC78\r\n"
 
     with pytest.warns(Warning):
-        await chiller.set_temperature_setpoint("4000 °C")
+        await chiller.set_temperature("4000 °C")
         assert chiller._serial.last_command == b"{M003A98\r\n"
 
 
@@ -225,9 +225,9 @@ async def test_get_temperature_control(chiller):
 @pytest.mark.asyncio
 async def test_temperature_control(chiller):
     chiller._serial.fixed_reply = b"{S000000"
-    await chiller.start_temperature_control()
+    await chiller.power_on()
     assert chiller._serial.last_command == b"{M140001\r\n"
-    await chiller.stop_temperature_control()
+    await chiller.power_off()
     assert chiller._serial.last_command == b"{M140000\r\n"
 
 
