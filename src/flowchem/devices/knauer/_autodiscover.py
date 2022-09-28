@@ -72,11 +72,11 @@ def _get_local_ip() -> str:
 
     # 192.168 subnet 1st priority
     if local_ip := next((ip for ip in machine_ips if ip.startswith("192.168.")), False):
-        return local_ip
+        return local_ip  # type: ignore
 
     # 10.0 subnet 2nd priority
     if local_ip := next((ip for ip in machine_ips if ip.startswith("10.")), False):
-        return local_ip
+        return local_ip  # type: ignore
 
     logger.warning(f"Could not reliably determine local IP!")
     hostname = socket.gethostname()
@@ -117,6 +117,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     thread.join()
 
     device_info = {}
+    device_ip: str
     for device_ip in iter(device_q.get, None):
         # MAC address
         mac = get_mac_address(ip=device_ip)

@@ -184,7 +184,7 @@ class HuberChiller(TemperatureControl):
         """Get temperature. Process preferred, otherwise internal."""
         if process_t := await self.process_temperature():
             return process_t
-        return await self.internal_temperature()
+        return await self.internal_temperature()  # type: ignore
 
     async def get_temperature_setpoint(self) -> float | None:
         """Return the set point used by temperature controller. Internal if not probe, otherwise process temp."""
