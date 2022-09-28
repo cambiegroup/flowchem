@@ -196,22 +196,22 @@ class HuberChiller(TemperatureControl):
         t_limits = await self.temperature_limits()
         min_t = flowchem_ureg(f"{t_limits['min']} degC")
         max_t = flowchem_ureg(f"{t_limits['max']} degC")
-        temp = flowchem_ureg(temp)
+        set_t = flowchem_ureg(temp)
 
-        if temp > max_t:
-            temp = max_t
+        if set_t > max_t:
+            set_t = max_t
             warnings.warn(
-                f"Temperature requested {temp} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
+                f"Temperature requested {set_t} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
                 f"Setting to {max_t} instead."
             )
-        if temp < min_t:
-            temp = min_t
+        if set_t < min_t:
+            set_t = min_t
             warnings.warn(
-                f"Temperature requested {temp} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
+                f"Temperature requested {set_t} is out of range [{min_t} - {max_t}] for HuberChiller {self}!"
                 f"Setting to {min_t} instead."
             )
 
-        await self._send_command_and_read_reply("{M00" + self._temp_to_string(temp))
+        await self._send_command_and_read_reply("{M00" + self._temp_to_string(set_t))
 
     async def target_reached(self):
         """Trivially implemented as delta(currentT-setT) < 1°C."""
@@ -324,8 +324,8 @@ class HuberChiller(TemperatureControl):
         max_reply = await self._send_command_and_read_reply("{M31****")
         max_t = self.PBCommand(max_reply).parse_temperature()
         return {
-            "min": min_t,
-            "max": max_t,
+            "min": min_t,  # type: ignore
+            "max": max_t,  # type: ignore
         }
 
     async def alarm_max_internal_temp(self) -> float | None:
