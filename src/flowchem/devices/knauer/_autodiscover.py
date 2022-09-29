@@ -116,7 +116,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     loop.call_soon_threadsafe(loop.stop)  # here
     thread.join()
 
-    device_info = {}
+    device_info: dict[str, str] = {}
     device_ip: str
     for device_ip in iter(device_q.get, None):
         # MAC address
