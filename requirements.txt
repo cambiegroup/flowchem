@@ -24,7 +24,7 @@ asgiref==3.4.1
     # via uvicorn
 asteval==0.9.25
     # via lmfit
-asyncua==0.9.92
+asyncua==0.9.96
     # via flowchem (setup.py)
 attrs==21.2.0
     # via jsonschema
@@ -229,7 +229,7 @@ prometheus-client==0.12.0
     # via notebook
 prompt-toolkit==3.0.23
     # via ipython
-protobuf==3.19.1
+protobuf==3.19.5
     # via
     #   google-api-core
     #   googleapis-common-protos
