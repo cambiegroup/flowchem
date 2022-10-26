@@ -229,7 +229,7 @@ prometheus-client==0.12.0
     # via notebook
 prompt-toolkit==3.0.23
     # via ipython
-protobuf==3.19.1
+protobuf==3.19.5
     # via
     #   google-api-core
     #   googleapis-common-protos
