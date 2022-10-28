@@ -56,11 +56,11 @@ def elite11_finder(serial_port) -> set[str | None]:
     elite11_finder.counter += 1  # type: ignore
     return set(
         dedent(
-            f"""\n\n[device.elite11-{elite11_finder.counter}]
-    type = "{p_type}"
-    port = "{serial_port}"
-    address = {address}
-    syringe_diameter = "XXX mm" # Specify syringe diameter!
-    syringe_volume = "YYY ml" # Specify syringe volume!\n"""
-        )  # type: ignore
+            f"\n\n[device.elite11-{elite11_finder.counter}]"  # type:ignore
+            f"""type = "{p_type}
+               port = "{serial_port}"
+               address = {address}
+               syringe_diameter = "XXX mm" # Specify syringe diameter!
+               syringe_volume = "YYY ml" # Specify syringe volume!\n"""
+        )
     )

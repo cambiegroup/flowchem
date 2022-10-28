@@ -12,8 +12,8 @@ def ml600_finder(serial_port) -> set[str | None]:
     """Try to initialize an ML600 on every available COM port."""
     logger.debug(f"Looking for ML600 pumps on {serial_port}...")
     # Static counter for device type across different serial ports
-    if "counter" not in ml600_finder.__dict__:  # type: ignore
-        ml600_finder.counter = 0
+    if "counter" not in ml600_finder.__dict__:
+        ml600_finder.counter = 0  # type: ignore
     dev_config: set[str | None] = set()
 
     try:
@@ -34,12 +34,12 @@ def ml600_finder(serial_port) -> set[str | None]:
         ml600_finder.counter += 1  # type: ignore
         dev_config.add(
             dedent(
-                f"""\n\n[device.ml600-{ml600_finder.counter}]
-        type = "ML600"
-        port = "{serial_port}"
-        address = {count + 1}
-        syringe_volume = "XXX ml" # Specify syringe volume here!\n"""
-            )  # type: ignore
+                f"\n\n[device.ml600-{ml600_finder.counter}]"  # type: ignore
+                f"""type = "ML600"
+                port = "{serial_port}"
+                address = {count + 1}
+                syringe_volume = "XXX ml" # Specify syringe volume here!\n"""
+            )
         )
 
     return dev_config

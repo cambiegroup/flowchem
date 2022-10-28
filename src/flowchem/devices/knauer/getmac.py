@@ -287,7 +287,7 @@ def _fcntl_iface(iface):
     iface = iface.encode()  # type: ignore
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 0x8927 = SIOCGIFADDR
-    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", iface[:15]))
+    info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", iface[:15]))  # type: ignore
     return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
 

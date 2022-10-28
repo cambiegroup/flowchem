@@ -26,7 +26,7 @@ min_pressure = "5 bar"  # Optionally, a string with natural language specifying 
 
 ## Device detection
 Azura Compact pumps can be auto-detected via the `flowchem-autodiscover` command-line utility.
-After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that 
+After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that
 can be auto-detected on your PC.
 
 ## Further information

@@ -33,12 +33,12 @@ The valve position naming follow the general convention of flowchem (see [Base V
 
 ## Device detection
 Knauer Valves can be auto-detected via the `flowchem-autodiscover` command-line utility.
-After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that 
+After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that
 can be auto-detected on your PC.
 
 ```{note} Valve types
-Note that the actual type of valve cannot be detected automatically, so you will need to replace the generic 
-`KnauerValve` type in the configuration with one of the valid device types (i.e. one of `Knauer6Port2PositionValve`, 
+Note that the actual type of valve cannot be detected automatically, so you will need to replace the generic
+`KnauerValve` type in the configuration with one of the valid device types (i.e. one of `Knauer6Port2PositionValve`,
 `Knauer6Port6PositionValve`, `Knauer12PortValve` and `Knauer16PortValve`)
 ```
 
