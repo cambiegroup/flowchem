@@ -1,50 +1,45 @@
 """This module is used to discover the serial address of any ML600 connected to the PC."""
 import asyncio
+from textwrap import dedent
 
-import aioserial
-import rich_click as click
-import serial.tools.list_ports
 from loguru import logger
 
 from flowchem.devices.hamilton.ml600 import InvalidConfiguration
 from flowchem.devices.hamilton.ml600 import ML600
 
 
-def ml600_finder():
+def ml600_finder(serial_port) -> set[str | None]:
     """Try to initialize an ML600 on every available COM port."""
-    port_available = [comport.device for comport in serial.tools.list_ports.comports()]
-    logger.info(f"Found the following serial port(s): {port_available}")
+    logger.debug(f"Looking for ML600 pumps on {serial_port}...")
+    # Static counter for device type across different serial ports
+    if "counter" not in ml600_finder.__dict__:
+        ml600_finder.counter = 0
+    dev_config = set()
 
-    # Ports connected to an ML600-looking device
-    valid_ports = set()
-    for serial_port in port_available:
-        logger.info(f"Looking for pump on {serial_port}...")
-        try:
-            link = ML600.HamiltonPumpIO(
-                aioserial.AioSerial(port=serial_port, timeout=0.1)
+    try:
+        link = ML600.HamiltonPumpIO.from_config({"port": serial_port})
+    except InvalidConfiguration:
+        return dev_config
+
+    try:
+        asyncio.run(link.initialize(hw_initialization=False))
+    except InvalidConfiguration:
+        # This is necessary only on failure to release the port for the other inspector
+        link._serial.close()
+        return dev_config
+
+    for count in range(link.num_pump_connected):
+        logger.info(f"Pump ML600 found on <{serial_port}> address {count + 1}")
+
+        ml600_finder.counter += 1
+        dev_config.add(
+            dedent(
+                f"""\n\n[device.ml600-{ml600_finder.counter}]
+        type = "ML600"
+        port = "{serial_port}"
+        address = {count + 1}
+        syringe_volume = "XXX ml" # Specify syringe volume here!\n"""
             )
-        except OSError:
-            logger.warning(f"Cannot open {serial_port}!")
-            continue
+        )
 
-        try:
-            asyncio.run(link.initialize())
-            logger.info(f"{link.num_pump_connected} pump(s) found on <{serial_port}>")
-            valid_ports.add(serial_port)
-        except InvalidConfiguration:
-            logger.info(f"No pumps found on {serial_port}.")
-
-    return valid_ports
-
-
-@click.command()
-def main():
-    ml600_pumps = ml600_finder()
-    if len(ml600_pumps) > 0:
-        logger.info(f"The following serial port are connected to ML600: {ml600_pumps}")
-    else:
-        logger.error("No ML600 pump found")
-
-
-if __name__ == "__main__":
-    main()
+    return dev_config

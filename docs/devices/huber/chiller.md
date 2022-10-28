@@ -30,17 +30,9 @@ automatically used:
 
 ## Device detection
 Lab PCs often have several devices connected via serial ports.
-A simple command can help you to identify the serial port connected to the Elite11 pump.
-
-Simply run the `huber-chiller-finder` command from the command line, after having installed flowchem.
-% FIXME add a successful connection example here :D
-```shell
-$ huber_chiller_finder.py
-2022-09-15 13:07:29.095 | INFO     | __main__:chiller_finder:17 - Found the following serial port(s): ['/dev/ttyS0']
-2022-09-15 13:07:29.095 | INFO     | __main__:chiller_finder:23 - Looking for chiller on /dev/ttyS0...
-2022-09-15 13:07:29.096 | WARNING  | __main__:chiller_finder:27 - Cannot open /dev/ttyS0!
-2022-09-15 13:07:29.096 | ERROR    | __main__:main:49 - No Huber chiller found
-```
+Huber chillers can be auto-detected via the `flowchem-autodiscover` command-line utility.
+After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that 
+can be auto-detected on your PC.
 
 ## Further information
 For further information please refer to the [manufacturer manual](./pb_commands_handbook.pdf)

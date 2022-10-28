@@ -124,6 +124,7 @@ class HuberChiller(TemperatureControl):
     def __init__(self, aio: aioserial.AioSerial, name=None):
         super().__init__(name)
         self._serial = aio
+        self.device_sn = None
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
@@ -148,7 +149,8 @@ class HuberChiller(TemperatureControl):
         """Ensure the connection w/ device is working."""
         serial_num = await self.serial_number()
         if serial_num == 0:
-            raise DeviceError("No reply received from Huber Chiller!")
+            raise InvalidConfiguration("No reply received from Huber Chiller!")
+        self.device_sn = serial_num
         logger.debug(f"Connected with Huber Chiller S/N {serial_num}")
 
     async def _send_command_and_read_reply(self, command: str) -> str:
@@ -177,7 +179,7 @@ class HuberChiller(TemperatureControl):
                 "****", "0000"
             )  # Fake reply to keep going
 
-        logger.debug(f"Reply {reply[0:8].decode('ascii')} received")
+        logger.debug(f"Reply received: {reply}")
         return reply.decode("ascii")
 
     async def get_temperature(self) -> float:
@@ -411,7 +413,10 @@ class HuberChiller(TemperatureControl):
         serial1 = await self._send_command_and_read_reply("{M1B****")
         serial2 = await self._send_command_and_read_reply("{M1C****")
         pb1, pb2 = self.PBCommand(serial1), self.PBCommand(serial2)
-        return int(pb1.data + pb2.data, 16)
+        if pb1.data and pb2.data:
+            return int(pb1.data + pb2.data, 16)
+        else:
+            return 0
 
     @staticmethod
     def _temp_to_string(temp: pint.Quantity) -> str:

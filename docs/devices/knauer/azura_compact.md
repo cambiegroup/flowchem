@@ -12,7 +12,6 @@ Moreover, they feature an autodiscover mechanism that makes it possible to autom
 of a device given its (immutable) MAC address.
 This enables the use of the valves with dynamic addresses (i.e. with a DHCP server) which simplify the setup procedure.
 
-
 ## Configuration
 Configuration sample showing all possible parameters:
 
@@ -24,6 +23,11 @@ mac_address = "00:11:22:33:44:55"  #  Onyl one of either ip_address or mac_addre
 max_pressure = "10 bar"  # Optionally, a string with natural language specifying max pressure can be provided
 min_pressure = "5 bar"  # Optionally, a string with natural language specifying max pressure can be provided
 ```
+
+## Device detection
+Azura Compact pumps can be auto-detected via the `flowchem-autodiscover` command-line utility.
+After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that 
+can be auto-detected on your PC.
 
 ## Further information
 For further information please refer to the [manufacturer manual](./pump_p2.1s_instructions.pdf)

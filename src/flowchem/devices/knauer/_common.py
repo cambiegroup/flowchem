@@ -3,7 +3,7 @@ import asyncio
 
 from loguru import logger
 
-from ._autodiscover import autodiscover_knauer
+from .autofinder import autodiscover_knauer
 from flowchem.exceptions import InvalidConfiguration
 
 

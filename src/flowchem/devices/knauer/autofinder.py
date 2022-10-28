@@ -4,14 +4,14 @@ import queue
 import socket
 import sys
 import time
+from textwrap import dedent
 from threading import Thread
 
-import rich_click as click
 from loguru import logger
 
 from flowchem.devices.knauer.getmac import get_mac_address
 
-__all__ = ["main", "autodiscover_knauer"]
+__all__ = ["autodiscover_knauer", "knauer_finder"]
 
 Address = tuple[str, int]
 
@@ -53,19 +53,19 @@ async def get_device_type(ip_address: str) -> str:
     reply = await reader.readuntil(separator=b"\r")
     if reply.startswith(b"HEADTYPE"):
         logger.debug(f"Device {ip_address} is a Pump")
-        return "Pump"
+        return "AzuraCompactPump"
 
     # Test Valve
     writer.write(b"T:?\n\r")
     reply = await reader.readuntil(separator=b"\r")
     if reply.startswith(b"VALVE"):
         logger.debug(f"Device {ip_address} is a Valve")
-        return "Valve"
+        return "KnauerValve"
 
     return "Unknown"
 
 
-def _get_local_ip() -> str:
+def _get_local_ip() -> str | None:
     """Guess the most suitable local IP for autodiscovery."""
     # These are all the local IPs (different interfaces)
     machine_ips = [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
@@ -78,9 +78,22 @@ def _get_local_ip() -> str:
     if local_ip := next((ip for ip in machine_ips if ip.startswith("10.")), False):
         return local_ip  # type: ignore
 
+    # 100.x subnet 3rd priority (Tailscale)
+    if local_ip := next((ip for ip in machine_ips if ip.startswith("100.")), False):
+        return local_ip  # type: ignore
+
     logger.warning(f"Could not reliably determine local IP!")
     hostname = socket.gethostname()
-    return socket.gethostbyname(hostname)
+
+    # Only accept local IP
+    if (
+        hostname.startswith("192.168")
+        or hostname.startswith("192.168")
+        or hostname.startswith("100.")
+    ):
+        return socket.gethostbyname(hostname)
+    else:
+        return None
 
 
 def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
@@ -98,6 +111,9 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     # Define source IP resolving local hostname.
     if not source_ip:
         source_ip = _get_local_ip()
+    if source_ip is None:
+        logger.warning("Please provide a valid source IP for broadcasting.")
+        return dict()
 
     try:
         loop = asyncio.get_running_loop()
@@ -113,7 +129,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     thread = Thread(target=loop.run_forever)
     thread.start()
     time.sleep(2)
-    loop.call_soon_threadsafe(loop.stop)  # here
+    loop.call_soon_threadsafe(loop.stop)
     thread.join()
 
     device_info: dict[str, str] = {}
@@ -126,8 +142,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     return device_info
 
 
-@click.command()
-def main():
+def knauer_finder(source_ip=None):
     """Execute autodiscovery. This is the entry point of the `knauer-finder` CLI command."""
     # This is a bug of asyncio on Windows :|
     if sys.platform == "win32":
@@ -135,7 +150,8 @@ def main():
 
     # Autodiscover devices (dict mac as index, IP as value)
     logger.info("Starting detection")
-    devices = autodiscover_knauer("192.168.1.114")
+    devices = autodiscover_knauer(source_ip)
+    dev_config = set()
 
     for mac_address, ip in devices.items():
         logger.info(f"Determining device type for device at {ip} [{mac_address}]")
@@ -143,9 +159,28 @@ def main():
         device_type = asyncio.run(get_device_type(ip))
         logger.info(f"Found a {device_type} on IP {ip}")
 
-    if not devices:
-        logger.info("No device found!")
+        if device_type == "AzuraCompactPump":
+            dev_config.add(
+                dedent(
+                    f"""\n\n[device.pump-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
+            type = "AzuraCompactPump"
+            ip_address = "{ip}"  # MAC address during discovery: {mac_address}
+            # max_pressure = "XX bar"
+            # min_pressure = "XX bar"\n"""
+                )
+            )
+        elif device_type == "KnauerValve":
+            dev_config.add(
+                dedent(
+                    f"""\n\n[device.valve-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
+                        type = "KnauerValve"  # Replace with actual valve type, e.g. Knauer6Port2PositionValve!
+                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}
+                        # default_position = "LOAD"  # Valve position to be set upon initialization\n"""
+                )
+            )
+
+    return dev_config
 
 
 if __name__ == "__main__":
-    main()
+    knauer_finder()
