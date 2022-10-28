@@ -96,7 +96,7 @@ def _get_local_ip() -> str | None:
         return None
 
 
-def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
+def autodiscover_knauer(source_ip: str | None = "") -> dict[str, str]:
     """
     Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
 

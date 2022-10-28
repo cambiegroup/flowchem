@@ -12,9 +12,9 @@ def ml600_finder(serial_port) -> set[str | None]:
     """Try to initialize an ML600 on every available COM port."""
     logger.debug(f"Looking for ML600 pumps on {serial_port}...")
     # Static counter for device type across different serial ports
-    if "counter" not in ml600_finder.__dict__:
+    if "counter" not in ml600_finder.__dict__:  # type: ignore
         ml600_finder.counter = 0
-    dev_config = set()
+    dev_config: set[str | None] = set()
 
     try:
         link = ML600.HamiltonPumpIO.from_config({"port": serial_port})
@@ -31,7 +31,7 @@ def ml600_finder(serial_port) -> set[str | None]:
     for count in range(link.num_pump_connected):
         logger.info(f"Pump ML600 found on <{serial_port}> address {count + 1}")
 
-        ml600_finder.counter += 1
+        ml600_finder.counter += 1  # type: ignore
         dev_config.add(
             dedent(
                 f"""\n\n[device.ml600-{ml600_finder.counter}]
@@ -39,7 +39,7 @@ def ml600_finder(serial_port) -> set[str | None]:
         port = "{serial_port}"
         address = {count + 1}
         syringe_volume = "XXX ml" # Specify syringe volume here!\n"""
-            )
+            )  # type: ignore
         )
 
     return dev_config

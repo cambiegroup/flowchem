@@ -10,12 +10,12 @@ from flowchem.exceptions import InvalidConfiguration
 
 
 # noinspection PyProtectedMember
-def elite11_finder(serial_port) -> set[str, None]:
+def elite11_finder(serial_port) -> set[str | None]:
     """Try to initialize an Elite11 on every available COM port. [Does not support daisy-chained Elite11!]"""
     logger.debug(f"Looking for Elite11 pumps on {serial_port}...")
     # Static counter for device type across different serial ports
     if "counter" not in elite11_finder.__dict__:
-        elite11_finder.counter = 0
+        elite11_finder.counter = 0  # type: ignore
 
     try:
         link = HarvardApparatusPumpIO(port=serial_port)
@@ -53,7 +53,7 @@ def elite11_finder(serial_port) -> set[str, None]:
     p_type = "Elite11InfuseOnly" if info.infuse_only else "Elite11InfuseWithdraw"
     logger.info(f"Pump {p_type} found on <{serial_port}>")
 
-    elite11_finder.counter += 1
+    elite11_finder.counter += 1  # type: ignore
     return set(
         dedent(
             f"""\n\n[device.elite11-{elite11_finder.counter}]
@@ -62,5 +62,5 @@ def elite11_finder(serial_port) -> set[str, None]:
     address = {address}
     syringe_diameter = "XXX mm" # Specify syringe diameter!
     syringe_volume = "YYY ml" # Specify syringe volume!\n"""
-        )
+        )  # type: ignore
     )
