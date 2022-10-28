@@ -140,7 +140,7 @@ jupyter-client==7.1.0
     #   ipykernel
     #   nbclient
     #   notebook
-jupyter-core==4.9.1
+jupyter-core==4.11.2
     # via
     #   jupyter-client
     #   nbconvert
