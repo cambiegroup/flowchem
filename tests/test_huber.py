@@ -9,13 +9,8 @@ from flowchem.exceptions import InvalidConfiguration
 
 
 def test_pbcommand_parse_temp():
-    assert (
-        HuberChiller.PBCommand("{S00F2DF").parse_temperature()
-        == -33.61
-    )
-    assert (
-        HuberChiller.PBCommand("{S0004DA").parse_temperature() == 12.42
-    )
+    assert HuberChiller.PBCommand("{S00F2DF").parse_temperature() == -33.61
+    assert HuberChiller.PBCommand("{S0004DA").parse_temperature() == 12.42
 
 
 def test_pbcommand_parse_int():

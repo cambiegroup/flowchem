@@ -1,4 +1,5 @@
 import sys
+
 import pytest
 from fastapi import FastAPI
 from httpx import AsyncClient
