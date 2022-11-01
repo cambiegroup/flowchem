@@ -8,6 +8,7 @@ from loguru import logger
 from starlette.responses import RedirectResponse
 
 import flowchem
+from flowchem.exceptions import InvalidConfiguration
 from flowchem.server.configuration_parser import parse_config_file
 
 
@@ -51,6 +52,14 @@ def create_server_for_devices(config: dict) -> FastAPI:
             routers = (routers,)
 
         for router in routers:
+            if (
+                router is None
+            ):  # Common mistake on method subclassing, let's provide a useful message ;)
+                logger.error(
+                    f"The device {device} did not return a valid APIRouter from its `get_router()` method!"
+                )
+                raise InvalidConfiguration(f"{device}.get_router() returned None!")
+
             app.include_router(router, tags=router.tags)
             logger.debug(f"Router <{router.prefix}> added to app!")
 

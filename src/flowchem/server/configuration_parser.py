@@ -3,7 +3,7 @@ import inspect
 import sys
 from pathlib import Path
 
-from flowchem.devices.find_device_type import autodiscover_device_classes
+from flowchem.devices.list_known_device_type import autodiscover_device_classes
 
 if sys.version_info >= (3, 11):
     # noinspection PyUnresolvedReferences

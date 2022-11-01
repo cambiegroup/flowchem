@@ -1,4 +1,4 @@
-from flowchem.devices.find_device_type import autodiscover_device_classes
+from flowchem.devices.list_known_device_type import autodiscover_device_classes
 
 
 def test_device_finder():

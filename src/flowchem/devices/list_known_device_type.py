@@ -1,4 +1,4 @@
-"""Auto-discover the device classes present in the device sub-folders."""
+"""Auto-discover the device classes present in the device sub-folders and in the installed plugins."""
 import inspect
 from importlib.metadata import entry_points
 from typing import Any
