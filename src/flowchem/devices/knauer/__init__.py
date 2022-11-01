@@ -1,5 +1,5 @@
-"""Knauer devices."""
-from .autofinder import knauer_finder
+"""Knauer's devices."""
+from .knauer_finder import knauer_finder
 from .azura_compact import AzuraCompactPump
 from .valves import Knauer12PortValve
 from .valves import Knauer16PortValve

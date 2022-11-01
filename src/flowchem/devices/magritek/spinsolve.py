@@ -16,8 +16,8 @@ from flowchem.devices.magritek._msg_maker import create_protocol_message
 from flowchem.devices.magritek._msg_maker import get_request
 from flowchem.devices.magritek._msg_maker import set_attribute
 from flowchem.devices.magritek._msg_maker import set_data_folder
-from flowchem.devices.magritek.xml_parser import parse_status_notification
-from flowchem.devices.magritek.xml_parser import StatusNotification
+from flowchem.devices.magritek._parser import parse_status_notification
+from flowchem.devices.magritek._parser import StatusNotification
 from flowchem.models.analytical_device import AnalyticalDevice
 
 

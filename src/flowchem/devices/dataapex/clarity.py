@@ -1,4 +1,3 @@
-# This could become a mess...
 # what needs to be done is switch the lamps on, which works over serial.
 # the rest is just sending commands to the console, possibly also to another machine
 # https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line

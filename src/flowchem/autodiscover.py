@@ -1,4 +1,4 @@
-"""This module is used to discover the serial address of any ML600 connected to the PC."""
+"""This module is used to autodiscover any supported devices connected to the PC."""
 from pathlib import Path
 
 import aioserial
@@ -8,8 +8,8 @@ from loguru import logger
 
 from flowchem.devices.hamilton.ml600_finder import ml600_finder
 from flowchem.devices.harvardapparatus.elite11_finder import elite11_finder
-from flowchem.devices.huber.huber_chiller_finder import chiller_finder
-from flowchem.devices.knauer.autofinder import knauer_finder
+from flowchem.devices.huber.chiller_finder import chiller_finder
+from flowchem.devices.knauer.knauer_finder import knauer_finder
 
 SERIAL_DEVICE_INSPECTORS = (ml600_finder, elite11_finder, chiller_finder)
 

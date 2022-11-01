@@ -1,9 +1,9 @@
-"""Module for communication with Knauer pumps and valves."""
+"""Module for communication with Knauer devices."""
 import asyncio
 
 from loguru import logger
 
-from .autofinder import autodiscover_knauer
+from .knauer_finder import autodiscover_knauer
 from flowchem.exceptions import InvalidConfiguration
 
 

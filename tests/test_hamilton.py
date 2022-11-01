@@ -1,3 +1,4 @@
+import sys
 import pytest
 from fastapi import FastAPI
 from httpx import AsyncClient
@@ -6,6 +7,7 @@ from flowchem.server.api_server import create_server_for_devices
 from flowchem.server.configuration_parser import parse_config
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="No mock_serial on windows")
 @pytest.fixture
 def devices(mock_serial) -> dict:
     """ML600 device."""
@@ -35,6 +37,7 @@ async def app(devices) -> FastAPI:
     return app
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="No mock_serial on windows")
 @pytest.mark.anyio
 async def test_root(app):
     """Test root verifies app initialization (config validation/ML600 instantiation)."""
@@ -45,6 +48,7 @@ async def test_root(app):
     assert response_docs.status_code == 200
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="No mock_serial on windows")
 @pytest.mark.anyio
 async def test_firmware_version(app):
     """Test firmware_version."""

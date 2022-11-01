@@ -8,14 +8,13 @@ from flowchem.devices.huber import HuberChiller
 from flowchem.exceptions import InvalidConfiguration
 
 
-# TEST PBCommand parsers first
 def test_pbcommand_parse_temp():
     assert (
         HuberChiller.PBCommand("{S00F2DF").parse_temperature()
-        == "-33.61 degree_Celsius"
+        == -33.61
     )
     assert (
-        HuberChiller.PBCommand("{S0004DA").parse_temperature() == "12.42 degree_Celsius"
+        HuberChiller.PBCommand("{S0004DA").parse_temperature() == 12.42
     )
 
 
@@ -69,6 +68,7 @@ class FakeSerial(aioserial.AioSerial):
         self.map_reply = {
             b"{M0A****\r\n": b"{S0AFFFF\r\n",  # Fake status reply
             b"{M3C****\r\n": b"{S3CFFFF\r\n",  # Fake status2 reply
+            b"{M3A****\r\n": b"{S3A04DA\r\n",  # Fake process temperature reply
             b"{M00****\r\n": b"{S0004DA\r\n",  # Fake setpoint reply
             b"{M03****\r\n": b"{S030a00\r\n",  # Fake pressure reply
             b"{M04****\r\n": b"{S04000a\r\n",  # Fake current power reply (10 W)
@@ -141,12 +141,13 @@ async def test_status2(chiller):
 @pytest.mark.asyncio
 async def test_get_temperature_setpoint(chiller):
     chiller._serial.fixed_reply = None
+
     temp = await chiller.get_temperature()
-    assert temp == "12.42 degree_Celsius"
+    assert temp == 12.42
 
     chiller._serial.fixed_reply = b"{S00F2DF"
     temp = await chiller.get_temperature()
-    assert temp == "-33.61 degree_Celsius"
+    assert temp == -33.61
 
 
 # noinspection PyUnresolvedReferences
@@ -249,20 +250,6 @@ async def test_circulation(chiller):
     assert chiller._serial.last_command == b"{M160001\r\n"
     await chiller.stop_circulation()
     assert chiller._serial.last_command == b"{M160000\r\n"
-
-
-@pytest.mark.asyncio
-async def test_min_setpoint(chiller):
-    chiller._serial.fixed_reply = None
-    min_t = await chiller.min_setpoint()
-    assert min_t == "-50.0 degree_Celsius"
-
-
-@pytest.mark.asyncio
-async def test_max_setpoint(chiller):
-    chiller._serial.fixed_reply = None
-    max_t = await chiller.max_setpoint()
-    assert max_t == "150.0 degree_Celsius"
 
 
 # noinspection PyUnresolvedReferences
