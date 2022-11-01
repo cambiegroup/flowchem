@@ -1,262 +1,120 @@
-# what needs to be done is switch the lamps on, which works over serial.
-# the rest is just sending commands to the console, possibly also to another machine
-# https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
-import socket
-import subprocess
-from pathlib import Path
-from threading import Thread
-from time import sleep
+"""Controls a local ClarityChrom instance via the CLI interface."""
+# See https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
+import asyncio
+import sys
+from shutil import which
 
-import tenacity
-
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.models.base_device import BaseDevice
-
-try:
-    # noinspection PyUnresolvedReferences
-    from .Knauer_HPLC_NDA import Lamp_Command
-
-    HAS_KNAUER_COMMANDS = True
-except ImportError:
-    HAS_KNAUER_COMMANDS = False
-
-# Todo should have a command constructor dataclass, would be more neat. For now, will do without to get it running asap
-
-# TODO Very weird, when starting from synthesis, fractionating valve is blocked. no idea why, it's ip is not used.
+from flowchem.models.analytical_device import AnalyticalDevice
 
 
-class ClarityInterface(BaseDevice):
+class Clarity(AnalyticalDevice):
+    DEFAULT_CONFIG = {
+        "startup-time": 20,
+        "startup-method": None,
+        "cmd_timeout": 3,
+        "user": "admin",
+        "password": None,
+        "instrument-config": None,
+    }
+
     def __init__(
         self,
-        remote: bool = False,
-        host: str = None,
-        port: int = None,
-        path_to_executable: str = None,
+        executable: str = r"C:\claritychrom\bin\claritychrom.exe",
         instrument_number: int = 1,
         name=None,
+        **config,
     ):
-        if not HAS_KNAUER_COMMANDS:
-            raise InvalidConfiguration(
-                "Knauer Lamps unusable: no Knauer Commands available.\n"
-                "Contact your distributor to get the serial API documentation."
-            )
-        # just determine path to executable, and open socket if for remote usage
-        self.remote = remote
+
+        self.config = self.DEFAULT_CONFIG | config
         self.instrument = instrument_number
-        self.path_to_executable = path_to_executable
-        if self.remote:
-            self.interface = MessageSender(host, port)
-            self.command_executor = self.interface.open_socket_and_send
+        # Executable is either path or command in PATH
+        if which(executable):
+            self.exe = executable
         else:
-            self.command_executor = ClarityExecutioner.execute_command  # type:ignore
+            assert self._is_valid_string(executable)
+            self.exe = f'"{executable}"'
+
+        assert which(executable) or Path(executable).is_file()
+        self.exe = executable
 
         super().__init__(name=name)
+
         # Ontology: high performance liquid chromatography instrument
         # noinspection HttpUrlsUsage
         self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0001057")
 
-    # if remote execute everything on other PC, else on this
-    # Todo doesn't make sense here, done other way
-    def execute_command(self, command_string):
-        if self.remote:
-            self.command_executor(command_string)
-        else:
-            self.command_executor(command_string, self.path_to_executable)  # type: ignore
+    def _is_valid_string(self, path: str):
+        """Ensure no double-quote are present in the string"""
+        return '"' not in path
 
-    # bit displaced convenience function to switch on the lamps of hplc detector.
-    # TODO remove if published
-    def switch_lamp_on(self, address="192.168.10.111", port=10001):
-        """Has to be performed BEFORE starting clarity, otherwise sockets get blocked."""
-        # send the  respective two commands and check return. Send to socket
-        message_sender = MessageSender(address, port)
-        message_sender.open_socket_and_send(Lamp_Command.deut_lamp_on)
-        sleep(1)
-        message_sender.open_socket_and_send(Lamp_Command.hal_lamp_on)
-        sleep(15)
+    async def initialize(self):
+        """Start ClarityChrom upon initialization."""
+        init_command = ""
+        init_command += (
+            f" cfg={cfg}" if (cfg := self.config["instrument-config"]) else ""
+        )
+        init_command += f" u={user}"
+        init_command += f" p={pwd}" if (pwd := self.config["password"]) else ""
+        met = self.config.get("startup-method", "")
+        assert self._is_valid_string(met)
+        init_command += f' "{met}"'
 
-    # define relevant strings
-    def open_clarity_chrom(
-        self, user: str, config_file: str, password: str = None, start_method: str = ""
-    ):
+        # Start Clarity and wait for it to be responsive before any other command is sent
+        await self.execute_command(init_command)
+        await asyncio.sleep(self.config["startup-time"])
+
+    async def set_sample_name(self, sample_name: str):
+        """Sets the name of the sample for the next run."""
+        assert self._is_valid_string(sample_name)
+        await self.execute_command(f'set_sample_name="{sample_name}"')
+
+    async def set_method(self, method_name: str):
         """
-        Open ClarityChrom.
-
-        start_method: supply the path to the method to start with, this is important for a soft column start
-        config file: if you want to start with specific instrument configuration, specify location of config file here
-        """
-        if not password:
-            self.execute_command(
-                f"i={self.instrument} cfg={config_file} u={user} {start_method}"
-            )
-        else:
-            self.execute_command(
-                f"i={self.instrument} cfg={config_file} u={user} p={password} {start_method}"
-            )
-        sleep(20)
-
-    # TODO should be OS agnostic
-    def slow_flowrate_ramp(self, path: str, method_list: tuple = ()):
-        """
-        Slowly ramp flow rate.
-
-        path: path where the methods are located
-        method list
-        """
-        for current_method in method_list:
-            self.execute_command(f"i={self.instrument} {path}\\{current_method}")
-            # not very elegant, but sending and setting method takes at least 10 seconds, only has to run during platform startup and can't see more elegant way how to do that
-            sleep(20)
-
-    def load_file(self, path_to_file: str):
-        """
-        Load method file.
+        Sets the name of the sample for the next run.
 
         has to be done to open project, then method. Take care to select 'Send Method to Instrument' option in Method
         Sending Options dialog in System Configuration.
         """
-        self.execute_command(f"i={self.instrument} {path_to_file}")
-        sleep(10)
+        assert self._is_valid_string(method_name)
+        await self.execute_command(f" {method_name}")
 
-    def set_sample_name(self, sample_name):
-        """Set the sample name for the next single run."""
-        self.execute_command(f"i={self.instrument} set_sample_name={sample_name}")
-        sleep(1)
-
-    def run(self):
+    async def run(self):
         """
-        Run the instrument.
+        Run one analysis on the instrument. Sample name has to be set in advance.
 
         Care should be taken to activate automatic data export on HPLC. (can be done via command,
-        but that only makes it more complicated). Takes at least 2 sec until run starts.
+        but that only makes it more complicated). Takes at least 2 sec until the run actually starts.
         """
-        self.execute_command(f"run={self.instrument}")
+        await self.execute_command(
+            f"run={self.instrument}", without_instrument_num=True
+        )
 
-    def exit(self):
+    async def exit(self):
         """Exit Clarity Chrom."""
-        self.execute_command("exit")
-        sleep(10)
+        await self.execute_command("exit", without_instrument_num=True)
 
+    async def execute_command(self, command: str, without_instrument_num: bool = False):
+        """Execute claritychrom.exe command."""
+        cmd_string = self.exe
+        if not without_instrument_num:
+            cmd_string += f" i={self.instrument}"
+        cmd_string += f" {command}"
 
-class MessageSender:
-    def __init__(self, host, port):
-        self.host = host
-        self.port = port
+        logger.debug(f"I will execute `{cmd_string}`")
 
-    # encode('utf-8')
-
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(5), wait=tenacity.wait_fixed(2), reraise=True
-    )
-    def open_socket_and_send(self, message: str):
-        s = socket.socket()
-        s.connect((self.host, self.port))
-        s.sendall(message.encode("utf-8"))
-        s.close()
-
-
-class ClarityExecutioner:
-    """
-    Control a CLarityChrom instance via CLI commands.
-
-    This needs to run on the computer having claritychrom installed, except for one uses the same PC. However,
-    going via socket and localhost would also work, but seems a bit cumbersome.
-    open up server socket. Everything coming in will be prepended with claritychrom.exe (if it is not already)
-    """
-
-    command_prepend = "claritychrom.exe"
-
-    def __init__(self, port, allowed_client="192.168.10.20", host_ip="192.168.10.11"):
-        self.port = port
-        self.allowed_client = allowed_client
-        self.host_ip = host_ip
-        # think that should also go in thread, otherwise blocks
-        self.server_socket = self.open_server()
-        self.executioner = Thread(target=self.get_commands_and_execute, daemon=False)
-        print("a")
-        self.executioner.start()
-        print("b")
-
-    def open_server(self):
-        s = socket.socket()
-        s.bind((self.host_ip, self.port))
-        s.listen(5)
-        return s
-
-    def accept_new_connection(self):
-        client_socket, address = self.server_socket.accept()
-        if address[0] != self.allowed_client:
-            client_socket.close()
-            print(f"nice try {client_socket, address}")
-        else:
-            # if below code is executed, that means the sender is connected
-            print(f"[+] {address} is connected.")
-            # in unicode
-            request = client_socket.recv(1024).decode("utf-8")
-            client_socket.close()
-            print(request)
-            return request
-
-    # TODO: instrument number has to go into command execution
-    def execute_command(
-        self,
-        command: str,
-        folder_of_executable: Path | str = r"C:\claritychrom\bin\\",
-    ):
-        prefix = "claritychrom.exe"
-        # sanitize input a bit
-        if command.split(" ")[0] != prefix:
-            command = folder_of_executable + prefix + " " + command  # type:ignore
-            print(command)
+        process = asyncio.create_subprocess_shell(cmd_string)
         try:
-            x = subprocess
-            x.run(command, shell=True, capture_output=False, timeout=3)
-        except subprocess.TimeoutExpired:
-            print("Damn, Subprocess")
+            await asyncio.wait_for(process.wait(), timeout=self.config["cmd_timeout"])
+        except TimeoutError:
+            logger.error(
+                f"Subprocess timeout expired (timeout = {self.config['cmd_timeout']} s)"
+            )
 
-    def get_commands_and_execute(self):
-        while True:
-            request = self.accept_new_connection()
-            self.execute_command(request)
-            sleep(1)
-            print("listening")
-
-
-# TODO: also dsk or k for opening with specific desktop could be helpful-.
-# TODO Export results can be specified -> exports result, rewrite to a nicer interface
-
-if __name__ == "__main__":
-    computer_w_Clarity = False
-    if computer_w_Clarity:
-        analyser = ClarityExecutioner(10014)
-    else:
-        commander = ClarityInterface(
-            remote=True, host="192.168.10.11", port=10014, instrument_number=2
-        )
-        commander.exit()
-        commander.switch_lamp_on()  # address and port hardcoded
-        commander.open_clarity_chrom(
-            "admin",
-            config_file=r"C:\ClarityChrom\Cfg\automated_exp.cfg ",
-            start_method=r"D:\Data2q\sugar-optimizer\autostartup_analysis\autostartup_005_Sugar-c18_shortened.MET",
-        )
-        commander.slow_flowrate_ramp(
-            r"D:\Data2q\sugar-optimizer\autostartup_analysis",
-            method_list=(
-                "autostartup_005_Sugar-c18_shortened.MET",
-                "autostartup_01_Sugar-c18_shortened.MET",
-                "autostartup_015_Sugar-c18_shortened.MET",
-                "autostartup_02_Sugar-c18_shortened.MET",
-                "autostartup_025_Sugar-c18_shortened.MET",
-                "autostartup_03_Sugar-c18_shortened.MET",
-                "autostartup_035_Sugar-c18_shortened.MET",
-                "autostartup_04_Sugar-c18_shortened.MET",
-                "autostartup_045_Sugar-c18_shortened.MET",
-                "autostartup_05_Sugar-c18_shortened.MET",
-            ),
-        )
-        commander.load_file(
-            r"D:\Data2q\sugar-optimizer\autostartup_analysis\auto_Sugar-c18_shortened.MET"
-        )
-        # commander.load_file("opendedicatedproject") # open a project for measurements
-        commander.set_sample_name("test123")
-        commander.run()
+    def get_router(self, prefix: str | None = None):
+        """Create an APIRouter for this object."""
+        router = super().get_router(prefix)
+        router.add_api_route("/sample-name", self.set_sample_name, methods=["PUT"])
+        router.add_api_route("/method", self.set_method, methods=["PUT"])
+        router.add_api_route("/run", self.run, methods=["PUT"])
+        router.add_api_route("/exit", self.exit, methods=["PUT"])
+        return router

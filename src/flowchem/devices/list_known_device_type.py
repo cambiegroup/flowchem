@@ -9,17 +9,6 @@ import flowchem.devices
 from flowchem.models.base_device import BaseDevice
 
 
-def autodiscover_device_classes():
-    """Get all the device-controlling classes, either from `flowchem.devices` or third party packages."""
-    first_part_objects = autodiscover_first_party()
-    logger.info(f"{len(first_part_objects)} first-party device type found!")
-    third_part_objects = autodiscover_third_party()
-    logger.info(f"{len(third_part_objects)} third-party device type found!")
-
-    # For duplicate the first party will overwrite the third party ones. Ensure unique names! ;)
-    return third_part_objects | first_part_objects
-
-
 def is_device_class(test_object):
     """Return true if the object is a subclass of BaseDevice."""
     if getattr(test_object, "__module__", None) is None:
@@ -58,6 +47,17 @@ def autodiscover_third_party() -> dict[str, Any]:
         device_classes.update(new_device_classes)
 
     return device_classes
+
+
+def autodiscover_device_classes():
+    """Get all the device-controlling classes, either from `flowchem.devices` or third party packages."""
+    first_part_objects = autodiscover_first_party()
+    logger.info(f"{len(first_part_objects)} first-party device type found!")
+    third_part_objects = autodiscover_third_party()
+    logger.info(f"{len(third_part_objects)} third-party device type found!")
+
+    # For duplicate the first party will overwrite the third party ones. Ensure unique names! ;)
+    return third_part_objects | first_part_objects
 
 
 if __name__ == "__main__":

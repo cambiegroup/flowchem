@@ -82,7 +82,8 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         self.eol = b"\n\r"
 
         # All the following are set upon initialize()
-        self.max_allowed_pressure, self.max_allowed_flow = 0, 0
+        self.max_allowed_pressure = 0
+        self.max_allowed_flow = 0
         self._headtype = None
         self._running: bool = None  # type: ignore
         self._pressure_max = max_pressure
