@@ -10,7 +10,7 @@ from flowchem.exceptions import InvalidConfiguration
 
 
 # noinspection PyProtectedMember
-def elite11_finder(serial_port) -> set[str | None]:
+def elite11_finder(serial_port) -> set[str]:
     """Try to initialize an Elite11 on every available COM port. [Does not support daisy-chained Elite11!]"""
     logger.debug(f"Looking for Elite11 pumps on {serial_port}...")
     # Static counter for device type across different serial ports

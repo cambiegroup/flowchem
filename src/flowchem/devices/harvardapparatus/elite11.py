@@ -353,7 +353,7 @@ class Elite11InfuseOnly(SyringePump):
         Elite11InfuseOnly._io_instances.add(self.pump_io)  # See above for details.
 
         self.address: int = address if address is not None else 0  # type: ignore
-        self._version = None  # Set in initialize
+        self._version: tuple[int, int, int] = None  # type: ignore
 
         # syringe diameter and volume - these will be set in initialize() - check values here though.
         if syringe_diameter is None:

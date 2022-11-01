@@ -8,13 +8,13 @@ from flowchem.devices.hamilton.ml600 import InvalidConfiguration
 from flowchem.devices.hamilton.ml600 import ML600
 
 
-def ml600_finder(serial_port) -> set[str | None]:
+def ml600_finder(serial_port) -> set[str]:
     """Try to initialize an ML600 on every available COM port."""
     logger.debug(f"Looking for ML600 pumps on {serial_port}...")
     # Static counter for device type across different serial ports
     if "counter" not in ml600_finder.__dict__:
         ml600_finder.counter = 0  # type: ignore
-    dev_config: set[str | None] = set()
+    dev_config: set[str] = set()
 
     try:
         link = ML600.HamiltonPumpIO.from_config({"port": serial_port})

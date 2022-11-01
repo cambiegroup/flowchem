@@ -36,7 +36,7 @@ class BaseValve(BaseDevice, ABC):
 
         # Set default position if provided
         if default_position is None:
-            self._default_position = None
+            self._default_position = ""
         else:
             if default_position in self.positions:
                 self._default_position = default_position

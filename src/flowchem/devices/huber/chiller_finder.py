@@ -9,7 +9,7 @@ from flowchem.exceptions import InvalidConfiguration
 
 
 # noinspection PyProtectedMember
-def chiller_finder(serial_port) -> set[str | None]:
+def chiller_finder(serial_port) -> set[str]:
     """Try to initialize an Elite11 on every available COM port."""
     logger.debug(f"Looking for Huber chillers on {serial_port}...")
 

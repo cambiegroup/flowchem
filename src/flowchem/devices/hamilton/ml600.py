@@ -335,7 +335,7 @@ class ML600(BaseDevice):
 
         return cls(
             pumpio,
-            syringe_volume=config.get("syringe_volume"),
+            syringe_volume=config.get("syringe_volume", ""),
             address=config.get("address", 1),
             name=config.get("name"),
         )

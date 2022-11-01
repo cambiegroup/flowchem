@@ -81,7 +81,9 @@ class Spinsolve(AnalyticalDevice):
             self.schema = xml_schema
 
         # IOs (these are set upon initialization w/ initialize)
-        self._io_reader, self._io_writer, self.reader = None, None, None
+        self._io_reader: asyncio.StreamReader = None  # type: ignore
+        self._io_writer: asyncio.StreamWriter = None  # type: ignore
+        self.reader: asyncio.Task = None  # type: ignore
         # Each protocol adds a new Path to the list, run_protocol returns the ID of the next protocol
         self._result_folders: list[Path] = []
 
@@ -135,13 +137,13 @@ class Spinsolve(AnalyticalDevice):
         parser = etree.XMLParser()
         while True:
             raw_tree = await self._io_reader.readuntil(b"</Message>")
-            logger.debug(f"Read reply {raw_tree}")
+            logger.debug(f"Read reply {raw_tree!r}")
 
             # Try parsing reply and skip if not valid
             try:
                 parsed_tree = etree.fromstring(raw_tree, parser)
             except etree.XMLSyntaxError:
-                warnings.warn(f"Cannot parse response XML {raw_tree}")
+                warnings.warn(f"Cannot parse response XML {raw_tree!r}")
                 continue
 
             # Validate reply if schema was provided

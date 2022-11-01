@@ -14,14 +14,14 @@ from flowchem.devices.knauer.knauer_finder import knauer_finder
 SERIAL_DEVICE_INSPECTORS = (ml600_finder, elite11_finder, chiller_finder)
 
 
-def inspect_serial_ports() -> set[str | None]:
+def inspect_serial_ports() -> set[str]:
     """Search for known devices on local serial ports and generate config stubs."""
     port_available = [comport.device for comport in list_ports.comports()]
     logger.info(
         f"Found the following serial port(s) on the current device: {port_available}"
     )
 
-    dev_found_config = set()
+    dev_found_config: set[str] = set()
     # Loop each serial port
     for serial_port in port_available:
         logger.info(f"Looking for known devices on {serial_port}...")

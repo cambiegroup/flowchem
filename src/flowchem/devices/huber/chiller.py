@@ -123,7 +123,7 @@ class HuberChiller(TemperatureControl):
     def __init__(self, aio: aioserial.AioSerial, name=None):
         super().__init__(name)
         self._serial = aio
-        self.device_sn = None
+        self.device_sn: int = None  # type: ignore
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
@@ -218,8 +218,9 @@ class HuberChiller(TemperatureControl):
         """Trivially implemented as delta(currentT-setT) < 1°C."""
         current_t = await self.get_temperature()
         set_t = await self.get_temperature_setpoint()
-        delta = abs(current_t - set_t)
-        return delta < 1
+        if set_t:
+            return abs(current_t - set_t) < 1
+        return False
 
     async def internal_temperature(self) -> float | None:
         """Return internal temp (bath temperature)."""

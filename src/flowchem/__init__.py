@@ -12,6 +12,6 @@ finally:
 # Unit registry
 import pint
 
-ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)  # type: ignore
+ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
 ureg.define("step = []")
 ureg.define("stroke = 48000 * step")
