@@ -7,9 +7,9 @@ import aioserial
 import pint
 from loguru import logger
 
+from flowchem import ureg
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.temperature_control import TemperatureControl
-from flowchem.units import flowchem_ureg
 
 
 class HuberChiller(TemperatureControl):
@@ -69,7 +69,7 @@ class HuberChiller(TemperatureControl):
 
         def parse_rpm(self) -> str:
             """Parse a device reply from hexadecimal string to rpm."""
-            return str(flowchem_ureg(f"{self.parse_integer()} rpm"))
+            return str(ureg(f"{self.parse_integer()} rpm"))
 
         def parse_bits(self) -> list[bool]:
             """Parse a device reply from hexadecimal string to 16 constituting bits."""
@@ -195,9 +195,9 @@ class HuberChiller(TemperatureControl):
     async def set_temperature(self, temp: str):
         """Set the set point used by temperature controller. Internal if not probe, otherwise process temp."""
         t_limits = await self.temperature_limits()
-        min_t = flowchem_ureg(f"{t_limits['min']} degC")
-        max_t = flowchem_ureg(f"{t_limits['max']} degC")
-        set_t = flowchem_ureg(temp)
+        min_t = ureg(f"{t_limits['min']} degC")
+        max_t = ureg(f"{t_limits['max']} degC")
+        set_t = ureg(temp)
 
         if set_t > max_t:
             set_t = max_t
@@ -240,13 +240,13 @@ class HuberChiller(TemperatureControl):
         """Return the pump pressure in mbar (note that you probably want barg, i.e. to remove 1 bar)."""
         reply = await self._send_command_and_read_reply("{M03****")
         pressure = self.PBCommand(reply).parse_integer()
-        return str(flowchem_ureg(f"{pressure} mbar"))
+        return str(ureg(f"{pressure} mbar"))
 
     async def current_power(self) -> str:
         """Return the current power in Watts (negative for cooling, positive for heating)."""
         reply = await self._send_command_and_read_reply("{M04****")
         power = self.PBCommand(reply).parse_integer()
-        return str(flowchem_ureg(f"{power} watt"))
+        return str(ureg(f"{power} watt"))
 
     async def status(self) -> dict[str, bool]:
         """Return the info contained in `vstatus1` as dict."""
@@ -296,7 +296,7 @@ class HuberChiller(TemperatureControl):
 
     async def set_pump_speed(self, rpm: str):
         """Set the pump speed, in rpm. See device display for range."""
-        parsed_rpm = flowchem_ureg(rpm)
+        parsed_rpm = ureg(rpm)
         await self._send_command_and_read_reply(
             "{M48" + self._int_to_string(parsed_rpm.m_as("rpm"))
         )
@@ -336,7 +336,7 @@ class HuberChiller(TemperatureControl):
 
     async def set_alarm_max_internal_temp(self, set_temp: str):
         """Set the max internal temp before the alarm is triggered and a fault generated."""
-        temp = flowchem_ureg(set_temp)
+        temp = ureg(set_temp)
         await self._send_command_and_read_reply("{M51" + self._temp_to_string(temp))
 
     async def alarm_min_internal_temp(self) -> float | None:
@@ -346,7 +346,7 @@ class HuberChiller(TemperatureControl):
 
     async def set_alarm_min_internal_temp(self, set_temp: str):
         """Set the min internal temp before the alarm is triggered and a fault generated."""
-        temp = flowchem_ureg(set_temp)
+        temp = ureg(set_temp)
         await self._send_command_and_read_reply("{M52" + self._temp_to_string(temp))
 
     async def alarm_max_process_temp(self) -> float | None:
@@ -356,7 +356,7 @@ class HuberChiller(TemperatureControl):
 
     async def set_alarm_max_process_temp(self, set_temp: str):
         """Set the max process temp before the alarm is triggered and a fault generated."""
-        temp = flowchem_ureg(set_temp)
+        temp = ureg(set_temp)
         await self._send_command_and_read_reply("{M53" + self._temp_to_string(temp))
 
     async def alarm_min_process_temp(self) -> float | None:
@@ -366,19 +366,19 @@ class HuberChiller(TemperatureControl):
 
     async def set_alarm_min_process_temp(self, set_temp: str):
         """Set the min process temp before the alarm is triggered and a fault generated."""
-        temp = flowchem_ureg(set_temp)
+        temp = ureg(set_temp)
         await self._send_command_and_read_reply("{M54" + self._temp_to_string(temp))
 
     async def set_ramp_duration(self, ramp_time: str):
         """Set the duration (in seconds) of a ramp to the temperature set by a later call to ramp_to_temperature."""
-        parsed_time = flowchem_ureg(ramp_time)
+        parsed_time = ureg(ramp_time)
         await self._send_command_and_read_reply(
             "{M59" + self._int_to_string(parsed_time.m_as("s"))
         )
 
     async def ramp_to_temperature(self, temperature: str):
         """Set the duration (in seconds) of a ramp to the temperature set by a later call to start_ramp()."""
-        temp = flowchem_ureg(temperature)
+        temp = ureg(temperature)
         await self._send_command_and_read_reply("{M5A" + self._temp_to_string(temp))
 
     async def is_venting(self) -> bool:
@@ -420,13 +420,13 @@ class HuberChiller(TemperatureControl):
     @staticmethod
     def _temp_to_string(temp: pint.Quantity) -> str:
         """From temperature to string for command. f^-1 of PCommand.parse_temperature."""
-        min_temp = flowchem_ureg("-151 °C")
-        max_temp = flowchem_ureg("327 °C")
+        min_temp = ureg("-151 °C")
+        max_temp = ureg("327 °C")
         if not isinstance(temp, pint.Quantity):
             logger.warning(
                 f"Implicit assumption that the temperature provided [{temp}] is in Celsius. Add units pls!"
             )
-            temp = flowchem_ureg(f"{temp} °C")
+            temp = ureg(f"{temp} °C")
         assert min_temp <= temp <= max_temp
         # Hexadecimal two's complement
         return f"{int(temp.m_as('°C') * 100) & 65535:04X}"

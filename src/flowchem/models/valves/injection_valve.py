@@ -4,8 +4,8 @@ from asyncio import sleep
 
 from fastapi import APIRouter
 
+from ... import ureg
 from .base_valve import BaseValve
-from flowchem.units import flowchem_ureg
 
 
 class InjectionValve(BaseValve, ABC):
@@ -20,7 +20,7 @@ class InjectionValve(BaseValve, ABC):
             default_position: the position to be set upon initialization.
             name (str): device name, passed to BaseDevice.
         """
-        self.loop_volume = flowchem_ureg(loop_volume)
+        self.loop_volume = ureg(loop_volume)
 
         # Default position is set upon initialization
         self._default_position = "LOAD"
@@ -43,7 +43,7 @@ class InjectionValve(BaseValve, ABC):
         Args:
             injection_time: time to switch to the specified position (string with units).
         """
-        time_to_wait = flowchem_ureg(injection_time)
+        time_to_wait = ureg(injection_time)
         initial_position = await self.get_position()
 
         await self._toggle_position()

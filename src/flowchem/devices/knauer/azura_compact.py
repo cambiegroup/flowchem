@@ -6,11 +6,11 @@ from enum import Enum
 from loguru import logger
 
 from ._common import KnauerEthernetDevice
+from flowchem import ureg
 from flowchem.exceptions import DeviceError
 from flowchem.models.pumps.base_pump import BasePump
 from flowchem.models.pumps.hplc_pump import HplcPump
 from flowchem.models.sensors.pressure_sensor import PressureSensor
-from flowchem.units import flowchem_ureg
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to the highest flow rate in ml/min
@@ -88,7 +88,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         self._pressure_max = max_pressure
         self._pressure_min = min_pressure
 
-        self.rate = flowchem_ureg.parse_expression("0 ml/min")
+        self.rate = ureg.parse_expression("0 ml/min")
 
     async def initialize(self):
         """Initialize connection."""
@@ -230,7 +230,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
     async def get_flow_rate(self) -> float:
         """Get flow rate in ml/min."""
         flow_value = await self.create_and_send_command(FLOW)
-        flowrate = flowchem_ureg(f"{flow_value} ul/min")
+        flowrate = ureg(f"{flow_value} ul/min")
         logger.debug(f"Current flow rate is {flowrate}")
         return flowrate.m_as("ml/min")
 
@@ -243,7 +243,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         if rate is None:
             rate = "0 ml/min"
 
-        parsed_flowrate = flowchem_ureg(rate)
+        parsed_flowrate = ureg(rate)
         await self.create_and_send_command(
             FLOW,
             setpoint=round(parsed_flowrate.m_as("ul/min")),
@@ -254,12 +254,12 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
     async def get_minimum_pressure(self):
         """Get minimum pressure. The pump stops if the measured P is lower than this."""
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
-        p_min = await self.create_and_send_command(command) * flowchem_ureg.bar
+        p_min = await self.create_and_send_command(command) * ureg.bar
         return str(p_min)
 
     async def set_minimum_pressure(self, value: str = "0 bar"):
         """Set minimum pressure. The pump stops if the measured P is lower than this."""
-        pressure = flowchem_ureg(value)
+        pressure = ureg(value)
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
         await self.create_and_send_command(
             command,
@@ -271,12 +271,12 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
     async def get_maximum_pressure(self) -> str:
         """Get maximum pressure. The pumps stop if the measured P is higher than this."""
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
-        p_max = await self.create_and_send_command(command) * flowchem_ureg.bar
+        p_max = await self.create_and_send_command(command) * ureg.bar
         return str(p_max)
 
     async def set_maximum_pressure(self, value: str):
         """Set maximum pressure. The pumps stop if the measured P is higher than this."""
-        pressure = flowchem_ureg(value)
+        pressure = ureg(value)
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         await self.create_and_send_command(
             command,
@@ -354,7 +354,7 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
 
     async def read_pressure(self, units: str | None = "bar") -> float:
         """Return pressure if the pump has a pressure sensor."""
-        pressure = await self._transmit_and_parse_reply(PRESSURE) * flowchem_ureg.bar
+        pressure = await self._transmit_and_parse_reply(PRESSURE) * ureg.bar
         logger.debug(f"Pressure measured = {pressure}")
         return pressure.m_as(units)
 

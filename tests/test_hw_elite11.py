@@ -9,9 +9,9 @@ import math
 
 import pytest
 
+from flowchem import ureg
 from flowchem.devices.harvardapparatus.elite11 import Elite11InfuseWithdraw
 from flowchem.devices.harvardapparatus.elite11 import PumpStatus
-from flowchem.units import flowchem_ureg
 
 
 @pytest.fixture(scope="session")
@@ -84,10 +84,10 @@ async def test_syringe_volume(pump: Elite11InfuseWithdraw):
     await pump.set_syringe_volume("10 ml")
     assert await pump.get_syringe_volume() == "10 ml"
     await pump.set_syringe_volume(f"{math.pi} ml")
-    vol = flowchem_ureg.Quantity(await pump.get_syringe_volume()).magnitude
+    vol = ureg.Quantity(await pump.get_syringe_volume()).magnitude
     assert math.isclose(vol, math.pi, abs_tol=10e-4)
     await pump.set_syringe_volume("3e-05 ml")
-    vol = flowchem_ureg.Quantity(await pump.get_syringe_volume()).magnitude
+    vol = ureg.Quantity(await pump.get_syringe_volume()).magnitude
     assert math.isclose(vol, 3e-5)
     await pump.set_syringe_volume("50 ml")  # Leave it high for next tests
 
@@ -100,14 +100,14 @@ async def test_infusion_rate(pump: Elite11InfuseWithdraw):
     assert await pump.get_flow_rate()
     with pytest.warns(UserWarning):
         await pump.set_flow_rate("121 ml/min")
-    rate = flowchem_ureg.Quantity(await pump.get_flow_rate()).magnitude
+    rate = ureg.Quantity(await pump.get_flow_rate()).magnitude
     assert math.isclose(rate, 12.49, rel_tol=0.01)
     with pytest.warns(UserWarning):
         await pump.set_flow_rate("0 ml/min")
-    rate = flowchem_ureg.Quantity(await pump.get_flow_rate()).magnitude
+    rate = ureg.Quantity(await pump.get_flow_rate()).magnitude
     assert math.isclose(rate, 1e-05, abs_tol=1e-5)
     await pump.set_flow_rate(f"{math.pi} ml/min")
-    rate = flowchem_ureg.Quantity(await pump.get_flow_rate()).magnitude
+    rate = ureg.Quantity(await pump.get_flow_rate()).magnitude
     assert math.isclose(rate, math.pi, abs_tol=0.001)
 
 
@@ -121,7 +121,7 @@ async def test_get_infused_volume(pump: Elite11InfuseWithdraw):
     await pump.set_target_volume("0.05 ml")
     await pump.infuse()
     await asyncio.sleep(2)
-    vol = flowchem_ureg.Quantity(await pump.get_infused_volume()).to("ml").magnitude
+    vol = ureg.Quantity(await pump.get_infused_volume()).to("ml").magnitude
     assert math.isclose(vol, 0.05, abs_tol=1e-4)
 
 
@@ -133,7 +133,7 @@ async def test_get_withdrawn_volume(pump: Elite11InfuseWithdraw):
     await pump.set_target_volume("0.1 ml")
     await pump.withdraw()
     await asyncio.sleep(1)
-    vol = flowchem_ureg.Quantity(await pump.get_withdrawn_volume()).to("ml").magnitude
+    vol = ureg.Quantity(await pump.get_withdrawn_volume()).to("ml").magnitude
     assert math.isclose(vol, 0.1, abs_tol=1e-4)
 
 
@@ -160,7 +160,7 @@ async def test_diameter(pump: Elite11InfuseWithdraw):
         await pump.set_syringe_diameter("0.01 mm")
 
     await pump.set_syringe_diameter(f"{math.pi} mm")
-    dia = flowchem_ureg.Quantity(await pump.get_syringe_diameter()).magnitude
+    dia = ureg.Quantity(await pump.get_syringe_diameter()).magnitude
     math.isclose(dia, math.pi)
 
 
@@ -169,8 +169,8 @@ async def test_diameter(pump: Elite11InfuseWithdraw):
 async def test_target_volume(pump: Elite11InfuseWithdraw):
     await pump.set_syringe_volume("10 ml")
     await pump.set_target_volume(f"{math.pi} ml")
-    vol = flowchem_ureg.Quantity(await pump.get_target_volume()).magnitude
+    vol = ureg.Quantity(await pump.get_target_volume()).magnitude
     assert math.isclose(vol, math.pi, abs_tol=10e-4)
     await pump.set_target_volume("1e-04 ml")
-    vol = flowchem_ureg.Quantity(await pump.get_target_volume()).magnitude
+    vol = ureg.Quantity(await pump.get_target_volume()).magnitude
     assert math.isclose(vol, 1e-4, abs_tol=10e-4)

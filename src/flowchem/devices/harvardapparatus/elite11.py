@@ -8,11 +8,11 @@ import aioserial
 from loguru import logger
 from pydantic import BaseModel
 
+from flowchem import ureg
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.pumps.base_pump import WithdrawMixin
 from flowchem.models.pumps.syringe_pump import SyringePump
-from flowchem.units import flowchem_ureg
 
 
 class PumpInfo(BaseModel):
@@ -484,10 +484,10 @@ class Elite11InfuseOnly(SyringePump):
         )
 
         # Lower limit usually expressed in nl/min so unit-aware quantities are needed
-        lower_limit, upper_limit = map(flowchem_ureg, limits_raw.split(" to "))
+        lower_limit, upper_limit = map(ureg, limits_raw.split(" to "))
 
         # Also add units to the provided rate
-        set_rate = flowchem_ureg(rate)
+        set_rate = ureg(rate)
 
         # Bound rate to acceptance range
         if set_rate < lower_limit:
@@ -550,7 +550,7 @@ class Elite11InfuseOnly(SyringePump):
         Args:
             volume_w_units (str): the volume of the syringe.
         """
-        volume = flowchem_ureg(volume_w_units)
+        volume = ureg(volume_w_units)
         await self._send_command_and_read_reply(
             Elite11Commands.SYRINGE_VOLUME, parameter=f"{volume.m_as('ml'):.15f} m"
         )
@@ -588,7 +588,7 @@ class Elite11InfuseOnly(SyringePump):
         flow_value = await self._send_command_and_read_reply(
             Elite11Commands.INFUSE_RATE
         )
-        flowrate = flowchem_ureg(flow_value)
+        flowrate = ureg(flow_value)
         logger.debug(f"Current infusion flow rate is {flowrate}")
         return flowrate.m_as("ml/min")
 
@@ -640,8 +640,8 @@ class Elite11InfuseOnly(SyringePump):
 
     async def set_syringe_diameter(self, diameter_w_units: str):
         """Set syringe diameter. This can be set in the interval 1 mm to 33 mm."""
-        diameter = flowchem_ureg(diameter_w_units)
-        if not 1 * flowchem_ureg.mm <= diameter <= 33 * flowchem_ureg.mm:
+        diameter = ureg(diameter_w_units)
+        if not 1 * ureg.mm <= diameter <= 33 * ureg.mm:
             warnings.warn(
                 f"Diameter provided ({diameter}) is not valid, ignored! [Accepted range: 1-33 mm]"
             )
@@ -671,7 +671,7 @@ class Elite11InfuseOnly(SyringePump):
 
     async def set_target_volume(self, volume: str):
         """Set target volume in ml. If the volume is set to 0, the target is cleared."""
-        target_volume = flowchem_ureg(volume)
+        target_volume = ureg(volume)
         if target_volume.magnitude == 0:
             await self._send_command_and_read_reply(Elite11Commands.CLEAR_TARGET_VOLUME)
         else:
@@ -799,7 +799,7 @@ class Elite11InfuseWithdraw(WithdrawMixin, Elite11InfuseOnly):
         flow_value = await self._send_command_and_read_reply(
             Elite11Commands.WITHDRAW_RATE
         )
-        flowrate = flowchem_ureg(flow_value)
+        flowrate = ureg(flow_value)
         logger.debug(f"Current withdraw flow rate is {flowrate}")
         return flowrate.m_as("ml/min")
 

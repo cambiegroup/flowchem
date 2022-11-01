@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING
 import aioserial
 from loguru import logger
 
+from flowchem import ureg
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
-from flowchem.units import flowchem_ureg
 
 if TYPE_CHECKING:
     import pint
@@ -288,7 +288,7 @@ class ML600(BaseDevice):
 
         # Syringe pumps only perform linear movement, and the volume displaced is function of the syringe loaded.
         try:
-            self.syringe_volume = flowchem_ureg(syringe_volume)
+            self.syringe_volume = ureg(syringe_volume)
         except AttributeError as attribute_error:
             raise InvalidConfiguration(
                 f"{self.__class__.__name__}:{self.name} "
@@ -302,13 +302,11 @@ class ML600(BaseDevice):
                 f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}"
             )
 
-        self._steps_per_ml: pint.Quantity = flowchem_ureg.Quantity(
+        self._steps_per_ml: pint.Quantity = ureg.Quantity(
             f"{48000 / self.syringe_volume} step/ml"
         )
         self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
-        self._max_vol = (
-            (48000 - self._offset_steps) * flowchem_ureg.step / self._steps_per_ml
-        )
+        self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
 
     @classmethod
     def from_config(cls, **config):
@@ -377,12 +375,12 @@ class ML600(BaseDevice):
         if speed_value is None:
             return ""
 
-        speed = flowchem_ureg(speed_value)
+        speed = ureg(speed_value)
 
         # Alert if out of bounds but don't raise exceptions, according to general philosophy.
         # Target flow rate too high
-        if speed < flowchem_ureg("2 sec/stroke"):
-            speed = flowchem_ureg("2 sec/stroke")
+        if speed < ureg("2 sec/stroke"):
+            speed = ureg("2 sec/stroke")
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"
@@ -390,8 +388,8 @@ class ML600(BaseDevice):
             )
 
         # Target flow rate too low
-        if speed > flowchem_ureg("3692 sec/stroke"):
-            speed = flowchem_ureg("3692 sec/stroke")
+        if speed > ureg("3692 sec/stroke"):
+            speed = ureg("3692 sec/stroke")
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"
@@ -440,7 +438,7 @@ class ML600(BaseDevice):
         example to dispense 9 mL from a 10 mL syringe you would determine the number of
         steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
         """
-        flowrate_w_units = flowchem_ureg(flowrate)
+        flowrate_w_units = ureg(flowrate)
         flowrate_in_steps_sec = flowrate_w_units * self._steps_per_ml
         seconds_per_stroke = (1 / flowrate_in_steps_sec).to("second/stroke")
 
@@ -456,7 +454,7 @@ class ML600(BaseDevice):
     def _volume_to_step_position(self, volume_w_units: str) -> int:
         """Convert a volume to a step position."""
         # noinspection PyArgumentEqualDefault
-        volume = flowchem_ureg(volume_w_units)
+        volume = ureg(volume_w_units)
         steps = volume * self._steps_per_ml
         return round(steps.m_as("steps")) + self._offset_steps
 
@@ -474,7 +472,7 @@ class ML600(BaseDevice):
         syringe_pos = await self.send_command_and_read_reply(
             ML600.Protocol1CommandTemplate(command="YQP")
         )
-        current_steps = (int(syringe_pos) - self._offset_steps) * flowchem_ureg.step
+        current_steps = (int(syringe_pos) - self._offset_steps) * ureg.step
         return str(current_steps / self._steps_per_ml)
 
     async def to_volume(self, target_volume: str, speed: str = ""):
@@ -572,7 +570,7 @@ class ML600(BaseDevice):
         wait: bool = False,
     ):
         """Get volume from valve specified at given flow rate."""
-        cur_vol = flowchem_ureg(await self.get_current_volume())
+        cur_vol = ureg(await self.get_current_volume())
         if (cur_vol + volume) > self._max_vol:
             warnings.warn(
                 f"Cannot withdraw {volume} given the current syringe position {cur_vol} and a "
@@ -599,7 +597,7 @@ class ML600(BaseDevice):
         wait: bool = False,
     ):
         """Deliver volume to valve specified at given flow rate."""
-        cur_vol = flowchem_ureg(await self.get_current_volume())
+        cur_vol = ureg(await self.get_current_volume())
         if volume > cur_vol:
             warnings.warn(
                 f"Cannot deliver {volume} given the current syringe position {cur_vol}!"

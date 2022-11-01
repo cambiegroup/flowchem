@@ -27,7 +27,7 @@ else:
         HAS_PHIDGET = True
 
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.units import flowchem_ureg
+from flowchem import ureg
 
 
 class PhidgetPressureSensor(PressureSensor):
@@ -50,8 +50,8 @@ class PhidgetPressureSensor(PressureSensor):
 
         # Sensor range
         sensor_min, sensor_max = pressure_range
-        self._min_pressure = flowchem_ureg(sensor_min)
-        self._max_pressure = flowchem_ureg(sensor_max)
+        self._min_pressure = ureg(sensor_min)
+        self._max_pressure = ureg(sensor_max)
         # current meter
         self.phidget = CurrentInput()
 
@@ -104,7 +104,7 @@ class PhidgetPressureSensor(PressureSensor):
             self._max_pressure - self._min_pressure
         )
         logger.debug(f"Read pressure {pressure_reading} barg!")
-        return str(pressure_reading * flowchem_ureg.bar)
+        return str(pressure_reading * ureg.bar)
 
     def read_pressure(self, units: str | None = "bar") -> str:  # type: ignore
         """
@@ -127,7 +127,7 @@ class PhidgetPressureSensor(PressureSensor):
             warnings.warn("Cannot read pressure!")
             return ""
         else:
-            pressure = self._current_to_pressure(current) * flowchem_ureg.bar
+            pressure = self._current_to_pressure(current) * ureg.bar
             return pressure.m_as(units)
 
 

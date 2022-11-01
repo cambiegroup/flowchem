@@ -7,10 +7,10 @@ from typing import Literal
 import aioserial
 from loguru import logger
 
+from flowchem import ureg
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
-from flowchem.units import flowchem_ureg
 
 
 class MansonPowerSupply(BaseDevice):
@@ -52,13 +52,13 @@ class MansonPowerSupply(BaseDevice):
     @staticmethod
     def _format_voltage(voltage_value: str) -> str:
         """Format a voltage in the format the power supply understands."""
-        voltage = flowchem_ureg(voltage_value)
+        voltage = ureg(voltage_value)
         # Zero fill by left pad with zeros, up to three digits
         return str(voltage.m_as("V") * 10).zfill(3)
 
     async def _format_amperage(self, amperage_value: str) -> str:
         """Format a current intensity in the format the power supply understands."""
-        current = flowchem_ureg(amperage_value)
+        current = ureg(amperage_value)
         multiplier = 100 if await self.get_info() in self.MODEL_ALT_RANGE else 10
         return str(current.m_as("A") * multiplier).zfill(3)
 
@@ -111,8 +111,8 @@ class MansonPowerSupply(BaseDevice):
         response = await self._send_command("GETD")
 
         try:
-            volt = float(response[0:4]) / 100 * flowchem_ureg.volt
-            curr = float(response[4:8]) / 100 * flowchem_ureg.ampere
+            volt = float(response[0:4]) / 100 * ureg.volt
+            curr = float(response[4:8]) / 100 * ureg.ampere
         except ValueError:
             warnings.warn("Invalid values from device!")
             return "0 V", "0 A", "NN"
@@ -141,15 +141,15 @@ class MansonPowerSupply(BaseDevice):
     async def get_output_power(self) -> str:
         """Return output power in watts."""
         voltage, intensity, _ = await self.get_output_read()
-        power = flowchem_ureg(voltage) * flowchem_ureg(intensity)
+        power = ureg(voltage) * ureg(intensity)
         return str(power.to("W"))
 
     async def get_max(self) -> tuple[str, str]:
         """Return maximum voltage and current, as tuple, or False."""
         response = await self._send_command("GMAX")
 
-        max_v_raw = int(response[0:3]) * flowchem_ureg.volt
-        max_c_raw = int(response[3:6]) * flowchem_ureg.ampere
+        max_v_raw = int(response[0:3]) * ureg.volt
+        max_c_raw = int(response[3:6]) * ureg.ampere
 
         max_v = max_v_raw / 10
         # Some models report current as 0.1 A others at 0.01 A
@@ -163,8 +163,8 @@ class MansonPowerSupply(BaseDevice):
 
         # RegEx to only keep numbers
         response = re.sub(r"\D", "", response)
-        v_setting = float(response[0:3]) / 10 * flowchem_ureg.volt
-        c_setting = float(response[3:6]) * flowchem_ureg.ampere
+        v_setting = float(response[0:3]) / 10 * ureg.volt
+        c_setting = float(response[3:6]) * ureg.ampere
 
         if await self.get_info() in self.MODEL_ALT_RANGE:
             c_setting /= 10
@@ -235,8 +235,8 @@ class MansonPowerSupply(BaseDevice):
         if await self.get_info() in self.MODEL_ALT_RANGE:
             voltage = [x / 10 for x in voltage]
 
-        voltage_str = [str(flowchem_ureg.Quantity(x, "V")) for x in voltage]
-        current_str = [str(flowchem_ureg.Quantity(x, "A")) for x in current]
+        voltage_str = [str(ureg.Quantity(x, "V")) for x in voltage]
+        current_str = [str(ureg.Quantity(x, "A")) for x in current]
 
         return list(zip(voltage_str, current_str))
 

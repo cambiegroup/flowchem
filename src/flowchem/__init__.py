@@ -8,3 +8,10 @@ except PackageNotFoundError:
     __version__ = "unknown"
 finally:
     del version, PackageNotFoundError
+
+# Unit registry
+import pint
+
+ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)  # type: ignore
+ureg.define("step = []")
+ureg.define("stroke = 48000 * step")
