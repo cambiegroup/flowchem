@@ -7,7 +7,6 @@ import aioserial
 import pint
 from loguru import logger
 
-from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.temperature_control import TemperatureControl
 from flowchem.units import flowchem_ureg
