@@ -243,9 +243,9 @@ class Knauer16PortValve(KnauerValve, MultiPositionValve):
 if __name__ == "__main__":
     import asyncio
 
-    v = Knauer6Port6PositionValve(ip_address="192.168.1.176")
+    v = Knauer6Port2PositionValve(ip_address="192.168.1.176")
 
-    async def main(valve: KnauerValve):
+    async def main(valve: Knauer6Port2PositionValve):
         """Test function."""
         await valve.initialize()
         await valve.set_position("I")
