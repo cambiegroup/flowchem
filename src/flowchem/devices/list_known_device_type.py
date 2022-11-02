@@ -41,9 +41,9 @@ def autodiscover_third_party() -> dict[str, Any]:
     """
     device_classes = {}
 
-    for ep in entry_points(
+    for ep in entry_points(  # lgtm [py/call/wrong-named-argument]
         group="flowchem.devices"
-    ):  # lgtm [py/call/wrong-named-argument]
+    ):
         logger.info(f"Loading third-party module: {ep.name} [distribution {ep.module}]")
         new_device_classes = _autodiscover_devices_in_module(ep.load())
         device_classes.update(new_device_classes)
