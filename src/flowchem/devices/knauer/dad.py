@@ -3,6 +3,7 @@ import asyncio
 
 from loguru import logger
 
+from ._common import KnauerEthernetDevice
 from flowchem.devices.list_known_device_type import autodiscover_third_party
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.analytical_device import AnalyticalDevice

@@ -2,19 +2,36 @@
 # See https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
 import asyncio
 import sys
+from pathlib import Path
 from shutil import which
+from typing import TypedDict
+
+from loguru import logger
 
 from flowchem.models.analytical_device import AnalyticalDevice
 
 
+ClarityConfig = TypedDict(
+    "ClarityConfig",
+    {
+        "startup-time": float,
+        "startup-method": str,
+        "cmd_timeout": float,
+        "user": str,
+        "password": str,
+        "clarity-cfg-file": str,
+    },
+)
+
+
 class Clarity(AnalyticalDevice):
-    DEFAULT_CONFIG = {
+    DEFAULT_CONFIG: ClarityConfig = {
         "startup-time": 20,
-        "startup-method": None,
+        "startup-method": "",
         "cmd_timeout": 3,
         "user": "admin",
-        "password": None,
-        "instrument-config": None,
+        "password": "",
+        "clarity-cfg-file": "",
     }
 
     def __init__(
@@ -25,7 +42,7 @@ class Clarity(AnalyticalDevice):
         **config,
     ):
 
-        self.config = self.DEFAULT_CONFIG | config
+        self.config: ClarityConfig = self.DEFAULT_CONFIG | config  # type: ignore
         self.instrument = instrument_number
         # Executable is either path or command in PATH
         if which(executable):
@@ -51,11 +68,11 @@ class Clarity(AnalyticalDevice):
         """Start ClarityChrom upon initialization."""
         init_command = ""
         init_command += (
-            f" cfg={cfg}" if (cfg := self.config["instrument-config"]) else ""
+            f" cfg={cfg}" if (cfg := self.config["clarity-cfg-file"]) else ""
         )
         init_command += f" u={user}"
         init_command += f" p={pwd}" if (pwd := self.config["password"]) else ""
-        met = self.config.get("startup-method", "")
+        met = self.config.get("startup-method")
         assert self._is_valid_string(met)
         init_command += f' "{met}"'
 
@@ -102,7 +119,7 @@ class Clarity(AnalyticalDevice):
 
         logger.debug(f"I will execute `{cmd_string}`")
 
-        process = asyncio.create_subprocess_shell(cmd_string)
+        process = await asyncio.create_subprocess_shell(cmd_string)
         try:
             await asyncio.wait_for(process.wait(), timeout=self.config["cmd_timeout"])
         except TimeoutError:
