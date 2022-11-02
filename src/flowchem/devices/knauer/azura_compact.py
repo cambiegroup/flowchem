@@ -8,7 +8,6 @@ from loguru import logger
 from ._common import KnauerEthernetDevice
 from flowchem import ureg
 from flowchem.exceptions import DeviceError
-from flowchem.models.pumps.base_pump import BasePump
 from flowchem.models.pumps.hplc_pump import HplcPump
 from flowchem.models.sensors.pressure_sensor import PressureSensor
 
