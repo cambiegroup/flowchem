@@ -132,7 +132,7 @@ def get_mac_address(
         except Exception:  # noqa: B902
             log.error("Failed to send ARP table population packet")
         finally:
-            s.close()
+            s.close()  # lgtm [py/should-use-with]
 
     # Set up the address hunt based on the arguments specified
     if ip6:
