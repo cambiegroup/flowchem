@@ -1,8 +1,6 @@
 """Control module for the Knauer DAD."""
 import asyncio
 
-from loguru import logger
-
 from ._common import KnauerEthernetDevice
 from flowchem.devices.list_known_device_type import autodiscover_third_party
 from flowchem.exceptions import InvalidConfiguration
@@ -19,7 +17,6 @@ class KnauerDAD(KnauerEthernetDevice, AnalyticalDevice):
         name: str | None = None,
         turn_on_d2: bool = True,
         turn_on_halogen: bool = True,
-        **config
     ):
         super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"

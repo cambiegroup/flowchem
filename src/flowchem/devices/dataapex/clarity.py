@@ -1,7 +1,6 @@
 """Controls a local ClarityChrom instance via the CLI interface."""
 # See https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
 import asyncio
-import sys
 from pathlib import Path
 from shutil import which
 from typing import TypedDict
@@ -16,7 +15,7 @@ ClarityConfig = TypedDict(
     {
         "startup-time": float,
         "startup-method": str,
-        "cmd_timeout": float,
+        "cmd-timeout": float,
         "user": str,
         "password": str,
         "clarity-cfg-file": str,
@@ -28,7 +27,7 @@ class Clarity(AnalyticalDevice):
     DEFAULT_CONFIG: ClarityConfig = {
         "startup-time": 20,
         "startup-method": "",
-        "cmd_timeout": 3,
+        "cmd-timeout": 3,
         "user": "admin",
         "password": "",
         "clarity-cfg-file": "",
@@ -121,10 +120,10 @@ class Clarity(AnalyticalDevice):
 
         process = await asyncio.create_subprocess_shell(cmd_string)
         try:
-            await asyncio.wait_for(process.wait(), timeout=self.config["cmd_timeout"])
+            await asyncio.wait_for(process.wait(), timeout=self.config["cmd-timeout"])
         except TimeoutError:
             logger.error(
-                f"Subprocess timeout expired (timeout = {self.config['cmd_timeout']} s)"
+                f"Subprocess timeout expired (timeout = {self.config['cmd-timeout']} s)"
             )
 
     def get_router(self, prefix: str | None = None):
