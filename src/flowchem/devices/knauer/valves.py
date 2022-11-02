@@ -107,15 +107,6 @@ class KnauerValve(KnauerEthernetDevice):
 
         return reply
 
-    async def get_position(self) -> str:
-        """Return current valve position."""
-        return await self._transmit_and_parse_reply("P")
-
-    async def set_position(self, position: str):
-        """Move valve to position."""
-        position = str(position).upper()
-        await self._transmit_and_parse_reply(position)
-
     async def get_valve_type(self):
         """
         Get valve type, if returned value is not supported throws an error.
@@ -157,7 +148,7 @@ class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
         await super().set_position(self.position_mapping[position])
 
     async def get_position(self) -> str:
-        """Move valve to position."""
+        """Return current valve position."""
         valve_pos = await super().get_position()
         return self._reverse_position_mapping[valve_pos]
 
@@ -181,6 +172,15 @@ class Knauer6Port6PositionValve(KnauerValve, MultiPositionValve):
         await super().initialize()
         assert self.valve_type == KnauerValveHeads.SIX_PORT_SIX_POSITION
 
+    async def get_position(self) -> str:
+        """Return current valve position."""
+        return await self._transmit_and_parse_reply("P")
+
+    async def set_position(self, position: str):
+        """Move valve to position."""
+        position = str(position).upper()
+        await self._transmit_and_parse_reply(position)
+
 
 class Knauer12PortValve(KnauerValve, MultiPositionValve):
     """KnauerValve of type TWELVE_PORT_TWELVE_POSITION."""
@@ -201,6 +201,15 @@ class Knauer12PortValve(KnauerValve, MultiPositionValve):
         await super().initialize()
         assert self.valve_type == KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION
 
+    async def get_position(self) -> str:
+        """Return current valve position."""
+        return await self._transmit_and_parse_reply("P")
+
+    async def set_position(self, position: str):
+        """Move valve to position."""
+        position = str(position).upper()
+        await self._transmit_and_parse_reply(position)
+
 
 class Knauer16PortValve(KnauerValve, MultiPositionValve):
     """KnauerValve of type SIXTEEN_PORT_SIXTEEN_POSITION."""
@@ -220,6 +229,15 @@ class Knauer16PortValve(KnauerValve, MultiPositionValve):
         """Ensure valve type."""
         await super().initialize()
         assert self.valve_type == KnauerValveHeads.SIXTEEN_PORT_SIXTEEN_POSITION
+
+    async def get_position(self) -> str:
+        """Return current valve position."""
+        return await self._transmit_and_parse_reply("P")
+
+    async def set_position(self, position: str):
+        """Move valve to position."""
+        position = str(position).upper()
+        await self._transmit_and_parse_reply(position)
 
 
 if __name__ == "__main__":

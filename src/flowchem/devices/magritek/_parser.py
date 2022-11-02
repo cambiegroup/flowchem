@@ -31,11 +31,11 @@ def parse_status_notification(xml_message: etree.Element):
         case ["State", "Stopping"]:
             status = StatusNotification.STOPPING
         case ["Progress", None]:
-            status = StatusNotification.RUNNING
+            status = StatusNotification.RUNNING  # lgtm [py/unreachable-statement]
         case ["Completed", None]:
-            status = StatusNotification.COMPLETED
+            status = StatusNotification.COMPLETED  # lgtm [py/unreachable-statement]
         case ["Error", None]:
-            status = StatusNotification.ERROR
+            status = StatusNotification.ERROR  # lgtm [py/unreachable-statement]
         case _:
             warnings.warn("Could not recognize StatusNotification state!")
             status = StatusNotification.UNKNOWN
