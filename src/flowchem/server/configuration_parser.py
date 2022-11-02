@@ -73,10 +73,10 @@ def parse_device(dev_settings, device_object_mapper) -> BaseDevice:
         del device_config["type"]
     except KeyError as error:
         logger.exception(
-            f"Device type unknown for '{device_name}'! [Known device types are: {device_object_mapper.keys()}]"
+            f"Device type `{device_config['type']}` unknown in 'device.{device_name}'! [Known types: {device_object_mapper.keys()}]"
         )
         raise InvalidConfiguration(
-            f"Device type unknown for {device_name}! \n"
+            f"Device type `{device_config['type']}` unknown in `device.{device_name}`! \n"
         ) from error
 
     # If the object has a 'from_config' method, use that for instantiation, otherwise try straight with the constructor.
