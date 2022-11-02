@@ -50,7 +50,9 @@ class Clarity(AnalyticalDevice):
             assert self._is_valid_string(executable)
             self.exe = f'"{executable}"'
 
-        assert which(executable) or Path(executable).is_file()
+        assert (
+            which(executable) or Path(executable).is_file()
+        ), "Clarity executable is available"
         self.exe = executable
 
         super().__init__(name=name)
@@ -69,7 +71,7 @@ class Clarity(AnalyticalDevice):
         init_command += (
             f" cfg={cfg}" if (cfg := self.config["clarity-cfg-file"]) else ""
         )
-        init_command += f" u={user}"
+        init_command += f" u={user}" if (user := self.config["user"]) else ""
         init_command += f" p={pwd}" if (pwd := self.config["password"]) else ""
         met = self.config.get("startup-method")
         assert self._is_valid_string(met)

@@ -2,6 +2,7 @@
 # This is so that users do not need to know inner manufacturer-based folder structure
 # Explicit
 from ._internal import FakeDevice
+from .dataapex import Clarity
 from .hamilton import ML600
 from .harvardapparatus import Elite11InfuseOnly
 from .harvardapparatus import Elite11InfuseWithdraw
