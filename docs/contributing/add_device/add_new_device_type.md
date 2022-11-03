@@ -1,10 +1,22 @@
 # Add a new device to flowchem
 
-![New device meme](./images/new-device-type.jpg)
-
 If you want to add support for a new device-type this is tha page for you!
 Let's assume you got a new lab device, an _✨Extendable Ear✨_ manufactured by _Weasley & Weasley_.
 And of course you want to control it via flowchem. Solid idea!👏
+
+You have two possibilities:
+* add support directly into flowchem (fork the repo, add device-specific code and
+create a pull request)
+* add support via a plugin (e.g. a `flowchem-extendable-ear` package)
+
+In general, devices whose support needs the addition of new dependencies to flowchem are better packaged as plugins,
+while generally useful modules are ideally embedded with flowchem.
+This is to limit the amount dependencies in `flowchem` while enabling support to devices with more complex needs.
+For example, a device only needing serial communication such as a syringe pump is ideal for native support, while the
+interface to Spinsolve NMR, needing an XML parser and a specialized library for FID processing is provided
+as a plugin.
+
+##
 
 ## Code
 In the `flowchem.device` subpackage, the device modules are organized in folders by manufacturer.
@@ -57,7 +69,8 @@ class ExtendeableEar(BaseDevice):
 ```
 - instantiable from dict or if not possible with from_config @classmethod
 
-Finally, add to __init__.py to ensure it is available for import with a statement like
+Finally, to register your new device type to the flowchem
+add to `__init__.py` to ensure it is available for import with a statement like
 ```python
 from flowchem.devices import ExtendableEar
 ```

@@ -10,7 +10,7 @@ In `flowchem` we provide a device type, named `Clarity`, to control local Clarit
 Configuration sample showing all possible parameters:
 
 ```toml
-[device.my-clarity-pc]  # This is the 'device' identifier
+[device.hplc]  # This is the 'device' identifier
 type = "Clarity"
 
 # Optional paramters (default shown)
@@ -26,8 +26,9 @@ clarity-cfg-file = ""  # Configuration file for Clarity, if e.g. LaunchManager i
 
 ## API methods
 Once configured, a flowchem Clarity object will expose the following commands:
-```{openapi}
-./clarity.yml
+
+```{eval-rst}
+.. include:: api.rst
 ```
 
 ## Further information

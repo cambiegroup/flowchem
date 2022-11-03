@@ -82,9 +82,6 @@ The rest of this document discusses working on the flowchem code base and docume
 
 * All code should be documented with docstrings in Google format and comments where appropriate.
 * All code should have tests.
-
-## Stylistic Guidelines
-
 * We use [black](https://github.com/psf/black) not to waste time discussing details code style.
 * You can install [pre-commit](https://pre-commit.com/) to run black and other linters as part of the pre-commit hooks. See our `.pre-commit-config.yml` for details. The use of linter and import re-ordering is aimed at reducing diff size and merge conflicts in pull request.
 
@@ -101,12 +98,14 @@ To build it locally, sphynx, myst-parser and other packages are needed. To insta
 pip install .[docs]
 ```
 
+Then from the docs folder run `make html` to generate html docs in the build directory.
+
 
 ```{toctree}
 :maxdepth: 2
 
 design_principles
-add_new_device_type
+add_device/add_new_device_type
 models/device_models
 
 ```

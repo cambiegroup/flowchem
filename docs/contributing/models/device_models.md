@@ -8,7 +8,7 @@ Language.
 
 The scheme below represents the current device object taxonomy.
 
-![Flowchem models taxonomy](../images/flowchem_models.svg)
+![Flowchem models taxonomy](../../images/flowchem_models.svg)
 
 
 ```{toctree}
