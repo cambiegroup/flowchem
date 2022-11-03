@@ -11,6 +11,7 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
+from flowchem.devices.known_plugins import plugin_devices
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.base_device import BaseDevice
 from loguru import logger
@@ -72,11 +73,22 @@ def parse_device(dev_settings, device_object_mapper) -> BaseDevice:
         obj_type = device_object_mapper[device_config["type"]]
         del device_config["type"]
     except KeyError as error:
+        # Helpful message for devices supported via plugins
+        if device_config["type"] in plugin_devices:
+            needed_plugin = plugin_devices[device_config["type"]]
+            logger.exception(
+                f"The device `{device_name}` of type `{device_config['type']}` needs a additional plugin"
+                f"Install {needed_plugin} to add support for it!"
+                f"e.g. `python -m pip install {needed_plugin}`"
+            )
+            raise InvalidConfiguration(f"{needed_plugin} not installed.")
+
         logger.exception(
-            f"Device type `{device_config['type']}` unknown in 'device.{device_name}'! [Known types: {device_object_mapper.keys()}]"
+            f"Device type `{device_config['type']}` unknown in 'device.{device_name}'!"
+            f"[Known types: {device_object_mapper.keys()}]"
         )
         raise InvalidConfiguration(
-            f"Device type `{device_config['type']}` unknown in `device.{device_name}`! \n"
+            f"Unknown device type `{device_config['type']}`."
         ) from error
 
     # If the object has a 'from_config' method, use that for instantiation, otherwise try straight with the constructor.
