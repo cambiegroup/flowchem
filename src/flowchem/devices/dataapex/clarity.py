@@ -79,6 +79,9 @@ class Clarity(AnalyticalDevice):
 
         # Start Clarity and wait for it to be responsive before any other command is sent
         await self.execute_command(init_command)
+        logger.info(
+            f"I will wait {self.config['startup-time']} seconds for Clarity to start-up..."
+        )
         await asyncio.sleep(self.config["startup-time"])
 
     async def set_sample_name(self, sample_name: str):
@@ -88,20 +91,21 @@ class Clarity(AnalyticalDevice):
 
     async def set_method(self, method_name: str):
         """
-        Sets the name of the sample for the next run.
+        Sets the HPLC method (i.e. a file with .MET extension) to the instrument.
 
-        has to be done to open project, then method. Take care to select 'Send Method to Instrument' option in Method
-        Sending Options dialog in System Configuration.
+        Make sure to select 'Send Method to Instrument' option in Method Sending Options dialog in System Configuration.
         """
         assert self._is_valid_string(method_name)
         await self.execute_command(f" {method_name}")
 
     async def run(self):
         """
-        Run one analysis on the instrument. Sample name has to be set in advance.
+        Run one analysis on the instrument. The sample name has to be set in advance via sample-name.
 
-        Care should be taken to activate automatic data export on HPLC. (can be done via command,
-        but that only makes it more complicated). Takes at least 2 sec until the run actually starts.
+        Note that it takes at least 2 sec until the run actually starts (depending on instrument configuration).
+        While the export of the chromatogram in e.g. ASCII format can be achieved programmatically via the CLI, the best
+        solution is to enable automatic data export for all runs of the HPLC as the chromatogram will be automatically
+        exported as soon as the run is finished.
         """
         await self.execute_command(
             f"run={self.instrument}", without_instrument_num=True
@@ -131,8 +135,8 @@ class Clarity(AnalyticalDevice):
     def get_router(self, prefix: str | None = None):
         """Create an APIRouter for this object."""
         router = super().get_router(prefix)
-        router.add_api_route("/sample-name", self.set_sample_name, methods=["PUT"])
-        router.add_api_route("/method", self.set_method, methods=["PUT"])
         router.add_api_route("/run", self.run, methods=["PUT"])
+        router.add_api_route("/method", self.set_method, methods=["PUT"])
+        router.add_api_route("/sample-name", self.set_sample_name, methods=["PUT"])
         router.add_api_route("/exit", self.exit, methods=["PUT"])
         return router
