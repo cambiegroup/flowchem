@@ -1,4 +1,12 @@
 # Magritek Spinsolve
+```{admonition} Additional plugin needed!
+:class: attention
+
+To use Spinsolve devices the external plugin `flowchem-spinsolve` is needed!
+
+Install it with `python -m pip install flowchem-spinsolve`!
+```
+
 ## Introduction
 The bench-top NMRs from Magritek are controlled by the proprietary software Spinsolve.
 Spinsolve can be controlled remotely via XML over HTTP.

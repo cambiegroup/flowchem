@@ -1,24 +1,5 @@
-#ignore-failures:
-#  python:
-#    - aioserial
-#    - backcall
-#    - commonmark
-#    - entrypoints
-#    - future
-#    - ipython-genutils
-#    - pickleshare
-#    - pyasn1
-#    - pyasn1-modules
-#    - webencodings
-#    - wcwidth
 additional-deps:
   python:
     # name can be included so Deadpendency can load the package details in the registry
     - name: asyncua
       repo: FreeOpcUa/opcua-asyncio
-
-    - name: lxml
-      repo: lxml/lxml
-
-    - name: nmrglue
-      repo: jjhelmus/nmrglue
