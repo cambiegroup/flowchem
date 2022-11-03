@@ -10,8 +10,6 @@ getting_started
 
 devices/supported_devices
 
-community
-
 contributing/index.md
 
 ```

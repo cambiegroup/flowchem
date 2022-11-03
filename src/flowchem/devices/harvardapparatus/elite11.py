@@ -722,7 +722,6 @@ class Elite11InfuseOnly(SyringePump):
 
         router.add_api_route("/parameters/force", self.get_force, methods=["PUT"])
         router.add_api_route("/parameters/force", self.set_force, methods=["PUT"])
-        # router.add_api_route("/run", self.run, methods=["PUT"])
         router.add_api_route("/info/version", self.version, methods=["GET"])
         router.add_api_route(
             "/info/status", self.get_status, methods=["GET"], response_model=PumpStatus

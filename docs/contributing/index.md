@@ -104,8 +104,9 @@ Then from the docs folder run `make html` to generate html docs in the build dir
 ```{toctree}
 :maxdepth: 2
 
+community
 design_principles
-add_device/add_new_device_type
+add_device/index
 models/device_models
 
 ```

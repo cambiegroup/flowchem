@@ -2,6 +2,20 @@
 
 The following devices are currently supported in flowchem:
 
+| Manufacturer     | Device / Model | `flowchem` name                          | `flowchem`  type    | Auto-discoverable |
+|------------------|----------------|------------------------------------------|---------------------|:-----------------:|
+| DataApex         | Clarity        | Clarity                                  | AnalyticalDevice    |        NO         |
+| Hamilton         | ML600          | ML600                                    |                     |        YES        |
+| HarvardApparatus | Elite11        | Elite11InfuseOnly, Elite11InfuseWithdraw | SyringePump         |        YES        |
+|                  |                |                                          |                     |                   |
+|                  |                |                                          |                     |                   |
+|                  |                |                                          |                     |                   |
+|                  |                |                                          |                     |                   |
+|                  |                |                                          |                     |                   |
+|                  |                |                                          |                     |                   |
+|                  |                |                                          |                     |                   |
+|                  |                |                                          |                     |                   |
+
 
 ```{toctree}
 :maxdepth: 1
