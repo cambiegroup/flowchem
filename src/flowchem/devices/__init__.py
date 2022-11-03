@@ -12,7 +12,6 @@ from .knauer import Knauer12PortValve
 from .knauer import Knauer16PortValve
 from .knauer import Knauer6Port2PositionValve
 from .knauer import Knauer6Port6PositionValve
-from .magritek import Spinsolve
 from .manson import MansonPowerSupply
 from .mettlertoledo import FlowIR
 from .phidgets import PressureSensor
