@@ -10,50 +10,35 @@ from loguru import logger
 from flowchem.models.analytical_device import AnalyticalDevice
 
 
-ClarityConfig = TypedDict(
-    "ClarityConfig",
-    {
-        "startup-time": float,
-        "startup-method": str,
-        "cmd-timeout": float,
-        "user": str,
-        "password": str,
-        "clarity-cfg-file": str,
-    },
-)
-
-
 class Clarity(AnalyticalDevice):
-    DEFAULT_CONFIG: ClarityConfig = {
-        "startup-time": 20,
-        "startup-method": "",
-        "cmd-timeout": 3,
-        "user": "admin",
-        "password": "",
-        "clarity-cfg-file": "",
-    }
-
     def __init__(
         self,
         executable: str = r"C:\claritychrom\bin\claritychrom.exe",
         instrument_number: int = 1,
+        startup_time: float = 20,
+        startup_method: str = "",
+        cmd_timeout: float = 3,
+        user: str = "admin",
+        password: str = "",
+        cfg_file: str = "",
         name=None,
-        **config,
     ):
 
-        self.config: ClarityConfig = self.DEFAULT_CONFIG | config  # type: ignore
-        self.instrument = instrument_number
         # Executable is either path or command in PATH
         if which(executable):
-            self.exe = executable
+            self.executable = executable
         else:
             assert self._is_valid_string(executable)
-            self.exe = f'"{executable}"'
+            self.executable = f'"{executable}"'
+        assert which(executable) or Path(executable).is_file(), "Valid executable found"
 
-        assert (
-            which(executable) or Path(executable).is_file()
-        ), "Clarity executable is available"
-        self.exe = executable
+        self.instrument = instrument_number
+        self.startup_time = startup_time
+        self.startup_method = startup_method
+        self.cmd_timeout = cmd_timeout
+        self.user = user
+        self.password = password
+        self.cfg_file = cfg_file
 
         super().__init__(name=name)
 
@@ -68,21 +53,16 @@ class Clarity(AnalyticalDevice):
     async def initialize(self):
         """Start ClarityChrom upon initialization."""
         init_command = ""
-        init_command += (
-            f" cfg={cfg}" if (cfg := self.config["clarity-cfg-file"]) else ""
-        )
-        init_command += f" u={user}" if (user := self.config["user"]) else ""
-        init_command += f" p={pwd}" if (pwd := self.config["password"]) else ""
-        met = self.config.get("startup-method")
-        assert self._is_valid_string(met)
-        init_command += f' "{met}"'
+        init_command += f" cfg={self.cfg_file}" if self.cfg_file else ""
+        init_command += f" u={self.user}" if self.user else ""
+        init_command += f" p={self.password}" if self.password else ""
+        assert self._is_valid_string(self.startup_method)
+        init_command += f' "{self.startup_method}"'
 
         # Start Clarity and wait for it to be responsive before any other command is sent
         await self.execute_command(init_command)
-        logger.info(
-            f"I will wait {self.config['startup-time']} seconds for Clarity to start-up..."
-        )
-        await asyncio.sleep(self.config["startup-time"])
+        logger.info(f"Clarity startup: waiting {self.startup_time} seconds")
+        await asyncio.sleep(self.startup_time)
 
     async def set_sample_name(self, sample_name: str):
         """Sets the name of the sample for the next run."""
@@ -117,7 +97,7 @@ class Clarity(AnalyticalDevice):
 
     async def execute_command(self, command: str, without_instrument_num: bool = False):
         """Execute claritychrom.exe command."""
-        cmd_string = self.exe
+        cmd_string = self.executable
         if not without_instrument_num:
             cmd_string += f" i={self.instrument}"
         cmd_string += f" {command}"
@@ -126,11 +106,9 @@ class Clarity(AnalyticalDevice):
 
         process = await asyncio.create_subprocess_shell(cmd_string)
         try:
-            await asyncio.wait_for(process.wait(), timeout=self.config["cmd-timeout"])
+            await asyncio.wait_for(process.wait(), timeout=self.cmd_timeout)
         except TimeoutError:
-            logger.error(
-                f"Subprocess timeout expired (timeout = {self.config['cmd-timeout']} s)"
-            )
+            logger.error(f"Subprocess timeout expired (timeout = {self.cmd_timeout} s)")
 
     def get_router(self, prefix: str | None = None):
         """Create an APIRouter for this object."""
