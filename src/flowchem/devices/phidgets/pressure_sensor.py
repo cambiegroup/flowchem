@@ -4,7 +4,9 @@ import warnings
 
 from loguru import logger
 
-from flowchem.models.sensors.pressure_sensor import PressureSensor
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.people import *
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -30,7 +32,7 @@ from flowchem.exceptions import InvalidConfiguration
 from flowchem import ureg
 
 
-class PhidgetPressureSensor(PressureSensor):
+class PhidgetPressureSensor(FlowchemDevice):
     """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
 
     def __init__(
@@ -85,12 +87,14 @@ class PhidgetPressureSensor(PressureSensor):
         """Ensure connection closure upon deletion."""
         self.phidget.close()
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
-        router = super().get_router()
-        router.add_api_route("/attached", self.is_attached, methods=["GET"])
-
-        return router
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Phidget",
+            model="VINT",
+        )
 
     def is_attached(self) -> bool:
         """Whether the device is connected."""
@@ -129,6 +133,17 @@ class PhidgetPressureSensor(PressureSensor):
         else:
             pressure = self._current_to_pressure(current) * ureg.bar
             return pressure.m_as(units)
+
+    def get_components(self):
+        """Return an IRSpectrometer component."""
+        # FIXME
+
+    # def get_router(self, prefix: str | None = None):
+    #     """Create an APIRouter for this object."""
+    #     router = super().get_router()
+    #     router.add_api_route("/attached", self.is_attached, methods=["GET"])
+    #
+    #     return router
 
 
 if __name__ == "__main__":

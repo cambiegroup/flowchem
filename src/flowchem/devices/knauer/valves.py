@@ -4,10 +4,13 @@ from enum import Enum
 
 from loguru import logger
 
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.exceptions import DeviceError
 from flowchem.models.valves.injection_valve import InjectionValve
 from flowchem.models.valves.multiposition_valve import MultiPositionValve
+from flowchem.people import *
 
 
 class KnauerValveHeads(Enum):
@@ -19,7 +22,7 @@ class KnauerValveHeads(Enum):
     SIXTEEN_PORT_SIXTEEN_POSITION = "16"
 
 
-class KnauerValve(KnauerEthernetDevice):
+class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
     """
     Control Knauer multi position valves.
 
@@ -43,6 +46,15 @@ class KnauerValve(KnauerEthernetDevice):
 
         # Detect valve type and state
         self.valve_type = await self.get_valve_type()
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Knauer",
+            model="Valve",
+        )
 
     @staticmethod
     def handle_errors(reply: str):
@@ -132,7 +144,7 @@ class KnauerValve(KnauerEthernetDevice):
         return headtype
 
 
-class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
+class Knauer6Port2PositionValve(KnauerValve):
     """KnauerValve of type SIX_PORT_TWO_POSITION."""
 
     position_mapping = {"LOAD": "L", "INJECT": "I"}
@@ -145,11 +157,11 @@ class Knauer6Port2PositionValve(KnauerValve, InjectionValve):
 
     async def set_position(self, position: str):
         """Move valve to position."""
-        await super().set_position(self.position_mapping[position])
+        await self._transmit_and_parse_reply(self.position_mapping[position])
 
     async def get_position(self) -> str:
         """Return current valve position."""
-        valve_pos = await super().get_position()
+        valve_pos = await self._transmit_and_parse_reply("P")
         return self._reverse_position_mapping[valve_pos]
 
 

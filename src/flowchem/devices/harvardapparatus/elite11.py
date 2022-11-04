@@ -9,10 +9,13 @@ from loguru import logger
 from pydantic import BaseModel
 
 from flowchem import ureg
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.pumps.base_pump import WithdrawMixin
 from flowchem.models.pumps.syringe_pump import SyringePump
+from flowchem.people import *
 
 
 class PumpInfo(BaseModel):
@@ -290,7 +293,7 @@ class Elite11Commands:
 
 
 # noinspection PyProtectedMember,DuplicatedCode
-class Elite11InfuseOnly(SyringePump):
+class Elite11InfuseOnly(FlowchemDevice):
     """
     Controls Harvard Apparatus Elite11 syringe pumps.
 
@@ -305,27 +308,6 @@ class Elite11InfuseOnly(SyringePump):
     # When several pumps are daisy-chained on the same serial port, they need to all access the same Serial object,
     # because access to the serial port is exclusive by definition (also locking there ensure thread safe operations).
     # FYI it is a borg idiom https://www.oreilly.com/library/view/python-cookbook/0596001673/ch05s23.html
-
-    metadata = {
-        "author": [
-            {
-                "first_name": "Jakob",
-                "last_name": "Wolf",
-                "email": "jakob.wolf@mpikg.mpg.de",
-                "institution": "Max Planck Institute of Colloids and Interfaces",
-                "github_username": "JB-Wolf",
-            },
-            {
-                "first_name": "Dario",
-                "last_name": "Cambié",
-                "email": "dario.cambie@mpikg.mpg.de",
-                "institution": "Max Planck Institute of Colloids and Interfaces",
-                "github_username": "dcambie",
-            },
-        ],
-        "tested": True,
-        "supported": True,
-    }
 
     def __init__(
         self,
@@ -403,6 +385,16 @@ class Elite11InfuseOnly(SyringePump):
             name=name,
             syringe_diameter=syringe_diameter,
             syringe_volume=syringe_volume,
+        )
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="HarvardApparatus",
+            model="Elite11",
+            version=self._version,
         )
 
     @staticmethod
@@ -823,20 +815,18 @@ class Elite11InfuseWithdraw(WithdrawMixin, Elite11InfuseOnly):
         await self.clear_infused_volume()
         await self.clear_withdrawn_volume()
 
-    def get_router(self, prefix: str | None = None):
-        """Return an APIRouter instance for this Elite11 pump."""
-        router = super().get_router()
-
-        # Creates an APIRouter for this object.
-        router.add_api_route("/run/inverse", self.inverse_run, methods=["PUT"])
-        router.add_api_route(
-            "/info/withdrawn-volume", self.get_withdrawn_volume, methods=["GET"]
-        )
-        router.add_api_route(
-            "/info/reset-withdrawn", self.clear_withdrawn_volume, methods=["PUT"]
-        )
-
-        return router
+    def get_components(self):
+        """Return a Pump component."""
+        # FIXME
+        ...
+        # # Creates an APIRouter for this object.
+        # router.add_api_route("/run/inverse", self.inverse_run, methods=["PUT"])
+        # router.add_api_route(
+        #     "/info/withdrawn-volume", self.get_withdrawn_volume, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/info/reset-withdrawn", self.clear_withdrawn_volume, methods=["PUT"]
+        # )
 
 
 if __name__ == "__main__":

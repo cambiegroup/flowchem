@@ -14,7 +14,7 @@ from .knauer import Knauer6Port2PositionValve
 from .knauer import Knauer6Port6PositionValve
 from .manson import MansonPowerSupply
 from .mettlertoledo import FlowIR
-from .phidgets import PressureSensor
+from .phidgets import PhidgetPressureSensor
 from .vicivalco import ViciValve
 
 

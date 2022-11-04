@@ -1,4 +1,4 @@
 """Phidget-based devices."""
-from .pressure_sensor import PressureSensor
+from .pressure_sensor import PhidgetPressureSensor
 
-__all__ = ["PressureSensor"]
+__all__ = ["PhidgetPressureSensor"]

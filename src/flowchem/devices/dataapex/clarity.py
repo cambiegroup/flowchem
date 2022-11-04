@@ -3,14 +3,20 @@
 import asyncio
 from pathlib import Path
 from shutil import which
-from typing import TypedDict
 
 from loguru import logger
 
-from flowchem.models.analytical_device import AnalyticalDevice
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.people import *
 
 
-class Clarity(AnalyticalDevice):
+def _is_valid_string(path: str):
+    """Ensure no double-quote are present in the string"""
+    return '"' not in path
+
+
+class Clarity(FlowchemDevice):
     def __init__(
         self,
         executable: str = r"C:\claritychrom\bin\claritychrom.exe",
@@ -28,7 +34,7 @@ class Clarity(AnalyticalDevice):
         if which(executable):
             self.executable = executable
         else:
-            assert self._is_valid_string(executable)
+            assert _is_valid_string(executable)
             self.executable = f'"{executable}"'
         assert which(executable) or Path(executable).is_file(), "Valid executable found"
 
@@ -46,17 +52,13 @@ class Clarity(AnalyticalDevice):
         # noinspection HttpUrlsUsage
         self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0001057")
 
-    def _is_valid_string(self, path: str):
-        """Ensure no double-quote are present in the string"""
-        return '"' not in path
-
     async def initialize(self):
         """Start ClarityChrom upon initialization."""
         init_command = ""
         init_command += f" cfg={self.cfg_file}" if self.cfg_file else ""
         init_command += f" u={self.user}" if self.user else ""
         init_command += f" p={self.password}" if self.password else ""
-        assert self._is_valid_string(self.startup_method)
+        assert _is_valid_string(self.startup_method)
         init_command += f' "{self.startup_method}"'
 
         # Start Clarity and wait for it to be responsive before any other command is sent
@@ -64,9 +66,18 @@ class Clarity(AnalyticalDevice):
         logger.info(f"Clarity startup: waiting {self.startup_time} seconds")
         await asyncio.sleep(self.startup_time)
 
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="DataApex",
+            model="Clarity Chromatography",
+        )
+
     async def set_sample_name(self, sample_name: str):
         """Sets the name of the sample for the next run."""
-        assert self._is_valid_string(sample_name)
+        assert _is_valid_string(sample_name)
         await self.execute_command(f'set_sample_name="{sample_name}"')
 
     async def set_method(self, method_name: str):
@@ -75,7 +86,7 @@ class Clarity(AnalyticalDevice):
 
         Make sure to select 'Send Method to Instrument' option in Method Sending Options dialog in System Configuration.
         """
-        assert self._is_valid_string(method_name)
+        assert _is_valid_string(method_name)
         await self.execute_command(f" {method_name}")
 
     async def run(self):
@@ -110,11 +121,11 @@ class Clarity(AnalyticalDevice):
         except TimeoutError:
             logger.error(f"Subprocess timeout expired (timeout = {self.cmd_timeout} s)")
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
-        router = super().get_router(prefix)
-        router.add_api_route("/run", self.run, methods=["PUT"])
-        router.add_api_route("/method", self.set_method, methods=["PUT"])
-        router.add_api_route("/sample-name", self.set_sample_name, methods=["PUT"])
-        router.add_api_route("/exit", self.exit, methods=["PUT"])
-        return router
+    def get_components(self):
+        """Return an HPLC_Control component."""
+        # FIXME
+        ...
+        # router.add_api_route("/run", self.run, methods=["PUT"])
+        # router.add_api_route("/method", self.set_method, methods=["PUT"])
+        # router.add_api_route("/sample-name", self.set_sample_name, methods=["PUT"])
+        # router.add_api_route("/exit", self.exit, methods=["PUT"])

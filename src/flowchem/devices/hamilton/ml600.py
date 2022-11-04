@@ -6,20 +6,18 @@ import time
 import warnings
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import TYPE_CHECKING
 
 import aioserial
 from loguru import logger
 
 from flowchem import ureg
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.models.base_device import BaseDevice
-
-if TYPE_CHECKING:
-    import pint
+from flowchem.people import *
 
 
-class ML600(BaseDevice):
+class ML600(FlowchemDevice):
     """ML600 implementation according to manufacturer docs. Tested on a 61501-01 (i.e. single syringe system).
 
     From manufacturer docs:
@@ -29,6 +27,13 @@ class ML600(BaseDevice):
     example to dispense 9 mL from a 10 mL syringe you would determine the number of
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
+
+    metadata = DeviceInfo(
+        authors=[dario, jakob, wei_hsin],
+        maintainers=[dario],
+        manufacturer="Hamilton",
+        model="ML600",
+    )
 
     @dataclass
     class Protocol1CommandTemplate:
@@ -302,11 +307,11 @@ class ML600(BaseDevice):
                 f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}"
             )
 
-        self._steps_per_ml: pint.Quantity = ureg.Quantity(
-            f"{48000 / self.syringe_volume} step/ml"
-        )
+        self._steps_per_ml = ureg(f"{48000 / self.syringe_volume} step/ml")
         self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
+        self._flow_rate = ureg("0.1 ml/min")
+        self._withdraw_flow_rate = ureg("0.1 ml/min")
 
     @classmethod
     def from_config(cls, **config):
@@ -444,9 +449,7 @@ class ML600(BaseDevice):
 
         return self._validate_speed(str(seconds_per_stroke))
 
-    def _seconds_per_stroke_to_flowrate(
-        self, second_per_stroke: pint.Quantity
-    ) -> float:
+    def _seconds_per_stroke_to_flowrate(self, second_per_stroke) -> float:
         """Converts seconds per stroke to flow rate. Only internal use."""
         flowrate = 1 / (second_per_stroke * self._steps_per_ml)
         return flowrate.to("ml/min")
@@ -492,6 +495,42 @@ class ML600(BaseDevice):
         """Resume any paused command."""
         return await self.send_command_and_read_reply(
             ML600.Protocol1CommandTemplate(command="$", execute_command=False)
+        )
+
+    async def set_flow_rate(self, rate: str):
+        """Set pump infusion flow rate."""
+        self._flow_rate = ureg(rate)
+
+    async def get_flow_rate(self) -> float:
+        """Get pump infusion flow rate."""
+        return self._flow_rate.m_as("ml/min")
+
+    async def set_withdrawing_flow_rate(self, rate: str):
+        """Set pump withdraw flow rate."""
+        self._withdraw_flow_rate = ureg(rate)
+
+    async def get_withdrawing_flow_rate(self) -> float:
+        """Get pump withdraw flow rate."""
+        return self._withdraw_flow_rate.m_as("ml/min")
+
+    async def infuse(self):
+        """
+        Start infusion.
+
+        As default infuse current syringe volume to `output` position at pre-set flowrate.
+        """
+        self.deliver(
+            volume=self.get_current_volume(),
+            to_valve=ValvePositionName.OUTPUT,
+            flowrate=str(self._flow_rate),
+        )
+
+    def withdraw(self):
+        """Pump in the opposite direction of infuse."""
+        self.deliver(
+            volume=self._max_vol,
+            to_valve=ValvePositionName.OUTPUT,
+            flowrate=str(self._flow_rate),
         )
 
     async def stop(self):
@@ -540,6 +579,7 @@ class ML600(BaseDevice):
         wait_for_movement_end: bool = True,
     ):
         """Set valve position. wait_for_movement_end is defaulted to True as it is a common mistake not to wait..."""
+        valve_by_name_cw = ML600.Protocol1CommandTemplate(command="LP0")
         valve_by_name_cw = ML600.Protocol1CommandTemplate(command="LP0")
         await self.send_command_and_read_reply(
             valve_by_name_cw, command_value=str(int(target_position))
@@ -628,46 +668,52 @@ class ML600(BaseDevice):
         await self.pickup(volume, from_valve, flowrate_in, wait=True)
         await self.deliver(volume, to_valve, flowrate_out, wait=wait)
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
-        router = super().get_router(prefix)
+    def get_components(self):
+        """Return a Syringe and a Valve component."""
+        # FIXME
+        ...
 
-        router.add_api_route("/firmware-version", self.version, methods=["GET"])
-        router.add_api_route("/initialize/pump", self.initialize_pump, methods=["PUT"])
-        router.add_api_route(
-            "/initialize/valve", self.initialize_valve, methods=["PUT"]
-        )
-        router.add_api_route(
-            "/initialize/syringe", self.initialize_syringe, methods=["PUT"]
-        )
-        router.add_api_route("/pause", self.pause, methods=["PUT"])
-        router.add_api_route("/resume", self.resume, methods=["PUT"])
-        router.add_api_route("/resume", self.resume, methods=["PUT"])
-        router.add_api_route("/stop", self.stop, methods=["PUT"])
-        router.add_api_route("/version", self.stop, methods=["PUT"])
-        router.add_api_route("/is-idle", self.is_idle, methods=["GET"])
-        router.add_api_route("/is-busy", self.is_busy, methods=["GET"])
-        router.add_api_route(
-            "/valve/position", self.get_valve_position, methods=["GET"]
-        )
-        router.add_api_route(
-            "/valve/position", self.set_valve_position, methods=["PUT"]
-        )
-        router.add_api_route(
-            "/syringe/volume", self.get_current_volume, methods=["GET"]
-        )
-        router.add_api_route("/syringe/volume", self.to_volume, methods=["PUT"])
-        router.add_api_route(
-            "/syringe/return-steps", self.get_return_steps, methods=["GET"]
-        )
-        router.add_api_route(
-            "/syringe/return-steps", self.set_return_steps, methods=["PUT"]
-        )
-        router.add_api_route("/pickup", self.pickup, methods=["PUT"])
-        router.add_api_route("/deliver", self.deliver, methods=["PUT"])
-        # router.add_api_route("/transfer", self.transfer, methods=["PUT"])  # Might go in timeout
+        # From BasePump
+        # router.add_api_route("/flow-rate", self.get_flow_rate, methods=["GET"])
+        # router.add_api_route("/flow-rate", self.set_flow_rate, methods=["PUT"])
+        # router.add_api_route("/infuse", self.infuse, methods=["PUT"])
+        # router.add_api_route("/stop", self.stop, methods=["PUT"])
 
-        return router
+        # router.add_api_route("/firmware-version", self.version, methods=["GET"])
+        # router.add_api_route("/initialize/pump", self.initialize_pump, methods=["PUT"])
+        # router.add_api_route(
+        #     "/initialize/valve", self.initialize_valve, methods=["PUT"]
+        # )
+        # router.add_api_route(
+        #     "/initialize/syringe", self.initialize_syringe, methods=["PUT"]
+        # )
+        # router.add_api_route("/pause", self.pause, methods=["PUT"])
+        # router.add_api_route("/resume", self.resume, methods=["PUT"])
+        # router.add_api_route("/is-idle", self.is_idle, methods=["GET"])
+        # router.add_api_route("/is-busy", self.is_busy, methods=["GET"])
+        # router.add_api_route(
+        #     "/valve/position", self.get_valve_position, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/valve/position", self.set_valve_position, methods=["PUT"]
+        # )
+        # router.add_api_route(
+        #     "/syringe/volume", self.get_current_volume, methods=["GET"]
+        # )
+        # router.add_api_route("/syringe/volume", self.to_volume, methods=["PUT"])
+        # router.add_api_route(
+        #     "/syringe/return-steps", self.get_return_steps, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/syringe/return-steps", self.set_return_steps, methods=["PUT"]
+        # )
+        # router.add_api_route("/pickup", self.pickup, methods=["PUT"])
+        # router.add_api_route("/deliver", self.deliver, methods=["PUT"])
+        # router.add_api_route(
+        #     "/transfer", self.transfer, methods=["PUT"]
+        # )  # Might go in timeout
+        #
+        # return router
 
 
 if __name__ == "__main__":

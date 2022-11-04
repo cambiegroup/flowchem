@@ -8,12 +8,14 @@ import aioserial
 from loguru import logger
 
 from flowchem import ureg
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.models.base_device import BaseDevice
+from flowchem.people import *
 
 
-class MansonPowerSupply(BaseDevice):
+class MansonPowerSupply(FlowchemDevice):
     """Control module for Manson Power Supply (e.g. used to power LEDs in the photo-rector or as potentiostat)."""
 
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
@@ -22,6 +24,7 @@ class MansonPowerSupply(BaseDevice):
         """Control class for Manson Power Supply."""
         super().__init__(name)
         self._serial = aio
+        self.model_info = ""
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
@@ -41,13 +44,22 @@ class MansonPowerSupply(BaseDevice):
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        model_info = await self.get_info()
-        if model_info == "":
+        self.model_info = await self.get_info()
+        if self.model_info == "":
             raise DeviceError("Communication with device failed!")
         if await self.get_info() not in self.MODEL_ALT_RANGE:
             raise InvalidConfiguration(
                 f"Device is not supported! [Supported models: {self.MODEL_ALT_RANGE}]"
             )
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Manson",
+            model=self.model_info,
+        )
 
     @staticmethod
     def _format_voltage(voltage_value: str) -> str:
@@ -273,17 +285,21 @@ class MansonPowerSupply(BaseDevice):
         await self.set_voltage(voltage)
         await self.set_current(current)
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this MansonPowerSupply instance."""
-        router = super().get_router()
+    def get_components(self):
+        """Return an IRSpectrometer component."""
+        # FIXME
 
-        router.add_api_route("/on", self.output_on, methods=["GET"])
-        router.add_api_route("/off", self.output_off, methods=["GET"])
-        router.add_api_route("/output/power", self.get_output_power, methods=["GET"])
-        router.add_api_route("/output/mode", self.get_output_mode, methods=["GET"])
-        router.add_api_route("/voltage/read", self.get_output_voltage, methods=["GET"])
-        router.add_api_route("/voltage/max", self.set_voltage, methods=["PUT"])
-        router.add_api_route("/current/read", self.get_output_current, methods=["GET"])
-        router.add_api_route("/current/max", self.set_current, methods=["PUT"])
-
-        return router
+    # def get_router(self, prefix: str | None = None):
+    #     """Create an APIRouter for this MansonPowerSupply instance."""
+    #     router = super().get_router()
+    #
+    #     router.add_api_route("/on", self.output_on, methods=["GET"])
+    #     router.add_api_route("/off", self.output_off, methods=["GET"])
+    #     router.add_api_route("/output/power", self.get_output_power, methods=["GET"])
+    #     router.add_api_route("/output/mode", self.get_output_mode, methods=["GET"])
+    #     router.add_api_route("/voltage/read", self.get_output_voltage, methods=["GET"])
+    #     router.add_api_route("/voltage/max", self.set_voltage, methods=["PUT"])
+    #     router.add_api_route("/current/read", self.get_output_current, methods=["GET"])
+    #     router.add_api_route("/current/max", self.set_current, methods=["PUT"])
+    #
+    #     return router

@@ -44,6 +44,7 @@ dependencies = [
     "rich_click>=0.3.0",
     'tomli; python_version<"3.11"',
     "uvicorn>=0.13.4",
+    "zeroconf>=0.39.4",
 ]
 
 [project.optional-dependencies]
@@ -86,7 +87,7 @@ documentation = "https://flowchem.readthedocs.io"
 repository = "https://github.com/cambiegroup/flowchem"
 
 [project.scripts]
-flowchem = "flowchem.cli:main"
+flowchem = "flowchem.__main__:main"
 flowchem-autodiscover = "flowchem.autodiscover:main"
 
 [tool.pytest.ini_options]

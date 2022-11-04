@@ -7,8 +7,11 @@ import aioserial
 from loguru import logger
 
 from flowchem import ureg
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.models.valves.injection_valve import InjectionValve
+from flowchem.people import *
 
 
 @dataclass
@@ -104,7 +107,7 @@ class ViciValcoValveIO:
             return ""
 
 
-class ViciValve(InjectionValve):
+class ViciValve(FlowchemDevice):
     """ViciValco injection valves."""
 
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
@@ -142,6 +145,7 @@ class ViciValve(InjectionValve):
         super().__init__(loop_volume=loop_volume, name=name)
 
         self.address = address
+        self._version = ""
 
     @classmethod
     def from_config(
@@ -165,8 +169,6 @@ class ViciValve(InjectionValve):
 
     async def initialize(self):
         """Must be called after init before anything else."""
-        await super().initialize()
-
         # Learning positions is only needed if the valve head has been reinstalled.
         await self.learn_positions()
 
@@ -174,8 +176,18 @@ class ViciValve(InjectionValve):
         await self.home()
 
         # Test connectivity by querying the valve's firmware version
-        firmware_version = await self.version()
-        logger.info(f"Connected to {self.name} - FW ver.: {firmware_version}!")
+        self._version = await self.version()
+        logger.info(f"Connected to {self.name} - FW ver.: {self._version}!")
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Vici-Valco",
+            model="Universal Valve Actuator",
+            version=self._version,
+        )
 
     async def learn_positions(self) -> None:
         """Initialize valve only, there is no reply -> reply_lines = 0."""
@@ -221,18 +233,13 @@ class ViciValve(InjectionValve):
         time_toggle = ViciCommand(valve_id=self.address, command="TT")
         await self.valve_io.write_and_read_reply(time_toggle)
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
-        from fastapi import APIRouter
-
-        router = APIRouter()
-        router.add_api_route("/firmware-version", self.version, methods=["GET"])
-        router.add_api_route("/home", self.home, methods=["PUT"])
-        router.add_api_route("/position", self.get_position, methods=["GET"])
-        router.add_api_route("/position", self.set_position, methods=["PUT"])
-        router.add_api_route("/timed-toggle", self.set_position, methods=["PUT"])
-
-        return router
+    def get_components(self):
+        """Return a Valve component."""
+        # router.add_api_route("/firmware-version", self.version, methods=["GET"])
+        # router.add_api_route("/home", self.home, methods=["PUT"])
+        # router.add_api_route("/position", self.get_position, methods=["GET"])
+        # router.add_api_route("/position", self.set_position, methods=["PUT"])
+        # router.add_api_route("/timed-toggle", self.set_position, methods=["PUT"])
 
 
 if __name__ == "__main__":

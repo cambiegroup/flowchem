@@ -7,9 +7,10 @@ from loguru import logger
 
 from ._common import KnauerEthernetDevice
 from flowchem import ureg
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.exceptions import DeviceError
-from flowchem.models.pumps.hplc_pump import HplcPump
-from flowchem.models.sensors.pressure_sensor import PressureSensor
+from flowchem.people import *
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to the highest flow rate in ml/min
@@ -45,29 +46,8 @@ class AzuraPumpHeads(Enum):
 
 
 # noinspection DuplicatedCode
-class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
+class AzuraCompactPump(KnauerEthernetDevice, FlowchemDevice):
     """Control module for Knauer Azura Compact pumps."""
-
-    metadata = {
-        "author": [
-            {
-                "first_name": "Jakob",
-                "last_name": "Wolf",
-                "email": "jakob.wolf@mpikg.mpg.de",
-                "institution": "Max Planck Institute of Colloids and Interfaces",
-                "github_username": "JB-Wolf",
-            },
-            {
-                "first_name": "Dario",
-                "last_name": "Cambie",
-                "email": "dario.cambie@mpikg.mpg.de",
-                "institution": "Max Planck Institute of Colloids and Interfaces",
-                "github_username": "dcambie",
-            },
-        ],
-        "tested": True,
-        "supported": True,
-    }
 
     def __init__(
         self,
@@ -106,6 +86,15 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
             await self.set_maximum_pressure(self._pressure_max)
         if self._pressure_min is not None:
             await self.set_minimum_pressure(self._pressure_min)
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="knauer",
+            model="Azura Compact",
+        )
 
     @staticmethod
     def error_present(reply: str) -> bool:

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 
 from flowchem.server.api_server import create_server_for_devices
-from flowchem.server.configuration_parser import parse_config
+from flowchem.server.configuration_parser import instantiate_device
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="No mock_serial on windows")
@@ -23,7 +23,7 @@ def devices(mock_serial) -> dict:
         "port": mock_serial.port,
         "syringe_volume": "1 ml",
     }
-    return parse_config(config)
+    return instantiate_device(config)
 
 
 @pytest.fixture

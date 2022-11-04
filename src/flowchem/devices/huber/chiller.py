@@ -8,11 +8,13 @@ import pint
 from loguru import logger
 
 from flowchem import ureg
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.models.temperature_control import TemperatureControl
+from flowchem.people import *
 
 
-class HuberChiller(TemperatureControl):
+class HuberChiller(FlowchemDevice):
     """Control class for Huber chillers."""
 
     @dataclass
@@ -151,6 +153,16 @@ class HuberChiller(TemperatureControl):
             raise InvalidConfiguration("No reply received from Huber Chiller!")
         self.device_sn = serial_num
         logger.debug(f"Connected with Huber Chiller S/N {serial_num}")
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Huber",
+            model="generic chiller",
+            serial_number=self.device_sn,
+        )
 
     async def _send_command_and_read_reply(self, command: str) -> str:
         """Send a command to the chiller and read the reply.
@@ -437,90 +449,87 @@ class HuberChiller(TemperatureControl):
         """From temperature to string for command. f^-1 of PCommand.parse_integer."""
         return f"{number:04X}"
 
-    def get_router(self, prefix: str | None = None):
-        """Populate route of APIRouter for this HuberChiller instance."""
-        router = super().get_router()
-        router.add_api_route(
-            "/temperature/process", self.process_temperature, methods=["GET"]
-        )
-        router.add_api_route(
-            "/temperature/internal", self.internal_temperature, methods=["GET"]
-        )
-        router.add_api_route(
-            "/temperature/return", self.return_temperature, methods=["GET"]
-        )
-        router.add_api_route("/power-exchanged", self.current_power, methods=["GET"])
-        router.add_api_route("/status", self.status, methods=["GET"])
-        router.add_api_route("/status2", self.status2, methods=["GET"])
-        router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
-        router.add_api_route(
-            "/temperature-control", self.is_temperature_control_active, methods=["GET"]
-        )
-        router.add_api_route(
-            "/pump/circulation", self.is_circulation_active, methods=["GET"]
-        )
-        router.add_api_route(
-            "/pump/circulation/start", self.start_circulation, methods=["GET"]
-        )
-        router.add_api_route(
-            "/pump/circulation/stop", self.stop_circulation, methods=["GET"]
-        )
-        router.add_api_route("/pump/pressure", self.pump_pressure, methods=["GET"])
-        router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
-        router.add_api_route(
-            "/pump/speed/set-point", self.pump_speed_setpoint, methods=["GET"]
-        )
-        router.add_api_route(
-            "/pump/speed/set-point", self.set_pump_speed, methods=["PUT"]
-        )
-        router.add_api_route(
-            "/cooling-water/temperature-inlet", self.cooling_water_temp, methods=["GET"]
-        )
-        router.add_api_route(
-            "/cooling-water/temperature-outlet",
-            self.cooling_water_temp_outflow,
-            methods=["GET"],
-        )
-        router.add_api_route(
-            "/cooling-water/pressure", self.cooling_water_pressure, methods=["GET"]
-        )
-        router.add_api_route(
-            "/alarm/process/min-temp", self.alarm_min_process_temp, methods=["GET"]
-        )
-        router.add_api_route(
-            "/alarm/process/max-temp", self.alarm_max_process_temp, methods=["GET"]
-        )
-        router.add_api_route(
-            "/alarm/process/min-temp", self.set_alarm_min_process_temp, methods=["PUT"]
-        )
-        router.add_api_route(
-            "/alarm/process/max-temp", self.set_alarm_min_process_temp, methods=["PUT"]
-        )
-        router.add_api_route(
-            "/alarm/internal/min-temp", self.alarm_min_internal_temp, methods=["GET"]
-        )
-        router.add_api_route(
-            "/alarm/internal/max-temp", self.alarm_max_internal_temp, methods=["GET"]
-        )
-        router.add_api_route(
-            "/alarm/internal/min-temp",
-            self.set_alarm_min_internal_temp,
-            methods=["PUT"],
-        )
-        router.add_api_route(
-            "/alarm/internal/max-temp",
-            self.set_alarm_min_internal_temp,
-            methods=["PUT"],
-        )
-        router.add_api_route("/venting/is_venting", self.is_venting, methods=["GET"])
-        router.add_api_route("/venting/start", self.start_venting, methods=["GET"])
-        router.add_api_route("/venting/stop", self.stop_venting, methods=["GET"])
-        router.add_api_route("/draining/is_venting", self.is_draining, methods=["GET"])
-        router.add_api_route("/draining/start", self.start_draining, methods=["GET"])
-        router.add_api_route("/draining/stop", self.stop_draining, methods=["GET"])
-        router.add_api_route("/serial_number", self.serial_number, methods=["GET"])
-
-        return router
+    def get_components(self):
+        """Return a TemperatureControl component."""
+        # router.add_api_route(
+        #     "/temperature/process", self.process_temperature, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/temperature/internal", self.internal_temperature, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/temperature/return", self.return_temperature, methods=["GET"]
+        # )
+        # router.add_api_route("/power-exchanged", self.current_power, methods=["GET"])
+        # router.add_api_route("/status", self.status, methods=["GET"])
+        # router.add_api_route("/status2", self.status2, methods=["GET"])
+        # router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
+        # router.add_api_route(
+        #     "/temperature-control", self.is_temperature_control_active, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/pump/circulation", self.is_circulation_active, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/pump/circulation/start", self.start_circulation, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/pump/circulation/stop", self.stop_circulation, methods=["GET"]
+        # )
+        # router.add_api_route("/pump/pressure", self.pump_pressure, methods=["GET"])
+        # router.add_api_route("/pump/speed", self.pump_speed, methods=["GET"])
+        # router.add_api_route(
+        #     "/pump/speed/set-point", self.pump_speed_setpoint, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/pump/speed/set-point", self.set_pump_speed, methods=["PUT"]
+        # )
+        # router.add_api_route(
+        #     "/cooling-water/temperature-inlet", self.cooling_water_temp, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/cooling-water/temperature-outlet",
+        #     self.cooling_water_temp_outflow,
+        #     methods=["GET"],
+        # )
+        # router.add_api_route(
+        #     "/cooling-water/pressure", self.cooling_water_pressure, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/alarm/process/min-temp", self.alarm_min_process_temp, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/alarm/process/max-temp", self.alarm_max_process_temp, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/alarm/process/min-temp", self.set_alarm_min_process_temp, methods=["PUT"]
+        # )
+        # router.add_api_route(
+        #     "/alarm/process/max-temp", self.set_alarm_min_process_temp, methods=["PUT"]
+        # )
+        # router.add_api_route(
+        #     "/alarm/internal/min-temp", self.alarm_min_internal_temp, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/alarm/internal/max-temp", self.alarm_max_internal_temp, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/alarm/internal/min-temp",
+        #     self.set_alarm_min_internal_temp,
+        #     methods=["PUT"],
+        # )
+        # router.add_api_route(
+        #     "/alarm/internal/max-temp",
+        #     self.set_alarm_min_internal_temp,
+        #     methods=["PUT"],
+        # )
+        # router.add_api_route("/venting/is_venting", self.is_venting, methods=["GET"])
+        # router.add_api_route("/venting/start", self.start_venting, methods=["GET"])
+        # router.add_api_route("/venting/stop", self.stop_venting, methods=["GET"])
+        # router.add_api_route("/draining/is_venting", self.is_draining, methods=["GET"])
+        # router.add_api_route("/draining/start", self.start_draining, methods=["GET"])
+        # router.add_api_route("/draining/stop", self.stop_draining, methods=["GET"])
+        # router.add_api_route("/serial_number", self.serial_number, methods=["GET"])
 
 
 if __name__ == "__main__":

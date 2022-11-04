@@ -10,12 +10,14 @@ from loguru import logger
 from ._icir_common import iCIR_spectrometer
 from ._icir_common import IRSpectrum
 from ._icir_common import ProbeInfo
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.exceptions import DeviceError
-from flowchem.models.analytical_device import AnalyticalDevice
 from flowchem.models.base_device import BaseDevice
+from flowchem.people import *
 
 
-class FlowIR(iCIR_spectrometer, AnalyticalDevice):
+class FlowIR(iCIR_spectrometer, FlowchemDevice):
     """Object to interact with the iCIR software controlling the FlowIR and ReactIR."""
 
     counter = 0
@@ -34,7 +36,7 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
             url = iCIR_spectrometer.iC_OPCUA_DEFAULT_SERVER_ADDRESS
 
         self.opcua = Client(url)
-        self.version = None
+        self.version = ""
 
     async def initialize(self):
         """Initialize and check connection."""
@@ -46,6 +48,16 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
             ) from timeout_error
         await self.check_version()
         logger.debug("FlowIR initialized!")
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Mettler-Toledo",
+            model="iCIR",
+            version=self.version,
+        )
 
     def is_local(self):
         """Return true if the server is on the same machine running the python code."""
@@ -179,36 +191,40 @@ class FlowIR(iCIR_spectrometer, AnalyticalDevice):
         while await self.probe_status() == "Running":
             await asyncio.sleep(0.2)
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this FlowIR instance."""
-        router = super().get_router(prefix)
-        router.add_api_route("/is-connected", self.is_iCIR_connected, methods=["GET"])
-        router.add_api_route("/probe-status", self.probe_status, methods=["GET"])
-        router.add_api_route(
-            "/probe-info", self.probe_info, methods=["GET"], response_model=ProbeInfo
-        )
+    def get_components(self):
+        """Return an IRSpectrometer component."""
+        # FIXME
 
-        router.add_api_route("/sample-count", self.sample_count, methods=["GET"])
-        router.add_api_route(
-            "/sample/last-acquisition-time", self.last_sample_time, methods=["GET"]
-        )
-        router.add_api_route(
-            "/sample/spectrum-treated", self.last_spectrum_treated, methods=["GET"]
-        )
-        router.add_api_route(
-            "/sample/spectrum-raw", self.last_spectrum_raw, methods=["GET"]
-        )
-        router.add_api_route(
-            "/sample/spectrum-background",
-            self.last_spectrum_background,
-            methods=["GET"],
-        )
-        router.add_api_route(
-            "/experiment/start", self.start_experiment, methods=["PUT"]
-        )
-        router.add_api_route("/experiment/stop", self.stop_experiment, methods=["GET"])
-
-        return router
+    # def get_router(self, prefix: str | None = None):
+    #     """Create an APIRouter for this FlowIR instance."""
+    #     router = super().get_router(prefix)
+    #     router.add_api_route("/is-connected", self.is_iCIR_connected, methods=["GET"])
+    #     router.add_api_route("/probe-status", self.probe_status, methods=["GET"])
+    #     router.add_api_route(
+    #         "/probe-info", self.probe_info, methods=["GET"], response_model=ProbeInfo
+    #     )
+    #
+    #     router.add_api_route("/sample-count", self.sample_count, methods=["GET"])
+    #     router.add_api_route(
+    #         "/sample/last-acquisition-time", self.last_sample_time, methods=["GET"]
+    #     )
+    #     router.add_api_route(
+    #         "/sample/spectrum-treated", self.last_spectrum_treated, methods=["GET"]
+    #     )
+    #     router.add_api_route(
+    #         "/sample/spectrum-raw", self.last_spectrum_raw, methods=["GET"]
+    #     )
+    #     router.add_api_route(
+    #         "/sample/spectrum-background",
+    #         self.last_spectrum_background,
+    #         methods=["GET"],
+    #     )
+    #     router.add_api_route(
+    #         "/experiment/start", self.start_experiment, methods=["PUT"]
+    #     )
+    #     router.add_api_route("/experiment/stop", self.stop_experiment, methods=["GET"])
+    #
+    #     return router
 
 
 if __name__ == "__main__":
