@@ -282,8 +282,9 @@ class PeltierCommands:
 
 
 class PeltierCooler:
-
-
+    heating_pid = [3,2,1]
+    cooling_pid = [3,2,1]
+    low_cooling_pid = [3,2,1]
 
     def __init__(self,
         # setup communication
@@ -321,11 +322,10 @@ class PeltierCooler:
         )
 
     def set_temperature(self, temperature: float):
-        # this is apparently milder to Peltiers
-        self.stop_control()
-        sleep(5)
-        self.start_control()
+        self._set_state_dependant_pid_parameters(temperature)
+        self._set_temperature(temperature)
 
+    def _set_temperature(self, temperature: float):
         reply = self.send_command_and_read_reply(PeltierCommands.SET_TEMPERATURE, int(temperature*100))
         assert reply == temperature
 
@@ -343,7 +343,7 @@ class PeltierCooler:
         reply = self.send_command_and_read_reply(PeltierCommands.SWITCH_ON)
         assert int(reply) == 1
 
-    def read_temperature(self) -> float:
+    def get_temperature(self) -> float:
         reply = self.send_command_and_read_reply(PeltierCommands.GET_TEMPERATURE)
         assert type(reply) == float
         return reply
@@ -380,6 +380,11 @@ class PeltierCooler:
         reply = self.send_command_and_read_reply(PeltierCommands.HEATING_CURRENT_LIMIT, int(current_limit*100))
         assert reply == current_limit
 
+    def set_pid_parameters(self, proportional, integral, differential):
+        self._set_p_of_pid(proportional)
+        self._set_i_of_pid(integral)
+        self._set_d_of_pid(differential)
+
     def _set_d_of_pid(self, differential):
         # max 10
         reply = self.send_command_and_read_reply(PeltierCommands.SET_DIFFERENTIAL_PID, int(differential * 100))
@@ -405,4 +410,13 @@ class PeltierCooler:
         reply = self.send_command_and_read_reply(PeltierCommands.SET_T_MIN, int(t_min * 100))
         assert reply == t_min
 
-# TODO CHECK FOR ERROR BEFORE PARSING
+    def _set_state_dependant_pid_parameters(self, new_T_setpoint):
+        current_T = self.get_temperature()
+        if current_T < new_T_setpoint:
+            #set_heating_parameters
+            self.set_pid_parameters(*self.heating_pid)
+        else:
+            if new_T_setpoint > -30:
+                self.set_pid_parameters(*self.cooling_pid)
+            else:
+                self.set_pid_parameters(*self.low_cooling_pid)
