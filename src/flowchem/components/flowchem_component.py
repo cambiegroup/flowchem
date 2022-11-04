@@ -17,6 +17,7 @@ class ComponentInfo(BaseModel):
 
     type = ""
     name = ""
+    owl_subclass_of = ""
     hw_device: DeviceInfo
 
 
@@ -25,16 +26,27 @@ class FlowchemComponent(ABC):
         """Initialize component."""
         self.name = name
         self.hw_device = hw_device
-        self.router = APIRouter(prefix=f"/{name}", tags=[hw_device.name, name])
-        self.router.add_api_route(
+        self.metadata = ComponentInfo(
+            hw_device=self.hw_device.get_metadata(), name=name
+        )
+
+        # Initialize router
+        self._router = APIRouter(prefix=f"/{name}", tags=[hw_device.name])
+        self._router.add_api_route(
             "/",
             self.get_metadata,
             methods=["GET"],
             response_model=ComponentInfo,
         )
-        self.metadata = ComponentInfo(
-            hw_device=self.hw_device.get_metadata(), name=name
-        )
+
+    @property
+    def router(self):
+        """Return the API Router. Serves as hook for subclass to add routes."""
+        return self._router
+
+    def add_api_route(self, path: str, endpoint: callable, **kwargs):
+        """Hook for subclasses to add routes to router."""
+        self._router.add_api_route(path, endpoint, **kwargs)
 
     def get_metadata(self) -> ComponentInfo:
         """Return metadata."""

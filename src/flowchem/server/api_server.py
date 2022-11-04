@@ -76,8 +76,9 @@ async def create_server_for_devices(config: dict, host) -> FlowchemInstance:
 
         for component in components:
             # API endpoints registration
-            app.include_router(component.router, tags=component.router.tags)
-            logger.debug(f"Router <{component.router.prefix}> added to app!")
+            router = component.get_router()
+            app.include_router(router, tags=router.tags)
+            logger.debug(f"Router <{router.prefix}> added to app!")
 
             # Advertise component via zeroconfig
             await mdns.add_component(
