@@ -120,7 +120,7 @@ class Huber(SerialDevice):
         self.send_message(f'{self.command_start}{self.circulation}{0:04}', True, self.answer)
 
     @command
-    def get_temperature(self):
+    def get_temperature(self) -> float:
         """Reads the current temperature of the bath"""
         answer = self.send_message(f'{self.command_start}{self.internal_temperature}{self.query}', True, self.answer)
         if answer[0] == self.internal_temperature:
@@ -131,7 +131,7 @@ class Huber(SerialDevice):
                 return (int(answer[1], 16)) / 100
 
     @command
-    def get_process_temperature(self):
+    def get_process_temperature(self) -> float:
         """Reads the current temperature of the external Pt100"""
         answer = self.send_message(f'{self.command_start}{self.process_temperature}{self.query}', True, self.answer)
         if answer[0] == self.process_temperature:
