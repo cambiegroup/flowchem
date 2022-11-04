@@ -9,10 +9,10 @@ In this folder we will write a _module_ (i.e. a python file 🐍) called `Extend
 We create it piece by piece, but the content of the module will look like this:
 
 ```python
-from flowchem.models.base_device import BaseDevice
+from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class ExtendeableEar(BaseDevice):
+class ExtendeableEar(FlowchemDevice):
     """Our virtual Extendable Ear!"""
 
     def __init__(self):
@@ -23,11 +23,10 @@ class ExtendeableEar(BaseDevice):
 
 
 ```python
-from fastapi import APIRouter
-from flowchem.models.base_device import BaseDevice
+from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class ExtendeableEar(BaseDevice):
+class ExtendeableEar(FlowchemDevice):
     """Our virtual Extendable Ear!"""
 
     def __init__(self):
@@ -45,8 +44,7 @@ class ExtendeableEar(BaseDevice):
     async def retract(self):
         ...
 
-    def get_router(self) -> APIRouter:
-        ...
+
 
 ```
 - instantiable from dict or if not possible with from_config @classmethod
