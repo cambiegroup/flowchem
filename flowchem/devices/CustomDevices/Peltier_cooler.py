@@ -303,9 +303,7 @@ class PeltierCooler:
         self._set_current_limit_cooling(14)
         self._set_max_temperature(50)
         self._set_min_temperature(-55)
-        self._set_p_of_pid(1)
-        self._set_i_of_pid(0.5)
-        self._set_d_of_pid(0.2)
+        self.set_pid_parameters(*self.cooling_pid)
         self.disable_slope()
 
     def send_command_and_read_reply( self, command_template: PeltierCommandTemplate, parameter: int= "", parse=True
