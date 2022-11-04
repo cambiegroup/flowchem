@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import atexit
 from time import sleep
 
 import logging
@@ -14,20 +13,21 @@ from time import sleep
 import serial
 
 
-class PeltierException(Exception):
-    """ General pump exception """
+"""
+Controlling Peltier via a TEC05-24 or TEC16-24 controller
+"""
 
+class PeltierException(Exception):
+    """ General peltier exception """
     pass
 
 
 class InvalidConfiguration(PeltierException):
     """ Used for failure in the serial communication """
-
     pass
 
 class InvalidCommand(PeltierException):
-    """ The provided command is invalid. This can be caused by the pump state e.g. if display is not in Quick Start! """
-
+    """ The provided command is invalid. This can be caused by the peltier state e.g. if boundary values are prohibitive! """
     pass
 
 
@@ -38,20 +38,20 @@ class InvalidArgument(PeltierException):
 
 
 class UnachievableSetpoint(PeltierException):
-    """ Essentially for target volumes beyond the available volume """
+    """ A valid command was followed by an invalid argument, Out of hardware capabilities """
 
     pass
 
 @dataclass
 class PeltierCommandTemplate:
-    """ Class representing a pump command and its expected reply, but without target pump number """
+    """ Class representing a peltier command and its expected reply, but without target peltier number """
 
     command_string: str
     reply_lines: int  # Reply line without considering leading newline and tailing prompt!
     requires_argument: bool
 
     def to_peltier(self, address: int, argument: int = "") -> PeltierCommand:
-        """ Returns a Protocol11Command by adding to the template pump address and command arguments """
+        """ Returns a Command by adding to the template peltier address and command arguments """
         if self.requires_argument and not argument:
             raise InvalidArgument(
                 f"Cannot send command {self.command_string} without an argument!"
@@ -64,28 +64,27 @@ class PeltierCommandTemplate:
             command_string=self.command_string,
             reply_lines=self.reply_lines,
             requires_argument=self.requires_argument,
-            target_pump_address=address,
+            target_peltier_address=address,
             command_argument=str(argument),
         )
 
 
 @dataclass
 class PeltierCommand(PeltierCommandTemplate):
-    """ Class representing a pump command and its expected reply """
+    """ Class representing a peltier command and its expected reply """
 
-    target_pump_address: int
+    target_peltier_address: int
     command_argument: str
 
     def compile(self,) -> str:
         """
-        Create actual command byte by prepending pump address to command.
-        Fast saves some ms but do not update the display.
+        Create actual command byte by prepending peltier address to command.
         """
-        assert 0 <= self.target_pump_address < 99
-        # end character needs to be '\r\n'. Since this command building is specific for elite 11, that should be fine
+        assert 0 <= self.target_peltier_address < 99
+        # end character needs to be '\n'.
         if self.command_argument:
             return (
-                str(self.target_pump_address)
+                str(self.target_peltier_address)
                 + " "
                 + self.command_string
                 + " "
@@ -94,7 +93,7 @@ class PeltierCommand(PeltierCommandTemplate):
             )
         else:
             return (
-                str(self.target_pump_address)
+                str(self.target_peltier_address)
                 + " "
                 + self.command_string
                 + "\n"
@@ -110,8 +109,7 @@ class PeltierIO:
             raise InvalidConfiguration(f"Invalid baud rate provided {baud_rate}!")
 
         if isinstance(port, int):
-            port = f"COM{port}"  # Because I am lazy
-
+            port = f"COM{port}"
         self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
         self.lock = threading.Lock()
 
@@ -124,7 +122,7 @@ class PeltierIO:
             raise InvalidConfiguration from e
 
     def _write(self, command: PeltierCommand):
-        """ Writes a command to the pump """
+        """ Writes a command to the peltier """
         command = command.compile()
         self.logger.debug(f"Sending {repr(command)}")
         try:
@@ -133,7 +131,7 @@ class PeltierIO:
             raise InvalidConfiguration from e
 
     def _read_reply(self, command) -> str:
-        """ Reads the pump reply from serial communication """
+        """ Reads the peltier reply from serial communication """
         self.logger.debug(
             f"I am going to read {command.reply_lines} line for this command (+prompt)"
         )
@@ -154,34 +152,33 @@ class PeltierIO:
         self.logger.debug(f"Reply received: {reply_string}")
         return reply_string
 
-    # TODO probably ommitable
     @staticmethod
     def parse_response_line(line: str) -> Tuple[int, str, float]:
         """ Split a received line in its components: address, prompt and reply body """
         assert len(line) > 0
 
-        pump_address = int(line.split(" ")[0])
+        peltier_address = int(line.split(" ")[0])
         status= str(line.split(" ")[1].split("=")[0])
         reply = str(line.split(" ")[1].split("=")[1])
 
-        return pump_address, status, float(reply)
+        return peltier_address, status, float(reply)
 
     @staticmethod
     def check_for_errors(last_response_line, command_sent):
         """ Further response parsing, checks for error messages """
         if "COMMAND ERR" in last_response_line:
             raise InvalidCommand(
-                f"The command {command_sent} is invalid for Peltier {command_sent.target_pump_address}!"
+                f"The command {command_sent} is invalid for Peltier {command_sent.target_peltier_address}!"
                 f"[Reply: {last_response_line}]"
             )
         elif "NUMBER ERR" in last_response_line:
             raise InvalidArgument(
-                f"The argument {command_sent} is out of allowed range for {command_sent.target_pump_address}!"
+                f"The argument {command_sent} is out of allowed range for {command_sent.target_peltier_address}!"
                 f"[Reply: {last_response_line}]"
             )
         elif "FORMAT ERR" in last_response_line:
             raise UnachievableSetpoint(
-                f"The command {command_sent} to peltier {command_sent.target_pump_address} is of invalid format, this likely means out of global boundaries"
+                f"The command {command_sent} to peltier {command_sent.target_peltier_address} is of invalid format, this likely means out of global boundaries"
                 f"[Reply: {last_response_line}]"
             )
 
@@ -196,7 +193,7 @@ class PeltierIO:
     def write_and_read_reply(
         self, command: PeltierCommand, return_parsed: bool = True
     ) -> Union[List[str], str]:
-        """ Main PumpIO method. Sends a command to the pump, read the replies and returns it, optionally parsed """
+        """ Main PeltierIO method. Sends a command to the peltier, read the replies and returns it, optionally parsed """
         with self.lock:
             self.reset_buffer()
             self._write(command)
@@ -204,17 +201,17 @@ class PeltierIO:
 
         if not response:
             raise InvalidConfiguration(
-                f"No response received from pump, check pump address! "
-                f"(Currently set to {command.target_pump_address})"
+                f"No response received from peltier, check peltier address! "
+                f"(Currently set to {command.target_peltier_address})"
             )
 
         PeltierIO.check_for_errors(last_response_line=response, command_sent=command)
 
         # Parse reply
-        pump_address, return_status, parsed_response = PeltierIO.parse_response_line(response)
+        peltier_address, return_status, parsed_response = PeltierIO.parse_response_line(response)
 
-        # Ensures that all the replies came from the target pump (this should always be the case)
-        assert all(address == command.target_pump_address for address in [pump_address])
+        # Ensures that all the replies came from the target peltier (this should always be the case)
+        assert all(address == command.target_peltier_address for address in [peltier_address])
 
         return parsed_response if return_parsed else response
 
@@ -226,7 +223,6 @@ class PeltierCommands:
     EMPTY_MESSAGE = PeltierCommandTemplate(
         command_string="", reply_lines=1, requires_argument=False
     )
-
     #TEMP1=-8.93 C
     GET_TEMPERATURE = PeltierCommandTemplate(
         command_string="GT1", reply_lines=1, requires_argument=False
@@ -249,8 +245,6 @@ class PeltierCommands:
     #STATUS=0
     SWITCH_OFF = PeltierCommandTemplate(
         command_string="SDI", reply_lines=1, requires_argument=False
-
-
     )
     COOLING_CURRENT_LIMIT = PeltierCommandTemplate(
         command_string="SCC", reply_lines=1, requires_argument=True
@@ -282,14 +276,14 @@ class PeltierCommands:
 
 
 class PeltierCooler:
+
+    #TODO check sink temperature and throw error if to high - if not doable from controller
+
     heating_pid = [3,2,1]
     cooling_pid = [3,2,1]
     low_cooling_pid = [3,2,1]
 
     def __init__(self,
-        # setup communication
-        # check that external cooler is on - check if there is a safety threshold in initial controller
-        # next step: set all limits and PID parameters
         peltier_io: PeltierIO,
         address: int = 0,
     ):
@@ -330,12 +324,10 @@ class PeltierCooler:
         assert reply == temperature
 
     def set_slope(self, slope: float):
-        # this is apparently milder to Peltiers
         reply = self.send_command_and_read_reply(PeltierCommands.SET_SLOPE, int(slope*100))
         assert reply == slope
 
     def disable_slope(self):
-        # this is apparently milder to Peltiers
         reply = self.send_command_and_read_reply(PeltierCommands.SET_SLOPE, 0)
         assert reply == 0
 
