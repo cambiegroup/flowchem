@@ -279,9 +279,9 @@ class PeltierCooler:
 
     #TODO check sink temperature and throw error if to high - if not doable from controller
 
-    heating_pid = [3,2,1]
-    cooling_pid = [3,2,1]
-    low_cooling_pid = [3,2,1]
+    heating_pid = [0.64,0.53,0.13]
+    cooling_pid = [2.83,2.36,0.59]
+    low_cooling_pid = [2.83,2.36,0.59]
 
     def __init__(self,
         peltier_io: PeltierIO,
