@@ -24,11 +24,11 @@ def chiller_finder(serial_port) -> set[str]:
         chill._serial.close()
         return set()
 
-    logger.info(f"Chiller #{chill.device_sn} found on <{serial_port}>")
+    logger.info(f"Chiller #{chill._device_sn} found on <{serial_port}>")
 
     return set(
         dedent(
-            f"""\n\n[device.huber-{chill.device_sn}]
+            f"""\n\n[device.huber-{chill._device_sn}]
     type = "HuberChiller"
     port = "{serial_port}"\n"""
         )

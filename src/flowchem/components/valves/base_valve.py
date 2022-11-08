@@ -1,4 +1,6 @@
 """Generic valve."""
+from __future__ import annotations
+
 from flowchem.components.base_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
@@ -7,7 +9,7 @@ class BaseValve(FlowchemComponent):
     """An abstract class for devices of type valve.
 
     .. warning::
-        Device objects should not directly subclass this object but rather a more specific valve type,
+        Device objects should not directly generate components with this object but rather a more specific valve type,
         such as `InjectionValve` or `MultiPositionValve`.
 
     All valves are characterized by:
