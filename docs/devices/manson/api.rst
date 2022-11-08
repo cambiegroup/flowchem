@@ -1,0 +1,1 @@
+.. openapi:: ./manson.yml

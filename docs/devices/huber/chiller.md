@@ -28,9 +28,16 @@ automatically used:
 * bytesize 8
 ```
 
+## API methods
+Once configured, a flowchem HuberChiller object will expose the following commands:
+
+```{eval-rst}
+.. include:: api.rst
+```
+
 ## Device detection
 Lab PCs often have several devices connected via serial ports.
-Huber chillers can be auto-detected via the `flowchem-autodiscover` command-line utility.
+Huber's chillers can be auto-detected via the `flowchem-autodiscover` command-line utility.
 After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that
 can be auto-detected on your PC.
 

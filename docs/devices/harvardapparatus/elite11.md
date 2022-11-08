@@ -2,7 +2,8 @@
 
 ## Introduction
 Harvard-Apparatus Elite11 pumps connected via USB cables (which creates a virtual serial port) are supported in flowchem
-via the two device types: `Elite11InfuseOnly` and `Elite11InfuseWithdraw`.
+via the `Elite11` device type.
+Depending on the pump model, the component might be able of infuse/withdraw or just infusing.
 This difference reflect the existence in commerce of both variants, i.e. pumps only capable of infusion and pumps that
 support both infusion and withdrawing commands.
 
@@ -15,12 +16,13 @@ Configuration sample showing all possible parameters:
 
 ```toml
 [device.my-elite11-pump]  # This is the pump identifier
-type = "Elite11InfuseOnly"  # Either Elite11InfuseOnly or Elite11InfuseWithdraw depending on model
+type = "Elite11"
 port = "COM11"  # This will be /dev/tty* under linux/MacOS
 address = 0  # Only needed for daisy-chaining. The address can be set on the pump, see manufacturer manual.
 syringe_diameter = "4.6 mm"
 syringe_volume = "1 ml"
 baudrate = 115200  # Values between 9,600 and 115,200 can be selected on the pump! (115200 assumed if not specified)
+force = 100  # Value percent, use lower force for smaller syringes, see manual.
 ```
 
 ```{note} Serial connection parameters
@@ -31,6 +33,12 @@ automatically used:
 * baudrate 115200
 ```
 
+## API methods
+Once configured, a flowchem Elite11 object will expose the following commands:
+
+```{eval-rst}
+.. include:: api.rst
+```
 
 ## Device detection
 Lab PCs often have several devices connected via serial ports.

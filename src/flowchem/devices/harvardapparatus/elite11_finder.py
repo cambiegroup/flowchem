@@ -4,7 +4,7 @@ from textwrap import dedent
 
 from loguru import logger
 
-from flowchem.devices.harvardapparatus.elite11 import Elite11InfuseOnly
+from flowchem.devices.harvardapparatus.elite11 import Elite11
 from flowchem.devices.harvardapparatus.elite11 import HarvardApparatusPumpIO
 from flowchem.exceptions import InvalidConfiguration
 
@@ -38,7 +38,7 @@ def elite11_finder(serial_port) -> set[str]:
         address = 0
 
     try:
-        test_pump = Elite11InfuseOnly(
+        test_pump = Elite11(
             link,
             syringe_diameter="20 mm",
             syringe_volume="10 ml",

@@ -1,36 +1,38 @@
-# Knauer Valves
+# Vici Valco Valves
 ## Introduction
-A range of different valve heads can be mounted on the same Knauer actuator, so several type of valves can be controlled
-with the same protocol. Both standard 6-port-2-position injection valve and multi-position valves
-(with 6, 12 or 16 ports) can be controlled via flowchem.
+While different valve heads can be mounted on the same Vici Universal actuator, so far only injection valves are
+supported, as they are the most common type.
+Support for additional valve types can be trivially added, based on the example of Knauer Valves.
 
 As for all `flowchem` devices, the virtual instrument can be instantiated via a configuration file that generates an
 openAPI endpoint.
 
 
 ## Connection
-Knauer valves are originally designed to be used with HPLC instruments, so they support ethernet communication.
-Moreover, they feature an autodiscover mechanism that makes it possible to automatically find the device IP address
-of a device given its (immutable) MAC address.
-This enables the use of the valves with dynamic addresses (i.e. with a DHCP server) which simplify the setup procedure.
-
+Depending on the device options, Vici valves can be controlled in different ways.
+The code here reported assumes serial communication, but can be easily ported to different connection type if necessary.
 
 ## Configuration
 Configuration sample showing all possible parameters:
 
 ```toml
-[device.my-knauer-valve]  # This is the valve identifier
-type = "Knauer6Port2PositionValve"  # Other options are Knauer6Port6PositionValve, Knauer12PortValve and Knauer16PortValve
-ip_address = "192.168.2.1"  # Onyl one of either ip_address or mac_address need to be provided
-mac_address = "00:11:22:33:44:55"  #  Onyl one of either ip_address or mac_address need to be provided
-default_position = "LOAD"  # Valve position to be set upon initialization
+[device.my-vici-valve]  # This is the valve identifier
+type = "ViciValve"
+port = "COM11"  # This will be /dev/tty* under linux/MacOS
+address = 0  # Only needed for daisy-chaining. The address can be set on the pump, see manufacturer manual.
+```
+
+```{note} Serial connection parameters
+Note, further parameters for the serial connections (i.e. those accepted by `serial.Serial`) such as `baudrate`,
+`parity`, `stopbits` and `bytesize` can be specified.
+However, it should not be necessary as the default for the instrument are automatically used.
 ```
 
 ## API methods
-Once configured, a flowchem Knauer6Port2PositionValve object will expose the following commands:
+Once configured, a flowchem ViciValve object will expose the following commands:
 
 ```{eval-rst}
-.. include:: api-pump.rst
+.. include:: api.rst
 ```
 
 ## Valve positions

@@ -24,6 +24,13 @@ max_pressure = "10 bar"  # Optionally, a string with natural language specifying
 min_pressure = "5 bar"  # Optionally, a string with natural language specifying max pressure can be provided
 ```
 
+## API methods
+Once configured, a flowchem AzuraCompactPump object will expose the following commands:
+
+```{eval-rst}
+.. include:: api-pump.rst
+```
+
 ## Device detection
 Azura Compact pumps can be auto-detected via the `flowchem-autodiscover` command-line utility.
 After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that
