@@ -1,24 +1,21 @@
 """Pressure sensor."""
 from abc import ABC
 
-from fastapi import APIRouter
-
 from .sensor import Sensor
+from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class PressureSensor(Sensor, ABC):
     """A pressure sensor."""
 
-    def __init__(self, name: str | None = None):
-        """Just call the superclass constructor."""
-        super().__init__(name=name)
+    def __int__(self, name: str, hw_device: FlowchemDevice):
+        """A generic Syringe pump."""
+        super().__init__(name, hw_device)
+        self.add_api_route("/read-pressure", self.read_pressure, methods=["GET"])
 
-    async def read_pressure(self, units: str | None = "bar"):
+        # Ontology: Pressure Sensor Device
+        self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/NCIT_C50167"
+
+    async def read_pressure(self, units: str = "bar"):
         """Read from sensor, result to be expressed in units (optional)."""
-        raise NotImplementedError("To be implemented in subclass")
-
-    def get_router(self, prefix: str | None = None) -> APIRouter:
-        """Get the API router for this device."""
-        router = super().get_router(prefix)
-        router.add_api_route("/read-pressure", self.read_pressure, methods=["GET"])
-        return router
+        ...

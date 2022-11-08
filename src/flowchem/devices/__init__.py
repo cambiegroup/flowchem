@@ -7,7 +7,7 @@ from .hamilton import ML600
 from .harvardapparatus import Elite11
 from .harvardapparatus import Elite11InfuseWithdraw
 from .huber import HuberChiller
-from .knauer import AzuraCompactPump
+from .knauer import AzuraCompact
 from .knauer import Knauer12PortValve
 from .knauer import Knauer16PortValve
 from .knauer import Knauer6Port2PositionValve

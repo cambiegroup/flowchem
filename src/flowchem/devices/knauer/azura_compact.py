@@ -9,6 +9,8 @@ from ._common import KnauerEthernetDevice
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.knauer.azura_compact_pump import AzuraCompactPump
+from flowchem.devices.knauer.azura_compact_sensor import AzuraCompactSensor
 from flowchem.exceptions import DeviceError
 from flowchem.people import *
 
@@ -46,7 +48,7 @@ class AzuraPumpHeads(Enum):
 
 
 # noinspection DuplicatedCode
-class AzuraCompactPump(KnauerEthernetDevice, FlowchemDevice):
+class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
     """Control module for Knauer Azura Compact pumps."""
 
     def __init__(
@@ -410,18 +412,7 @@ class AzuraCompactPump(KnauerEthernetDevice, FlowchemDevice):
 
     def components(self):
         """Create a Pump and a Sensor components."""
-        # Basic pump methods
-        router = super().get_router()
-        router.add_api_route("/remote-control", self.remote_control, methods=["PUT"])
-
-        # Pressure sensor as sub-device following pressure sensors schema
-        router2 = PressureSensor.get_router(self, prefix="/pressure-sensor")
-        # router2 = super(BasePump, self).get_router(prefix="/pressure-sensor")
-        # Note: This is super(BasePump) because the MRO of AzuraCompactPump is
-        # (KnauerEthernetDevice, HplcPump, BasePump, PressureSensor, Sensor, BaseDevice, ...)
-        # ---------------------------------^^^^^^^^ to get PressureSensor's router!
-
-        return router, router2
+        return AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)
 
 
 if __name__ == "__main__":
@@ -431,9 +422,9 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    p = AzuraCompactPump(ip_address="192.168.10.113")
+    p = AzuraCompact(ip_address="192.168.10.113")
 
-    async def main(pump: AzuraCompactPump):
+    async def main(pump: AzuraCompact):
         """Test function."""
         await pump.initialize()
         await pump.set_flow_rate("0.1 ml/min")
