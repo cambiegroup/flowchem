@@ -24,7 +24,7 @@ class FlowIR(iCIR_spectrometer, FlowchemDevice):
 
     def __init__(self, url: str = None, name: str = None):
         """Initiate connection with OPC UA server."""
-        BaseDevice.__init__(self, name)
+        super().__init__(name)
 
         if name is None:
             self.name = f"FlowIR_{self.counter}"

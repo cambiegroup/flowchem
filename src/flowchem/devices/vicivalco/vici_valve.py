@@ -142,7 +142,7 @@ class ViciValve(FlowchemDevice):
 
         # The valve name is used for logs and error messages.
         self.name = name if name else f"Valve {self.valve_io.name}:{address}"
-        super().__init__(loop_volume=loop_volume, name=name)
+        super().__init__(loop_volume=loop_volume, name=name)  # type: ignore
 
         self.address = address
         self._version = ""

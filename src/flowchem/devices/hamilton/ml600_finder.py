@@ -4,8 +4,8 @@ from textwrap import dedent
 
 from loguru import logger
 
+from flowchem.devices.hamilton.ml600 import HamiltonPumpIO
 from flowchem.devices.hamilton.ml600 import InvalidConfiguration
-from flowchem.devices.hamilton.ml600 import ML600
 
 
 def ml600_finder(serial_port) -> set[str]:
@@ -17,7 +17,7 @@ def ml600_finder(serial_port) -> set[str]:
     dev_config: set[str] = set()
 
     try:
-        link = ML600.HamiltonPumpIO.from_config({"port": serial_port})
+        link = HamiltonPumpIO.from_config({"port": serial_port})
     except InvalidConfiguration:
         return dev_config
 

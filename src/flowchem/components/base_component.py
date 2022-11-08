@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter
@@ -17,11 +17,11 @@ class ComponentInfo(BaseModel):
 
     type = ""
     name = ""
-    owl_subclass_of = ""
+    owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0000968"  # 'device'
     hw_device: DeviceInfo
 
 
-class FlowchemComponent(ABC):
+class FlowchemComponent:
     def __init__(self, name: str, hw_device: FlowchemDevice):
         """Initialize component."""
         self.name = name
@@ -44,7 +44,7 @@ class FlowchemComponent(ABC):
         """Return the API Router. Serves as hook for subclass to add routes."""
         return self._router
 
-    def add_api_route(self, path: str, endpoint: callable, **kwargs):
+    def add_api_route(self, path: str, endpoint: Callable, **kwargs):
         """Hook for subclasses to add routes to router."""
         self._router.add_api_route(path, endpoint, **kwargs)
 

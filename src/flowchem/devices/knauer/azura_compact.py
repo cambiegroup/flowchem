@@ -408,8 +408,8 @@ class AzuraCompactPump(KnauerEthernetDevice, FlowchemDevice):
         await self.create_and_send_command(EXTCONTR, setpoint=int(value))
         logger.debug(f"External control set to {value}")
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
+    def components(self):
+        """Create a Pump and a Sensor components."""
         # Basic pump methods
         router = super().get_router()
         router.add_api_route("/remote-control", self.remote_control, methods=["PUT"])

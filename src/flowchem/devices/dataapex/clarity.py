@@ -12,11 +12,6 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.people import *
 
 
-def _is_valid_string(path: str):
-    """Ensure no double-quote are present in the string"""
-    return '"' not in path
-
-
 class Clarity(FlowchemDevice):
     def __init__(
         self,
@@ -36,7 +31,7 @@ class Clarity(FlowchemDevice):
         if which(executable):
             self.executable = executable
         else:
-            assert _is_valid_string(executable)
+            assert '"' not in executable
             self.executable = f'"{executable}"'
         assert which(executable) or Path(executable).is_file(), "Valid executable found"
 
@@ -69,14 +64,12 @@ class Clarity(FlowchemDevice):
 
     async def execute_command(self, command: str, without_instrument_num: bool = False):
         """Execute claritychrom.exe command."""
-        assert _is_valid_string(command)
-        logger.debug(f"Executing Clarity command `{command}`")
-
         if without_instrument_num:
             cmd_string = self.executable + f" {command}"
         else:
             cmd_string = self.executable + f" i={self.instrument} {command}"
 
+        logger.debug(f"Executing Clarity command `{command}`")
         process = await asyncio.create_subprocess_shell(cmd_string)
         try:
             await asyncio.wait_for(process.wait(), timeout=self.cmd_timeout)

@@ -708,29 +708,26 @@ class Elite11InfuseOnly(FlowchemDevice):
         )
         return PumpInfo.parse_pump_string(parsed_multiline_response)
 
-    def get_router(self, prefix: str | None = None):
+    def components(self):
         """Create an APIRouter for this object."""
-        router = super().get_router(prefix)
-
-        router.add_api_route("/parameters/force", self.get_force, methods=["PUT"])
-        router.add_api_route("/parameters/force", self.set_force, methods=["PUT"])
-        router.add_api_route("/info/version", self.version, methods=["GET"])
-        router.add_api_route(
-            "/info/status", self.get_status, methods=["GET"], response_model=PumpStatus
-        )
-        router.add_api_route("/info/is-moving", self.is_moving, methods=["GET"])
-        router.add_api_route(
-            "/info/current-flow-rate", self.get_current_flowrate, methods=["GET"]
-        )
-        router.add_api_route(
-            "/info/infused-volume", self.get_infused_volume, methods=["GET"]
-        )
-        router.add_api_route(
-            "/info/reset-infused-volume", self.clear_infused_volume, methods=["PUT"]
-        )
-        router.add_api_route("/info/reset-all", self.clear_volumes, methods=["GET"])
-
-        return router
+        #
+        # router.add_api_route("/parameters/force", self.get_force, methods=["PUT"])
+        # router.add_api_route("/parameters/force", self.set_force, methods=["PUT"])
+        # router.add_api_route("/info/version", self.version, methods=["GET"])
+        # router.add_api_route(
+        #     "/info/status", self.get_status, methods=["GET"], response_model=PumpStatus
+        # )
+        # router.add_api_route("/info/is-moving", self.is_moving, methods=["GET"])
+        # router.add_api_route(
+        #     "/info/current-flow-rate", self.get_current_flowrate, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/info/infused-volume", self.get_infused_volume, methods=["GET"]
+        # )
+        # router.add_api_route(
+        #     "/info/reset-infused-volume", self.clear_infused_volume, methods=["PUT"]
+        # )
+        # router.add_api_route("/info/reset-all", self.clear_volumes, methods=["GET"])
 
 
 # noinspection PyProtectedMember

@@ -1,6 +1,17 @@
 # Software architecture
 
 ## General
+### In which order are device initialized
+When `flochem` is called with a configuration file via CLI, the following happens:
+1. The configuration is parsed, and all the hardware device object are created in the order they appear in the file.
+2. Communication is established for all the hardware device via the `async` method `initialize()`.
+3. The components of each hardware object are collected, their routes added to the API server and advertised via mDNS.
+4. Flowchem is ready to be used.
+
+It follows that:
+* All the code in components can assume that a valid connection to the hw device is already in place.
+* Components can use introspection e.g. to determine if a pump has withdrawing capabilities or not.
+
 ### Why no device orchestration functionalities are included?
 Lab automation holds great potential, yet research lab rarely reuse existing code.
 One reason for this is the lack of modularity in the existing lab-automation solutions. While a monolithic approach is faster to implement, it lacks flexibility.

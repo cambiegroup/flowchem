@@ -1,6 +1,7 @@
 """Base object for all hardware-control device classes."""
 from __future__ import annotations
 
+from abc import ABC
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
@@ -9,7 +10,7 @@ from pydantic import BaseModel
 from flowchem import __version__
 
 if TYPE_CHECKING:
-    from flowchem.components.flowchem_component import FlowchemComponent
+    from flowchem.components.base_component import FlowchemComponent
 
 
 class Person(BaseModel):
@@ -29,7 +30,7 @@ class DeviceInfo(BaseModel):
     version = ""
 
 
-class FlowchemDevice:
+class FlowchemDevice(ABC):
     """
     Base flowchem device.
 
@@ -45,7 +46,7 @@ class FlowchemDevice:
         pass
 
     def get_metadata(self) -> DeviceInfo:
-        return self.metadata
+        return self.metadata  # type: ignore
 
     def components(self) -> Iterable[FlowchemComponent]:
         return ()

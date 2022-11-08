@@ -1,6 +1,7 @@
 """Run with `uvicorn main:app`."""
 import asyncio
 from importlib.metadata import metadata
+from io import BytesIO
 from pathlib import Path
 from typing import BinaryIO
 from typing import TypedDict
@@ -21,7 +22,7 @@ class FlowchemInstance(TypedDict):
 
 
 def run_create_server_from_file(
-    config_file: BinaryIO | Path, host: str = "127.0.0.1"
+    config_file: BytesIO | Path, host: str = "127.0.0.1"
 ) -> FlowchemInstance:
     """Make create_server_from_file a sync function for CLI."""
 
@@ -29,7 +30,7 @@ def run_create_server_from_file(
 
 
 async def create_server_from_file(
-    config_file: BinaryIO | Path, host: str
+    config_file: BytesIO | Path, host: str
 ) -> FlowchemInstance:
     """
     Based on the toml device config provided, initialize connection to devices and create API endpoints.
