@@ -29,7 +29,7 @@ class HuberChiller(FlowchemDevice):
     def __init__(
         self,
         aio: aioserial.AioSerial,
-        name=None,
+        name="",
         min_temp: float = -150,
         max_temp: float = 250,
     ):

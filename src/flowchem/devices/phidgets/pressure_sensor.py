@@ -4,15 +4,18 @@ import time
 import pint
 from loguru import logger
 
-from flowchem.devices.phidgets.pressure_sensor_component import PhidgetPressureSensorComponent
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.phidgets.pressure_sensor_component import (
+    PhidgetPressureSensorComponent,
+)
 from flowchem.people import *
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
     from Phidget22.Devices.Log import Log, LogLevel
     from Phidget22.PhidgetException import PhidgetException
+
     HAS_PHIDGET = True
 except ImportError:
     HAS_PHIDGET = False
@@ -38,7 +41,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         vint_serial_number: int | None = None,
         vint_channel: int | None = None,
         phidget_is_remote: bool = False,
-        name: str | None = None,
+        name: str = "",
     ):
         """Initialize PressureSensor with the given pressure range (sensor-specific!)."""
         super().__init__(name=name)

@@ -65,7 +65,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         mac_address=None,
         max_pressure: str = "",
         min_pressure: str = "",
-        name=None,
+        name="",
     ):
         super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"

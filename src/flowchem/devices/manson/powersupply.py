@@ -21,14 +21,14 @@ class MansonPowerSupply(FlowchemDevice):
 
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
-    def __init__(self, aio: aioserial.AioSerial, name=None):
+    def __init__(self, aio: aioserial.AioSerial, name=""):
         """Control class for Manson Power Supply."""
         super().__init__(name)
         self._serial = aio
         self.model_info = ""
 
     @classmethod
-    def from_config(cls, port, name=None, **serial_kwargs):
+    def from_config(cls, port, name="", **serial_kwargs):
         """
         Create instance from config dict. Used by server to initialize obj from config.
 
