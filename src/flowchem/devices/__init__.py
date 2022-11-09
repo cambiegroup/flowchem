@@ -9,7 +9,7 @@ from .huber import HuberChiller
 from .knauer import AzuraCompact
 from .knauer import KnauerValve
 from .manson import MansonPowerSupply
-from .mettlertoledo import FlowIR
+from .mettlertoledo import IcIR
 from .phidgets import PhidgetPressureSensor
 from .vicivalco import ViciValve
 

@@ -1,5 +1,4 @@
 """MettlerToledo devices."""
-from ._icir_common import IRSpectrum
-from .flowir import FlowIR
+from .icir import IcIR
 
-__all__ = ["FlowIR", "IRSpectrum"]
+__all__ = ["IcIR"]

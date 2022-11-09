@@ -6,7 +6,7 @@ import sys
 import pytest
 
 from flowchem.devices.mettlertoledo import IRSpectrum
-from flowchem.devices.mettlertoledo.flowir import FlowIR
+from flowchem.devices.mettlertoledo.icir import IcIR
 
 
 def check_pytest_asyncio_installed():
@@ -22,8 +22,8 @@ def check_pytest_asyncio_installed():
 @pytest.fixture()
 async def flowir():
     """Return local FlowIR object"""
-    return FlowIR(
-        FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
+    return IcIR(
+        IcIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
     )
 
 
@@ -35,7 +35,7 @@ async def test_connected(flowir):
 
 
 @pytest.mark.asyncio
-@pytest.mark.FlowIR
+@pytest.mark.IcIR
 async def test_probe_info(flowir):
     async with flowir as spectrometer:
         info = await spectrometer.probe_info()

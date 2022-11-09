@@ -15,6 +15,7 @@ from flowchem.people import *
 class Clarity(FlowchemDevice):
     def __init__(
         self,
+        name,
         executable: str = r"C:\claritychrom\bin\claritychrom.exe",
         instrument_number: int = 1,
         startup_time: float = 20,
@@ -23,7 +24,6 @@ class Clarity(FlowchemDevice):
         user: str = "admin",
         password: str = "",
         cfg_file: str = "",
-        name=None,
     ):
         super().__init__(name=name)
 

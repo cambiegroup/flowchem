@@ -15,7 +15,6 @@ from flowchem.devices.flowchem_device import DeviceInfo
 class ComponentInfo(BaseModel):
     """Metadata associated with flowchem components."""
 
-    type = ""
     name = ""
     owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0000968"  # 'device'
     hw_device: DeviceInfo

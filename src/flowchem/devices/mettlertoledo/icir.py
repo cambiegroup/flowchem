@@ -1,45 +1,71 @@
 """Async implementation of FlowIR."""
 import asyncio
 import datetime
-import warnings
+from pathlib import Path
 
 from asyncua import Client
 from asyncua import ua
 from loguru import logger
+from pydantic import BaseModel
 
-from ._icir_common import iCIR_spectrometer
-from ._icir_common import IRSpectrum
-from ._icir_common import ProbeInfo
+from flowchem.components.analytics.ir_control import IRSpectrum
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.mettlertoledo.icir_control import IcIRControl
 from flowchem.exceptions import DeviceError
-from flowchem.models.base_device import BaseDevice
 from flowchem.people import *
 
 
-class FlowIR(iCIR_spectrometer, FlowchemDevice):
+class ProbeInfo(BaseModel):
+    """Dictionary returned from iCIR with probe info."""
+
+    spectrometer: str
+    spectrometer_SN: int
+    probe_SN: int
+    detector: str
+    apodization: str
+    ip_address: str
+    probe_type: str
+    sampling_interval: str
+    resolution: int
+    scan_option: str
+    gain: int
+
+
+class IcIR(FlowchemDevice):
     """Object to interact with the iCIR software controlling the FlowIR and ReactIR."""
+
+    iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
+    _supported_versions = {"7.1.91.0"}
+    SOFTWARE_VERSION = "ns=2;s=Local.iCIR.SoftwareVersion"
+    CONNECTION_STATUS = "ns=2;s=Local.iCIR.ConnectionStatus"
+    PROBE_DESCRIPTION = "ns=2;s=Local.iCIR.Probe1.ProbeDescription"
+    PROBE_STATUS = "ns=2;s=Local.iCIR.Probe1.ProbeStatus"
+    LAST_SAMPLE_TIME = "ns=2;s=Local.iCIR.Probe1.LastSampleTime"
+    SAMPLE_COUNT = "ns=2;s=Local.iCIR.Probe1.SampleCount"
+    SPECTRA_TREATED = "ns=2;s=Local.iCIR.Probe1.SpectraTreated"
+    SPECTRA_RAW = "ns=2;s=Local.iCIR.Probe1.SpectraRaw"
+    SPECTRA_BACKGROUND = "ns=2;s=Local.iCIR.Probe1.SpectraBackground"
+    START_EXPERIMENT = "ns=2;s=Local.iCIR.Probe1.Methods.Start Experiment"
+    STOP_EXPERIMENT = "ns=2;s=Local.iCIR.Probe1.Methods.Stop"
+    METHODS = "ns=2;s=Local.iCIR.Probe1.Methods"
 
     counter = 0
 
-    def __init__(self, url: str = None, name: str = None):
+    def __init__(self, name: str, template: str, url: str = ""):
         """Initiate connection with OPC UA server."""
         super().__init__(name)
 
-        if name is None:
-            self.name = f"FlowIR_{self.counter}"
-        else:
-            self.name = name
-
         # Default (local) url if none provided
-        if url is None:
-            url = iCIR_spectrometer.iC_OPCUA_DEFAULT_SERVER_ADDRESS
-
+        if not url:
+            url = self.iC_OPCUA_DEFAULT_SERVER_ADDRESS
         self.opcua = Client(url)
-        self.version = ""
+
+        self._template = template
+        self._version = ""
 
     async def initialize(self):
-        """Initialize and check connection."""
+        """Initialize, check connection and start acquisition."""
         try:
             await self.opcua.connect()
         except asyncio.TimeoutError as timeout_error:
@@ -49,6 +75,12 @@ class FlowIR(iCIR_spectrometer, FlowchemDevice):
         await self.check_version()
         logger.debug("FlowIR initialized!")
 
+        if not self.is_iCIR_connected:
+            raise DeviceError("Device not connected! Check iCIR...")
+
+        # Start acquisition! Ensures the device is ready when a spectrum is needed
+        await self.start_experiment(name="Flowchem", template=self._template)
+
     def metadata(self) -> DeviceInfo:
         """Return hw device metadata."""
         return DeviceInfo(
@@ -56,7 +88,8 @@ class FlowIR(iCIR_spectrometer, FlowchemDevice):
             maintainers=[dario],
             manufacturer="Mettler-Toledo",
             model="iCIR",
-            version=self.version,
+            version=self._version,
+            additional_info=self.probe_info(),
         )
 
     def is_local(self):
@@ -68,11 +101,11 @@ class FlowIR(iCIR_spectrometer, FlowchemDevice):
     async def check_version(self):
         """Check if iCIR is installed and open and if the version is supported."""
         try:
-            self.version = await self.opcua.get_node(
+            self._version = await self.opcua.get_node(
                 self.SOFTWARE_VERSION
             ).get_value()  # "7.1.91.0"
-            if self.version not in self._supported_versions:
-                warnings.warn(
+            if self._version not in self._supported_versions:
+                logger.warning(
                     f"The current version of iCIR [self.version] has not been tested!"
                     f"Pleas use one of the supported versions: {self._supported_versions}"
                 )
@@ -104,6 +137,79 @@ class FlowIR(iCIR_spectrometer, FlowchemDevice):
         return await self.opcua.get_node(self.SAMPLE_COUNT).get_value()
 
     @staticmethod
+    def _normalize_template_name(template_name) -> str:
+        """Add `.iCIRTemplate` extension to string if not already present."""
+        return (
+            template_name
+            if template_name.endswith(".iCIRTemplate")
+            else template_name + ".iCIRTemplate"
+        )
+
+    @staticmethod
+    def is_template_name_valid(template_name: str) -> bool:
+        r"""
+        Check template name validity. For the template folder location read below.
+
+        From Mettler Toledo docs:
+        You can use the Start method to create and run a new experiment in one of the iC analytical applications
+        (i.e. iC IR, iC FBRM, iC Vision, iC Raman). Note that you must provide the name of an existing experiment
+        template file that can be used as a basis for the new experiment.
+        The template file must be located in a specific folder on the iC OPC UA Server computer.
+        This is usually C:\\ProgramData\\METTLER TOLEDO\\iC OPC UA Server\\1.2\\Templates.
+        """
+        template_dir = Path(
+            r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
+        )
+        if not template_dir.exists() or not template_dir.is_dir():
+            logger.warning("iCIR template folder not found on the local PC!")
+            return False
+
+        # Ensures the name has been provided with no extension (common mistake)
+        template_name = IcIR._normalize_template_name(template_name)
+
+        return any(
+            existing_tmpl.name == template_name
+            for existing_tmpl in template_dir.glob("*.iCIRTemplate")
+        )
+
+    @staticmethod
+    def parse_probe_info(probe_info_reply: str) -> ProbeInfo:
+        """Convert the device reply into a ProbeInfo dictionary.
+
+        Example probe_info_reply reply is:
+        'FlowIR; SN: 2989; Detector: DTGS; Apodization: HappGenzel; IP Address: 192.168.1.2;
+        Probe: DiComp (Diamond); SN: 14570173; Interface: FlowIR™ Sensor; Sampling: 4000 to 650 cm-1;
+        Resolution: 8; Scan option: AutoSelect; Gain: 232;'
+        """
+        fields = probe_info_reply.split(";")
+        probe_info = {
+            "spectrometer": fields[0],
+            "spectrometer_SN": fields[1].split(": ")[1],
+            "probe_SN": fields[6].split(": ")[1],
+        }
+
+        # Use aliases, i.e. translate API names (left) to dict key (right)
+        translate_attributes = {
+            "Detector": "detector",
+            "Apodization": "apodization",
+            "IP Address": "ip_address",
+            "Probe": "probe_type",
+            "Sampling": "sampling_interval",
+            "Resolution": "resolution",
+            "Scan option": "scan_option",
+            "Gain": "gain",
+        }
+        for element in fields:
+            if ":" in element:
+                piece = element.split(":")
+                if piece[0].strip() in translate_attributes:
+                    probe_info[translate_attributes[piece[0].strip()]] = piece[
+                        1
+                    ].strip()
+
+        return probe_info  # type: ignore
+
+    @staticmethod
     async def _wavenumber_from_spectrum_node(node) -> list[float]:
         """Get the X-axis value of a spectrum. This is necessary as they change e.g. with resolution."""
         node_property = await node.get_properties()
@@ -115,7 +221,7 @@ class FlowIR(iCIR_spectrometer, FlowchemDevice):
         """Given a Spectrum node returns it as IRSpectrum."""
         try:
             intensity = await node.get_value()
-            wavenumber = await FlowIR._wavenumber_from_spectrum_node(node)
+            wavenumber = await IcIR._wavenumber_from_spectrum_node(node)
             return IRSpectrum(wavenumber=wavenumber, intensity=intensity)
 
         except ua.uaerrors.BadOutOfService:
@@ -123,17 +229,15 @@ class FlowIR(iCIR_spectrometer, FlowchemDevice):
 
     async def last_spectrum_treated(self) -> IRSpectrum:
         """Return an IRSpectrum element for the last acquisition."""
-        return await FlowIR.spectrum_from_node(
-            self.opcua.get_node(self.SPECTRA_TREATED)
-        )
+        return await IcIR.spectrum_from_node(self.opcua.get_node(self.SPECTRA_TREATED))
 
     async def last_spectrum_raw(self) -> IRSpectrum:
         """RAW result latest scan."""
-        return await FlowIR.spectrum_from_node(self.opcua.get_node(self.SPECTRA_RAW))
+        return await IcIR.spectrum_from_node(self.opcua.get_node(self.SPECTRA_RAW))
 
     async def last_spectrum_background(self) -> IRSpectrum:
         """RAW result latest scan."""
-        return await FlowIR.spectrum_from_node(
+        return await IcIR.spectrum_from_node(
             self.opcua.get_node(self.SPECTRA_BACKGROUND)
         )
 
@@ -147,14 +251,14 @@ class FlowIR(iCIR_spectrometer, FlowchemDevice):
                       That usually is C:\\ProgramData\\METTLER TOLEDO\\iC OPC UA Server\1.2\\Templates
             name: experiment name.
         """
-        template = FlowIR._normalize_template_name(template)
-        if self.is_local() and FlowIR.is_template_name_valid(template) is False:
+        template = self._normalize_template_name(template)
+        if self.is_local() and self.is_template_name_valid(template) is False:
             raise DeviceError(
                 f"Cannot start template {template}: name not valid! Check if is in: "
                 r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
             )
         if await self.probe_status() == "Running":
-            warnings.warn(
+            logger.warning(
                 "I was asked to start an experiment while a current experiment is already running!"
                 "I will have to stop that first! Sorry for that :)"
             )
@@ -193,38 +297,7 @@ class FlowIR(iCIR_spectrometer, FlowchemDevice):
 
     def get_components(self):
         """Return an IRSpectrometer component."""
-        # FIXME
-
-    # def get_router(self, prefix: str | None = None):
-    #     """Create an APIRouter for this FlowIR instance."""
-    #     router = super().get_router(prefix)
-    #     router.add_api_route("/is-connected", self.is_iCIR_connected, methods=["GET"])
-    #     router.add_api_route("/probe-status", self.probe_status, methods=["GET"])
-    #     router.add_api_route(
-    #         "/probe-info", self.probe_info, methods=["GET"], response_model=ProbeInfo
-    #     )
-    #
-    #     router.add_api_route("/sample-count", self.sample_count, methods=["GET"])
-    #     router.add_api_route(
-    #         "/sample/last-acquisition-time", self.last_sample_time, methods=["GET"]
-    #     )
-    #     router.add_api_route(
-    #         "/sample/spectrum-treated", self.last_spectrum_treated, methods=["GET"]
-    #     )
-    #     router.add_api_route(
-    #         "/sample/spectrum-raw", self.last_spectrum_raw, methods=["GET"]
-    #     )
-    #     router.add_api_route(
-    #         "/sample/spectrum-background",
-    #         self.last_spectrum_background,
-    #         methods=["GET"],
-    #     )
-    #     router.add_api_route(
-    #         "/experiment/start", self.start_experiment, methods=["PUT"]
-    #     )
-    #     router.add_api_route("/experiment/stop", self.stop_experiment, methods=["GET"])
-    #
-    #     return router
+        return (IcIRControl("ir-control", self),)
 
 
 if __name__ == "__main__":
