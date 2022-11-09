@@ -1,19 +1,111 @@
 """Distribution valves, generally connected to syringe pumps, direct the flow from a fixed port to one of the others."""
-from loguru import logger
-
 from flowchem.components.valves.base_valve import BaseValve
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class TwoPortDistribution(BaseValve):
     def __init__(self, name: str, hw_device: FlowchemDevice):
-        # These are hardware-port, only input and output are routable from the fixed syringe.
-        # All three are listed as this simplifies the creation of graphs
-        positions = ["pump", "input", "output"]
-        super().__init__(name, hw_device, positions)
+        positions = {
+            "input": [("pump", "input")],
+            "output": [("pump", "output")],
+        }
+        super().__init__(name, hw_device, positions, ports=["pump", "input", "output"])
 
-    async def set_position(self, position: str) -> bool:
-        if position not in self._positions or position == "pump":
-            logger.error(f"Invalid position {position} for valve {self.name}!")
-            return False
-        return True
+
+class SixPortDistribution(BaseValve):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
+        positions = {
+            "1": [("pump", "1")],
+            "2": [("pump", "2")],
+            "3": [("pump", "3")],
+            "4": [("pump", "4")],
+            "5": [("pump", "5")],
+            "6": [("pump", "6")],
+        }
+        super().__init__(
+            name, hw_device, positions, ports=["pump", "1", "2", "3", "4", "5", "6"]
+        )
+
+
+class TwelvePortDistribution(BaseValve):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
+        positions = {
+            "1": [("pump", "1")],
+            "2": [("pump", "2")],
+            "3": [("pump", "3")],
+            "4": [("pump", "4")],
+            "5": [("pump", "5")],
+            "6": [("pump", "6")],
+            "7": [("pump", "7")],
+            "8": [("pump", "8")],
+            "9": [("pump", "9")],
+            "10": [("pump", "10")],
+            "11": [("pump", "11")],
+            "12": [("pump", "12")],
+        }
+        super().__init__(
+            name,
+            hw_device,
+            positions,
+            ports=[
+                "pump",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+            ],
+        )
+
+
+class SixteenPortDistribution(BaseValve):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
+        positions = {
+            "1": [("pump", "1")],
+            "2": [("pump", "2")],
+            "3": [("pump", "3")],
+            "4": [("pump", "4")],
+            "5": [("pump", "5")],
+            "6": [("pump", "6")],
+            "7": [("pump", "7")],
+            "8": [("pump", "8")],
+            "9": [("pump", "9")],
+            "10": [("pump", "10")],
+            "11": [("pump", "11")],
+            "12": [("pump", "12")],
+            "13": [("pump", "13")],
+            "14": [("pump", "14")],
+            "15": [("pump", "15")],
+            "16": [("pump", "16")],
+        }
+        super().__init__(
+            name,
+            hw_device,
+            positions,
+            ports=[
+                "pump",
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+                "10",
+                "11",
+                "12",
+                "13",
+                "14",
+                "15",
+                "16",
+            ],
+        )

@@ -7,9 +7,11 @@ from loguru import logger
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
+from flowchem.devices.knauer.valve_component import Knauer12PortDistribution
+from flowchem.devices.knauer.valve_component import Knauer16PortDistribution
+from flowchem.devices.knauer.valve_component import Knauer6PortDistribution
+from flowchem.devices.knauer.valve_component import KnauerInjectionValve
 from flowchem.exceptions import DeviceError
-from flowchem.models.valves.injection_valve import InjectionValve
-from flowchem.models.valves.multiposition_valve import MultiPositionValve
 from flowchem.people import *
 
 
@@ -143,126 +145,38 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         logger.info(f"Valve connected, type: {headtype}.")
         return headtype
 
-
-class Knauer6Port2PositionValve(KnauerValve):
-    """KnauerValve of type SIX_PORT_TWO_POSITION."""
-
-    position_mapping = {"LOAD": "L", "INJECT": "I"}
-    _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
-
-    async def initialize(self):
-        """Ensure valve type."""
-        await super().initialize()
-        assert self.valve_type == KnauerValveHeads.SIX_PORT_TWO_POSITION
-
-    async def set_position(self, position: str):
-        """Move valve to position."""
-        await self._transmit_and_parse_reply(self.position_mapping[position])
-
-    async def get_position(self) -> str:
-        """Return current valve position."""
-        valve_pos = await self._transmit_and_parse_reply("P")
-        return self._reverse_position_mapping[valve_pos]
-
-
-class Knauer6Port6PositionValve(KnauerValve, MultiPositionValve):
-    """KnauerValve of type SIX_PORT_SIX_POSITION."""
-
-    def __init__(
-        self, ip_address=None, mac_address=None, default_position: int = 1, name=None
-    ):
-        super().__init__(
-            ip_address=ip_address,
-            mac_address=mac_address,
-            port_count=6,
-            default_position=default_position,
-            name=name,
-        )
-
-    async def initialize(self):
-        """Ensure valve type."""
-        await super().initialize()
-        assert self.valve_type == KnauerValveHeads.SIX_PORT_SIX_POSITION
-
-    async def get_position(self) -> str:
-        """Return current valve position."""
+    async def get_raw_position(self) -> str:
+        """Return current valve position, following valve nomenclature."""
         return await self._transmit_and_parse_reply("P")
 
-    async def set_position(self, position: str):
-        """Move valve to position."""
-        position = str(position).upper()
-        await self._transmit_and_parse_reply(position)
+    async def set_raw_position(self, position: str) -> bool:
+        """Sets the valve position, following valve nomenclature."""
+        return await self._transmit_and_parse_reply(position) != ""
 
-
-class Knauer12PortValve(KnauerValve, MultiPositionValve):
-    """KnauerValve of type TWELVE_PORT_TWELVE_POSITION."""
-
-    def __init__(
-        self, ip_address=None, mac_address=None, default_position: int = 1, name=None
-    ):
-        super().__init__(
-            ip_address=ip_address,
-            mac_address=mac_address,
-            port_count=12,
-            default_position=default_position,
-            name=name,
-        )
-
-    async def initialize(self):
-        """Ensure valve type."""
-        await super().initialize()
-        assert self.valve_type == KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION
-
-    async def get_position(self) -> str:
-        """Return current valve position."""
-        return await self._transmit_and_parse_reply("P")
-
-    async def set_position(self, position: str):
-        """Move valve to position."""
-        position = str(position).upper()
-        await self._transmit_and_parse_reply(position)
-
-
-class Knauer16PortValve(KnauerValve, MultiPositionValve):
-    """KnauerValve of type SIXTEEN_PORT_SIXTEEN_POSITION."""
-
-    def __init__(
-        self, ip_address=None, mac_address=None, default_position: int = 1, name=None
-    ):
-        super().__init__(
-            ip_address=ip_address,
-            mac_address=mac_address,
-            port_count=16,
-            default_position=default_position,
-            name=name,
-        )
-
-    async def initialize(self):
-        """Ensure valve type."""
-        await super().initialize()
-        assert self.valve_type == KnauerValveHeads.SIXTEEN_PORT_SIXTEEN_POSITION
-
-    async def get_position(self) -> str:
-        """Return current valve position."""
-        return await self._transmit_and_parse_reply("P")
-
-    async def set_position(self, position: str):
-        """Move valve to position."""
-        position = str(position).upper()
-        await self._transmit_and_parse_reply(position)
+    def components(self):
+        """Create the right type of Valve components based on head type."""
+        match self.valve_type:
+            case KnauerValveHeads.SIX_PORT_TWO_POSITION:
+                return KnauerInjectionValve("injection-valve", self)
+            case KnauerValveHeads.SIX_PORT_SIX_POSITION:
+                return Knauer6PortDistribution("distribution-valve", self)
+            case KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION:
+                return Knauer12PortDistribution("distribution-valve", self)
+            case KnauerValveHeads.SIXTEEN_PORT_SIXTEEN_POSITION:
+                return Knauer16PortDistribution("distribution-valve", self)
 
 
 if __name__ == "__main__":
     import asyncio
 
-    v = Knauer6Port2PositionValve(ip_address="192.168.1.176")
+    v = KnauerValve(ip_address="192.168.1.176")
 
-    async def main(valve: Knauer6Port2PositionValve):
+    async def main(valve):
         """Test function."""
         await valve.initialize()
-        await valve.set_position("I")
-        print(await valve.get_position())
-        await valve.set_position("L")
-        print(await valve.get_position())
+        await valve.set_raw_position("I")
+        print(await valve.get_raw_position())
+        await valve.set_raw_position("L")
+        print(await valve.get_raw_position())
 
     asyncio.run(main(v))
