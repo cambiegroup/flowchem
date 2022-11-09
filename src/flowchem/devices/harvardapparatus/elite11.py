@@ -212,7 +212,7 @@ class Elite11(FlowchemDevice):
 
     async def _send_command_and_read_reply(
         self, command: str, parameter="", parse=True, multiline=False
-    ) -> str | list[str]:
+    ):
         """Send a command based on its template and return the corresponding reply as str."""
         cmd = Protocol11Command(
             command=command,

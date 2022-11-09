@@ -5,13 +5,9 @@ from ._internal import FakeDevice
 from .dataapex import Clarity
 from .hamilton import ML600
 from .harvardapparatus import Elite11
-from .harvardapparatus import Elite11InfuseWithdraw
 from .huber import HuberChiller
 from .knauer import AzuraCompact
-from .knauer import Knauer12PortValve
-from .knauer import Knauer16PortValve
-from .knauer import Knauer6Port2PositionValve
-from .knauer import Knauer6Port6PositionValve
+from .knauer import KnauerValve
 from .manson import MansonPowerSupply
 from .mettlertoledo import FlowIR
 from .phidgets import PhidgetPressureSensor

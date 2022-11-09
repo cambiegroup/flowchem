@@ -286,8 +286,8 @@ class MansonPowerSupply(FlowchemDevice):
         await self.set_current(current)
 
     def get_components(self):
-        """Return an IRSpectrometer component."""
-        # FIXME
+        """Return an TemperatureControl component."""
+        return (TemperatureControl(),)
 
     # def get_router(self, prefix: str | None = None):
     #     """Create an APIRouter for this MansonPowerSupply instance."""

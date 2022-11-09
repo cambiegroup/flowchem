@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from flowchem import ureg
+
 
 @dataclass
 class PBCommand:

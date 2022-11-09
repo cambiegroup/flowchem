@@ -45,9 +45,9 @@ class TemperatureControl(FlowchemComponent):
         """Return True if the set temperature target has been reached."""
         ...
 
-    async def temperature_limits(self) -> dict[str, float]:
+    async def temperature_limits(self) -> TempRange:
         """Return a dict with `min` and `max` temperature in Celsius."""
-        return {"min": self._limits[0], "max": self._limits[1]}
+        return self._limits
 
     async def power_on(self):
         """Turn on temperature control."""
