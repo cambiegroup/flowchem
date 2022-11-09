@@ -1,11 +1,26 @@
 """Fake device for testing purposes. No parameters needed."""
-from flowchem.models.base_device import BaseDevice
+from collections.abc import Iterable
+
+from flowchem.components.base_component import FlowchemComponent
+from flowchem.components.test import TestComponent
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.people import dario
 
 
-class FakeDevice(BaseDevice):
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
-        router = super().get_router(prefix)
+class FakeDevice(FlowchemDevice):
 
-        router.add_api_route("/test", lambda f: True, methods=["GET"])
-        return router
+    metadata = DeviceInfo(
+        authors=[dario],
+        maintainers=[dario],
+        manufacturer="virtual-device",
+        model="FakeDevice",
+        serial_number=42,
+        version="v1.0",
+    )
+
+    def components(self) -> Iterable[FlowchemComponent]:
+        """Returns a test Component."""
+        component = TestComponent(name="test-device", hw_device=self)
+        component.router.add_api_route("/test", lambda: True, methods=["GET"])
+        return (component,)

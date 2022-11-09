@@ -9,7 +9,7 @@ import sys
 import pint
 import pytest
 
-from flowchem.devices.knauer.azura_compact import AzuraCompactPump
+from flowchem.devices.knauer.azura_compact import AzuraCompact
 from flowchem.devices.knauer.azura_compact import AzuraPumpHeads
 
 if sys.platform == "win32":
@@ -32,14 +32,14 @@ def event_loop(request):
 @pytest.fixture(scope="session")
 async def pump():
     """Change to match your hardware ;)"""
-    pump = AzuraCompactPump(ip_address="192.168.1.126")
+    pump = AzuraCompact(ip_address="192.168.1.126")
     await pump.initialize()
     return pump
 
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_pumphead(pump: AzuraCompactPump):
+async def test_pumphead(pump: AzuraCompact):
     assert await pump.get_headtype() in AzuraPumpHeads
     await pump.set_headtype(AzuraPumpHeads.FLOWRATE_TEN_ML)
     assert await pump.get_headtype() == AzuraPumpHeads.FLOWRATE_TEN_ML
@@ -49,13 +49,13 @@ async def test_pumphead(pump: AzuraCompactPump):
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_headtype(pump: AzuraCompactPump):
+async def test_headtype(pump: AzuraCompact):
     assert await pump.get_headtype() in AzuraPumpHeads
 
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_flow_rate(pump: AzuraCompactPump):
+async def test_flow_rate(pump: AzuraCompact):
     await pump.set_flow_rate("1.25 ml/min")
     await pump.infuse()
     # FIXME
@@ -69,7 +69,7 @@ async def test_flow_rate(pump: AzuraCompactPump):
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_analog_control(pump: AzuraCompactPump):
+async def test_analog_control(pump: AzuraCompact):
     await pump.enable_analog_control(True)
     assert await pump.is_analog_control_enabled() is True
     await pump.enable_analog_control(False)
@@ -78,7 +78,7 @@ async def test_analog_control(pump: AzuraCompactPump):
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_is_running(pump: AzuraCompactPump):
+async def test_is_running(pump: AzuraCompact):
     await pump.set_flow_rate("1 ml/min")
     await pump.infuse()
     assert pump.is_running() is True
@@ -87,14 +87,14 @@ async def test_is_running(pump: AzuraCompactPump):
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_motor_current(pump: AzuraCompactPump):
+async def test_motor_current(pump: AzuraCompact):
     await pump.stop()
     assert await pump.read_motor_current() == 0
 
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_correction_factor(pump: AzuraCompactPump):
+async def test_correction_factor(pump: AzuraCompact):
     init_val = await pump.get_correction_factor()
     await pump.set_correction_factor(0)
     assert await pump.get_correction_factor() == 0
@@ -103,7 +103,7 @@ async def test_correction_factor(pump: AzuraCompactPump):
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_adjusting_factor(pump: AzuraCompactPump):
+async def test_adjusting_factor(pump: AzuraCompact):
     init_val = await pump.get_adjusting_factor()
     await pump.set_adjusting_factor(1000)
     assert await pump.get_adjusting_factor() == 1000
@@ -112,7 +112,7 @@ async def test_adjusting_factor(pump: AzuraCompactPump):
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_autostart(pump: AzuraCompactPump):
+async def test_autostart(pump: AzuraCompact):
     await pump.enable_autostart()
     assert await pump.is_autostart_enabled() is True
     await pump.enable_autostart(False)
@@ -120,7 +120,7 @@ async def test_autostart(pump: AzuraCompactPump):
 
 @pytest.mark.KPump
 @pytest.mark.asyncio
-async def test_start_in(pump: AzuraCompactPump):
+async def test_start_in(pump: AzuraCompact):
     await pump.require_start_in()
     assert await pump.is_start_in_required() is True
     await pump.require_start_in(False)

@@ -20,27 +20,29 @@ Configuration sample showing all possible parameters:
 
 ```toml
 [device.my-knauer-valve]  # This is the valve identifier
-type = "Knauer6Port2PositionValve"  # Other options are Knauer6Port6PositionValve, Knauer12PortValve and Knauer16PortValve
+type = "KnauerValve"  # The actual valve type will be detected automatically
 ip_address = "192.168.2.1"  # Onyl one of either ip_address or mac_address need to be provided
 mac_address = "00:11:22:33:44:55"  #  Onyl one of either ip_address or mac_address need to be provided
-default_position = "LOAD"  # Valve position to be set upon initialization
+```
+
+## API methods
+Once configured, a flowchem Knauer6Port2PositionValve object will expose the following commands:
+
+```{eval-rst}
+.. include:: api-pump.rst
 ```
 
 ## Valve positions
-The valve position naming follow the general convention of flowchem (see [Base Valve](../../models/valves/base_valve.md):
-* Injection valves have position named 'LOAD' and 'INJECT'
-* Multiposition valves have positions from '1' to 'n' where n is the total amount of port available.
+The valve position naming follow the general convention of flowchem, depending on the valve type
+(see [Base Valve](../../models/valves/base_valve.md):
+* Injection valves have position named 'load' and 'inject'
+* Distribution valves have positions from '1' to 'n' where n is the total amount of port available.
 
 ## Device detection
 Knauer Valves can be auto-detected via the `flowchem-autodiscover` command-line utility.
 After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that
 can be auto-detected on your PC.
 
-```{note} Valve types
-Note that the actual type of valve cannot be detected automatically, so you will need to replace the generic
-`KnauerValve` type in the configuration with one of the valid device types (i.e. one of `Knauer6Port2PositionValve`,
-`Knauer6Port6PositionValve`, `Knauer12PortValve` and `Knauer16PortValve`)
-```
 
 ## Further information
 For further information please refer to the [manufacturer manual](./valve_instructions_en.pdf)

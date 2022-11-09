@@ -173,9 +173,8 @@ def knauer_finder(source_ip=None):
             dev_config.add(
                 dedent(
                     f"""\n\n[device.valve-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
-                        type = "KnauerValve"  # Replace with actual valve type, e.g. Knauer6Port2PositionValve!
-                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}
-                        # default_position = "LOAD"  # Valve position to be set upon initialization\n"""
+                        type = "KnauerValve"
+                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n"""
                 )
             )
 

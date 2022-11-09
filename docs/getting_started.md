@@ -1,4 +1,4 @@
-# flowchem
+# Getting started
 
 Welcome to the new users guide to flowchem!
 

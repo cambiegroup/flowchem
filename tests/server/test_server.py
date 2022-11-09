@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from textwrap import dedent
 
@@ -19,7 +20,7 @@ def app():
                     type = "FakeDevice"\n"""
                 )
             )
-        yield create_server_from_file(Path("test_configuration.toml"))
+        yield asyncio.run(create_server_from_file(Path("test_configuration.toml")))
 
 
 def test_read_main(app):

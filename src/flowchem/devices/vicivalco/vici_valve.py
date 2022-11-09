@@ -7,8 +7,11 @@ import aioserial
 from loguru import logger
 
 from flowchem import ureg
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.vicivalco.vici_valve_component import ViciInjectionValve
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.models.valves.injection_valve import InjectionValve
+from flowchem.people import *
 
 
 @dataclass
@@ -104,7 +107,7 @@ class ViciValcoValveIO:
             return ""
 
 
-class ViciValve(InjectionValve):
+class ViciValve(FlowchemDevice):
     """ViciValco injection valves."""
 
     # This class variable is used for daisy chains (i.e. multiple valves on the same serial connection). Details below.
@@ -112,10 +115,6 @@ class ViciValve(InjectionValve):
     # When several valves are daisy-chained on the same serial port, they need to all access the *same* Serial object,
     # because access to the serial port is exclusive by definition.
     # The mutable object _io_instances as class variable creates a shared state across all the instances.
-
-    # Map generic position to device-specific ones.
-    position_mapping = {"LOAD": "1", "INJECT": "2"}
-    _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
     def __init__(
         self,
@@ -139,9 +138,10 @@ class ViciValve(InjectionValve):
 
         # The valve name is used for logs and error messages.
         self.name = name if name else f"Valve {self.valve_io.name}:{address}"
-        super().__init__(loop_volume=loop_volume, name=name)
+        super().__init__(loop_volume=loop_volume, name=name)  # type: ignore
 
         self.address = address
+        self._version = ""
 
     @classmethod
     def from_config(
@@ -165,8 +165,6 @@ class ViciValve(InjectionValve):
 
     async def initialize(self):
         """Must be called after init before anything else."""
-        await super().initialize()
-
         # Learning positions is only needed if the valve head has been reinstalled.
         await self.learn_positions()
 
@@ -174,8 +172,18 @@ class ViciValve(InjectionValve):
         await self.home()
 
         # Test connectivity by querying the valve's firmware version
-        firmware_version = await self.version()
-        logger.info(f"Connected to {self.name} - FW ver.: {firmware_version}!")
+        self._version = await self.version()
+        logger.info(f"Connected to {self.name} - FW ver.: {self._version}!")
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Vici-Valco",
+            model="Universal Valve Actuator",
+            version=self._version,
+        )
 
     async def learn_positions(self) -> None:
         """Initialize valve only, there is no reply -> reply_lines = 0."""
@@ -188,23 +196,20 @@ class ViciValve(InjectionValve):
         await self.valve_io.write_and_read_reply(home)
 
         # This seems necessary to make sure move is finished
-        await self.get_position()
+        await self.get_raw_position()
 
     async def version(self) -> str:
         """Return the current firmware version reported by the valve."""
         version = ViciCommand(valve_id=self.address, command="VR", reply_lines=5)
         return await self.valve_io.write_and_read_reply(version)
 
-    async def get_position(self) -> str:
+    async def get_raw_position(self) -> str:
         """Represent the position of the valve."""
         current_pos = ViciCommand(valve_id=self.address, command="CP")
-        valve_pos = await self.valve_io.write_and_read_reply(current_pos)
+        return await self.valve_io.write_and_read_reply(current_pos)
 
-        return self._reverse_position_mapping[valve_pos]
-
-    async def set_position(self, position: str | str):
-        """Set valve position. Switches really quick and doesn't reply, so waiting does not make sense."""
-        # FIXME check position validity
+    async def set_raw_position(self, position: str):
+        """Set valve position."""
         valve_by_name_cw = ViciCommand(
             valve_id=self.address, command="GO", value=position, reply_lines=0
         )
@@ -221,18 +226,9 @@ class ViciValve(InjectionValve):
         time_toggle = ViciCommand(valve_id=self.address, command="TT")
         await self.valve_io.write_and_read_reply(time_toggle)
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
-        from fastapi import APIRouter
-
-        router = APIRouter()
-        router.add_api_route("/firmware-version", self.version, methods=["GET"])
-        router.add_api_route("/home", self.home, methods=["PUT"])
-        router.add_api_route("/position", self.get_position, methods=["GET"])
-        router.add_api_route("/position", self.set_position, methods=["PUT"])
-        router.add_api_route("/timed-toggle", self.set_position, methods=["PUT"])
-
-        return router
+    def get_components(self):
+        """Return a Valve component."""
+        return (ViciInjectionValve("injection-valve", self),)
 
 
 if __name__ == "__main__":
@@ -242,4 +238,4 @@ if __name__ == "__main__":
     asyncio.run(valve1.initialize())
 
     # Set position works with both strings and InjectionValvePosition
-    asyncio.run(valve1.set_position("2"))
+    asyncio.run(valve1.set_raw_position("2"))

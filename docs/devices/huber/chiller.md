@@ -15,6 +15,8 @@ Configuration sample showing all possible parameters:
 [device.my-huber-chiller]  # This is the chiller identifier
 type = "HuberChiller"
 port = "COM11"  # This will be /dev/tty* under linux/MacOS
+min_temp = -100  # Min and max temp can be used to further limit the avaiable temperatures
+max_temp = +250  # e.g. for compatibility with the reaction system.
 ```
 
 ```{note} Serial connection parameters
@@ -28,9 +30,16 @@ automatically used:
 * bytesize 8
 ```
 
+## API methods
+Once configured, a flowchem HuberChiller object will expose the following commands:
+
+```{eval-rst}
+.. include:: api.rst
+```
+
 ## Device detection
 Lab PCs often have several devices connected via serial ports.
-Huber chillers can be auto-detected via the `flowchem-autodiscover` command-line utility.
+Huber's chillers can be auto-detected via the `flowchem-autodiscover` command-line utility.
 After having installed flowchem, run `flowchem-autodiscover` to create a configuration stub with all the devices that
 can be auto-detected on your PC.
 

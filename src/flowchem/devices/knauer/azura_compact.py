@@ -3,13 +3,17 @@ import asyncio
 import warnings
 from enum import Enum
 
+import pint
 from loguru import logger
 
 from ._common import KnauerEthernetDevice
 from flowchem import ureg
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.knauer.azura_compact_pump import AzuraCompactPump
+from flowchem.devices.knauer.azura_compact_sensor import AzuraCompactSensor
 from flowchem.exceptions import DeviceError
-from flowchem.models.pumps.hplc_pump import HplcPump
-from flowchem.models.sensors.pressure_sensor import PressureSensor
+from flowchem.people import *
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to the highest flow rate in ml/min
@@ -45,29 +49,8 @@ class AzuraPumpHeads(Enum):
 
 
 # noinspection DuplicatedCode
-class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
+class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
     """Control module for Knauer Azura Compact pumps."""
-
-    metadata = {
-        "author": [
-            {
-                "first_name": "Jakob",
-                "last_name": "Wolf",
-                "email": "jakob.wolf@mpikg.mpg.de",
-                "institution": "Max Planck Institute of Colloids and Interfaces",
-                "github_username": "JB-Wolf",
-            },
-            {
-                "first_name": "Dario",
-                "last_name": "Cambie",
-                "email": "dario.cambie@mpikg.mpg.de",
-                "institution": "Max Planck Institute of Colloids and Interfaces",
-                "github_username": "dcambie",
-            },
-        ],
-        "tested": True,
-        "supported": True,
-    }
 
     def __init__(
         self,
@@ -106,6 +89,15 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
             await self.set_maximum_pressure(self._pressure_max)
         if self._pressure_min is not None:
             await self.set_minimum_pressure(self._pressure_min)
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="knauer",
+            model="Azura Compact",
+        )
 
     @staticmethod
     def error_present(reply: str) -> bool:
@@ -352,11 +344,9 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         )
         logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
-    async def read_pressure(self, units: str | None = "bar") -> float:
+    async def read_pressure(self) -> pint.Quantity:
         """Return pressure if the pump has a pressure sensor."""
-        pressure = await self._transmit_and_parse_reply(PRESSURE) * ureg.bar
-        logger.debug(f"Pressure measured = {pressure}")
-        return pressure.m_as(units)
+        return await self._transmit_and_parse_reply(PRESSURE) * ureg.bar
 
     async def read_extflow(self) -> float:
         """Read the set flowrate from analog in."""
@@ -419,20 +409,9 @@ class AzuraCompactPump(KnauerEthernetDevice, HplcPump, PressureSensor):
         await self.create_and_send_command(EXTCONTR, setpoint=int(value))
         logger.debug(f"External control set to {value}")
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
-        # Basic pump methods
-        router = super().get_router()
-        router.add_api_route("/remote-control", self.remote_control, methods=["PUT"])
-
-        # Pressure sensor as sub-device following pressure sensors schema
-        router2 = PressureSensor.get_router(self, prefix="/pressure-sensor")
-        # router2 = super(BasePump, self).get_router(prefix="/pressure-sensor")
-        # Note: This is super(BasePump) because the MRO of AzuraCompactPump is
-        # (KnauerEthernetDevice, HplcPump, BasePump, PressureSensor, Sensor, BaseDevice, ...)
-        # ---------------------------------^^^^^^^^ to get PressureSensor's router!
-
-        return router, router2
+    def components(self):
+        """Create a Pump and a Sensor components."""
+        return AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)
 
 
 if __name__ == "__main__":
@@ -442,9 +421,9 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    p = AzuraCompactPump(ip_address="192.168.10.113")
+    p = AzuraCompact(ip_address="192.168.10.113")
 
-    async def main(pump: AzuraCompactPump):
+    async def main(pump: AzuraCompact):
         """Test function."""
         await pump.initialize()
         await pump.set_flow_rate("0.1 ml/min")

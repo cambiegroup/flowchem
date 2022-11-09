@@ -2,7 +2,7 @@ from textwrap import dedent
 
 from click.testing import CliRunner
 
-from flowchem.cli import main
+from flowchem.__main__ import main
 
 
 def test_cli(mocker):

@@ -1,7 +1,10 @@
 """Parse a device config file."""
 import inspect
 import sys
+import typing
+from io import BytesIO
 from pathlib import Path
+from textwrap import dedent
 
 from flowchem.devices.list_known_device_type import autodiscover_device_classes
 
@@ -17,40 +20,49 @@ from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
 
-def parse_toml_file(file_path: Path) -> dict:
+def parse_toml(stream: typing.BinaryIO) -> dict:
     """
     Read the TOML configuration file and returns it as a dict.
 
     Extensive exception handling due to the error-prone human editing needed in the configuration file.
     """
-    with file_path.open("rb") as stream:
-        try:
-            return tomllib.load(stream)
-        except tomllib.TOMLDecodeError as parser_error:
-            logger.exception(parser_error)
-            raise InvalidConfiguration(
-                f"The configuration file {file_path} is not a valid TOML file!"
-            ) from parser_error
+    try:
+        return tomllib.load(stream)
+    except tomllib.TOMLDecodeError as parser_error:
+        logger.exception(parser_error)
+        raise InvalidConfiguration(
+            f"The configuration provided does not contain valid TOML!"
+        ) from parser_error
 
 
-def parse_config_file(file_path: Path | str) -> dict:
+def parse_config(file_path: BytesIO | Path) -> dict:
     """Parse a config file."""
-    file_path = Path(file_path)
-    assert file_path.exists() and file_path.is_file(), f"{file_path} is a valid file"
-    config = parse_toml_file(file_path)
-    config["filename"] = file_path.stem
-    return parse_config(config)
+    # StringIO used for testing without creating actual files
+    if isinstance(file_path, BytesIO):
+        config = parse_toml(file_path)
+        config["filename"] = "StringIO"
+    else:
+        assert (
+            file_path.exists() and file_path.is_file()
+        ), f"{file_path} is a valid file"
+
+        with file_path.open("rb") as stream:
+            config = parse_toml(stream)
+
+        config["filename"] = file_path.stem
+
+    return instantiate_device(config)
 
 
-def parse_config(config: dict) -> dict:
-    """Parse config."""
-    # Create a dict with device type (str) as key and the device class as value.
-    # e.g. device_mapper["Spinsolve"] = Spinsolve
-    # This is later use for the programmatic instantiation of devices
+def instantiate_device(config: dict) -> dict:
+    """Instantiate all devices defined in the provided config dict."""
+    assert "device" in config, "The configuration file must include a device section"
+
+    # device_mapper is a dict mapping device type (str, as key) with the device class (obj, value).
+    # e.g. device_mapper["Spinsolve"] = Spinsolve class
     device_mapper = autodiscover_device_classes()
 
     # Iterate on all devices, parse device-specific settings and instantiate the relevant objects
-    assert "device" in config, "The configuration file must include a device section"
     config["device"] = [
         parse_device(dev_settings, device_mapper)
         for dev_settings in config["device"].items()
@@ -73,7 +85,7 @@ def parse_device(dev_settings, device_object_mapper) -> BaseDevice:
         obj_type = device_object_mapper[device_config["type"]]
         del device_config["type"]
     except KeyError as error:
-        # Helpful message for devices supported via plugins
+        # If the device type specified is supported via a plugin we know of, alert user
         if device_config["type"] in plugin_devices:
             needed_plugin = plugin_devices[device_config["type"]]
             logger.exception(
@@ -108,7 +120,9 @@ def parse_device(dev_settings, device_object_mapper) -> BaseDevice:
             f"Accepted parameters: {inspect.getfullargspec(called).args}"
         ) from error
 
-    logger.debug(f"Created device '{device.name}' instance: {device}")
+    logger.debug(
+        f"Created device '{device.name}' instance: {device.__class__.__name__}"
+    )
     return device
 
 
@@ -134,5 +148,40 @@ def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
 
 
 if __name__ == "__main__":
-    cfg = parse_config_file("sample_configuration.toml")
+    cfg_txt = BytesIO(
+        dedent(
+            """config_version = "1.0"
+    simulation = true
+
+    [device.donor]
+    type = "Elite11InfuseOnly"
+    port = "COM11"
+    address = 0
+    syringe_diameter = "4.6 mm"
+    syringe_volume = "1 ml"
+
+    [device.activator]
+    type = "Elite11InfuseOnly"
+    port = "COM11"
+    address= 1
+    syringe_diameter = "4.6 mm"
+    syringe_volume = "1 ml"
+
+    [device.quencher]
+    type = "AxuraCompactPump"
+    mac_address = "00:80:A3:BA:C3:4A"
+    max_pressure = "13 bar"
+
+    [device.sample-loop]
+    type = "ViciValve"
+    port = "COM13"
+    address = 0
+
+    [device.chiller]
+    type = "HubeerChiller"
+    port = "COM3"
+    """
+        ).encode("utf-8")
+    )
+    cfg = parse_config(cfg_txt)
     print(cfg)

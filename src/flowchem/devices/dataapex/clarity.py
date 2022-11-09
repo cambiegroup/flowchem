@@ -3,140 +3,81 @@
 import asyncio
 from pathlib import Path
 from shutil import which
-from typing import TypedDict
 
 from loguru import logger
 
-from flowchem.models.analytical_device import AnalyticalDevice
+from .clarity_hplc_control import ClarityComponent
+from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.people import *
 
 
-ClarityConfig = TypedDict(
-    "ClarityConfig",
-    {
-        "startup-time": float,
-        "startup-method": str,
-        "cmd-timeout": float,
-        "user": str,
-        "password": str,
-        "clarity-cfg-file": str,
-    },
-)
-
-
-class Clarity(AnalyticalDevice):
-    DEFAULT_CONFIG: ClarityConfig = {
-        "startup-time": 20,
-        "startup-method": "",
-        "cmd-timeout": 3,
-        "user": "admin",
-        "password": "",
-        "clarity-cfg-file": "",
-    }
-
+class Clarity(FlowchemDevice):
     def __init__(
         self,
+        name,
         executable: str = r"C:\claritychrom\bin\claritychrom.exe",
         instrument_number: int = 1,
-        name=None,
-        **config,
+        startup_time: float = 20,
+        startup_method: str = "",
+        cmd_timeout: float = 3,
+        user: str = "admin",
+        password: str = "",
+        cfg_file: str = "",
     ):
-
-        self.config: ClarityConfig = self.DEFAULT_CONFIG | config  # type: ignore
-        self.instrument = instrument_number
-        # Executable is either path or command in PATH
-        if which(executable):
-            self.exe = executable
-        else:
-            assert self._is_valid_string(executable)
-            self.exe = f'"{executable}"'
-
-        assert (
-            which(executable) or Path(executable).is_file()
-        ), "Clarity executable is available"
-        self.exe = executable
-
         super().__init__(name=name)
 
-        # Ontology: high performance liquid chromatography instrument
-        # noinspection HttpUrlsUsage
-        self.owl_subclass_of.add("http://purl.obolibrary.org/obo/OBI_0001057")
+        # Validate executable
+        if which(executable):
+            self.executable = executable
+        else:
+            assert '"' not in executable
+            self.executable = f'"{executable}"'
+        assert which(executable) or Path(executable).is_file(), "Valid executable found"
 
-    def _is_valid_string(self, path: str):
-        """Ensure no double-quote are present in the string"""
-        return '"' not in path
+        # Save instance variables
+        self.instrument = instrument_number
+        self.startup_time = startup_time
+        self.cmd_timeout = cmd_timeout
+
+        # Pre-form initialization command to avoid passing tons of vars to initialize()
+        self._init_command = ""
+        self._init_command += f" cfg={cfg_file}" if cfg_file else ""
+        self._init_command += f" u={user}" if user else ""
+        self._init_command += f" p={password}" if password else ""
+        self._init_command += f' "{startup_method}"'
 
     async def initialize(self):
-        """Start ClarityChrom upon initialization."""
-        init_command = ""
-        init_command += (
-            f" cfg={cfg}" if (cfg := self.config["clarity-cfg-file"]) else ""
+        """Start ClarityChrom and wait for it to be responsive."""
+        await self.execute_command(self._init_command)
+        logger.info(f"Clarity startup: waiting {self.startup_time} seconds")
+        await asyncio.sleep(self.startup_time)
+
+    def metadata(self) -> DeviceInfo:
+        """Return hw device metadata."""
+        return DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="DataApex",
+            model="Clarity Chromatography",
         )
-        init_command += f" u={user}" if (user := self.config["user"]) else ""
-        init_command += f" p={pwd}" if (pwd := self.config["password"]) else ""
-        met = self.config.get("startup-method")
-        assert self._is_valid_string(met)
-        init_command += f' "{met}"'
-
-        # Start Clarity and wait for it to be responsive before any other command is sent
-        await self.execute_command(init_command)
-        logger.info(
-            f"I will wait {self.config['startup-time']} seconds for Clarity to start-up..."
-        )
-        await asyncio.sleep(self.config["startup-time"])
-
-    async def set_sample_name(self, sample_name: str):
-        """Sets the name of the sample for the next run."""
-        assert self._is_valid_string(sample_name)
-        await self.execute_command(f'set_sample_name="{sample_name}"')
-
-    async def set_method(self, method_name: str):
-        """
-        Sets the HPLC method (i.e. a file with .MET extension) to the instrument.
-
-        Make sure to select 'Send Method to Instrument' option in Method Sending Options dialog in System Configuration.
-        """
-        assert self._is_valid_string(method_name)
-        await self.execute_command(f" {method_name}")
-
-    async def run(self):
-        """
-        Run one analysis on the instrument. The sample name has to be set in advance via sample-name.
-
-        Note that it takes at least 2 sec until the run actually starts (depending on instrument configuration).
-        While the export of the chromatogram in e.g. ASCII format can be achieved programmatically via the CLI, the best
-        solution is to enable automatic data export for all runs of the HPLC as the chromatogram will be automatically
-        exported as soon as the run is finished.
-        """
-        await self.execute_command(
-            f"run={self.instrument}", without_instrument_num=True
-        )
-
-    async def exit(self):
-        """Exit Clarity Chrom."""
-        await self.execute_command("exit", without_instrument_num=True)
 
     async def execute_command(self, command: str, without_instrument_num: bool = False):
         """Execute claritychrom.exe command."""
-        cmd_string = self.exe
-        if not without_instrument_num:
-            cmd_string += f" i={self.instrument}"
-        cmd_string += f" {command}"
+        if without_instrument_num:
+            cmd_string = self.executable + f" {command}"
+        else:
+            cmd_string = self.executable + f" i={self.instrument} {command}"
 
-        logger.debug(f"I will execute `{cmd_string}`")
-
+        logger.debug(f"Executing Clarity command `{command}`")
         process = await asyncio.create_subprocess_shell(cmd_string)
         try:
-            await asyncio.wait_for(process.wait(), timeout=self.config["cmd-timeout"])
+            await asyncio.wait_for(process.wait(), timeout=self.cmd_timeout)
+            return True
         except TimeoutError:
-            logger.error(
-                f"Subprocess timeout expired (timeout = {self.config['cmd-timeout']} s)"
-            )
+            logger.error(f"Subprocess timeout expired (timeout = {self.cmd_timeout} s)")
+            return False
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
-        router = super().get_router(prefix)
-        router.add_api_route("/run", self.run, methods=["PUT"])
-        router.add_api_route("/method", self.set_method, methods=["PUT"])
-        router.add_api_route("/sample-name", self.set_sample_name, methods=["PUT"])
-        router.add_api_route("/exit", self.exit, methods=["PUT"])
-        return router
+    def get_components(self):
+        """Return an HPLC_Control component."""
+        return (ClarityComponent(name="clarity", hw_device=self),)

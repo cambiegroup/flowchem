@@ -4,18 +4,13 @@
 from ._internal import FakeDevice
 from .dataapex import Clarity
 from .hamilton import ML600
-from .harvardapparatus import Elite11InfuseOnly
-from .harvardapparatus import Elite11InfuseWithdraw
+from .harvardapparatus import Elite11
 from .huber import HuberChiller
-from .knauer import AzuraCompactPump
-from .knauer import Knauer12PortValve
-from .knauer import Knauer16PortValve
-from .knauer import Knauer6Port2PositionValve
-from .knauer import Knauer6Port6PositionValve
-from .magritek import Spinsolve
+from .knauer import AzuraCompact
+from .knauer import KnauerValve
 from .manson import MansonPowerSupply
-from .mettlertoledo import FlowIR
-from .phidgets import PressureSensor
+from .mettlertoledo import IcIR
+from .phidgets import PhidgetPressureSensor
 from .vicivalco import ViciValve
 
 
