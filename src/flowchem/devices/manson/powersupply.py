@@ -10,6 +10,7 @@ from loguru import logger
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.manson.manson_component import MansonTemperatureControl
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.people import *
@@ -118,7 +119,7 @@ class MansonPowerSupply(FlowchemDevice):
 
     async def get_output_read(
         self,
-    ) -> tuple[str, str, Literal["CC"] | Literal["CV"] | Literal["NN"]]:
+    ) -> tuple[float, float, Literal["CC"] | Literal["CV"] | Literal["NN"]]:
         """Return actual values of voltage, current and mode."""
         response = await self._send_command("GETD")
 
@@ -127,20 +128,20 @@ class MansonPowerSupply(FlowchemDevice):
             curr = float(response[4:8]) / 100 * ureg.ampere
         except ValueError:
             warnings.warn("Invalid values from device!")
-            return "0 V", "0 A", "NN"
+            return 0, 0, "NN"
 
         if response[8:9] == "0":
-            return str(volt), str(curr), "CV"
+            return volt.m_as("V"), curr.m_as("A"), "CV"
         if response[8:9] == "1":
-            return str(volt), str(curr), "CC"
-        return str(volt), str(curr), "NN"
+            return volt.m_as("V"), curr.m_as("A"), "CC"
+        return volt.m_as("V"), curr.m_as("A"), "NN"
 
-    async def get_output_voltage(self) -> str:
+    async def get_output_voltage(self) -> float:
         """Return output voltage in Volt."""
         voltage, _, _ = await self.get_output_read()
         return voltage
 
-    async def get_output_current(self) -> str:
+    async def get_output_current(self) -> float:
         """Return output current in ampere."""
         _, current, _ = await self.get_output_read()
         return current
@@ -287,7 +288,7 @@ class MansonPowerSupply(FlowchemDevice):
 
     def get_components(self):
         """Return an TemperatureControl component."""
-        return (TemperatureControl(),)
+        return (MansonTemperatureControl(),)
 
     # def get_router(self, prefix: str | None = None):
     #     """Create an APIRouter for this MansonPowerSupply instance."""
