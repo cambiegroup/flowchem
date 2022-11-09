@@ -153,8 +153,8 @@ class MansonPowerSupply(FlowchemDevice):
 
     async def get_output_power(self) -> str:
         """Return output power in watts."""
-        voltage, intensity, _ = await self.get_output_read()
-        power = ureg(voltage) * ureg(intensity)
+        voltage, current, _ = await self.get_output_read()
+        power = ureg(f"{voltage} V") * ureg(f"{current} A")
         return str(power.to("W"))
 
     async def get_max(self) -> tuple[str, str]:
