@@ -8,4 +8,5 @@ class AzuraCompactSensor(PressureSensor):
 
     async def read_pressure(self, units: str = "bar"):
         """Read from sensor, result to be expressed in units (optional)."""
-        return await self.hw_device.read_pressure(units)
+        pressure = await self.hw_device.read_pressure()
+        return pressure.m_as(units)

@@ -3,6 +3,7 @@ import asyncio
 import warnings
 from enum import Enum
 
+import pint
 from loguru import logger
 
 from ._common import KnauerEthernetDevice
@@ -343,11 +344,9 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         )
         logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
-    async def read_pressure(self, units: str | None = "bar") -> float:
+    async def read_pressure(self) -> pint.Quantity:
         """Return pressure if the pump has a pressure sensor."""
-        pressure = await self._transmit_and_parse_reply(PRESSURE) * ureg.bar
-        logger.debug(f"Pressure measured = {pressure}")
-        return pressure.m_as(units)
+        return await self._transmit_and_parse_reply(PRESSURE) * ureg.bar
 
     async def read_extflow(self) -> float:
         """Read the set flowrate from analog in."""

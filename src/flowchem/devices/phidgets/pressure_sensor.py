@@ -1,9 +1,10 @@
 """Use Phidgets to control lab devices. So far, only 4..20mA interface for Swagelock Pressure-sensor."""
 import time
-import warnings
 
+import pint
 from loguru import logger
 
+from .pressure_sensor_component import PhidgetPressureSensorComponent
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.people import *
@@ -18,7 +19,7 @@ else:
     try:
         Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
     except OSError:
-        warnings.warn(
+        logger.warning(
             "Phidget22 package installed but Phidget library not found!\n"
             "Get it from https://www.phidgets.com/docs/Operating_System_Support"
         )
@@ -110,9 +111,9 @@ class PhidgetPressureSensor(FlowchemDevice):
         logger.debug(f"Read pressure {pressure_reading} barg!")
         return str(pressure_reading * ureg.bar)
 
-    def read_pressure(self, units: str | None = "bar") -> str:  # type: ignore
+    def read_pressure(self) -> pint.Quantity:  # type: ignore
         """
-        Read pressure from the sensor and returns with `units` (default: bar).
+        Read pressure from the sensor and returns it as pint.Quantity.
 
         This is the main class method, and it never fails, but rather return None. Why?
 
@@ -128,22 +129,14 @@ class PhidgetPressureSensor(FlowchemDevice):
             current = self.phidget.getCurrent()
             logger.debug(f"Current pressure: {current}")
         except PhidgetException:
-            warnings.warn("Cannot read pressure!")
-            return ""
+            logger.error("Cannot read pressure!")
+            return 0 * ureg.bar
         else:
-            pressure = self._current_to_pressure(current) * ureg.bar
-            return pressure.m_as(units)
+            return self._current_to_pressure(current) * ureg.bar
 
     def get_components(self):
         """Return an IRSpectrometer component."""
-        # FIXME
-
-    # def get_router(self, prefix: str | None = None):
-    #     """Create an APIRouter for this object."""
-    #     router = super().get_router()
-    #     router.add_api_route("/attached", self.is_attached, methods=["GET"])
-    #
-    #     return router
+        return (PhidgetPressureSensorComponent("pressure-sensor", self),)
 
 
 if __name__ == "__main__":
