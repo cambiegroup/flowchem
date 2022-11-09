@@ -119,9 +119,8 @@ class ViciValve(FlowchemDevice):
     def __init__(
         self,
         valve_io: ViciValcoValveIO,
-        loop_volume: str = "1 ul",
-        address: int | None = None,
         name: str = "",
+        address: int | None = None,
     ):
         """
         Create instance from an existing ViciValcoValveIO object. This allows dependency injection.
@@ -148,7 +147,6 @@ class ViciValve(FlowchemDevice):
         cls,
         port: str,
         address: int,
-        loop_volume: str = "1 ul",
         name: str = "",
         **serial_kwargs,
     ):
