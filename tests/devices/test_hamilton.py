@@ -54,6 +54,6 @@ async def test_root(app):
 async def test_get_position(app):
     """Test firmware_version."""
     async with AsyncClient(app=app, base_url="http://127.0.0.1:8000/ml600-test") as ac:
-        response = await ac.get("/ml600-test/")
+        response = await ac.get("/pump/")
     assert response.status_code == 200
     assert "NV01.01.a" in response.text
