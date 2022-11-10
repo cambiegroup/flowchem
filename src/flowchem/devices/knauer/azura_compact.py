@@ -147,7 +147,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         return reply
 
     async def create_and_send_command(
-        self, message, setpoint: int | None = None, setpoint_range: tuple = None
+        self, message, setpoint: int | None = None, setpoint_range: tuple | None = None
     ):
         """
         Create and sends a message from the command.

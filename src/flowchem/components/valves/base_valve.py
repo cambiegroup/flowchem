@@ -52,7 +52,7 @@ class BaseValve(FlowchemComponent):
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
 
-    async def get_position(self) -> str:
+    async def get_position(self) -> str:  # type: ignore
         """Get the current position of the valve."""
         ...
 
