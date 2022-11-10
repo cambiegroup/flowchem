@@ -1,10 +1,13 @@
 """ML600 component relative to pumping."""
 from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from loguru import logger
 
 from flowchem import ureg
 from flowchem.components.pumps.syringe_pump import SyringePump
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .ml600 import ML600
 

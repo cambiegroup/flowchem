@@ -1,5 +1,6 @@
 """This module is used to control Harvard Apparatus Elite 11 syringe pump via the 11 protocol."""
 from __future__ import annotations
+
 import asyncio
 import warnings
 
@@ -7,8 +8,9 @@ import pint
 from loguru import logger
 from pydantic import BaseModel
 
-from ._pumpio import HarvardApparatusPumpIO, PumpStatus
+from ._pumpio import HarvardApparatusPumpIO
 from ._pumpio import Protocol11Command
+from ._pumpio import PumpStatus
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice

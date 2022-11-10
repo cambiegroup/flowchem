@@ -17,6 +17,7 @@ class PumpStatus(Enum):
     TARGET_REACHED = "T"
     STALLED = "*"
 
+
 @dataclass
 class Protocol11Command:
     """Class representing a pump command."""

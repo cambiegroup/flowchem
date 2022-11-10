@@ -62,7 +62,7 @@ test = [
     "pytest-cov",
     "pytest-mock",
     "httpx",
-    "mock_serial; sys_platform != 'win32'",
+    "mock_serial; platform_system != 'Windows'",
     "requests",
 ]
 phidget = [
@@ -111,12 +111,15 @@ legacy_tox_ini = """
 [tox]
 envlist = mypy,flake8,test
 isolated_build = true
-minversion = 3.10.4
+minversion = 3.10
 
 [testenv:{mypy,flake8,test}]
 envdir = {toxworkdir}/.tox
 changedir = {envtmpdir}
-extras = dev,test
+extras =
+    mypy: dev
+    test: test
+    flake8: dev
 description =
     mypy: Run mypy
     flake8: Run flake8

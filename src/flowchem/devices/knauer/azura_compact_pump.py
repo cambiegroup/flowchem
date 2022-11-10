@@ -1,8 +1,9 @@
 """Azura compact pump component."""
 from __future__ import annotations
-from loguru import logger
 
 from typing import TYPE_CHECKING
+
+from loguru import logger
 
 if TYPE_CHECKING:
     from .azura_compact import AzuraCompact

@@ -31,7 +31,9 @@ class FlowchemComponent:
         )
 
         # Initialize router
-        self._router = APIRouter(prefix=f"/{hw_device.name}/{name}", tags=[hw_device.name])
+        self._router = APIRouter(
+            prefix=f"/{hw_device.name}/{name}", tags=[hw_device.name]
+        )
         self.add_api_route(
             "/",
             self.get_metadata,

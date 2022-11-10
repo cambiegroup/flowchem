@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from flowchem.components.analytics.ir_control import IRControl
 from flowchem.components.analytics.ir_control import IRSpectrum
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .icir import IcIR

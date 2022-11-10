@@ -1,8 +1,9 @@
 """Elite11 pump component."""
 from __future__ import annotations
-from loguru import logger
 
 from typing import TYPE_CHECKING
+
+from loguru import logger
 
 if TYPE_CHECKING:
     from .elite11 import Elite11
