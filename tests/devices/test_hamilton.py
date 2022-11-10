@@ -29,13 +29,13 @@ def devices(mock_serial) -> dict:
 @pytest.fixture
 async def app(devices) -> FastAPI:
     """ML600-containing app."""
-    app = create_server_for_devices(devices)
+    app = await create_server_for_devices(devices)
 
     # Ugly workaround, essentially startup hooks are not called with AsyncClient
     # See tiangolo/fastapi#2003 for details
     [await dev.initialize() for dev in devices["device"]]
 
-    return app
+    return app["api_server"]
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="No mock_serial on windows")

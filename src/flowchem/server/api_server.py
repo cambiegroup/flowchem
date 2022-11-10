@@ -48,7 +48,7 @@ async def create_server_from_file(
     return await create_server_for_devices(parsed_config, host)
 
 
-async def create_server_for_devices(config: dict, host) -> FlowchemInstance:
+async def create_server_for_devices(config: dict, host="127.0.0.1") -> FlowchemInstance:
     """Initialize and create API endpoints for device object provided."""
     dev_list = config["device"]
     port = config.get("port", 8000)
