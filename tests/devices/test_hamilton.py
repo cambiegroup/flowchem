@@ -51,9 +51,9 @@ async def test_root(app):
 
 @pytest.mark.skipif(sys.platform == "win32", reason="No mock_serial on windows")
 @pytest.mark.anyio
-async def test_firmware_version(app):
+async def test_get_position(app):
     """Test firmware_version."""
     async with AsyncClient(app=app, base_url="http://127.0.0.1:8000/ml600-test") as ac:
-        response = await ac.get("/firmware-version")
+        response = await ac.get("/ml600-test/valve/")
     assert response.status_code == 200
-    assert response.text == '"NV01.01.a"'
+    assert "NV01.01.a" in response.text
