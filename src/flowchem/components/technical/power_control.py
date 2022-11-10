@@ -36,7 +36,7 @@ class PowerControl(FlowchemComponent):
         """Set the target current to the given string in natural language."""
         ...
 
-    async def get_current(self) -> float:
+    async def get_current(self) -> float:  # type: ignore
         """Return current in Ampere."""
         ...
 
@@ -44,7 +44,7 @@ class PowerControl(FlowchemComponent):
         """Set the target voltage to the given string in natural language."""
         ...
 
-    async def get_voltage(self) -> float:
+    async def get_voltage(self) -> float:  # type: ignore
         """Return current in Volt."""
         ...
 

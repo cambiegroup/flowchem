@@ -1,6 +1,4 @@
 """An IR control component."""
-from abc import ABC
-
 from pydantic import BaseModel
 
 from flowchem.components.base_component import FlowchemComponent
@@ -19,7 +17,7 @@ class IRSpectrum(BaseModel):
     intensity: list[float]
 
 
-class IRControl(FlowchemComponent, ABC):
+class IRControl(FlowchemComponent):
     def __int__(self, name: str, hw_device: FlowchemDevice):
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
@@ -29,7 +27,7 @@ class IRControl(FlowchemComponent, ABC):
         # Ontology: high performance liquid chromatography instrument
         self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0001057"
 
-    async def acquire_spectrum(self) -> IRSpectrum:
+    async def acquire_spectrum(self) -> IRSpectrum:  # type: ignore
         """Acquire an IR spectrum."""
         ...
 

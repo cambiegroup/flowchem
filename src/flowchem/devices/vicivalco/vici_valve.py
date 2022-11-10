@@ -121,7 +121,7 @@ class ViciValve(FlowchemDevice):
         valve_io: ViciValcoValveIO,
         loop_volume: str = "1 ul",
         address: int | None = None,
-        name: str = None,
+        name: str = "",
     ):
         """
         Create instance from an existing ViciValcoValveIO object. This allows dependency injection.
@@ -149,7 +149,7 @@ class ViciValve(FlowchemDevice):
         port: str,
         address: int,
         loop_volume: str = "1 ul",
-        name: str = None,
+        name: str = "",
         **serial_kwargs,
     ):
         """Create instances via provided parameters to enable programmatic instantiation."""

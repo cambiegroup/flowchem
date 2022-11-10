@@ -1,11 +1,9 @@
 """An HPLC control component."""
-from abc import ABC
-
 from flowchem.components.base_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class HPLCControl(FlowchemComponent, ABC):
+class HPLCControl(FlowchemComponent):
     def __int__(self, name: str, hw_device: FlowchemDevice):
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)

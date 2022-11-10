@@ -1,13 +1,11 @@
 """Sensor device."""
 from __future__ import annotations
 
-from abc import ABC
-
 from flowchem.components.base_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class Sensor(FlowchemComponent, ABC):
+class Sensor(FlowchemComponent):
     """A generic sensor."""
 
     def __int__(self, name: str, hw_device: FlowchemDevice):

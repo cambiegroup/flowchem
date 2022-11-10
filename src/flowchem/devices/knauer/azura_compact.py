@@ -53,18 +53,18 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
     """Control module for Knauer Azura Compact pumps."""
 
     metadata = DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="knauer",
-            model="Azura Compact",
-        )
+        authors=[dario, jakob, wei_hsin],
+        maintainers=[dario],
+        manufacturer="knauer",
+        model="Azura Compact",
+    )
 
     def __init__(
         self,
         ip_address=None,
         mac_address=None,
-        max_pressure: str = None,
-        min_pressure: str = None,
+        max_pressure: str = "",
+        min_pressure: str = "",
         name=None,
     ):
         super().__init__(ip_address, mac_address, name=name)
@@ -92,9 +92,9 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         # Also ensure rest state is not pumping.
         await self.stop()
 
-        if self._pressure_max is not None:
+        if self._pressure_max:
             await self.set_maximum_pressure(self._pressure_max)
-        if self._pressure_min is not None:
+        if self._pressure_min:
             await self.set_minimum_pressure(self._pressure_min)
 
     @staticmethod
@@ -147,7 +147,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         return reply
 
     async def create_and_send_command(
-        self, message, setpoint: int = None, setpoint_range: tuple = None
+        self, message, setpoint: int | None = None, setpoint_range: tuple = None
     ):
         """
         Create and sends a message from the command.
@@ -321,7 +321,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         reply = await self.create_and_send_command(command)
         return int(reply)
 
-    async def set_adjusting_factor(self, setpoint: int = None):
+    async def set_adjusting_factor(self, setpoint: int | None = None):
         """Set the adjust parameter. Not clear what it is."""
         command = ADJ10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else ADJ50
         reply = await self.create_and_send_command(

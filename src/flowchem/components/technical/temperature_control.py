@@ -37,11 +37,11 @@ class TemperatureControl(FlowchemComponent):
         """Set the target temperature to the given string in natural language."""
         ...
 
-    async def get_temperature(self) -> float:
+    async def get_temperature(self) -> float:  # type: ignore
         """Return temperature in Celsius."""
         ...
 
-    async def is_target_reached(self) -> bool:
+    async def is_target_reached(self) -> bool:  # type: ignore
         """Return True if the set temperature target has been reached."""
         ...
 

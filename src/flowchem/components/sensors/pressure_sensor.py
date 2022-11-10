@@ -1,11 +1,9 @@
 """Pressure sensor."""
-from abc import ABC
-
 from .sensor import Sensor
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class PressureSensor(Sensor, ABC):
+class PressureSensor(Sensor):
     """A pressure sensor."""
 
     def __int__(self, name: str, hw_device: FlowchemDevice):
