@@ -62,6 +62,7 @@ test = [
     "pytest-cov",
     "httpx",
     "mock_serial",
+    "requests",
 ]
 phidget = [
     "phidget22>=1.7.20211005",

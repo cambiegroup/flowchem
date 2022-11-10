@@ -1,6 +1,4 @@
 """Base object for all hardware-control device classes."""
-from __future__ import annotations
-
 from abc import ABC
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
@@ -49,5 +47,5 @@ class FlowchemDevice(ABC):
     def get_metadata(self) -> DeviceInfo:
         return self.metadata  # type: ignore
 
-    def components(self) -> Iterable[FlowchemComponent]:
+    def components(self) -> Iterable["FlowchemComponent"]:
         return ()
