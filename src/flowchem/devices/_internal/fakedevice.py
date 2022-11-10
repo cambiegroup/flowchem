@@ -21,6 +21,6 @@ class FakeDevice(FlowchemDevice):
 
     def components(self) -> Iterable[FlowchemComponent]:
         """Returns a test Component."""
-        component = TestComponent(name="test-device", hw_device=self)
-        component.router.add_api_route("/test", lambda: True, methods=["GET"])
+        component = TestComponent(name="test-component", hw_device=self)
+        component.add_api_route("/test", lambda: True, methods=["GET"])
         return (component,)

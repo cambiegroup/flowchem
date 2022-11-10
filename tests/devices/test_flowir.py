@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from flowchem.devices.mettlertoledo import IRSpectrum
+from flowchem.components.analytics.ir_control import IRSpectrum
 from flowchem.devices.mettlertoledo.icir import IcIR
 
 
@@ -20,32 +20,32 @@ def check_pytest_asyncio_installed():
 
 
 @pytest.fixture()
-async def flowir():
+async def spectrometer():
     """Return local FlowIR object"""
-    return IcIR(
-        IcIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
+    s = IcIR(
+        template="template",
+        url=IcIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace(
+            "localhost", "BSMC-YMEF002121"
+        ),
+    )
+    await s.initialize()
+    return s
+
+
+@pytest.mark.FlowIR
+async def test_connected(spectrometer):
+    assert await spectrometer.is_iCIR_connected()
+
+
+@pytest.mark.FlowIR
+async def test_probe_info(spectrometer):
+    info = await spectrometer.probe_info()
+    assert all(
+        field in info
+        for field in ("spectrometer", "spectrometer_SN", "probe_SN", "detector")
     )
 
 
-@pytest.mark.asyncio
-@pytest.mark.FlowIR
-async def test_connected(flowir):
-    async with flowir as spectrometer:
-        assert await spectrometer.is_iCIR_connected()
-
-
-@pytest.mark.asyncio
-@pytest.mark.IcIR
-async def test_probe_info(flowir):
-    async with flowir as spectrometer:
-        info = await spectrometer.probe_info()
-        assert all(
-            field in info
-            for field in ("spectrometer", "spectrometer_SN", "probe_SN", "detector")
-        )
-
-
-@pytest.mark.asyncio
 @pytest.mark.FlowIR
 async def test_probe_status(flowir):
     async with flowir as spectrometer:
@@ -53,7 +53,6 @@ async def test_probe_status(flowir):
         assert status == "Not running"
 
 
-@pytest.mark.asyncio
 @pytest.mark.FlowIR
 async def test_spectrum_acquisition(flowir):
     async with flowir as spectrometer:
@@ -85,7 +84,6 @@ async def test_spectrum_acquisition(flowir):
         await spectrometer.wait_until_idle()
 
 
-@pytest.mark.asyncio
 @pytest.mark.FlowIR
 async def test_spectra(flowir):
     # This implies the previous test run successfully, thus last spectrum is now

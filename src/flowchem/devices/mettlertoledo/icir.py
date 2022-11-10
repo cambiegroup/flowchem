@@ -61,7 +61,7 @@ class IcIR(FlowchemDevice):
 
     counter = 0
 
-    def __init__(self, name: str, template: str, url: str = ""):
+    def __init__(self, template: str, url="", name=""):
         """Initiate connection with OPC UA server."""
         super().__init__(name)
 

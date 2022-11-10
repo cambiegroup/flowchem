@@ -20,7 +20,10 @@ def app():
                     type = "FakeDevice"\n"""
                 )
             )
-        yield asyncio.run(create_server_from_file(Path("test_configuration.toml")))
+        server = asyncio.run(
+            create_server_from_file(Path("test_configuration.toml"), "127.0.0.1")
+        )
+        yield server["api_server"]
 
 
 def test_read_main(app):
@@ -29,7 +32,7 @@ def test_read_main(app):
     assert response.status_code == 200
     assert "Flowchem" in response.text
 
-    response = client.get("/test-device/test")
+    response = client.get("/test-device/test-component/test")
     assert response.status_code == 200
     assert response.text == "true"
 

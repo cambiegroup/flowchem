@@ -10,14 +10,14 @@ import math
 import pytest
 
 from flowchem import ureg
-from flowchem.devices.harvardapparatus.elite11 import Elite11InfuseWithdraw
+from flowchem.devices.harvardapparatus.elite11 import Elite11
 from flowchem.devices.harvardapparatus.elite11 import PumpStatus
 
 
 @pytest.fixture(scope="session")
 async def pump():
     """Change to match your hardware ;)"""
-    pump = Elite11InfuseWithdraw.from_config(
+    pump = Elite11.from_config(
         port="COM4", syringe_volume="5 ml", syringe_diameter="20 mm"
     )
     await pump.initialize()
@@ -40,20 +40,20 @@ def event_loop(request):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_version(pump: Elite11InfuseWithdraw):
+async def test_version(pump: Elite11):
     assert "11 ELITE" in await pump.version()
 
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_status_idle(pump: Elite11InfuseWithdraw):
+async def test_status_idle(pump: Elite11):
     await pump.stop()
     assert await pump.get_status() is PumpStatus.IDLE
 
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_status_infusing(pump: Elite11InfuseWithdraw):
+async def test_status_infusing(pump: Elite11):
     await move_infuse(pump)
     assert await pump.get_status() is PumpStatus.INFUSING
     await pump.stop()
@@ -61,7 +61,7 @@ async def test_status_infusing(pump: Elite11InfuseWithdraw):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_status_withdrawing(pump: Elite11InfuseWithdraw):
+async def test_status_withdrawing(pump: Elite11):
     await pump.set_syringe_diameter("10 mm")
     await pump.set_withdrawing_flow_rate("1 ml/min")
     await pump.withdraw()
@@ -71,7 +71,7 @@ async def test_status_withdrawing(pump: Elite11InfuseWithdraw):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_is_moving(pump: Elite11InfuseWithdraw):
+async def test_is_moving(pump: Elite11):
     assert await pump.is_moving() is False
     await move_infuse(pump)
     assert await pump.is_moving() is True
@@ -80,7 +80,7 @@ async def test_is_moving(pump: Elite11InfuseWithdraw):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_syringe_volume(pump: Elite11InfuseWithdraw):
+async def test_syringe_volume(pump: Elite11):
     await pump.set_syringe_volume("10 ml")
     assert await pump.get_syringe_volume() == "10 ml"
     await pump.set_syringe_volume(f"{math.pi} ml")
@@ -94,7 +94,7 @@ async def test_syringe_volume(pump: Elite11InfuseWithdraw):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_infusion_rate(pump: Elite11InfuseWithdraw):
+async def test_infusion_rate(pump: Elite11):
     await pump.set_syringe_volume("10 ml")
     await pump.set_flow_rate("5 ml/min")
     assert await pump.get_flow_rate()
@@ -113,7 +113,7 @@ async def test_infusion_rate(pump: Elite11InfuseWithdraw):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_get_infused_volume(pump: Elite11InfuseWithdraw):
+async def test_get_infused_volume(pump: Elite11):
     await pump.clear_volumes()
     assert await pump.get_infused_volume() == "0 ul"
     await pump.set_syringe_diameter("30 mm")
@@ -127,7 +127,7 @@ async def test_get_infused_volume(pump: Elite11InfuseWithdraw):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_get_withdrawn_volume(pump: Elite11InfuseWithdraw):
+async def test_get_withdrawn_volume(pump: Elite11):
     await pump.clear_volumes()
     await pump.set_withdrawing_flow_rate("10 ml/min")
     await pump.set_target_volume("0.1 ml")
@@ -139,7 +139,7 @@ async def test_get_withdrawn_volume(pump: Elite11InfuseWithdraw):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_force(pump: Elite11InfuseWithdraw):
+async def test_force(pump: Elite11):
     await pump.set_force(10)
     assert await pump.get_force() == 10
     await pump.set_force(50.2)
@@ -149,7 +149,7 @@ async def test_force(pump: Elite11InfuseWithdraw):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_diameter(pump: Elite11InfuseWithdraw):
+async def test_diameter(pump: Elite11):
     await pump.set_syringe_diameter("10 mm")
     assert await pump.get_syringe_diameter() == "10.0000 mm"
 
@@ -166,7 +166,7 @@ async def test_diameter(pump: Elite11InfuseWithdraw):
 
 @pytest.mark.HApump
 @pytest.mark.asyncio
-async def test_target_volume(pump: Elite11InfuseWithdraw):
+async def test_target_volume(pump: Elite11):
     await pump.set_syringe_volume("10 ml")
     await pump.set_target_volume(f"{math.pi} ml")
     vol = ureg.Quantity(await pump.get_target_volume()).magnitude
