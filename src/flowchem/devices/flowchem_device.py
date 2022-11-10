@@ -20,8 +20,8 @@ class DeviceInfo(BaseModel):
     """Metadata associated with hardware devices."""
 
     backend = f"flowchem v. {__version__}"
-    authors = "list[Person]"
-    maintainers = "list[Person]"
+    authors: "list[Person]"
+    maintainers: "list[Person]"
     manufacturer: str
     model: str
     serial_number = "unknown"
