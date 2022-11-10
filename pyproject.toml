@@ -117,9 +117,8 @@ minversion = 3.10
 envdir = {toxworkdir}/.tox
 changedir = {envtmpdir}
 extras =
-    mypy: dev
-    test: test
-    flake8: dev
+    dev
+    test
 description =
     mypy: Run mypy
     flake8: Run flake8
