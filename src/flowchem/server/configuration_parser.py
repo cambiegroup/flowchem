@@ -6,6 +6,7 @@ from io import BytesIO
 from pathlib import Path
 from textwrap import dedent
 
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.list_known_device_type import autodiscover_device_classes
 
 if sys.version_info >= (3, 11):
@@ -16,7 +17,6 @@ else:
 
 from flowchem.devices.known_plugins import plugin_devices
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.models.base_device import BaseDevice
 from loguru import logger
 
 
@@ -72,7 +72,7 @@ def instantiate_device(config: dict) -> dict:
     return config
 
 
-def parse_device(dev_settings, device_object_mapper) -> BaseDevice:
+def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
     """
     Parse device config and return a device object.
 

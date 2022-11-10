@@ -52,6 +52,13 @@ class AzuraPumpHeads(Enum):
 class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
     """Control module for Knauer Azura Compact pumps."""
 
+    metadata = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="knauer",
+            model="Azura Compact",
+        )
+
     def __init__(
         self,
         ip_address=None,
@@ -89,15 +96,6 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
             await self.set_maximum_pressure(self._pressure_max)
         if self._pressure_min is not None:
             await self.set_minimum_pressure(self._pressure_min)
-
-    def metadata(self) -> DeviceInfo:
-        """Return hw device metadata."""
-        return DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="knauer",
-            model="Azura Compact",
-        )
 
     @staticmethod
     def error_present(reply: str) -> bool:

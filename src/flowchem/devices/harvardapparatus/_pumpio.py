@@ -1,12 +1,21 @@
 from dataclasses import dataclass
+from enum import Enum
 
 import aioserial
 from loguru import logger
 
-from flowchem.devices.harvardapparatus.elite11 import PumpStatus
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 
+
+class PumpStatus(Enum):
+    """Possible pump statuses, as defined by the reply prompt."""
+
+    IDLE = ":"
+    INFUSING = ">"
+    WITHDRAWING = "<"
+    TARGET_REACHED = "T"
+    STALLED = "*"
 
 @dataclass
 class Protocol11Command:

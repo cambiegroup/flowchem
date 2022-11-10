@@ -41,7 +41,9 @@ async def create_server_from_file(
     parsed_config = parse_config(config_file)
 
     # Run `initialize` method of all hw devices
+    logger.info("Initializing devices (all devices are initialized in parallel)")
     await asyncio.gather(*[dev.initialize() for dev in parsed_config["device"]])
+    logger.info("Device initialization complete!")
 
     return await create_server_for_devices(parsed_config, host)
 
@@ -74,16 +76,16 @@ async def create_server_for_devices(config: dict, host) -> FlowchemInstance:
     for device in dev_list:
         # Get components (some compounded devices can return multiple components)
         components = device.components()
+        logger.info(f"Got {len(components)} components from {device.name}")
 
         for component in components:
             # API endpoints registration
-            router = component.get_router()
-            app.include_router(router, tags=router.tags)
-            logger.debug(f"Router <{router.prefix}> added to app!")
+            app.include_router(component.router, tags=component.router.tags)
+            logger.debug(f"Router <{component.router.prefix}> added to app!")
 
             # Advertise component via zeroconfig
             await mdns.add_component(
-                name=component.name, url=api_base_url + component.router.prefix
+                name=component.router.prefix, url=api_base_url + component.router.prefix
             )
 
     return {"api_server": app, "mdns_server": mdns, "port": port}

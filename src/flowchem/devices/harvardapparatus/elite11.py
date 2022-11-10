@@ -1,13 +1,13 @@
 """This module is used to control Harvard Apparatus Elite 11 syringe pump via the 11 protocol."""
+from __future__ import annotations
 import asyncio
 import warnings
-from enum import Enum
 
 import pint
 from loguru import logger
 from pydantic import BaseModel
 
-from ._pumpio import HarvardApparatusPumpIO
+from ._pumpio import HarvardApparatusPumpIO, PumpStatus
 from ._pumpio import Protocol11Command
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
@@ -66,16 +66,6 @@ class PumpInfo(BaseModel):
         )
 
 
-class PumpStatus(Enum):
-    """Possible pump statuses, as defined by the reply prompt."""
-
-    IDLE = ":"
-    INFUSING = ">"
-    WITHDRAWING = "<"
-    TARGET_REACHED = "T"
-    STALLED = "*"
-
-
 class Elite11(FlowchemDevice):
     """
     Controls Harvard Apparatus Elite11 syringe pumps.
@@ -87,16 +77,6 @@ class Elite11(FlowchemDevice):
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection).
     _io_instances: set[HarvardApparatusPumpIO] = set()
-
-    def metadata(self) -> DeviceInfo:
-        """Return hw device metadata."""
-        return DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="HarvardApparatus",
-            model="Elite11",
-            version=self._version,
-        )
 
     def __init__(
         self,
@@ -114,7 +94,7 @@ class Elite11(FlowchemDevice):
         Elite11._io_instances.add(self.pump_io)
 
         self.address = address
-        self._version = (0, 0, 0)
+        self._infuse_only = True  # Actual value set in initialize
 
         # syringe diameter and volume, and force will be set in initialize()
         self._force = force
@@ -127,6 +107,14 @@ class Elite11(FlowchemDevice):
             self._syringe_volume = syringe_volume
         else:
             raise InvalidConfiguration("Please provide the syringe volume!")
+
+        self.metadata = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="HarvardApparatus",
+            model="Elite11",
+            version="",
+        )
 
     @classmethod
     def from_config(
@@ -198,10 +186,15 @@ class Elite11(FlowchemDevice):
         logger.info(
             f"Connected to '{self.name}'! [{self.pump_io._serial.name}:{self.address}]"
         )
-        self._version = self._parse_version(await self.version())
+        version = await self.version()
+        self.metadata.version = version.split(" ")[-1]
 
         # Clear target volume eventually set to prevent pump from stopping prematurely
         await self.set_target_volume("0 ml")
+
+        # Get pump type
+        pump_info = await self.pump_info()
+        self._infuse_only = True if pump_info.infuse_only else False
 
     @staticmethod
     def _parse_version(version_text: str) -> tuple[int, int, int]:
@@ -387,8 +380,7 @@ class Elite11(FlowchemDevice):
 
     def components(self):
         """Return pump component."""
-        pump_info = await self.pump_info()
-        if pump_info.infuse_only:
+        if self._infuse_only:
             return (Elite11PumpOnly("pump", self),)
         else:
             return (Elite11PumpWithdraw("pump", self),)

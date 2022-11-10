@@ -1,7 +1,11 @@
+"""ML600 component relative to valve switching."""
+from __future__ import annotations
 from loguru import logger
 
 from flowchem.components.valves.distribution_valves import TwoPortDistribution
-from flowchem.devices import ML600
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .ml600 import ML600
 
 
 class ML600Valve(TwoPortDistribution):

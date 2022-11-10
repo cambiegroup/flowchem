@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from .pressure_sensor import PhidgetPressureSensor
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .pressure_sensor import PhidgetPressureSensor
 from flowchem.components.sensors.pressure_sensor import PressureSensor
 
 

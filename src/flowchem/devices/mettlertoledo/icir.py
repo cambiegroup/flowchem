@@ -35,6 +35,15 @@ class ProbeInfo(BaseModel):
 class IcIR(FlowchemDevice):
     """Object to interact with the iCIR software controlling the FlowIR and ReactIR."""
 
+    metadata = DeviceInfo(
+        authors=[dario, jakob, wei_hsin],
+        maintainers=[dario],
+        manufacturer="Mettler-Toledo",
+        model="iCIR",
+        version="",
+        additional_info="",
+    )
+
     iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
     _supported_versions = {"7.1.91.0"}
     SOFTWARE_VERSION = "ns=2;s=Local.iCIR.SoftwareVersion"
@@ -62,7 +71,6 @@ class IcIR(FlowchemDevice):
         self.opcua = Client(url)
 
         self._template = template
-        self._version = ""
 
     async def initialize(self):
         """Initialize, check connection and start acquisition."""
@@ -72,6 +80,12 @@ class IcIR(FlowchemDevice):
             raise DeviceError(
                 f"Could not connect to FlowIR on {self.opcua.server_url}!"
             ) from timeout_error
+
+        # Ensure iCIR version is supported
+        self.metadata.version = await self.opcua.get_node(
+            self.SOFTWARE_VERSION
+        ).get_value()  # "7.1.91.0"
+
         await self.check_version()
         logger.debug("FlowIR initialized!")
 
@@ -80,17 +94,7 @@ class IcIR(FlowchemDevice):
 
         # Start acquisition! Ensures the device is ready when a spectrum is needed
         await self.start_experiment(name="Flowchem", template=self._template)
-
-    def metadata(self) -> DeviceInfo:
-        """Return hw device metadata."""
-        return DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="Mettler-Toledo",
-            model="iCIR",
-            version=self._version,
-            additional_info=self.probe_info(),
-        )
+        self.metadata.additional_info = await self.probe_info()
 
     def is_local(self):
         """Return true if the server is on the same machine running the python code."""
@@ -101,10 +105,7 @@ class IcIR(FlowchemDevice):
     async def check_version(self):
         """Check if iCIR is installed and open and if the version is supported."""
         try:
-            self._version = await self.opcua.get_node(
-                self.SOFTWARE_VERSION
-            ).get_value()  # "7.1.91.0"
-            if self._version not in self._supported_versions:
+            if self.metadata.version not in self._supported_versions:
                 logger.warning(
                     f"The current version of iCIR [self.version] has not been tested!"
                     f"Pleas use one of the supported versions: {self._supported_versions}"
@@ -295,7 +296,7 @@ class IcIR(FlowchemDevice):
         while await self.probe_status() == "Running":
             await asyncio.sleep(0.2)
 
-    def get_components(self):
+    def components(self):
         """Return an IRSpectrometer component."""
         return (IcIRControl("ir-control", self),)
 

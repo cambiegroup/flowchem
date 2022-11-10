@@ -28,7 +28,7 @@ class DeviceInfo(BaseModel):
     model: str
     serial_number = "unknown"
     version = ""
-    additional_info: dict
+    additional_info: dict = {}
 
 
 class FlowchemDevice(ABC):

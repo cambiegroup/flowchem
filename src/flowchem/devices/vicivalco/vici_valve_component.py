@@ -1,5 +1,9 @@
 """Vici valve component."""
-from .vici_valve import ViciValve
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .vici_valve import ViciValve
 from flowchem.components.valves.injection_valves import SixPortTwoPosition
 
 

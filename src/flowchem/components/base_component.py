@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter
+from loguru import logger
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
@@ -30,8 +31,8 @@ class FlowchemComponent:
         )
 
         # Initialize router
-        self._router = APIRouter(prefix=f"/{name}", tags=[hw_device.name])
-        self._router.add_api_route(
+        self._router = APIRouter(prefix=f"/{hw_device.name}/{name}", tags=[hw_device.name])
+        self.add_api_route(
             "/",
             self.get_metadata,
             methods=["GET"],
@@ -45,6 +46,7 @@ class FlowchemComponent:
 
     def add_api_route(self, path: str, endpoint: Callable, **kwargs):
         """Hook for subclasses to add routes to router."""
+        logger.debug(f"Adding route {path} for router of {self.name}")
         self._router.add_api_route(path, endpoint, **kwargs)
 
     def get_metadata(self) -> ComponentInfo:

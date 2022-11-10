@@ -1,7 +1,11 @@
 """Elite11 pump component."""
+from __future__ import annotations
 from loguru import logger
 
-from .elite11 import Elite11
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .elite11 import Elite11
 from flowchem.components.pumps.syringe_pump import SyringePump
 
 

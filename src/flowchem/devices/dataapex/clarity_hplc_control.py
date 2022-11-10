@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from flowchem.components.analytics.hplc_control import HPLCControl
-from flowchem.devices import Clarity
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from flowchem.devices import Clarity
 
 
 class ClarityComponent(HPLCControl):

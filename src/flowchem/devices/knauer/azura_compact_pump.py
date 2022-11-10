@@ -1,12 +1,23 @@
 """Azura compact pump component."""
+from __future__ import annotations
 from loguru import logger
 
-from .azura_compact import AzuraCompact
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .azura_compact import AzuraCompact
 from flowchem.components.pumps.hplc_pump import HPLCPump
 
 
 class AzuraCompactPump(HPLCPump):
     hw_device: AzuraCompact  # for typing's sake
+
+    def __init__(self, name: str, hw_device: AzuraCompact):
+        """Initialize component."""
+        logger.error(f"MAIN CALLED")
+        super().__init__(name, hw_device)
+        logger.error(f"MAIN DONE")
+        logger.debug(f"router is {self.router.routes}")
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
         """Start infusion."""

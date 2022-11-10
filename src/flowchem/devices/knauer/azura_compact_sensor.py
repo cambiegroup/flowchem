@@ -1,5 +1,10 @@
 """Azura compact sensor component."""
-from .azura_compact import AzuraCompact
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .azura_compact import AzuraCompact
+
 from flowchem.components.sensors.pressure_sensor import PressureSensor
 
 

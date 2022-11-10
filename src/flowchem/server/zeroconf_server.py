@@ -51,6 +51,7 @@ class ZeroconfServer:
 
     async def add_component(self, name, url):
         """Adds device to the server."""
+        logger.debug(f"Adding zeroconf component {name}")
         service_name = ZeroconfServer._get_valid_service_name(name)
 
         # LabThing service
