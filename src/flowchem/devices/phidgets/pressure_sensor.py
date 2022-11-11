@@ -88,17 +88,17 @@ class PhidgetPressureSensor(FlowchemDevice):
         """Whether the device is connected."""
         return bool(self.phidget.getAttached())
 
-    def _current_to_pressure(self, current_in_ampere: float) -> str:
+    def _current_to_pressure(self, current_in_ampere: float) -> pint.Quantity:
         """Convert current reading into pressure value."""
         mill_amp = current_in_ampere * 1000
         # minP..maxP is 4..20mA
         pressure_reading = self._min_pressure + ((mill_amp - 4) / 16) * (
             self._max_pressure - self._min_pressure
         )
-        logger.debug(f"Read pressure {pressure_reading} barg!")
-        return str(pressure_reading * ureg.bar)
+        logger.debug(f"Read pressure {pressure_reading}!")
+        return pressure_reading
 
-    def read_pressure(self) -> pint.Quantity:  # type: ignore
+    def read_pressure(self) -> str:  # type: ignore
         """
         Read pressure from the sensor and returns it as pint.Quantity.
 
@@ -114,12 +114,12 @@ class PhidgetPressureSensor(FlowchemDevice):
         """
         try:
             current = self.phidget.getCurrent()
-            logger.debug(f"Current pressure: {current}")
+            logger.debug(f"Actual current: {current}")
         except PhidgetException:
             logger.error("Cannot read pressure!")
             return 0 * ureg.bar
         else:
-            return self._current_to_pressure(current) * ureg.bar
+            return str(self._current_to_pressure(current))
 
     def components(self):
         """Return an IRSpectrometer component."""
