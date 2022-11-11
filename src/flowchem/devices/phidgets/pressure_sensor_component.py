@@ -12,6 +12,10 @@ from flowchem.components.sensors.pressure_sensor import PressureSensor
 class PhidgetPressureSensorComponent(PressureSensor):
     hw_device: PhidgetPressureSensor  # just for typing
 
+    def __int__(self, name: str, hw_device: FlowchemDevice):
+        """A generic Syringe pump."""
+        super().__init__(name, hw_device)
+
     async def read_pressure(self, units: str = "bar"):
         """Read from sensor, result to be expressed in units (optional)."""
         return self.hw_device.read_pressure().m_as(units)
