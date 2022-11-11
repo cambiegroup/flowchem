@@ -137,7 +137,7 @@ class ViciValve(FlowchemDevice):
 
         # The valve name is used for logs and error messages.
         self.name = name if name else f"Valve {self.valve_io.name}:{address}"
-        super().__init__(loop_volume=loop_volume, name=name)  # type: ignore
+        super().__init__(name=name)  # type: ignore
 
         self.address = address
         self._version = ""
@@ -159,7 +159,7 @@ class ViciValve(FlowchemDevice):
         else:
             valve_io = ViciValcoValveIO.from_config(port, **serial_kwargs)
 
-        return cls(valve_io, loop_volume=loop_volume, address=address, name=name)
+        return cls(valve_io, address=address, name=name)
 
     async def initialize(self):
         """Must be called after init before anything else."""
