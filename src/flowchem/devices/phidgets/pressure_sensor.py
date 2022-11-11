@@ -73,8 +73,8 @@ class PhidgetPressureSensor(FlowchemDevice):
             logger.debug("Pressure sensor connected!")
         except PhidgetException as phidget_error:
             raise InvalidConfiguration(
-                "Cannot connect to sensor! Check settings..."
-            ) from phidget_error
+                "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
+            )
 
         # Set power supply to 24V
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)
