@@ -13,21 +13,10 @@ try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
     from Phidget22.Devices.Log import Log, LogLevel
     from Phidget22.PhidgetException import PhidgetException
+    HAS_PHIDGET = True
 except ImportError:
     HAS_PHIDGET = False
-else:
-    try:
-        Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
-    except OSError:
-        logger.warning(
-            "Phidget22 package installed but Phidget library not found!\n"
-            "Get it from https://www.phidgets.com/docs/Operating_System_Support"
-        )
-        HAS_PHIDGET = False
-    except PhidgetException as phidget_e:
-        HAS_PHIDGET = "Logging already enabled" in phidget_e.description
-    else:
-        HAS_PHIDGET = True
+
 
 from flowchem.exceptions import InvalidConfiguration
 from flowchem import ureg
