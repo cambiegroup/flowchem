@@ -101,7 +101,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         logger.debug(f"Read pressure {pressure_reading}!")
         return pressure_reading
 
-    def read_pressure(self) -> str:  # type: ignore
+    def read_pressure(self) -> pint.Quantity:  # type: ignore
         """
         Read pressure from the sensor and returns it as pint.Quantity.
 
@@ -122,7 +122,7 @@ class PhidgetPressureSensor(FlowchemDevice):
             logger.error("Cannot read pressure!")
             return 0 * ureg.bar
         else:
-            return str(self._current_to_pressure(current))
+            return self._current_to_pressure(current)
 
     def components(self):
         """Return an IRSpectrometer component."""
