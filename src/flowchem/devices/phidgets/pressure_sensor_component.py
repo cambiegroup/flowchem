@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from flowchem.devices.flowchem_device import FlowchemDevice
+
 if TYPE_CHECKING:
     from .pressure_sensor import PhidgetPressureSensor
 from flowchem.components.sensors.pressure_sensor import PressureSensor
@@ -9,6 +11,10 @@ from flowchem.components.sensors.pressure_sensor import PressureSensor
 
 class PhidgetPressureSensorComponent(PressureSensor):
     hw_device: PhidgetPressureSensor  # just for typing
+
+    def __int__(self, name: str, hw_device: FlowchemDevice):
+        """A generic Syringe pump."""
+        super().__init__(name, hw_device)
 
     async def read_pressure(self, units: str = "bar"):
         """Read from sensor, result to be expressed in units (optional)."""

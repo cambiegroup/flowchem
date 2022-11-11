@@ -4,7 +4,7 @@ import time
 import pint
 from loguru import logger
 
-from .pressure_sensor_component import PhidgetPressureSensorComponent
+from flowchem.devices.phidgets.pressure_sensor_component import PhidgetPressureSensorComponent
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.people import *
@@ -13,21 +13,10 @@ try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
     from Phidget22.Devices.Log import Log, LogLevel
     from Phidget22.PhidgetException import PhidgetException
+    HAS_PHIDGET = True
 except ImportError:
     HAS_PHIDGET = False
-else:
-    try:
-        Log.enable(LogLevel.PHIDGET_LOG_INFO, "phidget.log")
-    except OSError:
-        logger.warning(
-            "Phidget22 package installed but Phidget library not found!\n"
-            "Get it from https://www.phidgets.com/docs/Operating_System_Support"
-        )
-        HAS_PHIDGET = False
-    except PhidgetException as phidget_e:
-        HAS_PHIDGET = "Logging already enabled" in phidget_e.description
-    else:
-        HAS_PHIDGET = True
+
 
 from flowchem.exceptions import InvalidConfiguration
 from flowchem import ureg
@@ -35,6 +24,13 @@ from flowchem import ureg
 
 class PhidgetPressureSensor(FlowchemDevice):
     """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
+
+    metadata = DeviceInfo(
+        authors=[dario, jakob, wei_hsin],
+        maintainers=[dario],
+        manufacturer="Phidget",
+        model="VINT",
+    )
 
     def __init__(
         self,
@@ -77,8 +73,8 @@ class PhidgetPressureSensor(FlowchemDevice):
             logger.debug("Pressure sensor connected!")
         except PhidgetException as phidget_error:
             raise InvalidConfiguration(
-                "Cannot connect to sensor! Check settings..."
-            ) from phidget_error
+                "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
+            )
 
         # Set power supply to 24V
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)
@@ -88,30 +84,21 @@ class PhidgetPressureSensor(FlowchemDevice):
         """Ensure connection closure upon deletion."""
         self.phidget.close()
 
-    def metadata(self) -> DeviceInfo:
-        """Return hw device metadata."""
-        return DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="Phidget",
-            model="VINT",
-        )
-
     def is_attached(self) -> bool:
         """Whether the device is connected."""
         return bool(self.phidget.getAttached())
 
-    def _current_to_pressure(self, current_in_ampere: float) -> str:
+    def _current_to_pressure(self, current_in_ampere: float) -> pint.Quantity:
         """Convert current reading into pressure value."""
         mill_amp = current_in_ampere * 1000
         # minP..maxP is 4..20mA
         pressure_reading = self._min_pressure + ((mill_amp - 4) / 16) * (
             self._max_pressure - self._min_pressure
         )
-        logger.debug(f"Read pressure {pressure_reading} barg!")
-        return str(pressure_reading * ureg.bar)
+        logger.debug(f"Read pressure {pressure_reading}!")
+        return pressure_reading
 
-    def read_pressure(self) -> pint.Quantity:  # type: ignore
+    def read_pressure(self) -> str:  # type: ignore
         """
         Read pressure from the sensor and returns it as pint.Quantity.
 
@@ -127,14 +114,14 @@ class PhidgetPressureSensor(FlowchemDevice):
         """
         try:
             current = self.phidget.getCurrent()
-            logger.debug(f"Current pressure: {current}")
+            logger.debug(f"Actual current: {current}")
         except PhidgetException:
             logger.error("Cannot read pressure!")
             return 0 * ureg.bar
         else:
-            return self._current_to_pressure(current) * ureg.bar
+            return str(self._current_to_pressure(current))
 
-    def get_components(self):
+    def components(self):
         """Return an IRSpectrometer component."""
         return (PhidgetPressureSensorComponent("pressure-sensor", self),)
 
