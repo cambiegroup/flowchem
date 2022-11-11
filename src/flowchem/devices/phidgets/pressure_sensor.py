@@ -4,7 +4,7 @@ import time
 import pint
 from loguru import logger
 
-from .pressure_sensor_component import PhidgetPressureSensorComponent
+from flowchem.devices.phidgets.pressure_sensor_component import PhidgetPressureSensorComponent
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.people import *
@@ -134,7 +134,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         else:
             return self._current_to_pressure(current) * ureg.bar
 
-    def get_components(self):
+    def components(self):
         """Return an IRSpectrometer component."""
         return (PhidgetPressureSensorComponent("pressure-sensor", self),)
 
