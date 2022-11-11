@@ -25,6 +25,13 @@ from flowchem import ureg
 class PhidgetPressureSensor(FlowchemDevice):
     """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
 
+    metadata = DeviceInfo(
+        authors=[dario, jakob, wei_hsin],
+        maintainers=[dario],
+        manufacturer="Phidget",
+        model="VINT",
+    )
+
     def __init__(
         self,
         pressure_range: tuple[str, str] = ("0 bar", "10 bar"),
@@ -76,15 +83,6 @@ class PhidgetPressureSensor(FlowchemDevice):
     def __del__(self):
         """Ensure connection closure upon deletion."""
         self.phidget.close()
-
-    def metadata(self) -> DeviceInfo:
-        """Return hw device metadata."""
-        return DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="Phidget",
-            model="VINT",
-        )
 
     def is_attached(self) -> bool:
         """Whether the device is connected."""
