@@ -1,13 +1,25 @@
 """Control module for the Knauer DAD."""
 import asyncio
 
-from ._common import KnauerEthernetDevice
+from loguru import logger
+
+from flowchem.components.analytics.dad_control import DADControl
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.list_known_device_type import autodiscover_third_party
 from flowchem.exceptions import InvalidConfiguration
-from flowchem.models.analytical_device import AnalyticalDevice
+
+try:
+    from flowchem_knauer import KnauerDADCommands
+except ImportError as ie:
+    raise InvalidConfiguration(
+        "You tried to use a Knauer DAD device but the relevant commands are missing!\n"
+        "Unfortunately, we cannot publish those as they were provided under NDA.\n"
+        "Contact Knauer for further assistance."
+    ) from ie
 
 
-class KnauerDAD(KnauerEthernetDevice, AnalyticalDevice):
+class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
     """DAD control class."""
 
     def __init__(
@@ -22,15 +34,10 @@ class KnauerDAD(KnauerEthernetDevice, AnalyticalDevice):
         self.eol = b"\n\r"
         self._d2 = turn_on_d2
         self._hal = turn_on_halogen
+        self._state_d2 = False
+        self._state_hal = False
 
-        plugins = autodiscover_third_party()
-        if not "KnauerDADCommands" in plugins:
-            raise InvalidConfiguration(
-                "You tried to use a Knauer DAD device but the relevant commands are missing!\n"
-                "Unfortunately, we cannot publish those as they were provided under NDA.\n"
-                "Contact Knauer for further assistance."
-            )
-        self.cmd = plugins["KnauerDADCommands"]
+        self.cmd = KnauerDADCommands()
 
     async def initialize(self):
         """Initialize connection."""
@@ -46,16 +53,35 @@ class KnauerDAD(KnauerEthernetDevice, AnalyticalDevice):
     async def d2(self, state: bool = True) -> str:
         """Turn off or on the deuterium lamp."""
         cmd = self.cmd.D2_LAMP_ON if state else self.cmd.D2_LAMP_OFF
+        self._state_d2 = state
         return await self._send_and_receive(cmd)
 
     async def hal(self, state: bool = True) -> str:
         """Turn off or on the halogen lamp."""
         cmd = self.cmd.HAL_LAMP_ON if state else self.cmd.HAL_LAMP_OFF
+        self._state_hal = state
         return await self._send_and_receive(cmd)
 
-    def get_router(self, prefix: str | None = None):
-        """Create an APIRouter for this object."""
-        router = super().get_router()
-        router.add_api_route("/deuterium-lamp", self.d2, methods=["PUT"])
-        router.add_api_route("/halogen-lamp", self.hal, methods=["PUT"])
-        return router
+    def components(self):
+        return (KnauerDADControl("dad", self),)
+
+
+class KnauerDADControl(DADControl):
+    hw_device: KnauerDAD
+
+    async def get_lamp(self):
+        """Lamp status."""
+        return {
+            "d2": self.hw_device._state_d2,
+            "hal": self.hw_device._state_hal,
+        }
+
+    async def set_lamp(self, state: bool, lamp_name: str):
+        """Lamp status."""
+        match lamp_name:
+            case "d2":
+                await self.hw_device.d2(state)
+            case "hal":
+                await self.hw_device.hal(state)
+            case _:
+                logger.error("unknown lamp name!")
