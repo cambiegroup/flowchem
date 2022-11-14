@@ -181,8 +181,8 @@ class Elite11(FlowchemDevice):
             ) from index_e
 
         # Sets syringe parameters
-        await self.set_syringe_diameter(ureg(self._diameter))
-        await self.set_syringe_volume(ureg(self._syringe_volume))
+        await self.set_syringe_diameter(ureg.Quantity(self._diameter))
+        await self.set_syringe_volume(ureg.Quantity(self._syringe_volume))
         await self.set_force(self._force)
 
         logger.info(
@@ -279,7 +279,7 @@ class Elite11(FlowchemDevice):
         lower_limit, upper_limit = map(ureg, limits_raw.split(" to "))
 
         # Also add units to the provided rate
-        set_rate = ureg(rate)
+        set_rate = ureg.Quantity(rate)
 
         # Bound rate to acceptance range
         if set_rate < lower_limit:
@@ -335,7 +335,7 @@ class Elite11(FlowchemDevice):
     async def get_flow_rate(self) -> float:
         """Return the infusion rate as str w/ units."""
         flow_value = await self._send_command_and_read_reply("irate")
-        flowrate = ureg(flow_value)
+        flowrate = ureg.Quantity(flow_value)
         logger.debug(f"Current infusion flow rate is {flowrate}")
         return flowrate.m_as("ml/min")
 
@@ -349,7 +349,7 @@ class Elite11(FlowchemDevice):
     async def get_withdrawing_flow_rate(self) -> float:
         """Return the withdrawing flow rate as ml/min."""
         flow_value = await self._send_command_and_read_reply("wrate")
-        flowrate = ureg(flow_value)
+        flowrate = ureg.Quantity(flow_value)
         logger.debug(f"Current withdraw flow rate is {flowrate}")
         return flowrate.m_as("ml/min")
 
@@ -360,7 +360,7 @@ class Elite11(FlowchemDevice):
 
     async def set_target_volume(self, volume: str):
         """Set target volume in ml. If the volume is set to 0, the target is cleared."""
-        target_volume = ureg(volume)
+        target_volume = ureg.Quantity(volume)
         if target_volume.magnitude == 0:
             await self._send_command_and_read_reply("ctvolume")
         else:

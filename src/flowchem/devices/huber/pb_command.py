@@ -53,7 +53,7 @@ class PBCommand:
 
     def parse_rpm(self) -> str:
         """Parse a device reply from hexadecimal string to rpm."""
-        return str(ureg(f"{self.parse_integer()} rpm"))
+        return str(ureg.Quantity(f"{self.parse_integer()} rpm"))
 
     def parse_bits(self) -> list[bool]:
         """Parse a device reply from hexadecimal string to 16 constituting bits."""

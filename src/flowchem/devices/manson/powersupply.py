@@ -65,13 +65,13 @@ class MansonPowerSupply(FlowchemDevice):
     @staticmethod
     def _format_voltage(voltage_value: str) -> str:
         """Format a voltage in the format the power supply understands."""
-        voltage = ureg(voltage_value)
+        voltage = ureg.Quantity(voltage_value)
         # Zero fill by left pad with zeros, up to three digits
         return str(voltage.m_as("V") * 10).zfill(3)
 
     async def _format_amperage(self, amperage_value: str) -> str:
         """Format a current intensity in the format the power supply understands."""
-        current = ureg(amperage_value)
+        current = ureg.Quantity(amperage_value)
         multiplier = 100 if await self.get_info() in self.MODEL_ALT_RANGE else 10
         return str(current.m_as("A") * multiplier).zfill(3)
 
@@ -154,7 +154,7 @@ class MansonPowerSupply(FlowchemDevice):
     async def get_output_power(self) -> str:
         """Return output power in watts."""
         voltage, current, _ = await self.get_output_read()
-        power = ureg(f"{voltage} V") * ureg(f"{current} A")
+        power = ureg.Quantity(f"{voltage} V") * ureg.Quantity(f"{current} A")
         return str(power.to("W"))
 
     async def get_max(self) -> tuple[str, str]:

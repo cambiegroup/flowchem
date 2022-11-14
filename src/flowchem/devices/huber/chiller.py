@@ -169,7 +169,9 @@ class HuberChiller(FlowchemDevice):
     @staticmethod
     def _temp_to_string(temp: pint.Quantity) -> str:
         """From temperature to string for command. f^-1 of PCommand.parse_temperature."""
-        assert ureg("-151 °C") <= temp <= ureg("327 °C"), "Protocol temperature limits"
+        assert (
+            ureg.Quantity("-151 °C") <= temp <= ureg.Quantity("327 °C")
+        ), "Protocol temperature limits"
         # Hexadecimal two's complement
         return f"{int(temp.m_as('°C') * 100) & 65535:04X}"
 
@@ -180,7 +182,9 @@ class HuberChiller(FlowchemDevice):
 
     def get_components(self):
         """Return a TemperatureControl component."""
-        temperature_limits = TempRange(min=ureg(self._min_t), max=ureg(self._max_t))
+        temperature_limits = TempRange(
+            min=ureg.Quantity(self._min_t), max=ureg.Quantity(self._max_t)
+        )
         return HuberTemperatureControl("temperature-control", self, temperature_limits)
 
     # async def return_temperature(self) -> float | None:

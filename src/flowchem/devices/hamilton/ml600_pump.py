@@ -38,10 +38,10 @@ class ML600Pump(SyringePump):
             rate = self.hw_device.config.get("default_infuse_rate")  # type: ignore
 
         if not volume:
-            target_vol = ureg("0 ml")
+            target_vol = ureg.Quantity("0 ml")
         else:
             current_volume = await self.hw_device.get_current_volume()
-            target_vol = current_volume - ureg(volume)
+            target_vol = current_volume - ureg.Quantity(volume)
             if target_vol < 0:
                 logger.error(
                     f"Cannot infuse target volume {volume}! "
@@ -49,7 +49,7 @@ class ML600Pump(SyringePump):
                 )
                 return False
 
-        await self.hw_device.to_volume(target_vol, ureg(rate))
+        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate))
         return True
 
     async def withdraw(self, rate: str = "1 ml/min", volume: str | None = None) -> bool:
@@ -65,7 +65,7 @@ class ML600Pump(SyringePump):
             target_vol = self.hw_device.syringe_volume
         else:
             current_volume = await self.hw_device.get_current_volume()
-            target_vol = current_volume + ureg(volume)
+            target_vol = current_volume + ureg.Quantity(volume)
             if target_vol > self.hw_device.syringe_volume:
                 logger.error(
                     f"Cannot withdraw target volume {volume}! "
@@ -73,5 +73,5 @@ class ML600Pump(SyringePump):
                 )
                 return False
 
-        await self.hw_device.to_volume(target_vol, ureg(rate))
+        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate))
         return True

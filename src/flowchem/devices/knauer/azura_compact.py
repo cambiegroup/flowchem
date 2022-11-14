@@ -220,7 +220,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
     async def get_flow_rate(self) -> float:
         """Get flow rate in ml/min."""
         flow_value = await self.create_and_send_command(FLOW)
-        flowrate = ureg(f"{flow_value} ul/min")
+        flowrate = ureg.Quantity(f"{flow_value} ul/min")
         logger.debug(f"Current flow rate is {flowrate}")
         return flowrate.m_as("ml/min")
 
@@ -233,7 +233,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         if rate is None:
             rate = "0 ml/min"
 
-        parsed_flowrate = ureg(rate)
+        parsed_flowrate = ureg.Quantity(rate)
         await self.create_and_send_command(
             FLOW,
             setpoint=round(parsed_flowrate.m_as("ul/min")),
@@ -249,7 +249,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
 
     async def set_minimum_pressure(self, value: str = "0 bar"):
         """Set minimum pressure. The pump stops if the measured P is lower than this."""
-        pressure = ureg(value)
+        pressure = ureg.Quantity(value)
         command = PMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMIN50
         await self.create_and_send_command(
             command,
@@ -266,7 +266,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
 
     async def set_maximum_pressure(self, value: str):
         """Set maximum pressure. The pumps stop if the measured P is higher than this."""
-        pressure = ureg(value)
+        pressure = ureg.Quantity(value)
         command = PMAX10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else PMAX50
         await self.create_and_send_command(
             command,

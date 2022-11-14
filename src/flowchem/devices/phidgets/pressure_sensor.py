@@ -45,8 +45,8 @@ class PhidgetPressureSensor(FlowchemDevice):
 
         # Sensor range
         sensor_min, sensor_max = pressure_range
-        self._min_pressure = ureg(sensor_min)
-        self._max_pressure = ureg(sensor_max)
+        self._min_pressure = ureg.Quantity(sensor_min)
+        self._max_pressure = ureg.Quantity(sensor_max)
         # current meter
         self.phidget = CurrentInput()
 

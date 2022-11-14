@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 
 
 class TempRange(NamedTuple):
-    min: pint.Quantity = ureg("-100 °C")
-    max: pint.Quantity = ureg("+250 °C")
+    min: pint.Quantity = ureg.Quantity("-100 °C")
+    max: pint.Quantity = ureg.Quantity("+250 °C")
 
 
 class TemperatureControl(FlowchemComponent):
@@ -42,7 +42,7 @@ class TemperatureControl(FlowchemComponent):
         if temp.isnumeric():
             temp = temp + "°C"
             logger.warning("No units provided to set_temperature, assuming Celsius.")
-        set_t = ureg(temp)
+        set_t = ureg.Quantity(temp)
 
         if set_t < self._limits[0]:
             set_t = self._limits[0]

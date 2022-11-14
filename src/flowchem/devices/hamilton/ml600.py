@@ -233,7 +233,7 @@ class ML600(FlowchemDevice):
 
         # Syringe pumps only perform linear movement, and the volume displaced is function of the syringe loaded.
         try:
-            self.syringe_volume = ureg(syringe_volume)
+            self.syringe_volume = ureg.Quantity(syringe_volume)
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
             raise InvalidConfiguration(
@@ -247,7 +247,7 @@ class ML600(FlowchemDevice):
                 f"The volume (in ml) has to be one of {ML600.VALID_SYRINGE_VOLUME}"
             )
 
-        self._steps_per_ml = ureg(f"{48000 / self.syringe_volume} step/ml")
+        self._steps_per_ml = ureg.Quantity(f"{48000 / self.syringe_volume} step/ml")
         self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
 
@@ -296,7 +296,7 @@ class ML600(FlowchemDevice):
         )
 
         if hw_init:
-            await self.initialize_pump(speed=ureg(init_speed))
+            await self.initialize_pump(speed=ureg.Quantity(init_speed))
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
@@ -315,8 +315,8 @@ class ML600(FlowchemDevice):
 
         # Alert if out of bounds but don't raise exceptions, according to general philosophy.
         # Target flow rate too high
-        if speed < ureg("2 sec/stroke"):
-            speed = ureg("2 sec/stroke")
+        if speed < ureg.Quantity("2 sec/stroke"):
+            speed = ureg.Quantity("2 sec/stroke")
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"
@@ -324,8 +324,8 @@ class ML600(FlowchemDevice):
             )
 
         # Target flow rate too low
-        if speed > ureg("3692 sec/stroke"):
-            speed = ureg("3692 sec/stroke")
+        if speed > ureg.Quantity("3692 sec/stroke"):
+            speed = ureg.Quantity("3692 sec/stroke")
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"

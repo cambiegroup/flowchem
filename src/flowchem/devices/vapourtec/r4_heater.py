@@ -160,7 +160,7 @@ class R4Heater(FlowchemDevice):
 
     def components(self):
         temp_limits = {
-            ch_num: TempRange(min=ureg(t[0]), max=ureg(t[1]))
+            ch_num: TempRange(min=ureg.Quantity(t[0]), max=ureg.Quantity(t[1]))
             for ch_num, t in enumerate(zip(self._min_t, self._max_t))
         }
         return [
