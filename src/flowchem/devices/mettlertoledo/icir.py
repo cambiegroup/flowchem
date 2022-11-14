@@ -41,7 +41,6 @@ class IcIR(FlowchemDevice):
         manufacturer="Mettler-Toledo",
         model="iCIR",
         version="",
-        additional_info="",
     )
 
     iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
