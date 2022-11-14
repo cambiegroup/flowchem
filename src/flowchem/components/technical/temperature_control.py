@@ -2,12 +2,16 @@
 from __future__ import annotations
 
 from typing import NamedTuple
+from typing import TYPE_CHECKING
 
 import pint
+from loguru import logger
 
 from flowchem import ureg
 from flowchem.components.base_component import FlowchemComponent
-from flowchem.devices.flowchem_device import FlowchemDevice
+
+if TYPE_CHECKING:
+    from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class TempRange(NamedTuple):
@@ -33,9 +37,27 @@ class TemperatureControl(FlowchemComponent):
 
         self._limits = temp_limits
 
-    async def set_temperature(self, temp: str):
+    async def set_temperature(self, temp: str) -> pint.Quantity:
         """Set the target temperature to the given string in natural language."""
-        ...
+        if temp.isnumeric():
+            temp = temp + "°C"
+            logger.warning("No units provided to set_temperature, assuming Celsius.")
+        set_t = ureg(temp)
+
+        if set_t < self._limits[0]:
+            set_t = self._limits[0]
+            logger.warning(
+                f"Temperature requested {set_t} is out of range [{self._limits}] for {self.name}!"
+                f"Setting to {self._limits[0]} instead."
+            )
+
+        if set_t > self._limits[1]:
+            set_t = self._limits[1]
+            logger.warning(
+                f"Temperature requested {set_t} is out of range [{self._limits}] for {self.name}!"
+                f"Setting to {self._limits[1]} instead."
+            )
+        return set_t
 
     async def get_temperature(self) -> float:  # type: ignore
         """Return temperature in Celsius."""

@@ -17,22 +17,7 @@ class HuberTemperatureControl(TemperatureControl):
 
     async def set_temperature(self, temp: str):
         """Set the target temperature to the given string in natural language."""
-        set_t = ureg(temp)
-
-        if set_t < self._limits[0]:
-            set_t = self._limits[0]
-            logger.warning(
-                f"Temperature requested {set_t} is out of range [{self._limits}] for {self.name}!"
-                f"Setting to {self._limits[0]} instead."
-            )
-
-        if set_t > self._limits[1]:
-            set_t = self._limits[1]
-            logger.warning(
-                f"Temperature requested {set_t} is out of range [{self._limits}] for {self.name}!"
-                f"Setting to {self._limits[1]} instead."
-            )
-
+        set_t = await super().set_temperature(temp)
         return await self.hw_device.set_temperature(set_t)
 
     async def get_temperature(self) -> float:
