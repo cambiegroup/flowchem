@@ -35,7 +35,6 @@ def main(device_config_file, logfile, host):
     logger.debug(f"Starting server with configuration file: '{device_config_file}'")
 
     flowchem_instance = run_create_server_from_file(Path(device_config_file), host=host)
-    print(flowchem_instance["api_server"])
     uvicorn.run(
         flowchem_instance["api_server"],
         host=host,
