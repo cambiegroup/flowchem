@@ -28,18 +28,11 @@ from flowchem import ureg
 class PhidgetPressureSensor(FlowchemDevice):
     """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
 
-    metadata = DeviceInfo(
-        authors=[dario, jakob, wei_hsin],
-        maintainers=[dario],
-        manufacturer="Phidget",
-        model="VINT",
-    )
-
     def __init__(
         self,
         pressure_range: tuple[str, str] = ("0 bar", "10 bar"),
-        vint_serial_number: int | None = None,
-        vint_channel: int | None = None,
+        vint_serial_number: int = "",
+        vint_channel: int = -1,
         phidget_is_remote: bool = False,
         name: str = "",
     ):
@@ -58,9 +51,9 @@ class PhidgetPressureSensor(FlowchemDevice):
         self.phidget = CurrentInput()
 
         # Ensure connection with the right sensor (ideally these are from config)
-        if vint_serial_number is not None:
+        if vint_serial_number:
             self.phidget.setDeviceSerialNumber(vint_serial_number)
-        if vint_channel is not None:
+        if vint_channel > -1:
             self.phidget.setChannel(vint_channel)
 
         # Fancy remote sensors?
@@ -82,6 +75,14 @@ class PhidgetPressureSensor(FlowchemDevice):
         # Set power supply to 24V
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)
         self.phidget.setDataInterval(200)  # 200ms
+
+        self.metadata = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Phidget",
+            model="VINT",
+            serial_number=vint_serial_number,
+        )
 
     def __del__(self):
         """Ensure connection closure upon deletion."""
