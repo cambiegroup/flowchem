@@ -112,13 +112,6 @@ class R4Heater(FlowchemDevice):
         """Get firmware version."""
         return await self.write_and_read_reply(self.cmd.VERSION)
 
-    async def wait_for_target_temp(self, channel: int):
-        """Waits until the target channel has reached the desired temperature and is stable."""
-        t_stable = False
-        while not t_stable:
-            if not self.target_reached(channel):
-                time.sleep(1)
-
     async def set_temperature(self, channel, temperature: pint.Quantity):
         """Set temperature to channel."""
         cmd = self.cmd.SET_TEMPERATURE.format(

@@ -31,7 +31,7 @@ class PhidgetPressureSensor(FlowchemDevice):
     def __init__(
         self,
         pressure_range: tuple[str, str] = ("0 bar", "10 bar"),
-        vint_serial_number: int = "",
+        vint_serial_number: int = -1,
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
         name: str = "",
@@ -51,7 +51,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         self.phidget = CurrentInput()
 
         # Ensure connection with the right sensor (ideally these are from config)
-        if vint_serial_number:
+        if vint_serial_number > -1:
             self.phidget.setDeviceSerialNumber(vint_serial_number)
         if vint_channel > -1:
             self.phidget.setChannel(vint_channel)

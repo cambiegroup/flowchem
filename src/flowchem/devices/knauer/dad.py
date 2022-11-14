@@ -41,7 +41,6 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
                 "Unfortunately, we cannot publish those as they were provided under NDA.\n"
                 "Contact Knauer for further assistance."
             )
-        self.cmd = plugins["KnauerDADCommands"]
 
         self.cmd = KnauerDADCommands()
 

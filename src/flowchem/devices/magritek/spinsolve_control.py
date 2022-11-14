@@ -16,7 +16,6 @@ class SpinsolveControl(NMRControl):
     def __int__(self, name: str, hw_device: Spinsolve):  # type:ignore
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
-        self.add_api_route("/spectrum-count", self.spectrum_count, methods=["GET"])
         # Solvent
         self.add_api_route("/solvent", self.hw_device.get_solvent, methods=["GET"])
         self.add_api_route("/solvent", self.hw_device.set_solvent, methods=["PUT"])
