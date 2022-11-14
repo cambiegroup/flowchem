@@ -11,12 +11,10 @@ from flowchem.exceptions import InvalidConfiguration
 
 try:
     from flowchem_knauer import KnauerDADCommands
-except ImportError as ie:
-    raise InvalidConfiguration(
-        "You tried to use a Knauer DAD device but the relevant commands are missing!\n"
-        "Unfortunately, we cannot publish those as they were provided under NDA.\n"
-        "Contact Knauer for further assistance."
-    ) from ie
+
+    HAS_DAD_COMMANDS = True
+except ImportError:
+    HAS_DAD_COMMANDS = False
 
 
 class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
@@ -36,6 +34,14 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         self._hal = turn_on_halogen
         self._state_d2 = False
         self._state_hal = False
+
+        if not HAS_DAD_COMMANDS:
+            raise InvalidConfiguration(
+                "You tried to use a Knauer DAD device but the relevant commands are missing!\n"
+                "Unfortunately, we cannot publish those as they were provided under NDA.\n"
+                "Contact Knauer for further assistance."
+            )
+        self.cmd = plugins["KnauerDADCommands"]
 
         self.cmd = KnauerDADCommands()
 

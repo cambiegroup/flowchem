@@ -19,12 +19,10 @@ from flowchem.people import *
 
 try:
     from flowchem_vapourtec import VapourtecR4Commands
-except ImportError as ie:
-    raise InvalidConfiguration(
-        "You tried to use a Vapourtec device but the relevant commands are missing!\n"
-        "Unfortunately, we cannot publish those as they were provided under NDA.\n"
-        "Contact Vapourtec for further assistance."
-    ) from ie
+
+    HAS_VAPOURTEC_COMMANDS = True
+except ImportError:
+    HAS_VAPOURTEC_COMMANDS = False
 
 
 class R4Heater(FlowchemDevice):
@@ -56,6 +54,13 @@ class R4Heater(FlowchemDevice):
         assert len(min_temp) == len(max_temp) == 4
         self._min_t = min_temp
         self._max_t = max_temp
+
+        if not HAS_VAPOURTEC_COMMANDS:
+            raise InvalidConfiguration(
+                "You tried to use a Vapourtec device but the relevant commands are missing!\n"
+                "Unfortunately, we cannot publish those as they were provided under NDA.\n"
+                "Contact Vapourtec for further assistance."
+            )
 
         self.cmd = VapourtecR4Commands()
 
