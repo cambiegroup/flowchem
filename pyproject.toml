@@ -54,7 +54,6 @@ test = [
     "pytest-cov",
     "pytest-mock",
     "httpx",
-    "mock_serial; platform_system != 'Windows'",
     "requests",
 ]
 phidget = [
