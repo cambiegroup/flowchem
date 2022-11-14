@@ -1,6 +1,12 @@
 """An HPLC control component."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from flowchem.components.base_component import FlowchemComponent
-from flowchem.devices.flowchem_device import FlowchemDevice
+
+if TYPE_CHECKING:
+    from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class HPLCControl(FlowchemComponent):
