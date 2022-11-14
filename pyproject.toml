@@ -36,7 +36,7 @@ dependencies = [
     "asyncua>=0.9.92",
     "fastapi>=0.65.2",
     "loguru>=0.5.0",
-    "mistune==0.8.4", # Due to sphinx-contrib/openapi#121
+    "lxml>=4.6.4",
     "packaging>=21.3",
     "pint>=0.16.1,<0.19.3",
     "pydantic>=1.8.2",
@@ -57,6 +57,7 @@ dev = [
     "pre-commit"
 ]
 test = [
+    "flowchem-test",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
@@ -72,6 +73,7 @@ plot = [
     "matplotlib>=3.5.0",
 ]
 docs = [
+    "mistune==0.8.4", # Due to sphinx-contrib/openapi#121
     "myst-parser",
     "sphinx",
     "sphinx-autodoc-typehints",
@@ -96,6 +98,7 @@ flowchem-autodiscover = "flowchem.autodiscover:main"
 testpaths = "tests"
 asyncio_mode = "auto"
 addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=30"
+#addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' -s -v"  # pycharm
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",
