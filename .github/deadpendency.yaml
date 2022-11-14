@@ -1,3 +1,6 @@
+ignore-failures:
+    python:
+      - pyserial
 additional-deps:
   python:
     # name can be included so Deadpendency can load the package details in the registry
