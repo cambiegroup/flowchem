@@ -15,10 +15,7 @@ class AzuraCompactPump(HPLCPump):
 
     def __init__(self, name: str, hw_device: AzuraCompact):
         """Initialize component."""
-        logger.error(f"MAIN CALLED")
         super().__init__(name, hw_device)
-        logger.error(f"MAIN DONE")
-        logger.debug(f"router is {self.router.routes}")
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
         """Start infusion."""
