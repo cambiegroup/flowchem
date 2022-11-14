@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
-    from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.devices.flowchem_device import DeviceInfo
 
 
 class ComponentInfo(BaseModel):

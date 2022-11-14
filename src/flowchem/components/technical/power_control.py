@@ -14,8 +14,6 @@ class PowerControl(FlowchemComponent):
         self,
         name: str,
         hw_device: FlowchemDevice,
-        voltage_max: pint.Quantity,
-        current_max: pint.Quantity,
     ):
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device)

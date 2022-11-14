@@ -288,7 +288,7 @@ class MansonPowerSupply(FlowchemDevice):
 
     def get_components(self):
         """Return an TemperatureControl component."""
-        return (MansonPowerControl(),)
+        return (MansonPowerControl("power-control", self),)
 
     # def get_router(self, prefix: str | None = None):
     #     """Create an APIRouter for this MansonPowerSupply instance."""

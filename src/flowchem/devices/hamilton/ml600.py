@@ -282,7 +282,7 @@ class ML600(FlowchemDevice):
             pumpio,
             syringe_volume=config.get("syringe_volume", ""),
             address=config.get("address", 1),
-            name=config.get("name"),
+            name=config.get("name", ""),
         )
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):

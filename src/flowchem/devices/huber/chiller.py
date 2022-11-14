@@ -148,7 +148,7 @@ class HuberChiller(FlowchemDevice):
         reply = await self._send_command_and_read_reply("{M3A****")
         return PBCommand(reply).parse_temperature()
 
-    async def temperature_limits(self) -> tuple[float | None, float | None]:
+    async def temperature_limits(self) -> tuple[float, float]:
         """Return minimum/maximum accepted value for the temperature setpoint (in Celsius)."""
         min_reply = await self._send_command_and_read_reply("{M30****")
         min_t = PBCommand(min_reply).parse_temperature()

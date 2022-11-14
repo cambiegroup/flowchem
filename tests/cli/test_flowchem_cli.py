@@ -15,8 +15,9 @@ def test_cli(mocker):
         with open("test_configuration.toml", "w") as f:
             f.write(
                 dedent(
-                    """[device.test-device]\n
-            type = "FakeDevice"\n"""
+                    """
+                    [device.test-device]\n
+                    type = "FakeDevice"\n"""
                 )
             )
 

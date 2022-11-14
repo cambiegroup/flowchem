@@ -36,7 +36,7 @@ class PBCommand:
         """Data portion of PBCommand."""
         return self.command[4:8]
 
-    def parse_temperature(self) -> float | None:
+    def parse_temperature(self) -> float:
         """Parse a device temp from hex string to celsius float."""
         # self.data is the two's complement 16-bit signed hex, see manual
         temp = (
@@ -44,9 +44,7 @@ class PBCommand:
             if int(self.data, 16) > 32767
             else (int(self.data, 16)) / 100
         )
-        # -151 used for invalid temperatures
-        if temp == -151:
-            return None
+        # Note: -151 used for invalid temperatures!
         return temp
 
     def parse_integer(self) -> int:

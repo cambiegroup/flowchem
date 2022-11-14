@@ -3,7 +3,6 @@ import asyncio
 from importlib.metadata import metadata
 from io import BytesIO
 from pathlib import Path
-from typing import BinaryIO
 from typing import TypedDict
 
 from fastapi import FastAPI

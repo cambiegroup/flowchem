@@ -88,7 +88,7 @@ class IcIR(FlowchemDevice):
         await self.check_version()
         logger.debug("FlowIR initialized!")
 
-        if not self.is_iCIR_connected:
+        if not await self.is_iCIR_connected():
             raise DeviceError("Device not connected! Check iCIR...")
 
         # Start acquisition! Ensures the device is ready when a spectrum is needed
