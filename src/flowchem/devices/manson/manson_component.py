@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from flowchem.components.technical.power_control import PowerControl
+
 if TYPE_CHECKING:
     from flowchem.devices import MansonPowerSupply
 
-from flowchem.components.technical.temperature_control import TemperatureControl
 
-
-class MansonTemperatureControl(TemperatureControl):
+class MansonPowerControl(PowerControl):
     hw_device: MansonPowerSupply  # for typing's sake
 
     async def set_current(self, current: str):

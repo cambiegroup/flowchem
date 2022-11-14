@@ -10,7 +10,7 @@ from loguru import logger
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.manson.manson_component import MansonTemperatureControl
+from flowchem.devices.manson.manson_component import MansonPowerControl
 from flowchem.exceptions import DeviceError
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.people import *
@@ -288,7 +288,7 @@ class MansonPowerSupply(FlowchemDevice):
 
     def get_components(self):
         """Return an TemperatureControl component."""
-        return (MansonTemperatureControl(),)
+        return (MansonPowerControl(),)
 
     # def get_router(self, prefix: str | None = None):
     #     """Create an APIRouter for this MansonPowerSupply instance."""
