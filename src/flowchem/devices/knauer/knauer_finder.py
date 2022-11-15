@@ -66,7 +66,7 @@ async def get_device_type(ip_address: str) -> str:
     return "Unknown"
 
 
-def _get_local_ip() -> str | None:
+def _get_local_ip() -> str:
     """Guess the most suitable local IP for autodiscovery."""
     # These are all the local IPs (different interfaces)
     machine_ips = [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
@@ -94,7 +94,7 @@ def _get_local_ip() -> str | None:
     ):
         return socket.gethostbyname(hostname)
     else:
-        return None
+        return ""
 
 
 def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
@@ -136,16 +136,22 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     loop.call_soon_threadsafe(loop.stop)
     thread.join()
 
+    device_list = []
+    # Get all device from queue (nobody should need has more than 40 devices, right?)
+    for _ in range(40):
+        try:
+            device_list.append(device_q.get_nowait())
+        except queue.Empty:
+            break
+
     device_info: dict[str, str] = {}
     device_ip: str
-    try:
-        for device_ip in iter(device_q.get_nowait, None):
-            # MAC address
-            mac = get_mac_address(ip=device_ip)
-            if mac:
-                device_info[mac] = device_ip
-    except queue.Empty:
-        pass
+    # We got replies from IPs, let's find their MACs
+    for device_ip in device_list:
+        # MAC address
+        mac = get_mac_address(ip=device_ip)
+        if mac:
+            device_info[mac] = device_ip
     return device_info
 
 
