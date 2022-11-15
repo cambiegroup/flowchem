@@ -40,13 +40,21 @@ def main(device_config_file, logfile, host):
         logger.add(Path(logfile))
     logger.debug(f"Starting server with configuration file: '{device_config_file}'")
 
-    flowchem_instance = run_create_server_from_file(Path(device_config_file), host=host)
-    uvicorn.run(
-        flowchem_instance["api_server"],
-        host=host,
-        port=flowchem_instance["port"],
-        timeout_keep_alive=3600,
-    )
+    async def main2():
+        flowchem_instance = await run_create_server_from_file(
+            Path(device_config_file), host=host
+        )
+        config = uvicorn.Config(
+            flowchem_instance["api_server"],
+            host=host,
+            port=flowchem_instance["port"],
+            log_level="info",
+            timeout_keep_alive=3600,
+        )
+        server = uvicorn.Server(config)
+        await server.serve()
+
+    asyncio.run(main2())
 
 
 if __name__ == "__main__":

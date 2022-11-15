@@ -20,12 +20,12 @@ class FlowchemInstance(TypedDict):
     port: int
 
 
-def run_create_server_from_file(
+async def run_create_server_from_file(
     config_file: BytesIO | Path, host: str = "127.0.0.1"
 ) -> FlowchemInstance:
     """Make create_server_from_file a sync function for CLI."""
 
-    return asyncio.run(create_server_from_file(config_file, host))
+    return await create_server_from_file(config_file, host)
 
 
 async def create_server_from_file(
