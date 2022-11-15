@@ -4,6 +4,8 @@ Why does this file exist, and why `__main__`? For more info, read:
 - https://www.python.org/dev/peps/pep-0338/
 - https://docs.python.org/3/using/cmdline.html#cmdoption-m
 """
+import asyncio
+import sys
 from pathlib import Path
 
 import rich_click as click
@@ -29,6 +31,10 @@ def main(device_config_file, logfile, host):
 
     Parse DEVICE_CONFIG_FILE and starts a server exposing the devices via RESTful API.
     """
+
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
     logger.info(f"Starting flowchem v. {__version__}!")
     if logfile:
         logger.add(Path(logfile))
