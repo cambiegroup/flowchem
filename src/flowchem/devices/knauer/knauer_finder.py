@@ -125,7 +125,11 @@ def autodiscover_knauer(source_ip: str | None = "") -> dict[str, str]:
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
         local_addr=(source_ip, 28688),
     )
-    loop.run_until_complete(coro)
+    try:
+        loop.run_until_complete(coro)
+    except OSError:
+        return {}
+
     thread = Thread(target=loop.run_forever)
     thread.start()
     time.sleep(2)
