@@ -76,6 +76,7 @@ class KnauerEthernetDevice:
 
     async def _send_and_receive(self, message: str) -> str:
         self._writer.write(message.encode("ascii") + self.eol)
+        await self._writer.drain()
         logger.debug(f"WRITE >>> '{message}' ")
         reply = await self._reader.readuntil(separator=b"\r")
         logger.debug(f"READ <<< '{reply.decode().strip()}' ")
