@@ -7,6 +7,7 @@ import time
 from textwrap import dedent
 from threading import Thread
 
+import rich_click as click
 from loguru import logger
 
 from flowchem.vendor.getmac import get_mac_address
@@ -99,10 +100,8 @@ def _get_local_ip() -> str | None:
 def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     """
     Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
-
     Note that the MAC is the key here as it is the parameter used in configuration files.
     Knauer devices only support DHCP so static IPs are not an option.
-
     Args:
         source_ip: source IP for autodiscover (only relevant if multiple network interfaces are available!)
     Returns:
@@ -120,7 +119,6 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = asyncio.new_event_loop()
-
     device_q: queue.Queue = queue.Queue()
     coro = loop.create_datagram_endpoint(
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
@@ -140,11 +138,14 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
 
     device_info: dict[str, str] = {}
     device_ip: str
-    for device_ip in iter(device_q.get, None):
-        # MAC address
-        mac = get_mac_address(ip=device_ip)
-        if mac:
-            device_info[mac] = device_ip
+    try:
+        for device_ip in iter(device_q.get_nowait, None):
+            # MAC address
+            mac = get_mac_address(ip=device_ip)
+            if mac:
+                device_info[mac] = device_ip
+    except queue.Empty:
+        pass
     return device_info
 
 
