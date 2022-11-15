@@ -96,7 +96,7 @@ def _get_local_ip() -> str | None:
         return None
 
 
-def autodiscover_knauer(source_ip: str | None = "") -> dict[str, str]:
+def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     """
     Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
 
@@ -111,9 +111,10 @@ def autodiscover_knauer(source_ip: str | None = "") -> dict[str, str]:
     # Define source IP resolving local hostname.
     if not source_ip:
         source_ip = _get_local_ip()
-    if source_ip is None:
+    if not source_ip:
         logger.warning("Please provide a valid source IP for broadcasting.")
         return dict()
+    logger.info(f"Starting detection from IP {source_ip}")
 
     try:
         loop = asyncio.get_running_loop()
@@ -127,7 +128,8 @@ def autodiscover_knauer(source_ip: str | None = "") -> dict[str, str]:
     )
     try:
         loop.run_until_complete(coro)
-    except OSError:
+    except OSError as e:
+        logger.error(e)
         return {}
 
     thread = Thread(target=loop.run_forever)
@@ -152,8 +154,7 @@ def knauer_finder(source_ip=None):
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    # Autodiscover devices (dict mac as index, IP as value)
-    logger.info("Starting detection")
+    # Autodiscover devices (returns dict with MAC as index, IP as value)
     devices = autodiscover_knauer(source_ip)
     dev_config = set()
 
