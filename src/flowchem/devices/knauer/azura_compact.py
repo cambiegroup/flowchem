@@ -6,7 +6,7 @@ from enum import Enum
 import pint
 from loguru import logger
 
-from ._common import KnauerEthernetDevice
+from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -224,19 +224,15 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         logger.debug(f"Current flow rate is {flowrate}")
         return flowrate.m_as("ml/min")
 
-    async def set_flow_rate(self, rate: str):
+    async def set_flow_rate(self, rate: pint.Quantity):
         """Set flow rate.
 
         Args:
             rate (str): value with units
         """
-        if rate is None:
-            rate = "0 ml/min"
-
-        parsed_flowrate = ureg.Quantity(rate)
         await self.create_and_send_command(
             FLOW,
-            setpoint=round(parsed_flowrate.m_as("ul/min")),
+            setpoint=round(rate.m_as("ul/min")),
             setpoint_range=(0, self.max_allowed_flow + 1),
         )
         logger.info(f"Flow set to {rate}")
@@ -419,14 +415,20 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    p = AzuraCompact(ip_address="192.168.10.113")
+    p = AzuraCompact(ip_address="192.168.1.119")
 
     async def main(pump: AzuraCompact):
         """Test function."""
         await pump.initialize()
-        await pump.set_flow_rate("0.1 ml/min")
+        c = pump.components()
+        print(c)
+        pc: AzuraCompactPump = c[0]
+        print(pc)
+        print(await pc.infuse(rate="0.1 ml/min"))
+        await pump.set_flow_rate(ureg.Quantity("0.1 ml/min"))
         await pump.infuse()
         await asyncio.sleep(5)
         await pump.stop()
+        print(await pc.is_pumping())
 
     asyncio.run(main(p))

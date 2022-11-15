@@ -58,7 +58,7 @@ async def get_device_type(ip_address: str) -> str:
 
     if reply.startswith(b"HEADTYPE"):
         logger.debug(f"Device {ip_address} is a Pump")
-        return "AzuraCompactPump"
+        return "AzuraCompact"
 
     # Test Valve
     writer.write(b"T:?\n\r")
@@ -175,12 +175,12 @@ def knauer_finder(source_ip=None):
         device_type = asyncio.run(get_device_type(ip))
         logger.info(f"Found a {device_type} on IP {ip}")
 
-        if device_type == "AzuraCompactPump":
+        if device_type == "AzuraCompact":
             dev_config.add(
                 dedent(
                     f"""\n\n
                     [device.pump-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
-                    type = "AzuraCompactPump"
+                    type = "AzuraCompact"
                     ip_address = "{ip}"  # MAC address during discovery: {mac_address}
                     # max_pressure = "XX bar"
                     # min_pressure = "XX bar"\n"""

@@ -4,7 +4,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class BasePump(FlowchemComponent):
-    def __int__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
         """A generic pump."""
         super().__init__(name, hw_device)
         self.add_api_route("/infuse", self.infuse, methods=["PUT"])

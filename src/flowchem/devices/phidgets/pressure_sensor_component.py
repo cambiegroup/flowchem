@@ -12,7 +12,7 @@ from flowchem.components.sensors.pressure_sensor import PressureSensor
 class PhidgetPressureSensorComponent(PressureSensor):
     hw_device: PhidgetPressureSensor  # just for typing
 
-    def __int__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
         """A generic Syringe pump."""
         super().__init__(name, hw_device)
 

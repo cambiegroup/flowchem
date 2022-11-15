@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class SpinsolveControl(NMRControl):
     hw_device: Spinsolve  # for typing's sake
 
-    def __int__(self, name: str, hw_device: Spinsolve):  # type:ignore
+    def __init__(self, name: str, hw_device: Spinsolve):  # type:ignore
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
         # Solvent

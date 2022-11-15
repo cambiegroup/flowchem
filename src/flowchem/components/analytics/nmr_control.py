@@ -4,7 +4,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class NMRControl(FlowchemComponent):
-    def __int__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
         """NMR Control component."""
         super().__init__(name, hw_device)
         self.add_api_route("/acquire-spectrum", self.acquire_spectrum, methods=["PUT"])

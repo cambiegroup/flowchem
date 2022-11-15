@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class IcIRControl(IRControl):
     hw_device: IcIR  # for typing's sake
 
-    def __int__(self, name: str, hw_device: IcIR):  # type:ignore
+    def __init__(self, name: str, hw_device: IcIR):  # type:ignore
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
         self.add_api_route("/spectrum-count", self.spectrum_count, methods=["GET"])

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class HPLCControl(FlowchemComponent):
-    def __int__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
         self.add_api_route("/run-sample", self.run_sample, methods=["PUT"])

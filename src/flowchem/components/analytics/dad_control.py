@@ -4,7 +4,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class DADControl(FlowchemComponent):
-    def __int__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
         """DAD Control component."""
         super().__init__(name, hw_device)
         self.add_api_route("/lamp", self.get_lamp, methods=["GET"])

@@ -18,7 +18,7 @@ class IRSpectrum(BaseModel):
 
 
 class IRControl(FlowchemComponent):
-    def __int__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
         self.add_api_route("/acquire-spectrum", self.acquire_spectrum, methods=["PUT"])
