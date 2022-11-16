@@ -1,11 +1,10 @@
 [build-system]
-# Setuptools 64 and pip 21.3 are needed for editable installs, but a modern version of setuptools never hurts
 requires = ["setuptools>64", "wheel", "pip>=22"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "flowchem"
-version = "0.1.0-alpha3"
+version = "1.0.0-alpha1"
 description = "Flowchem is a python library to control a variety of instruments commonly found in chemistry labs."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -101,7 +100,7 @@ python_version = "3.10"
 testpaths = "tests"
 asyncio_mode = "auto"
 addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=30"
-#addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' -s -v"  # pycharm
+
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",

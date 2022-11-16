@@ -13,7 +13,7 @@ class FakeServer:
 
     @staticmethod
     async def serve():
-        return asyncio.sleep(0)
+        return None
 
 
 def test_cli(mocker):
