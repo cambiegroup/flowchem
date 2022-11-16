@@ -101,7 +101,7 @@ def _get_local_ip() -> str:
         return ""
 
 
-async def send_broadcast(source_ip):
+async def send_broadcast_and_receive_replies(source_ip):
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:
@@ -148,12 +148,13 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
         return dict()
     logger.info(f"Starting detection from IP {source_ip}")
 
-    device_list = asyncio.run(send_broadcast(source_ip))
+    device_list = asyncio.run(send_broadcast_and_receive_replies(source_ip))
 
     device_info: dict[str, str] = {}
     device_ip: str
     # We got replies from IPs, let's find their MACs
     for device_ip in device_list:
+        logger.debug(f"Got a reply from {device_ip}")
         # MAC address
         mac = get_mac_address(ip=device_ip)
         if mac:
@@ -201,4 +202,4 @@ def knauer_finder(source_ip=None):
 
 
 if __name__ == "__main__":
-    knauer_finder("127.0.0.1")
+    knauer_finder()

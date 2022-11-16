@@ -174,7 +174,7 @@ def get_mac_address(
                     to_find = "en0"
 
     mac = _hunt_for_mac(to_find, typ, network_request)
-    log.debug("Raw MAC found: %s", mac)
+    # log.debug("Raw MAC found: %s", mac)
 
     # Check and format the result to be lowercase, colon-separated
     if mac is not None:
