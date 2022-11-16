@@ -40,7 +40,8 @@ def main(device_config_file, logfile, host):
         logger.add(Path(logfile))
     logger.debug(f"Starting server with configuration file: '{device_config_file}'")
 
-    async def main2():
+    async def main_loop():
+        """The loop must be shared between uvicorn and flowchem."""
         flowchem_instance = await run_create_server_from_file(
             Path(device_config_file), host=host
         )
@@ -52,9 +53,10 @@ def main(device_config_file, logfile, host):
             timeout_keep_alive=3600,
         )
         server = uvicorn.Server(config)
+        logger.info(f"I got a server it is {server}")
         await server.serve()
 
-    asyncio.run(main2())
+    asyncio.run(main_loop())
 
 
 if __name__ == "__main__":
