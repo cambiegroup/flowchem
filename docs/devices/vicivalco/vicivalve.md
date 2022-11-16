@@ -31,9 +31,9 @@ However, it should not be necessary as the default for the instrument are automa
 ## API methods
 Once configured, a flowchem ViciValve object will expose the following commands:
 
-```{eval-rst}
-.. include:: api.rst
-```
+%```{eval-rst}
+%.. include:: api.rst
+%```
 
 ## Valve positions
 The valve position naming follow the general convention of flowchem (see [Base Valve](../../models/valves/base_valve.md):

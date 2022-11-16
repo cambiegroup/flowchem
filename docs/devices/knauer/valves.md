@@ -28,9 +28,9 @@ mac_address = "00:11:22:33:44:55"  #  Onyl one of either ip_address or mac_addre
 ## API methods
 Once configured, a flowchem Knauer6Port2PositionValve object will expose the following commands:
 
-```{eval-rst}
-.. include:: api-pump.rst
-```
+%```{eval-rst}
+%.. include:: api-valve.rst
+%```
 
 ## Valve positions
 The valve position naming follow the general convention of flowchem, depending on the valve type

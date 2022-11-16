@@ -35,9 +35,9 @@ remote_to_local_mapping = ["D:\\data2q", "\\BSMC-7WP43Y1\\data2q"]
 ## API methods
 Once configured, a flowchem Spinsolve object will expose the following commands:
 
-```{eval-rst}
-.. include:: api.rst
-```
+%```{eval-rst}
+%.. include:: api.rst
+%```
 
 ## Remote control
 When controlling a Spinsolve instance running on a remote PC, it is necessary that the FIDs are saved in a folder that

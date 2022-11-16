@@ -23,6 +23,6 @@ Note, further parameters for the serial connections (i.e. those accepted by `ser
 ## API methods
 Once configured, a flowchem MansonPowerSupply object will expose the following commands:
 
-```{eval-rst}
-.. include:: api.rst
-```
+%```{eval-rst}
+%.. include:: api.rst
+%```
