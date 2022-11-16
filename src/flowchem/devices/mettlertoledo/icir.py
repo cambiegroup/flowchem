@@ -93,7 +93,8 @@ class IcIR(FlowchemDevice):
 
         # Start acquisition! Ensures the device is ready when a spectrum is needed
         await self.start_experiment(name="Flowchem", template=self._template)
-        self.metadata.additional_info = await self.probe_info()
+        probe = await self.probe_info()
+        self.metadata.additional_info = probe.dict()
 
     def is_local(self):
         """Return true if the server is on the same machine running the python code."""
