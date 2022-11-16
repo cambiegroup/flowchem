@@ -36,9 +36,9 @@ Once configured, a flowchem ViciValve object will expose the following commands:
 %```
 
 ## Valve positions
-The valve position naming follow the general convention of flowchem (see [Base Valve](../../models/valves/base_valve.md):
-* Injection valves have position named 'LOAD' and 'INJECT'
-* Multiposition valves have positions from '1' to 'n' where n is the total amount of port available.
+The valve position naming follow the general convention of flowchem:
+* Injection valves have position named 'load' and 'inject'
+* Distribution valves have positions from '1' to 'n' where n is the total amount of port available.
 
 ## Device detection
 Knauer Valves can be auto-detected via the `flowchem-autodiscover` command-line utility.
@@ -52,4 +52,4 @@ Note that the actual type of valve cannot be detected automatically, so you will
 ```
 
 ## Further information
-For further information please refer to the [manufacturer manual](./valve_instructions_en.pdf)
+For further information please refer to the [manufacturer manual](./universal-actuator.pdf)

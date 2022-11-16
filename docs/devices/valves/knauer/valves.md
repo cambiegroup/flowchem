@@ -33,8 +33,7 @@ Once configured, a flowchem Knauer6Port2PositionValve object will expose the fol
 %```
 
 ## Valve positions
-The valve position naming follow the general convention of flowchem, depending on the valve type
-(see [Base Valve](../../models/valves/base_valve.md):
+The valve position naming follow the general convention of flowchem, depending on the valve type:
 * Injection valves have position named 'load' and 'inject'
 * Distribution valves have positions from '1' to 'n' where n is the total amount of port available.
 
@@ -45,4 +44,4 @@ can be auto-detected on your PC.
 
 
 ## Further information
-For further information please refer to the [manufacturer manual](./valve_instructions_en.pdf)
+For further information please refer to the [manufacturer manual](valve_instructions_en.pdf)
