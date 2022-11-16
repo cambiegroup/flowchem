@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from textwrap import dedent
 
@@ -6,10 +7,19 @@ from click.testing import CliRunner
 from flowchem.__main__ import main
 
 
+class FakeServer:
+    def __init__(self, config):
+        pass
+
+    @staticmethod
+    async def serve():
+        return asyncio.sleep(0)
+
+
 def test_cli(mocker):
     runner = CliRunner()
     # Skip running server
-    mocker.patch("uvicorn.run", return_value=None)
+    mocker.patch("uvicorn.Server", return_value=FakeServer)
 
     with runner.isolated_filesystem():
         with open("test_configuration.toml", "w") as f:
