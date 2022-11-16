@@ -91,14 +91,24 @@ async def create_server_for_devices(config: dict, host="127.0.0.1") -> FlowchemI
 
 
 if __name__ == "__main__":
+
     import io
-
-    test_conf = io.BytesIO(
-        b"""[device.test-device]\n
-    type = "FakeDevice"\n"""
-    )
-    flowchem_instance = run_create_server_from_file(config_file=test_conf)
-
     import uvicorn
 
-    uvicorn.run(flowchem_instance["api_server"])
+    async def main():
+        flowchem_instance = await run_create_server_from_file(
+            config_file=io.BytesIO(
+                b"""[device.test-device]\n
+        type = "FakeDevice"\n"""
+            )
+        )
+        config = uvicorn.Config(
+            flowchem_instance["api_server"],
+            port=flowchem_instance["port"],
+            log_level="info",
+            timeout_keep_alive=3600,
+        )
+        server = uvicorn.Server(config)
+        await server.serve()
+
+    asyncio.run(main())

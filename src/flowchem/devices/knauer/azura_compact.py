@@ -6,10 +6,10 @@ from enum import Enum
 import pint
 from loguru import logger
 
-from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.knauer.azura_compact_pump import AzuraCompactPump
 from flowchem.devices.knauer.azura_compact_sensor import AzuraCompactSensor
 from flowchem.exceptions import DeviceError

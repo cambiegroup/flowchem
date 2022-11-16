@@ -112,9 +112,7 @@ def main(output, overwrite, safe_only, assume_yes, source_ip):
 
     # Print results
     if not serial_config and not eth_config:
-        logger.error(
-            f"No device found! The output file `{output}` will not be created."
-        )
+        logger.error(f"No device found! The output file `{output}` won't be created.")
         return
     logger.info(f"Found {len(serial_config) + len(eth_config)} devices!")
 
