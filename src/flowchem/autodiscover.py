@@ -66,7 +66,7 @@ def inspect_eth(source_ip):
     is_flag=True,
     help="Overwrite existing configuration file if present",
 )
-@click.option("--safe-only", "-s", is_flag=True, help="Run only safe modules.")
+@click.option("--safe", "-s", is_flag=True, help="Run only safe modules.")
 @click.option(
     "--assume-yes",
     "--yes",
@@ -79,7 +79,7 @@ def inspect_eth(source_ip):
     help="Source IP for broadcast packets. (Relevant if multiple eth interface are available)",
     default=None,
 )
-def main(output, overwrite, safe_only, assume_yes, source_ip):
+def main(output, overwrite, safe, assume_yes, source_ip):
     """Auto-find devices connected to the current PC."""
     # Validate output location
     if Path(output).exists() and not overwrite:
@@ -89,7 +89,8 @@ def main(output, overwrite, safe_only, assume_yes, source_ip):
         return
 
     # Ask confirmation for serial communication
-    if not safe_only and not assume_yes:
+    confirm = False
+    if not safe and not assume_yes:
         logger.warning(
             "The autodiscover include modules that involve communication over serial ports."
         )
@@ -97,12 +98,10 @@ def main(output, overwrite, safe_only, assume_yes, source_ip):
         logger.warning(
             "Unsupported devices could be placed in an unsafe state as result of the discovery process!"
         )
-        assume_yes = click.confirm(
-            "Do you want to include the search for serial devices?"
-        )
+        confirm = click.confirm("Do you want to include the search for serial devices?")
 
     # Search serial devices
-    if not safe_only and assume_yes:
+    if not safe and (assume_yes or confirm):
         serial_config = inspect_serial_ports()
     else:
         serial_config = set()
