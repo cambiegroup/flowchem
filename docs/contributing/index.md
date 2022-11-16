@@ -107,6 +107,6 @@ Then from the docs folder run `make html` to generate html docs in the build dir
 community
 design_principles
 add_device/index
-models/device_models
+components/index
 
 ```

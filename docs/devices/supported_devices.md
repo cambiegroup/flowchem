@@ -31,6 +31,6 @@ magritek/spinsolve
 manson/manson
 mettler/flowir
 phidgets/p_sensor
-vicivlaco/vicivalve
+vicivalco/vicivalve
 
 ```
