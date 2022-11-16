@@ -48,4 +48,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
-          title: flowchem ${{  github.ref_name }}
+          title: flowchem_${{  github.ref_name }}
