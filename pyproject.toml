@@ -1,26 +1,131 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>64", "wheel", "pip>=22"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "flowchem"
+version = "1.0.0-alpha1"
+description = "Flowchem is a python library to control a variety of instruments commonly found in chemistry labs."
+readme = "README.md"
+requires-python = ">=3.10"
+license =  { text = "MIT" }
+keywords = ["chemistry", "automation", "laboratory", "science"]
+authors = [
+    { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
+    { name = "Jakob Wolf", email = "Jakob.Wolf@mpikg.mpg.de" },
+    { name = "Wei-Hsin Hsu", email = "Wei-hsin.Hsu@mpikg.mpg.de" },
+]
+maintainers = [
+  { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" }
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License"
+]
+dependencies = [
+    "aioserial>=1.3.0",
+    "asyncua>=0.9.92",
+    "fastapi>=0.65.2",
+    "loguru>=0.5.0",
+    "lxml>=4.6.4",
+    "packaging>=21.3",
+    "pint>=0.16.1", # See hgrecco/pint#1642
+    "pydantic>=1.8.2",
+    "pyserial>=3",
+    "rich_click>=0.3.0",
+    'tomli; python_version<"3.11"',
+    "uvicorn>=0.13.4",
+    "zeroconf>=0.39.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy",
+    "flake8",
+    "black",
+    "pylint",
+    "tox",
+    "pre-commit"
+]
+test = [
+    "flowchem-test",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-mock",
+    "httpx",
+    "requests",
+]
+phidget = [
+    "phidget22>=1.7.20211005",
+]
+plot = [
+    "matplotlib>=3.5.0",
+]
+docs = [
+    "mistune==0.8.4", # Due to sphinx-contrib/openapi#121
+    "myst-parser",
+    "sphinx",
+    "sphinx-autodoc-typehints",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-openapi",
+]
+types = [
+    "types-lxml",
+    "data-science-types",
+]
+
+[project.urls]
+homepage = "https://github.com/cambiegroup/flowchem"
+documentation = "https://flowchem.readthedocs.io"
+repository = "https://github.com/cambiegroup/flowchem"
+
+[project.scripts]
+flowchem = "flowchem.__main__:main"
+flowchem-autodiscover = "flowchem.autodiscover:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+flowchem = ["py.typed"]
+
+[tool.mypy]
+ignore_missing_imports = true
+python_version = "3.10"
 
 [tool.pytest.ini_options]
 testpaths = "tests"
 asyncio_mode = "auto"
 addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=30"
+
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",
     "FlowIR: tests requiring a connection to a FlowIR.",
     "KPump: tests for Azura compact" ]
 
-[tool.mypy]
-ignore_missing_imports = true
-python_version = 3.9
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = mypy,flake8,test
+isolated_build = true
+minversion = 3.10
 
-[tool.pylint.'MESSAGES CONTROL']
-max-line-length = 120
-#load-plugins = "perflint"
-extension-pkg-allow-list = 'pydantic, lxml'
-#disable = "C0330, R0201"
-
-[tool.isort]
-profile = "black"
+[testenv:{mypy,flake8,test}]
+envdir = {toxworkdir}/.tox
+changedir = {envtmpdir}
+extras =
+    dev
+    test
+description =
+    mypy: Run mypy
+    flake8: Run flake8
+    test: Run the tests with pytest under {basepython}
+commands =
+    mypy: mypy --check-untyped-defs --python-version 3.10 --ignore-missing-imports {toxinidir}/src
+    flake8: flake8 --count --select=E9,F63,F7,F82 --show-source --statistics
+    test: python -m pytest {posargs} {toxinidir}
+"""

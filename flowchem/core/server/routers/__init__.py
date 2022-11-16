@@ -1,1 +1,0 @@
-from .Spinsolve_router import spinsolve_get_router

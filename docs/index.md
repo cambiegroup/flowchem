@@ -1,20 +1,15 @@
-.. Flowchem documentation master file, created by
-   sphinx-quickstart on Thu Sep 30 12:19:43 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to Flowchem's documentation!
 ====================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+Select a topic from the list below, or read the [Getting Started](./getting_started.md) guide.
 
+```{toctree}
+:maxdepth: 2
 
+getting_started
 
-Indices and tables
-==================
+devices/supported_devices
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+contributing/index.md
+
+```

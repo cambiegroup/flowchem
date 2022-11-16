@@ -1,0 +1,16 @@
+"""Injection valves are multiport, two-position valves, e.g. 6-2 commonly used w/ injection loops for HPLC injection."""
+from flowchem.components.valves.base_valve import BaseValve
+from flowchem.devices.flowchem_device import FlowchemDevice
+
+
+class SixPortTwoPosition(BaseValve):
+    def __init__(self, name: str, hw_device: FlowchemDevice):
+        # These are hardware-port, only input and output are routable from the fixed syringe.
+        # All three are listed as this simplifies the creation of graphs
+        positions = {
+            "load": [("1", "2"), ("3", "4"), ("5", "6")],
+            "inject": [("6", "1"), ("2", "3"), ("4", "5")],
+        }
+        super().__init__(
+            name, hw_device, positions, ports=["1", "2", "3", "4", "5", "6"]
+        )
