@@ -101,6 +101,35 @@ def _get_local_ip() -> str:
         return ""
 
 
+async def send_broadcast(source_ip):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+
+    device_q: queue.Queue = queue.Queue()
+    transport, protocol = await loop.create_datagram_endpoint(
+        lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
+        local_addr=(source_ip, 28688),
+        allow_broadcast=True,
+    )
+    try:
+        await asyncio.sleep(2)  # Serve for 1 hour.
+
+    finally:
+        transport.close()
+
+    device_list = []
+    # Get all device from queue (nobody should need has more than 40 devices, right?)
+    for _ in range(40):
+        try:
+            device_list.append(device_q.get_nowait())
+        except queue.Empty:
+            break
+
+    return device_list
+
+
 def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     """
     Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
@@ -119,34 +148,7 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
         return dict()
     logger.info(f"Starting detection from IP {source_ip}")
 
-    try:
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-    device_q: queue.Queue = queue.Queue()
-    coro = loop.create_datagram_endpoint(
-        lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
-        local_addr=(source_ip, 28688),
-    )
-    try:
-        loop.run_until_complete(coro)
-    except OSError as e:
-        logger.error(e)
-        return {}
-
-    thread = Thread(target=loop.run_forever)
-    thread.start()
-    time.sleep(2)
-    loop.call_soon_threadsafe(loop.stop)
-    thread.join()
-
-    device_list = []
-    # Get all device from queue (nobody should need has more than 40 devices, right?)
-    for _ in range(40):
-        try:
-            device_list.append(device_q.get_nowait())
-        except queue.Empty:
-            break
+    device_list = asyncio.run(send_broadcast(source_ip))
 
     device_info: dict[str, str] = {}
     device_ip: str
@@ -199,4 +201,4 @@ def knauer_finder(source_ip=None):
 
 
 if __name__ == "__main__":
-    knauer_finder()
+    knauer_finder("127.0.0.1")
