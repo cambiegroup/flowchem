@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  title: Flowchem - devices
+  title: Flowchem - flowchem_config
   description: Flowchem is a python library to control a variety of instruments commonly
     found in chemistry labs.
   license:
@@ -8,52 +8,42 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.1.0a3
 paths:
-  /hplc/run:
-    put:
+  /elite11-1/pump/:
+    get:
       tags:
-      - hplc
-      - hplc
-      summary: Run
-      description: 'Run one analysis on the instrument. The sample name has to be
-        set in advance via sample-name.
-
-
-        Note that it takes at least 2 sec until the run actually starts (depending
-        on instrument configuration).
-
-        While the export of the chromatogram in e.g. ASCII format can be achieved
-        programmatically via the CLI, the best
-
-        solution is to enable automatic data export for all runs of the HPLC as the
-        chromatogram will be automatically
-
-        exported as soon as the run is finished.'
-      operationId: run_hplc_run_put
+      - elite11-1
+      - elite11-1
+      summary: Get Metadata
+      operationId: get_metadata_elite11_1_pump__get
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
-  /hplc/method:
+              schema:
+                $ref: '#/components/schemas/ComponentInfo'
+  /elite11-1/pump/infuse:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Method
-      description: 'Sets the HPLC method (i.e. a file with .MET extension) to the
-        instrument.
-
-
-        Make sure to select ''Send Method to Instrument'' option in Method Sending
-        Options dialog in System Configuration.'
-      operationId: set_method_hplc_method_put
+      - elite11-1
+      - elite11-1
+      summary: Infuse
+      description: Infuse.
+      operationId: infuse_elite11_1_pump_infuse_put
       parameters:
-      - required: true
+      - required: false
         schema:
-          title: Method Name
+          title: Rate
           type: string
-        name: method_name
+          default: ''
+        name: rate
+        in: query
+      - required: false
+        schema:
+          title: Volume
+          type: string
+          default: ''
+        name: volume
         in: query
       responses:
         '200':
@@ -67,20 +57,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/sample-name:
+  /elite11-1/pump/stop:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Sample Name
-      description: Sets the name of the sample for the next run.
-      operationId: set_sample_name_hplc_sample_name_put
+      - elite11-1
+      - elite11-1
+      summary: Stop
+      description: Stops pump.
+      operationId: stop_elite11_1_pump_stop_put
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /elite11-1/pump/is-pumping:
+    get:
+      tags:
+      - elite11-1
+      - elite11-1
+      summary: Is Pumping
+      description: True if pump is moving.
+      operationId: is_pumping_elite11_1_pump_is_pumping_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /elite11-1/pump/withdraw:
+    put:
+      tags:
+      - elite11-1
+      - elite11-1
+      summary: Withdraw
+      description: Withdraw.
+      operationId: withdraw_elite11_1_pump_withdraw_put
       parameters:
-      - required: true
+      - required: false
         schema:
-          title: Sample Name
+          title: Rate
           type: string
-        name: sample_name
+          default: 1 ml/min
+        name: rate
+        in: query
+      - required: false
+        schema:
+          title: Volume
+          type: string
+        name: volume
         in: query
       responses:
         '200':
@@ -94,22 +119,67 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/exit:
-    put:
-      tags:
-      - hplc
-      - hplc
-      summary: Exit
-      description: Exit Clarity Chrom.
-      operationId: exit_hplc_exit_put
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
 components:
   schemas:
+    ComponentInfo:
+      title: ComponentInfo
+      required:
+      - hw_device
+      type: object
+      properties:
+        hw_device:
+          $ref: '#/components/schemas/DeviceInfo'
+        name:
+          title: Name
+          type: string
+          default: ''
+        owl_subclass_of:
+          title: Owl Subclass Of
+          type: string
+          default: http://purl.obolibrary.org/obo/OBI_0000968
+      description: Metadata associated with flowchem components.
+    DeviceInfo:
+      title: DeviceInfo
+      required:
+      - authors
+      - maintainers
+      - manufacturer
+      - model
+      type: object
+      properties:
+        authors:
+          title: Authors
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+        maintainers:
+          title: Maintainers
+          type: array
+          items:
+            $ref: '#/components/schemas/Person'
+        manufacturer:
+          title: Manufacturer
+          type: string
+        model:
+          title: Model
+          type: string
+        additional_info:
+          title: Additional Info
+          type: object
+          default: {}
+        backend:
+          title: Backend
+          type: string
+          default: flowchem v. 0.1.0a3
+        serial_number:
+          title: Serial Number
+          type: string
+          default: unknown
+        version:
+          title: Version
+          type: string
+          default: ''
+      description: Metadata associated with hardware devices.
     HTTPValidationError:
       title: HTTPValidationError
       type: object
@@ -119,6 +189,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ValidationError'
+    Person:
+      title: Person
+      required:
+      - name
+      - email
+      type: object
+      properties:
+        name:
+          title: Name
+          type: string
+        email:
+          title: Email
+          type: string
     ValidationError:
       title: ValidationError
       required:
@@ -140,3 +223,4 @@ components:
         type:
           title: Error Type
           type: string
+
