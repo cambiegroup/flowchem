@@ -3,11 +3,8 @@ import asyncio
 import queue
 import socket
 import sys
-import time
 from textwrap import dedent
-from threading import Thread
 
-import rich_click as click
 from loguru import logger
 
 from flowchem.vendor.getmac import get_mac_address
