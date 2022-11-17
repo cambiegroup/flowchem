@@ -101,11 +101,13 @@ class R4Heater(FlowchemDevice):
         """Sends a command to the pump, read the replies and returns it, optionally parsed."""
         self._serial.reset_input_buffer()
         await self._write(command)
+        logger.debug(f"Command {command} sent to R4!")
         response = await self._read_reply()
 
         if not response:
             raise InvalidConfiguration("No response received from heating module!")
 
+        logger.debug(f"Reply received: {response}")
         return response.rstrip()
 
     async def version(self):

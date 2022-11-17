@@ -11,8 +11,9 @@ from flowchem.devices.harvardapparatus.elite11_finder import elite11_finder
 from flowchem.devices.huber.huber_finder import chiller_finder
 from flowchem.devices.knauer.knauer_finder import knauer_finder
 from flowchem.devices.mettlertoledo.icir_finder import icir_finder
+from flowchem.devices.vapourtec.vapourtec_finder import r4_finder
 
-SERIAL_DEVICE_INSPECTORS = (ml600_finder, elite11_finder, chiller_finder)
+SERIAL_DEVICE_INSPECTORS = (ml600_finder, elite11_finder, chiller_finder, r4_finder)
 
 
 def inspect_serial_ports() -> set[str]:
