@@ -25,11 +25,12 @@ min_pressure = "5 bar"  # Optionally, a string with natural language specifying 
 ```
 
 ## API methods
-Once configured, a flowchem AzuraCompactPump object will expose the following commands:
+Once configured, a flowchem AzuraCompactPump object will expose the following commands (where `pump-b90e33` is the name
+of the device):
 
-%```{eval-rst}
-%.. include:: api-pump.rst
-%```
+```{eval-rst}
+.. include:: api-pump.rst
+```
 
 ## Device detection
 Azura Compact pumps can be auto-detected via the `flowchem-autodiscover` command-line utility.
