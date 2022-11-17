@@ -80,22 +80,22 @@ on how to interact with others in a way that makes the community thrive.
   See our `.pre-commit-config.yml` for details.
 %  The use of linter and import re-ordering is aimed at reducing diff size and merge conflicts in pull request.
 
-## Test coverage
+## Tests
 To run the tests `pytest` and some pytest plugins are needed.
-To install the testing-related dependency run this command:
+To install them run:
 ```shell
 pip install flowchem[test]
 ```
 
 ## Building docs
-The docs are automatically build for each commit at [readthedocs.com](https://readthedocs.org/projects/flowchem/).
+The documentation is automatically build for each commit at [readthedocs.com](https://readthedocs.org/projects/flowchem/).
 To build it locally, sphynx, myst-parser and other packages are needed.
-To install the tools to build the docs run this command:
+To install them run:
 ```shell
 pip install flowchem[docs]
 ```
 
-Then from the docs folder run `make html` to generate html docs in the build directory.
+Then from the docs folder run `make html` to generate html files in the _build subdirectory.
 
 ```{toctree}
 :maxdepth: 2
