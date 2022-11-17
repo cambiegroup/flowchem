@@ -7,7 +7,7 @@ from textwrap import dedent
 
 from loguru import logger
 
-from flowchem.vendor.getmac import get_mac_address
+from flowchem.utils.getmac import get_mac_address
 
 __all__ = ["autodiscover_knauer", "knauer_finder"]
 

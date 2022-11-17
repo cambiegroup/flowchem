@@ -52,4 +52,4 @@ For example, bla
 
 
 
-If you have comments or suggestions, please don’t hesitate to [reach out](./contributing/community.md)!
+If you have comments or suggestions, please don’t hesitate to reach out!

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fastapi import Query
+
 from flowchem.components.analytics.hplc_control import HPLCControl
 
 if TYPE_CHECKING:
@@ -21,7 +23,15 @@ class ClarityComponent(HPLCControl):
         """Exit Clarity Chrom."""
         return await self.hw_device.execute_command("exit", without_instrument_num=True)
 
-    async def send_method(self, method_name) -> bool:
+    async def send_method(
+        self,
+        method_name: str = Query(
+            default=...,
+            description="Name of the method file",
+            example="MyMethod.MET",
+            alias="method-name",
+        ),
+    ) -> bool:
         """
         Sets the HPLC method (i.e. a file with .MET extension) to the instrument.
 
@@ -29,7 +39,21 @@ class ClarityComponent(HPLCControl):
         """
         return await self.hw_device.execute_command(f" {method_name}")
 
-    async def run_sample(self, sample_name: str, method_name: str) -> bool:
+    async def run_sample(
+        self,
+        sample_name: str = Query(
+            default=...,
+            description="Sample name",
+            example="JB-123-crude-2h",
+            alias="sample-name",
+        ),
+        method_name: str = Query(
+            default=...,
+            description="Name of the method file",
+            example="MyMethod.MET",
+            alias="method-name",
+        ),
+    ) -> bool:
         """
         Run one analysis on the instrument.
 

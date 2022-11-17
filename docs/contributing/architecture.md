@@ -1,6 +1,22 @@
 # Software architecture
 
+## Repository structure
+The repository is structured as follows:
+* `docs` - documentation
+* `examples` - example of use
+* `src` - source code
+* `tests` - test files (pytest)
+
+The source code in the `flowchem` packages is organized in:
+* `components` -
+* `devices` -
+* `server` -
+* `utils` -
+
+
 ## General
+
+
 ### In which order are device initialized
 When `flochem` is called with a configuration file via CLI, the following happens:
 1. The configuration is parsed, and all the hardware device object are created in the order they appear in the file.

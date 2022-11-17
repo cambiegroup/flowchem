@@ -29,7 +29,12 @@ def main(device_config_file, logfile, host):
     """
     Flowchem main program.
 
-    Parse DEVICE_CONFIG_FILE and starts a server exposing the devices via RESTful API.
+    Parse device_config_file and starts a server exposing the devices via RESTful API.
+
+    Args:
+        device_config_file: Flowchem configuration file specifying device connection settings (TOML)
+        logfile: Output file for logs.
+        host: IP on which the server will be listening. Loopback IP as default, use LAN IP to enable remote access.
     """
 
     if sys.platform == "win32":

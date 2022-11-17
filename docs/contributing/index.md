@@ -1,8 +1,15 @@
 # Contribute to flowchem
-
+There are many ways of contributing to flowchem: if you are using it and have suggestions or bugs report them in the
+issue tracker on GitHub, if you find the documentation not clear, propose a change and if you want to add support for
+new device, that would be awesome as well!
 % part of this page is based on the numpy project one
 % See also https://rdflib.readthedocs.io/en/stable/developers.html
 % And https://diataxis.fr/how-to-guides/
+
+## Community
+We aim at creating a community around flowchem, by incentive the participation from a diverse group of contributors.
+Please read the [Contributor Covenant](https://www.contributor-covenant.org/) we adopted as Code of Conduct for guidance
+on how to interact with others in a way that makes the community thrive.
 
 ## Development process
 1. If you are a first-time contributor:
@@ -66,26 +73,26 @@
 
 ## Guidelines
 
-* All code should be documented with docstrings in Google format and comments where appropriate.
-* All code should have tests.
-* We use [black](https://github.com/psf/black) not to waste time discussing details code style.
+* All code should be documented with docstrings (in Google format) and comments where appropriate.
+* Possibly, all new code should have tests.
+* We use [black](https://github.com/psf/black) as code formatter not to waste time discussing code style.
 * You can install [pre-commit](https://pre-commit.com/) to run black and other linters as part of the pre-commit hooks.
   See our `.pre-commit-config.yml` for details.
-  The use of linter and import re-ordering is aimed at reducing diff size and merge conflicts in pull request.
+%  The use of linter and import re-ordering is aimed at reducing diff size and merge conflicts in pull request.
 
 ## Test coverage
 To run the tests `pytest` and some pytest plugins are needed.
-To install the testing-related dependency for local testing run this command from the root folder:
+To install the testing-related dependency run this command:
 ```shell
-pip install .[test]
+pip install flowchem[test]
 ```
 
 ## Building docs
 The docs are automatically build for each commit at [readthedocs.com](https://readthedocs.org/projects/flowchem/).
 To build it locally, sphynx, myst-parser and other packages are needed.
-To install the tools to build the docs run this command from the root folder:
+To install the tools to build the docs run this command:
 ```shell
-pip install .[docs]
+pip install flowchem[docs]
 ```
 
 Then from the docs folder run `make html` to generate html docs in the build directory.
@@ -93,8 +100,7 @@ Then from the docs folder run `make html` to generate html docs in the build dir
 ```{toctree}
 :maxdepth: 2
 
-community
-design_principles
+architecture
 add_device/index
 components/index
 ```

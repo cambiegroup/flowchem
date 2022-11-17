@@ -34,9 +34,11 @@ def r4_finder(serial_port) -> list[str]:
         # Local variable for enumeration
         r4_finder.counter += 1  # type: ignore
         cfg = f"[device.r4-heater-{r4_finder.counter}]"  # type:ignore
-        cfg += dedent(f"""
+        cfg += dedent(
+            f"""
         type = "R4Heater"
-        port = "{serial_port}"\n\n""")
+        port = "{serial_port}"\n\n"""
+        )
     else:
         cfg = ""
 
