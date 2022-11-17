@@ -53,7 +53,6 @@ def main(device_config_file, logfile, host):
             timeout_keep_alive=3600,
         )
         server = uvicorn.Server(config)
-        logger.info(f"I got a server it is {server}")
         await server.serve()
 
     asyncio.run(main_loop())
