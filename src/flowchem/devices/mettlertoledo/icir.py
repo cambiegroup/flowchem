@@ -60,14 +60,16 @@ class IcIR(FlowchemDevice):
 
     counter = 0
 
-    def __init__(self, template: str, url="", name=""):
+    def __init__(self, template="", url="", name=""):
         """Initiate connection with OPC UA server."""
         super().__init__(name)
 
         # Default (local) url if none provided
         if not url:
             url = self.iC_OPCUA_DEFAULT_SERVER_ADDRESS
-        self.opcua = Client(url)
+        self.opcua = Client(
+            url, timeout=5
+        )  # Call to START_EXPERIMENT can take few seconds!
 
         self._template = template
 
@@ -77,16 +79,16 @@ class IcIR(FlowchemDevice):
             await self.opcua.connect()
         except asyncio.TimeoutError as timeout_error:
             raise DeviceError(
-                f"Could not connect to FlowIR on {self.opcua.server_url}!"
+                f"Could not connect to iCIR on {self.opcua.server_url}!"
             ) from timeout_error
 
         # Ensure iCIR version is supported
         self.metadata.version = await self.opcua.get_node(
             self.SOFTWARE_VERSION
-        ).get_value()  # "7.1.91.0"
+        ).get_value()  # e.g. "7.1.91.0"
 
-        await self.check_version()
-        logger.debug("FlowIR initialized!")
+        self.ensure_version_is_supported()
+        logger.debug("iCIR initialized!")
 
         if not await self.is_iCIR_connected():
             raise DeviceError("Device not connected! Check iCIR...")
@@ -102,7 +104,7 @@ class IcIR(FlowchemDevice):
             x in self.opcua.server_url.netloc for x in ("localhost", "127.0.0.1")
         )
 
-    async def check_version(self):
+    def ensure_version_is_supported(self):
         """Check if iCIR is installed and open and if the version is supported."""
         try:
             if self.metadata.version not in self._supported_versions:
@@ -208,7 +210,7 @@ class IcIR(FlowchemDevice):
                         1
                     ].strip()
 
-        return probe_info  # type: ignore
+        return ProbeInfo.parse_obj(probe_info)
 
     @staticmethod
     async def _wavenumber_from_spectrum_node(node) -> list[float]:
@@ -256,7 +258,7 @@ class IcIR(FlowchemDevice):
         if self.is_local() and self.is_template_name_valid(template) is False:
             raise DeviceError(
                 f"Cannot start template {template}: name not valid! Check if is in: "
-                r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
+                r'"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"'
             )
         if await self.probe_status() == "Running":
             logger.warning(

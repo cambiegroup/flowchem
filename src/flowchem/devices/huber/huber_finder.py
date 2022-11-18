@@ -1,4 +1,4 @@
-"""This module is used to discover the serial address of any ML600 connected to the PC."""
+"""This module is used to discover the serial address of any Huber chiller connected to the PC."""
 import asyncio
 from textwrap import dedent
 
@@ -10,7 +10,7 @@ from flowchem.exceptions import InvalidConfiguration
 
 # noinspection PyProtectedMember
 def chiller_finder(serial_port) -> set[str]:
-    """Try to initialize an Elite11 on every available COM port."""
+    """Try to initialize a Huber chiller on every available COM port."""
     logger.debug(f"Looking for Huber chillers on {serial_port}...")
 
     try:

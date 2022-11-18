@@ -3,14 +3,11 @@ import asyncio
 import queue
 import socket
 import sys
-import time
 from textwrap import dedent
-from threading import Thread
 
-import rich_click as click
 from loguru import logger
 
-from flowchem.vendor.getmac import get_mac_address
+from flowchem.utils.getmac import get_mac_address
 
 __all__ = ["autodiscover_knauer", "knauer_finder"]
 
@@ -181,12 +178,12 @@ def knauer_finder(source_ip=None):
         if device_type == "AzuraCompact":
             dev_config.add(
                 dedent(
-                    f"""\n\n
-                    [device.pump-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
-                    type = "AzuraCompact"
-                    ip_address = "{ip}"  # MAC address during discovery: {mac_address}
-                    # max_pressure = "XX bar"
-                    # min_pressure = "XX bar"\n"""
+                    f"""
+                       [device.pump-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
+                       type = "AzuraCompact"
+                       ip_address = "{ip}"  # MAC address during discovery: {mac_address}
+                       # max_pressure = "XX bar"
+                       # min_pressure = "XX bar"\n\n"""
                 )
             )
         elif device_type == "KnauerValve":

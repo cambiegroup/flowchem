@@ -10,8 +10,10 @@ from flowchem.devices.hamilton.ml600_finder import ml600_finder
 from flowchem.devices.harvardapparatus.elite11_finder import elite11_finder
 from flowchem.devices.huber.huber_finder import chiller_finder
 from flowchem.devices.knauer.knauer_finder import knauer_finder
+from flowchem.devices.mettlertoledo.icir_finder import icir_finder
+from flowchem.devices.vapourtec.vapourtec_finder import r4_finder
 
-SERIAL_DEVICE_INSPECTORS = (ml600_finder, elite11_finder, chiller_finder)
+SERIAL_DEVICE_INSPECTORS = (ml600_finder, elite11_finder, chiller_finder, r4_finder)
 
 
 def inspect_serial_ports() -> set[str]:
@@ -44,11 +46,20 @@ def inspect_serial_ports() -> set[str]:
     return dev_found_config
 
 
-def inspect_eth(source_ip):
+def inspect_eth(source_ip) -> set[str]:
     """Search for known devices on ethernet and generate config stubs."""
     logger.info("Starting ethernet detection")
+    dev_found_config: set[str] = set()
 
-    return knauer_finder(source_ip)
+    # Find Knauer
+    knauer_devices = knauer_finder(source_ip)
+    dev_found_config.update(knauer_devices)
+
+    # Find iCIR
+    icir = icir_finder()
+    dev_found_config.update(icir)
+
+    return dev_found_config
 
 
 @click.command()

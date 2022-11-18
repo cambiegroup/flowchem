@@ -10,7 +10,7 @@ from flowchem.exceptions import InvalidConfiguration
 
 
 # noinspection PyProtectedMember
-def elite11_finder(serial_port) -> set[str]:
+def elite11_finder(serial_port) -> list[str]:
     """Try to initialize an Elite11 on every available COM port. [Does not support daisy-chained Elite11!]"""
     logger.debug(f"Looking for Elite11 pumps on {serial_port}...")
     # Static counter for device type across different serial ports
@@ -21,14 +21,14 @@ def elite11_finder(serial_port) -> set[str]:
         link = HarvardApparatusPumpIO(port=serial_port)
     except InvalidConfiguration:
         # This is necessary only on failure to release the port for the other inspector
-        return set()
+        return []
 
     # Check for echo
     link._serial.write(b"\r\n")
     if link._serial.readline() != b"\n":
         # This is necessary only on failure to release the port for the other inspector
         link._serial.close()
-        return set()
+        return []
 
     # Parse status prompt
     pump = link._serial.readline().decode("ascii")
@@ -48,19 +48,19 @@ def elite11_finder(serial_port) -> set[str]:
     except InvalidConfiguration:
         # This is necessary only on failure to release the port for the other inspector
         link._serial.close()
-        return set()
+        return []
 
-    p_type = "Elite11InfuseOnly" if info.infuse_only else "Elite11InfuseWithdraw"
-    logger.info(f"Pump {p_type} found on <{serial_port}>")
+    logger.info(f"Elite11 found on <{serial_port}>")
 
+    # Local variable for enumeration
     elite11_finder.counter += 1  # type: ignore
-    return set(
-        dedent(
-            f"\n\n[device.elite11-{elite11_finder.counter}]"  # type:ignore
-            f"""type = "{p_type}
+    cfg = f"[device.elite11-{elite11_finder.counter}]"  # type:ignore
+    cfg += dedent(
+        f"""
+               type = "Elite11"
                port = "{serial_port}"
                address = {address}
                syringe_diameter = "XXX mm" # Specify syringe diameter!
-               syringe_volume = "YYY ml" # Specify syringe volume!\n"""
-        )
+               syringe_volume = "YYY ml" # Specify syringe volume!\n\n"""
     )
+    return [cfg]
