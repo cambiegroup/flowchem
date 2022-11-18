@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flowchem"
-version = "1.0.0-alpha1"
+version = "1.0.0-alpha2"
 description = "Flowchem is a python library to control a variety of instruments commonly found in chemistry labs."
 readme = "README.md"
 requires-python = ">=3.10"
