@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@master
       - name: Publish release 📦 to GitHub
         if: startsWith(github.ref_name, 'v')
-        uses: elgohr/Github-Release-Action@master
+        uses: elgohr/Github-Release-Action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         with:
