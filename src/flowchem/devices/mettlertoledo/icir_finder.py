@@ -43,7 +43,10 @@ def icir_finder():
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    return [asyncio.run(generate_icir_config())]
+    try:
+        return [asyncio.run(generate_icir_config())]
+    except OSError:
+        return []
 
 
 if __name__ == "__main__":

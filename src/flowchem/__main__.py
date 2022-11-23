@@ -23,9 +23,10 @@ from flowchem.server.api_server import run_create_server_from_file
 @click.option(
     "-h", "--host", "host", type=str, default="127.0.0.1", help="Server host."
 )
+@click.option("-d", "--debug", is_flag=True, help="Print debug info.")
 @click.version_option()
 @click.command()
-def main(device_config_file, logfile, host):
+def main(device_config_file, logfile, host, debug):
     """
     Flowchem main program.
 
@@ -40,9 +41,14 @@ def main(device_config_file, logfile, host):
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+    if not debug:
+        # Set stderr to info
+        logger.remove()
+        logger.add(sys.stderr, level="INFO")
+
     logger.info(f"Starting flowchem v. {__version__}!")
     if logfile:
-        logger.add(Path(logfile))
+        logger.add(Path(logfile), level="DEBUG")
     logger.debug(f"Starting server with configuration file: '{device_config_file}'")
 
     async def main_loop():

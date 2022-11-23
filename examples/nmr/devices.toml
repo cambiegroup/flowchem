@@ -2,8 +2,8 @@
 
 
 [device.pump-b90e33]
-type = "AzuraCompact"
-ip_address = "192.168.1.119"  # MAC address during discovery: 00:80:a3:b9:0e:33
+type = "FakeDevice"
+#ip_address = "192.168.1.119"  # MAC address during discovery: 00:80:a3:b9:0e:33
 # max_pressure = "XX bar"
 # min_pressure = "XX bar"
 #
