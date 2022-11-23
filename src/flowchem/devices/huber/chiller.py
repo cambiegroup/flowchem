@@ -180,12 +180,14 @@ class HuberChiller(FlowchemDevice):
         """From int to string for command. f^-1 of PCommand.parse_integer."""
         return f"{number:04X}"
 
-    def get_components(self):
+    def components(self):
         """Return a TemperatureControl component."""
         temperature_limits = TempRange(
             min=ureg.Quantity(self._min_t), max=ureg.Quantity(self._max_t)
         )
-        return HuberTemperatureControl("temperature-control", self, temperature_limits)
+        return (
+            HuberTemperatureControl("temperature-control", self, temperature_limits),
+        )
 
     # async def return_temperature(self) -> float | None:
     #     """Return the temp of the thermal fluid flowing back to the device."""

@@ -1,57 +1,16 @@
 """Vacuubrand CVC3000 control."""
 import asyncio
-from enum import IntEnum
 
 import aioserial
 import pint
 from loguru import logger
-from pydantic import BaseModel
 
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vacuubrand.cvc3000_pressure_control import CVC3000PressureControl
+from flowchem.devices.vacuubrand.utils import ProcessStatus
 from flowchem.exceptions import InvalidConfiguration
 from flowchem.people import *
-
-
-class PumpControlMode(IntEnum):
-    VacuuLAN = 0
-    PUMP_DOWN = 1
-    VAC_CONTROL = 2
-    AUTO = 3
-    PROGRAM = 4
-    GAUGE = 4
-
-
-class PumpState(IntEnum):
-    OFF = 0
-    PUMP_DOWN = 1
-    VACUUM_REACHED = 2
-    AUTO_OFF = 3  # Below set value
-
-
-class ProcessStatus(BaseModel):
-    is_pump_on: bool
-    is_inline_valve_open: bool
-    is_coolant_valve_open: bool
-    is_venting_valve_open: bool
-    control: PumpControlMode
-    state: PumpState
-
-    @classmethod
-    def from_reply(cls, reply):
-        reply_dict = {
-            "is_pump_on": bool(reply[0]),
-            "is_inline_valve_open": bool(reply[1]),
-            "is_coolant_valve_open": bool(reply[2]),
-            "is_venting_valve_open": bool(reply[3]),
-            "control": PumpControlMode(int(reply[4])),
-            "state": PumpState(int(reply[5])),
-        }
-        return cls.parse_obj(reply_dict)
-
-
-ProcessStatus.update_forward_refs()
 
 
 class CVC3000(FlowchemDevice):
@@ -134,7 +93,7 @@ class CVC3000(FlowchemDevice):
 
         # Receive reply and return it after decoding
         try:
-            reply = await asyncio.wait_for(self._serial.readline_async(), 1)
+            reply = await asyncio.wait_for(self._serial.readline_async(), 2)
         except asyncio.TimeoutError:
             logger.error("No reply received! Unsupported command?")
             return ""
@@ -169,8 +128,11 @@ class CVC3000(FlowchemDevice):
     async def status(self) -> ProcessStatus:
         """Get process status reply."""
         raw_status = await self._send_command_and_read_reply(f"IN_STAT")
+        # Sometimes fails on first call
+        if not raw_status:
+            raw_status = await self._send_command_and_read_reply(f"IN_STAT")
         return ProcessStatus.from_reply(raw_status)
 
-    def get_components(self):
+    def components(self):
         """Return a TemperatureControl component."""
-        return CVC3000PressureControl("pressure-control", self)
+        return (CVC3000PressureControl("pressure-control", self),)
