@@ -9,27 +9,28 @@ from flowchem.exceptions import InvalidConfiguration
 
 
 # noinspection PyProtectedMember
-def chiller_finder(serial_port) -> set[str]:
+def chiller_finder(serial_port) -> list[str]:
     """Try to initialize a Huber chiller on every available COM port."""
     logger.debug(f"Looking for Huber chillers on {serial_port}...")
 
     try:
         chill = HuberChiller.from_config(port=serial_port)
     except InvalidConfiguration:
-        return set()
+        return []
 
     try:
         asyncio.run(chill.initialize())
     except InvalidConfiguration:
         chill._serial.close()
-        return set()
+        return []
 
     logger.info(f"Chiller #{chill._device_sn} found on <{serial_port}>")
 
-    return set(
+    return [
         dedent(
-            f"""\n\n[device.huber-{chill._device_sn}]
-    type = "HuberChiller"
-    port = "{serial_port}"\n"""
+            f"""
+            [device.huber-{chill._device_sn}]
+            type = "HuberChiller"
+            port = "{serial_port}"\n"""
         )
-    )
+    ]

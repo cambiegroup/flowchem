@@ -10,5 +10,6 @@ from .magritek import *
 from .manson import *
 from .mettlertoledo import *
 from .phidgets import *
+from .vacuubrand import *
 from .vapourtec import *
 from .vicivalco import *
