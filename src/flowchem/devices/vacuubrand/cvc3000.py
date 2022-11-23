@@ -129,7 +129,7 @@ class CVC3000(FlowchemDevice):
         Returns:
             str: reply received
         """
-        await self._serial.write_async(command.encode("ascii"))
+        await self._serial.write_async(command.encode("ascii") + b"\r\n")
         logger.debug(f"Command `{command}` sent!")
 
         # Receive reply and return it after decoding
@@ -148,7 +148,10 @@ class CVC3000(FlowchemDevice):
         """Get version."""
         raw_version = await self._send_command_and_read_reply("IN_VER")
         # raw_version = CVC 3000 VX.YY
-        return raw_version.split()[-1]
+        try:
+            return raw_version.split()[-1]
+        except IndexError:
+            return None
 
     async def set_pressure(self, pressure: pint.Quantity):
         mbar = int(pressure.m_as("mbar"))
