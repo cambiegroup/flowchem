@@ -31,13 +31,15 @@ Currently, the following instruments are supported, but we are open to contribut
  - ... [add support for a new device](https://flowchem.readthedocs.io/en/latest/add_new_device_type.html)!
 
 ## Installation
-Python 3.10 is needed, and it is suggested to install flowchem with pipx.
+To install flowchem, Python >= 3.10 is needed.
+If you plan to use flowchem as a used, without modifing its source code, we suggest to install it with pipx.
 You can install pipx and flowchem as follows:
 ```shell
 pip install pipx
 pipx ensurepath
 pipx install flowchem
 ```
+This will make the `flowchem` and `flowchem-autodiscover` commands available system-wide.
 
 ## Documentation
 You can find the documentation online on [flowchem.readthedocs.io](https://flowchem.readthedocs.io/en/latest/).
@@ -46,4 +48,5 @@ You can find the documentation online on [flowchem.readthedocs.io](https://flowc
 This project is released under the terms of the MIT License.
 
 ## Questions
-For questions about this project, fell free to open a GitHub issue, or reach out [by email](mailto:2422614+dcambie@users.noreply.github.com).
+For questions about this project, fell free to open a GitHub issue, or reach out
+[by email](mailto:2422614+dcambie@users.noreply.github.com).

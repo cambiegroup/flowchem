@@ -103,7 +103,7 @@ class HuberChiller(FlowchemDevice):
         # Send command. Using PBCommand ensure command validation, see PBCommand.to_chiller()
         pb_command = PBCommand(command.upper())
         await self._serial.write_async(pb_command.to_chiller())
-        logger.debug(f"Command {command[0:8]} sent to chiller!")
+        logger.debug(f"Command {command[0:8]} sent!")
 
         # Receive reply and return it after decoding
         try:

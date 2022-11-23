@@ -9,6 +9,7 @@ analytics/index.md
 pumps/index.md
 valves/index.md
 temperature/index.md
+pressure/index.md
 misc/index.md
 
 ```
