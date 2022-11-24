@@ -70,6 +70,7 @@ on how to interact with others in a way that makes the community thrive.
 5. Document changes
 
    * If your change introduces support for a new device make sure to add the relevant documentation for it.
+     As conceptual framework for our documentation we follow [Diátaxis](https://diataxis.fr/).
 
 ## Guidelines
 
