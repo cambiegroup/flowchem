@@ -1,1 +1,0 @@
-.. openapi:: ./clarity.yml

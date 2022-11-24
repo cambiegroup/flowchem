@@ -1,11 +1,42 @@
-Welcome to Flowchem's documentation!
-====================================
+Flowchem documentation
+======================
 
-Flowchem is a python library to control a variety of instruments commonly found in chemistry labs.
 
+Flowchem is a library to control instruments and devices commonly found in chemistry labs
+via an interoperable web API.
+
+Lear more about [how flowchem works](./learning/index.md).
+
+::::{grid} 1 2 3 3
+
+:::{grid-item}
+:columns: auto
+
+```{button-ref} get_started
+:color: primary
+```
+:::
+
+:::{grid-item}
+:columns: auto
+
+```{button-ref} Tutorial
+:color: secondary
+```
+:::
+
+:::{grid-item}
+:columns: auto
+
+```{button-ref} Examples
+:color: secondary
+```
+:::
+::::
+---
 
 ## Install flowchem
-To install `flowchem`, ensure you have `python` installed with a version >= 3.10. Then run:
+To install `flowchem`, ensure you have Python installed, then run:
 ```shell
 pip install flowchem
 ```
@@ -15,17 +46,40 @@ pip install pipx
 pipx ensurepath
 pipx install flowchem
 ```
-Read more about [installing flowchem](./get_started.md).
+Read more about [installing flowchem](./getting_started.md).
 
-Select a topic from the list below, or read the [Get Started](./get_started.md) guide.
+---
+
+## Example
+View this Hello World example in the Examples:
+```toml
+[device.example1]
+type="FakeDevice"
+```
+```{button-ref} ./examples/hallo-world
+:color: primary
+```
+---
+
+## Citation
+If you use flowchem for your paper, please remember to cite it!
+
+[//]: # (TODO: add ref to paper once out)
 
 ```{toctree}
 :maxdepth: 2
+:hidden:
 
-get_started
+getting_started
+
+learning/index
 
 devices/supported_devices
 
-contributing/index.md
+api/index
+
+contribute
+
+add_device/index
 
 ```

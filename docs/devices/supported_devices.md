@@ -1,4 +1,4 @@
-# Devices
+# How-to device guide
 
 The following devices are currently supported in flowchem:
 

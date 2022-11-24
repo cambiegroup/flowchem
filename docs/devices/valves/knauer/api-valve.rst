@@ -1,1 +1,0 @@
-.. openapi:: ./knauer-valve.yml
