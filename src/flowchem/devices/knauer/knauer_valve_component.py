@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .valve import KnauerValve
+    from .knauer_valve import KnauerValve
 from flowchem.components.valves.distribution_valves import SixPortDistribution
 from flowchem.components.valves.distribution_valves import SixteenPortDistribution
 from flowchem.components.valves.distribution_valves import TwelvePortDistribution

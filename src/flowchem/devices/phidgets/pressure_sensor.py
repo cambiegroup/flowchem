@@ -9,7 +9,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.phidgets.pressure_sensor_component import (
     PhidgetPressureSensorComponent,
 )
-from flowchem.people import *
+from flowchem.utils.people import *
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
@@ -21,7 +21,7 @@ except ImportError:
     HAS_PHIDGET = False
 
 
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfiguration
 from flowchem import ureg
 
 

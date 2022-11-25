@@ -119,9 +119,8 @@ First we need to define a basic command structure that would be supported by all
 For example, we can define three methods: one to start the recording, one to stop it.
 The stop method will be responsible for returning the path of the file where the recording was saved.
 
-
 ```python
-from flowchem.components.sensors.sensor import Sensor
+from flowchem.components.sensors.base_sensor import Sensor
 
 
 class Microphone(Sensor):

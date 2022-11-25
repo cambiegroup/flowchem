@@ -6,7 +6,7 @@ from loguru import logger
 
 from flowchem.devices.harvardapparatus.elite11 import Elite11
 from flowchem.devices.harvardapparatus.elite11 import HarvardApparatusPumpIO
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfiguration
 
 
 # noinspection PyProtectedMember

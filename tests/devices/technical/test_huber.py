@@ -8,7 +8,7 @@ from loguru import logger
 
 from flowchem.devices.huber import HuberChiller
 from flowchem.devices.huber.pb_command import PBCommand
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfiguration
 
 
 @pytest.fixture

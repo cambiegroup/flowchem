@@ -21,4 +21,4 @@ Note, further parameters for the serial connections (i.e. those accepted by `ser
 ```
 
 ## API methods
-See the [device API reference](../../api/manson/api.md) for a description of the available methods.
+See the [device API reference](../../api/manson_power_supply/api.md) for a description of the available methods.

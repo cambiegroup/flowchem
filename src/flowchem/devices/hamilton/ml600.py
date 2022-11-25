@@ -14,8 +14,8 @@ from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
 from flowchem.devices.hamilton.ml600_valve import ML600Valve
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.people import *
+from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.people import *
 
 if TYPE_CHECKING:
     import pint

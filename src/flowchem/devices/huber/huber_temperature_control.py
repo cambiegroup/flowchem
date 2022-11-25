@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.components.technical.temperature_control import TemperatureControl
+from flowchem.components.technical.temperature import TemperatureControl
 
 
 class HuberTemperatureControl(TemperatureControl):

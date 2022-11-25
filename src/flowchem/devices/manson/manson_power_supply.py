@@ -11,9 +11,9 @@ from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.manson.manson_component import MansonPowerControl
-from flowchem.exceptions import DeviceError
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.people import *
+from flowchem.utils.exceptions import DeviceError
+from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.people import *
 
 
 class MansonPowerSupply(FlowchemDevice):

@@ -8,12 +8,12 @@ from asyncua import ua
 from loguru import logger
 from pydantic import BaseModel
 
-from flowchem.components.analytics.ir_control import IRSpectrum
+from flowchem.components.analytics.ir import IRSpectrum
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.mettlertoledo.icir_control import IcIRControl
-from flowchem.exceptions import DeviceError
-from flowchem.people import *
+from flowchem.utils.exceptions import DeviceError
+from flowchem.utils.people import *
 
 
 class ProbeInfo(BaseModel):

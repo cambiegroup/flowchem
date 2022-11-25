@@ -4,8 +4,8 @@ from enum import Enum
 import aioserial
 from loguru import logger
 
-from flowchem.exceptions import DeviceError
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import DeviceError
+from flowchem.utils.exceptions import InvalidConfiguration
 
 
 class PumpStatus(Enum):

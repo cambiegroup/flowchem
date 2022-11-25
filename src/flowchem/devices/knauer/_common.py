@@ -4,7 +4,7 @@ import asyncio
 from loguru import logger
 
 from .knauer_finder import autodiscover_knauer
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfiguration
 
 
 class KnauerEthernetDevice:

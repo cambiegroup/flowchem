@@ -5,7 +5,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfiguration
 
 
 def get_my_docs_path() -> Path:

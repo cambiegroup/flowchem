@@ -3,6 +3,6 @@
 ```{toctree}
 :maxdepth: 1
 
-manson
+phidget_pressure_sensor
 
 ```

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from fastapi import BackgroundTasks
 
-from flowchem.components.analytics.nmr_control import NMRControl
+from flowchem.components.analytics.nmr import NMRControl
 
 if TYPE_CHECKING:
     from .spinsolve import Spinsolve

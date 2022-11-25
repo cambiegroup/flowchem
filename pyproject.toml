@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flowchem"
-version = "1.0.0-alpha2post1"
+version = "1.0.0-alpha3"
 description = "Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -47,7 +47,7 @@ dev = [
     "pre-commit"
 ]
 test = [
-    "flowchem-test",
+    "flowchem-test>=0.1a3",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
@@ -82,7 +82,7 @@ repository = "https://github.com/cambiegroup/flowchem"
 
 [project.scripts]
 flowchem = "flowchem.__main__:main"
-flowchem-autodiscover = "flowchem.autodiscover:main"
+flowchem-autodiscover = "flowchem.utils.autodiscover:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

@@ -1,7 +1,7 @@
 import pytest
 from click.testing import CliRunner
 
-from flowchem.autodiscover import main
+from flowchem.utils.autodiscover import main
 
 
 @pytest.mark.skip(reason="Fails in CI due to network limits on broadcast")
