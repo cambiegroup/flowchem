@@ -7,10 +7,10 @@ from loguru import logger
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
-from flowchem.devices.knauer.valve_component import Knauer12PortDistribution
-from flowchem.devices.knauer.valve_component import Knauer16PortDistribution
-from flowchem.devices.knauer.valve_component import Knauer6PortDistribution
-from flowchem.devices.knauer.valve_component import KnauerInjectionValve
+from flowchem.devices.knauer.knauer_valve_component import Knauer12PortDistribution
+from flowchem.devices.knauer.knauer_valve_component import Knauer16PortDistribution
+from flowchem.devices.knauer.knauer_valve_component import Knauer6PortDistribution
+from flowchem.devices.knauer.knauer_valve_component import KnauerInjectionValve
 from flowchem.exceptions import DeviceError
 from flowchem.people import *
 

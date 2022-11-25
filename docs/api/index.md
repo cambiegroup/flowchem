@@ -12,8 +12,9 @@ Select a device to see the relevantAPI reference:
 ./huber_chiller/api
 ./icir/api
 ./knauer_valve/api
-./manson/api
+./manson_power_supply/api
 ./ml600/api
+./phidget_p_sensor/api
 ./r4_heater/api
 ./spinsolve/api
 ./vici_valve/api

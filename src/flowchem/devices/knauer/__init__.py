@@ -2,7 +2,7 @@
 from .azura_compact import AzuraCompact
 from .dad import KnauerDAD
 from .knauer_finder import knauer_finder
-from .valve import KnauerValve
+from .knauer_valve import KnauerValve
 
 
 __all__ = [
