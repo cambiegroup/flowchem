@@ -1,1 +1,0 @@
-.. openapi:: ./spinsolve.yml

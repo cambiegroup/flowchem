@@ -3,6 +3,6 @@
 ```{toctree}
 :maxdepth: 1
 
-vacuubrand/cvc3000
+cvc3000
 
 ```

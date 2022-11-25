@@ -3,8 +3,7 @@
 ```{toctree}
 :maxdepth: 1
 
-huber/chiller
-vapourtec/r4-heater
-
+huber_chiller
+r4_heater
 
 ```

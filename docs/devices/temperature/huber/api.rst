@@ -1,1 +1,0 @@
-.. openapi:: ./huber.yml

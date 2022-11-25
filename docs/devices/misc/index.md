@@ -3,7 +3,7 @@
 ```{toctree}
 :maxdepth: 1
 
-manson/manson
-phidgets/p_sensor
+manson
+p_sensor
 
 ```

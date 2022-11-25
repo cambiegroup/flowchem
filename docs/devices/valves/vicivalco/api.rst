@@ -1,1 +1,0 @@
-.. openapi:: ./vici.yml

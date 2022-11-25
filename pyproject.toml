@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "flowchem"
 version = "1.0.0-alpha2post1"
-description = "Flowchem is a python library to control a variety of instruments commonly found in chemistry labs."
+description = "Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API."
 readme = "README.md"
 requires-python = ">=3.10"
 license =  { text = "MIT" }
@@ -65,6 +65,7 @@ docs = [
     "mistune==0.8.4", # Due to sphinx-contrib/openapi#121
     "myst-parser",
     "sphinx",
+    "sphinx-design",
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
     "sphinxcontrib-openapi",

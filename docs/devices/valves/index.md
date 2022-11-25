@@ -3,5 +3,6 @@
 ```{toctree}
 :maxdepth: 1
 
-vicivalco/vicivalve
+knauer_valve
+vici_valve
 ```

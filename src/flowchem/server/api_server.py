@@ -40,7 +40,7 @@ async def create_server_from_file(
     parsed_config = parse_config(config_file)
 
     # Run `initialize` method of all hw devices
-    logger.info("Initializing devices (all devices are initialized in parallel)")
+    logger.info("Initializing devices...")  # all devices are initialized in parallel
     await asyncio.gather(*[dev.initialize() for dev in parsed_config["device"]])
     logger.info("Device initialization complete!")
 
@@ -75,7 +75,7 @@ async def create_server_for_devices(config: dict, host="127.0.0.1") -> FlowchemI
     for device in dev_list:
         # Get components (some compounded devices can return multiple components)
         components = device.components()
-        logger.info(f"Got {len(components)} components from {device.name}")
+        logger.debug(f"Got {len(components)} components from {device.name}")
 
         for component in components:
             # API endpoints registration
