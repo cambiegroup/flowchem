@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.technical.temperature_control import TemperatureControl
-from flowchem.components.technical.temperature_control import TempRange
+from flowchem.components.technical.temperature import TemperatureControl
+from flowchem.components.technical.temperature import TempRange
 
 if TYPE_CHECKING:
     from .r4_heater import R4Heater

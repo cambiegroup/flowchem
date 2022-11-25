@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.technical.pressure_control import PressureControl
+from flowchem.components.technical.pressure import PressureControl
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vacuubrand.utils import ProcessStatus
 from flowchem.devices.vacuubrand.utils import PumpState

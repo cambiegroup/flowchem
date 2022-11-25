@@ -10,7 +10,7 @@ import pint
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.components.technical.temperature_control import TempRange
+from flowchem.components.technical.temperature import TempRange
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vapourtec.r4_heater_channel_control import R4HeaterChannelControl

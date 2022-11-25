@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from fastapi import Query
 
-from flowchem.components.analytics.hplc_control import HPLCControl
+from flowchem.components.analytics.hplc import HPLCControl
 
 if TYPE_CHECKING:
     from flowchem.devices import Clarity

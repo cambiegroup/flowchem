@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from flowchem.components.analytics.ir_control import IRSpectrum
+from flowchem.components.analytics.ir import IRSpectrum
 from flowchem.devices.mettlertoledo.icir import IcIR
 
 

@@ -1,5 +1,5 @@
 """Pressure sensor."""
-from .sensor import Sensor
+from .base_sensor import Sensor
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 

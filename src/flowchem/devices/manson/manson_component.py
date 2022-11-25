@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.technical.power_control import PowerControl
+from flowchem.components.technical.power import PowerControl
 
 if TYPE_CHECKING:
     from flowchem.devices import MansonPowerSupply
