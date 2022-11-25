@@ -5,7 +5,7 @@ from textwrap import dedent
 from loguru import logger
 
 from flowchem.devices import R4Heater
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfiguration
 
 
 # noinspection PyProtectedMember

@@ -11,8 +11,8 @@ from flowchem.devices.knauer.knauer_valve_component import Knauer12PortDistribut
 from flowchem.devices.knauer.knauer_valve_component import Knauer16PortDistribution
 from flowchem.devices.knauer.knauer_valve_component import Knauer6PortDistribution
 from flowchem.devices.knauer.knauer_valve_component import KnauerInjectionValve
-from flowchem.exceptions import DeviceError
-from flowchem.people import *
+from flowchem.utils.exceptions import DeviceError
+from flowchem.utils.people import *
 
 
 class KnauerValveHeads(Enum):

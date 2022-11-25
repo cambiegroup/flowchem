@@ -9,7 +9,7 @@ from loguru import logger
 from .clarity_hplc_control import ClarityComponent
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.people import *
+from flowchem.utils.people import *
 
 
 class Clarity(FlowchemDevice):

@@ -9,8 +9,8 @@ from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vacuubrand.cvc3000_pressure_control import CVC3000PressureControl
 from flowchem.devices.vacuubrand.utils import ProcessStatus
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.people import *
+from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.people import *
 
 
 class CVC3000(FlowchemDevice):

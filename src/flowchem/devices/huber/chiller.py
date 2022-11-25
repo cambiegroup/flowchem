@@ -11,8 +11,8 @@ from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.huber.huber_temperature_control import HuberTemperatureControl
 from flowchem.devices.huber.pb_command import PBCommand
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.people import *
+from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.people import *
 
 
 class HuberChiller(FlowchemDevice):

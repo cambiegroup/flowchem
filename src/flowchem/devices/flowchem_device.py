@@ -7,7 +7,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from flowchem import __version__
-from flowchem.exceptions import DeviceError
+from flowchem.utils.exceptions import DeviceError
 
 if TYPE_CHECKING:
     from flowchem.components.base_component import FlowchemComponent

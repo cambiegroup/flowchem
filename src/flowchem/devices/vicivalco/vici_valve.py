@@ -10,8 +10,8 @@ from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vicivalco.vici_valve_component import ViciInjectionValve
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.people import *
+from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.people import *
 
 
 @dataclass

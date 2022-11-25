@@ -12,8 +12,8 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.knauer.azura_compact_pump import AzuraCompactPump
 from flowchem.devices.knauer.azura_compact_sensor import AzuraCompactSensor
-from flowchem.exceptions import DeviceError
-from flowchem.people import *
+from flowchem.utils.exceptions import DeviceError
+from flowchem.utils.people import *
 
 FLOW = "FLOW"  # 0-50000 µL/min, int only!
 HEADTYPE = "HEADTYPE"  # 10, 50 ml. Value refers to the highest flow rate in ml/min

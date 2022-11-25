@@ -16,8 +16,8 @@ from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.harvardapparatus.elite11_pump import Elite11PumpOnly
 from flowchem.devices.harvardapparatus.elite11_pump import Elite11PumpWithdraw
-from flowchem.exceptions import InvalidConfiguration
-from flowchem.people import *
+from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.people import *
 
 
 class PumpInfo(BaseModel):

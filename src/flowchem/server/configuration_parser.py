@@ -16,7 +16,7 @@ else:
     import tomli as tomllib
 
 from flowchem.devices.known_plugins import plugin_devices
-from flowchem.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfiguration
 from loguru import logger
 
 
