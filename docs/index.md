@@ -12,7 +12,7 @@ Lear more about [how flowchem works](./learning/index.md).
 :::{grid-item}
 :columns: auto
 
-```{button-ref} get_started
+```{button-ref} getting_started
 :color: primary
 ```
 :::
@@ -50,8 +50,8 @@ Read more about [installing flowchem](./getting_started.md).
 
 ---
 
-## Example
-View this Hello World example in the Examples:
+## Tutorial
+View the [Simple Reactor Control Tutorial]() for a hands-on introduction to flowchem:
 ```toml
 [device.example1]
 type="FakeDevice"

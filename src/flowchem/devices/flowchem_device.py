@@ -3,9 +3,11 @@ from abc import ABC
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
+from loguru import logger
 from pydantic import BaseModel
 
 from flowchem import __version__
+from flowchem.exceptions import DeviceError
 
 if TYPE_CHECKING:
     from flowchem.components.base_component import FlowchemComponent
@@ -48,7 +50,14 @@ class FlowchemDevice(ABC):
         pass
 
     def get_metadata(self) -> DeviceInfo:
-        return self.metadata  # type: ignore
+        try:
+            return self.metadata  # type: ignore
+        except AttributeError as ae:
+            logger.error(f"Invalid device type for {self.name}!")
+            raise DeviceError(
+                f"Invalid device {self.name}!"
+                f"The attribute `metadata` is missing, should be a DeviceInfo variable!"
+            ) from ae
 
     def components(self) -> Iterable["FlowchemComponent"]:
         return ()

@@ -97,3 +97,17 @@ pip install flowchem[docs]
 ```
 
 Then from the docs folder run `make html` to generate html files in the _build subdirectory.
+
+## Repository structure
+The repository is structured as follows:
+* `docs` - documentation
+* `examples` - example of use
+* `src` - source code
+* `tests` - test files (pytest)
+We follow the "src-layout", read [this article](https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout) for more details.
+
+Moreover, the source code in the `flowchem` packages is organized in:
+* `components` - the abstract components representing specific device capabilities (e.g. pumping).
+* `devices` - containing the code to control the different devices, sorted by manufacturer
+* `server` - the modules related to configuration parsing and API server initialization.
+* `utils` - various helper functions
