@@ -140,7 +140,12 @@ class ViciValve(FlowchemDevice):
         super().__init__(name=name)  # type: ignore
 
         self.address = address
-        self._version = ""
+        self.metadata = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Vici-Valco",
+            model="Universal Valve Actuator",
+        )
 
     @classmethod
     def from_config(
@@ -170,18 +175,8 @@ class ViciValve(FlowchemDevice):
         await self.home()
 
         # Test connectivity by querying the valve's firmware version
-        self._version = await self.version()
-        logger.info(f"Connected to {self.name} - FW ver.: {self._version}!")
-
-    def metadata(self) -> DeviceInfo:
-        """Return hw device metadata."""
-        return DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="Vici-Valco",
-            model="Universal Valve Actuator",
-            version=self._version,
-        )
+        self.metadata.version = await self.version()
+        logger.info(f"Connected to {self.name} - FW ver.: {self.metadata.version}!")
 
     async def learn_positions(self) -> None:
         """Initialize valve only, there is no reply -> reply_lines = 0."""

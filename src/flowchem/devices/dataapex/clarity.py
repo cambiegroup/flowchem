@@ -13,6 +13,13 @@ from flowchem.people import *
 
 
 class Clarity(FlowchemDevice):
+    metadata = DeviceInfo(
+        authors=[dario, jakob, wei_hsin],
+        maintainers=[dario],
+        manufacturer="DataApex",
+        model="Clarity Chromatography",
+    )
+
     def __init__(
         self,
         name,
@@ -52,15 +59,6 @@ class Clarity(FlowchemDevice):
         await self.execute_command(self._init_command)
         logger.info(f"Clarity startup: waiting {self.startup_time} seconds")
         await asyncio.sleep(self.startup_time)
-
-    def metadata(self) -> DeviceInfo:
-        """Return hw device metadata."""
-        return DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="DataApex",
-            model="Clarity Chromatography",
-        )
 
     async def execute_command(self, command: str, without_instrument_num: bool = False):
         """Execute claritychrom.exe command."""

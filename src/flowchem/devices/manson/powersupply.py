@@ -25,7 +25,12 @@ class MansonPowerSupply(FlowchemDevice):
         """Control class for Manson Power Supply."""
         super().__init__(name)
         self._serial = aio
-        self.model_info = ""
+        self.metadata = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Manson",
+            model="HCS-3***",
+        )
 
     @classmethod
     def from_config(cls, port, name="", **serial_kwargs):
@@ -45,22 +50,13 @@ class MansonPowerSupply(FlowchemDevice):
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        self.model_info = await self.get_info()
-        if self.model_info == "":
+        self.metadata.model = await self.get_info()
+        if not self.metadata.model:
             raise DeviceError("Communication with device failed!")
-        if await self.get_info() not in self.MODEL_ALT_RANGE:
+        if self.metadata.model not in self.MODEL_ALT_RANGE:
             raise InvalidConfiguration(
                 f"Device is not supported! [Supported models: {self.MODEL_ALT_RANGE}]"
             )
-
-    def metadata(self) -> DeviceInfo:
-        """Return hw device metadata."""
-        return DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="Manson",
-            model=self.model_info,
-        )
 
     @staticmethod
     def _format_voltage(voltage_value: str) -> str:
