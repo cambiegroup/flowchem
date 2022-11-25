@@ -35,9 +35,15 @@ class HuberChiller(FlowchemDevice):
     ):
         super().__init__(name)
         self._serial = aio
-        self._device_sn: int = None  # type: ignore
         self._min_t: float = min_temp
         self._max_t: float = max_temp
+
+        self.metadata = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            maintainers=[dario],
+            manufacturer="Huber",
+            model="generic chiller",
+        )
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
@@ -60,10 +66,10 @@ class HuberChiller(FlowchemDevice):
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        self._device_sn = await self.serial_number()
-        if self._device_sn == 0:
+        self.metadata.serial_number = await self.serial_number()
+        if self.metadata.serial_number == 0:
             raise InvalidConfiguration("No reply received from Huber Chiller!")
-        logger.debug(f"Connected with Huber Chiller S/N {self._device_sn}")
+        logger.debug(f"Connected with Huber Chiller S/N {self.metadata.serial_number}")
 
         # Validate temperature limits
         device_limits = await self.temperature_limits()
@@ -80,16 +86,6 @@ class HuberChiller(FlowchemDevice):
                 f"The maximum possible temperature will be {device_limits[1]} °C"
             )
             self._max_t = device_limits[1]
-
-    def metadata(self) -> DeviceInfo:
-        """Return hw device metadata."""
-        return DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
-            manufacturer="Huber",
-            model="generic chiller",
-            serial_number=self._device_sn,
-        )
 
     async def _send_command_and_read_reply(self, command: str) -> str:
         """Send a command to the chiller and read the reply.
