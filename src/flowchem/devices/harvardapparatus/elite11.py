@@ -124,7 +124,7 @@ class Elite11(FlowchemDevice):
         port: str,
         syringe_diameter: str,
         syringe_volume: str,
-        address: int = 0,
+        address: int = -1,
         name: str = "",
         force: int = 30,
         **serial_kwargs,
@@ -169,7 +169,7 @@ class Elite11(FlowchemDevice):
         The prompt is used to confirm that the address is correct.
         """
         # Autodetect address if none provided
-        if self.address == 0:
+        if self.address == -1:
             self.address = self.pump_io.autodiscover_address()
 
         # Test communication and return InvalidConfiguration on failure
@@ -190,13 +190,10 @@ class Elite11(FlowchemDevice):
         )
         version = await self.version()
         self.metadata.version = version.split(" ")[-1]
+        self._infuse_only = "I/W" not in self.metadata.version
 
         # Clear target volume eventually set to prevent pump from stopping prematurely
         await self.set_target_volume("0 ml")
-
-        # Get pump type
-        pump_info = await self.pump_info()
-        self._infuse_only = True if pump_info.infuse_only else False
 
     @staticmethod
     def _parse_version(version_text: str) -> tuple[int, int, int]:

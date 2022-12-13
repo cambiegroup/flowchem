@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from enum import Enum
 
@@ -35,6 +36,8 @@ class HarvardApparatusPumpIO:
     def __init__(self, port: str, **kwargs):
         # Merge default settings, including serial, with provided ones.
         configuration = dict(HarvardApparatusPumpIO.DEFAULT_CONFIG, **kwargs)
+
+        self.lock = asyncio.Lock()
 
         try:
             self._serial = aioserial.AioSerial(port, **configuration)
@@ -110,9 +113,10 @@ class HarvardApparatusPumpIO:
         If unparsed reply is a List[str] with raw replies.
         If parsed reply is a List[str] w/ reply body (address and prompt removed from each line).
         """
-        self._serial.reset_input_buffer()
-        await self._write(command)
-        response = await self._read_reply()
+        async with self.lock:
+            self._serial.reset_input_buffer()
+            await self._write(command)
+            response = await self._read_reply()
 
         if not response:
             logger.error("No reply received from pump!")
