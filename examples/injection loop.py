@@ -16,8 +16,6 @@ async def injection_loop(Equiv_dict:dict):
     fill_tube_time_2 = 1.5* ((0.0212+0.1)/Total_infusion_rate) #min
 
 
-
-
     pump_EosinY = Elite11InfuseOnly.from_config(
         port="COM5", syringe_volume="1 ml", diameter="4.61 mm", address=0
     ) # Always the pump connect to the computer have to be address 0
