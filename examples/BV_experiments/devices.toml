@@ -1,0 +1,35 @@
+[device.eosin]
+address = 0
+type = "Elite11"
+port = "COM5"
+syringe_diameter = "14.567 mm"
+syringe_volume = "10 ml"
+baudrate = 115200
+
+[device.solvent]
+address = 3
+type = "Elite11"
+port = "COM5"
+syringe_diameter = "14.567 mm"
+syringe_volume = "10 ml"
+
+[device.activator]
+address = 4
+type = "Elite11"
+port = "COM5"
+syringe_diameter = "14.567 mm"
+syringe_volume = "10 ml"
+
+[device.quencher]
+address = 5
+type = "Elite11"
+port = "COM5"
+syringe_diameter = "14.567 mm"
+syringe_volume = "10 ml"
+
+[device.sm]
+address = 6
+type = "Elite11"
+port = "COM5"
+syringe_diameter = "14.567 mm"
+syringe_volume = "10 ml"
