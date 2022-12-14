@@ -12,7 +12,7 @@ import subprocess
 # autolynx queue file is also where the conversion should happen - just set duration and a bit after that issue the conversion command
 class AutoLynxQueueFile:
     def __init__(self, path_to_AutoLynxQ = r"W:\BS-FlowChemistry\Equipment\Waters MS\AutoLynxQ",
-                 ms_exp_file = "15min_scan.exp", tune_file = "SampleTuneAndDev_ManOBz.ipr",
+                 ms_exp_file = "15min_scan.exp", tune_file = "SampleTuneAndDev_ManOBz_MeOH_after_geom.ipr",
                  inlet_method = "inlet_method"):
         self.fields = "FILE_NAME\tMS_FILE\tMS_TUNE_FILE\tINLET_FILE\tSAMPLE_LOCATION\tIndex"
         self.rows = f"\t{ms_exp_file}\t{tune_file}\t{inlet_method}\t66\t1"
