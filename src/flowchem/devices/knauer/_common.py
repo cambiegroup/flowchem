@@ -32,7 +32,7 @@ class KnauerEthernetDevice:
 
         # MAC address
         if mac_address:
-            self.ip_address = self._ip_from_mac(mac_address)
+            self.ip_address = self._ip_from_mac(mac_address.lower())
         else:
             self.ip_address = ip_address
 
