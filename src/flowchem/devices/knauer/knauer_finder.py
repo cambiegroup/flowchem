@@ -4,6 +4,7 @@ import queue
 import socket
 import sys
 from textwrap import dedent
+from anyio.from_thread import start_blocking_portal
 
 from loguru import logger
 
@@ -107,7 +108,6 @@ async def send_broadcast_and_receive_replies(source_ip):
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = asyncio.new_event_loop()
-
     device_q: queue.Queue = queue.Queue()
     transport, protocol = await loop.create_datagram_endpoint(
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
@@ -148,10 +148,8 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
         return dict()
     logger.info(f"Starting detection from IP {source_ip}")
 
-    # device_list = asyncio.run(send_broadcast_and_receive_replies(source_ip))
-    device_list = asyncio.create_task(send_broadcast_and_receive_replies(source_ip))
-    # Use separate thread for searching device + threading.event to mark end of finding phase3
-    # https://stackoverflow.com/questions/63856409
+    with start_blocking_portal() as portal:
+        device_list = portal.call(send_broadcast_and_receive_replies, source_ip)
 
     device_info: dict[str, str] = {}
     device_ip: str
