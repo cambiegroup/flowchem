@@ -84,6 +84,10 @@ def _get_local_ip() -> str:
     if local_ip := next((ip for ip in machine_ips if ip.startswith("100.")), False):
         return local_ip  # type: ignore
 
+    # 141.x subnet 3rd priority (Tailscale)
+    if local_ip := next((ip for ip in machine_ips if ip.startswith("141.")), False):
+        return local_ip  # type: ignore
+
     logger.warning(f"Could not reliably determine local IP!")
     hostname = socket.gethostname()
 
@@ -189,9 +193,10 @@ def knauer_finder(source_ip=None):
         elif device_type == "KnauerValve":
             dev_config.add(
                 dedent(
-                    f"""\n\n[device.valve-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
+                    f"""
+                        [device.valve-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
                         type = "KnauerValve"
-                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n"""
+                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n\n"""
                 )
             )
 
