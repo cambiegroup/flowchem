@@ -115,8 +115,7 @@ async def send_broadcast_and_receive_replies(source_ip: str):
         allow_broadcast=True,
     )
     try:
-        await asyncio.sleep(2)  # Serve for 1 hour.
-
+        await asyncio.sleep(2)
     finally:
         transport.close()
 
@@ -149,7 +148,10 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
         return dict()
     logger.info(f"Starting detection from IP {source_ip}")
 
-    device_list = asyncio.run(send_broadcast_and_receive_replies(source_ip))
+    # device_list = asyncio.run(send_broadcast_and_receive_replies(source_ip))
+    device_list = asyncio.create_task(send_broadcast_and_receive_replies(source_ip))
+    # Use separate thread for searching device + threading.event to mark end of finding phase3
+    # https://stackoverflow.com/questions/63856409
 
     device_info: dict[str, str] = {}
     device_ip: str
