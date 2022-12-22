@@ -6,10 +6,10 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 class TwoPortDistribution(BaseValve):
     def __init__(self, name: str, hw_device: FlowchemDevice):
         positions = {
-            "input": [("pump", "input")],
-            "output": [("pump", "output")],
+            "1": [("pump", "1")],
+            "2": [("pump", "2")],
         }
-        super().__init__(name, hw_device, positions, ports=["pump", "input", "output"])
+        super().__init__(name, hw_device, positions, ports=["pump", "1", "2"])
 
 
 class SixPortDistribution(BaseValve):
