@@ -176,7 +176,7 @@ class R2(FlowchemDevice):
         """Get system pressure limit"""
         state = await self.get_status()
         return state.presslimit
-    async def get_setting_Temperature(self, channel = 3)-> str:
+    async def get_setting_Temperature(self, channel = 2)-> str:
         """Get temperature (in Celsius) from R4."""
         state = await self.get_status()
 
@@ -245,7 +245,12 @@ class R2(FlowchemDevice):
         )
         await self.write_and_read_reply(cmd)
 
-    async def get_current_temperature(self, channel = ""):
+   # set valve position
+    async def trigger_Key_Press(self, keycode:str):
+        cmd= self.cmd.KEY_PRESS.format(keycode=keycode)
+        await self.write_and_read_reply(cmd)
+
+    async def get_current_temperature(self, channel =" "):
         """Get temperature (in Celsius) from channel3."""
         temp_state = await self.write_and_read_reply(self.cmd.H)
         return 
