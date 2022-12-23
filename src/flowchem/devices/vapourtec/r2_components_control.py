@@ -11,12 +11,12 @@ if TYPE_CHECKING:
     from .r4_heater import R4Heater
 
 
-class R2InjectionValve(SixPortTwoPosition): #total 2 injection loop (A, B)
+class R2InjectionValve_A(SixPortTwoPosition): #total 2 injection loop (A, B)
     """R2 reactor injection loop valve control class."""
 
     hw_device: R2  # for typing's sake
 
-    position_mapping = {"load": "1", "inject": "2"}
+    position_mapping = {"load": "0", "inject": "1"}
     _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
     def __init__(self, name: str, hw_device: R2, channel: int):
@@ -32,11 +32,6 @@ class R2InjectionValve(SixPortTwoPosition): #total 2 injection loop (A, B)
 
     async def set_position(self, position: str):
         """Move valve to position."""
-
-
-
-
-
 
 
 class R2TwoPortValve(TwoPortDistribution): #total 3 valve (A, B, Collection)
