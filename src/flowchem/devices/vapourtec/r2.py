@@ -49,8 +49,8 @@ class R2(FlowchemDevice):
         name: str = "",
         min_temp: float | list[float] = -40,
         max_temp: float | list[float] = 80,
-        # min_pressure: float
-        # max_pressure: float
+        min_pressure: float = 1000,
+        max_pressure: float = 50000,
         **config,
     ):
         super().__init__(name)
@@ -129,10 +129,10 @@ class R2(FlowchemDevice):
         """Get firmware version."""
         return await self.write_and_read_reply(self.cmd.VERSION)
 
-
     async def system_type(self):
         """Get system type: system type, pressure mode"""
         return await self.write_and_read_reply(self.cmd.GET_SYSTEM_TYPE)
+
     async def get_status(self) -> AllComponentStatus:
         """Get all status from R2."""
         failure = 0
@@ -149,6 +149,7 @@ class R2(FlowchemDevice):
                 else:
                     continue
 
+    # Get specific state of individual component
     async def get_Run_State(self) -> str:
         """Get run state"""
         State_dic ={
@@ -163,68 +164,125 @@ class R2(FlowchemDevice):
         }
         state = await self.get_status()
         return State_dic[state.run_state]
-    async def get_flowrate(self):
-        """Get pump flow rate"""
+    async def get_setting_PumpA_Flowrate(self) -> str:
+        """Get pump A flow rate"""
+        state = await self.get_status()
+        return state.pumpA_speed
+    async def get_setting_PumpB_Flowrate(self) -> str:
+        """Get pump A flow rate"""
+        state = await self.get_status()
+        return state.pumpB_speed
+    async def get_setting_Pressure_Limit(self) -> str:
+        """Get system pressure limit"""
+        state = await self.get_status()
+        return state.presslimit
+    async def get_setting_Temperature(self, channel = 3)-> str:
+        """Get temperature (in Celsius) from R4."""
+        state = await self.get_status()
 
-    async def get_pressure_limit(self):
-        """Get pressure limit"""
-
-    async def get_valve_position(self):
-        "Get valve position"
+        #check others channel can also be used with R2
+        return "Off" if state.chan3_temp == "-1000" else state.chan3_temp
 
 
-    async def
+    async def get_TwoPValveA_Position(self) -> str:
+        "Get TwoPortValve A position"
+        state = await self.get_status()
+        return "Inlet of TwoPortValve A is Solvent" if "{0:05b}".format(int(
+            state.LEDs_bitmap))[-1] == "0" else "Inlet of TwoPortValve A is Reagent"
+        # return "Inlet of TwoPortValve_A is Solvent" if int(
+        #     state.LEDs_bitmap)%2 ==0 else "Inlet of TwoPortValve_A is Reagent"
+    async def get_TwoPValveB_Position(self) -> str:
+        "Get TwoPortValve B position"
+        state = await self.get_status()
+        return "Inlet of TwoPortValve B is Solvent" if "{0:05b}".format(int(
+            state.LEDs_bitmap))[-2] == "0" else "Inlet of TwoPortValve B is Reagent"
+    async def get_InjectionValveA_Position(self) -> str:
+        "Get InjectionValve A position"
+        state = await self.get_status()
+        return "InjectionValve A is loading mode" if "{0:05b}".format(int(
+            state.LEDs_bitmap))[-3] == "0" else "InjectionValve A is Injection mode"
+    async def get_InjectionValveB_Position(self) -> str:
+        "Get InjectionValve A position"
+        state = await self.get_status()
+        return "InjectionValve B is loading mode" if "{0:05b}".format(int(
+            state.LEDs_bitmap))[-4] == "0" else "InjectionValve B is Injection mode"
+    async def get_TwoPValveC_Position(self)-> str:
+        "Get TwoPortValve B position"
+        state = await self.get_status()
+        return "Outlet of TwoPortValve C is Waste" if "{0:05b}".format(int(
+            state.LEDs_bitmap))[-5] == "0" else "OUtlet of TwoPortValve C is Collection"
 
-    async def set_temperature(self, channel, temperature: pint.Quantity):
-        """Set temperature to channel3."""
-        cmd = self.cmd.SET_TEMPERATURE.format(
-            channel=channel, temperature_in_C=round(temperature.m_as("°C"))
+
+
+    # Set parameters to R2 and R4
+    async def set_Flowrate(self, pump, flowrate: pint.Quantity): # pump A and pump B as component
+        "Set flowrate to pump"
+        # pump A = "0"; pump B = "1"
+        cmd =self.cmd.SET_FLOWRATE.format(
+            pump=pump, rate_in_ul_min=round(flowrate.m_as("ul/min"))
         )
         await self.write_and_read_reply(cmd)
-        # Set temperature implies channel on
-        await self.power_on(channel)
-        # Verify it is not unplugged
-        status = await self.get_status(channel)
-        if status.state == "U":
-            logger.error(
-                f"TARGET CHANNEL {channel} UNPLUGGED! (Note: numbering starts at 0)"
-            )
 
-    async def get_temperature(self, channel):
-        """Get temperature (in Celsius) from channel."""
-        state = await self.get_status(channel)
-        return None if state.temperature == "281.2" else state.temperature
+    # async def set_Temperature(self, channel="2", temperature: pint.Quantity): #check others channel can also be used with R2
+    #     # Current Commands did not worked, check with Vapourtec
+    #     """Set temperature to channel3.
+    #
+    #     Args:
+    #         temperature (object):
+    #     """
+    #     cmd = self.cmd.SET_TEMPERATURE.format(
+    #         channel=channel, temperature_in_C=round(temperature.m_as("°C"))
+    #     )
+    #     await self.write_and_read_reply(cmd)
+    async def set_Pressure(self, pressure: pint.Quantity): #system pressure: range 1,000 to 50,000 mbar
+        cmd = self.cmd.SET_MAX_PRESSURE.format(
+            max_p_in_mbar=round(pressure.m_as("mbar")/500)*500
+        )
+        await self.write_and_read_reply(cmd)
+    async def set_UV(self, power:str = "100",heated: str = "0"):
+        cmd = self.cmd.SET_UV150.format(
+            power_percent=power, heated_on= heated
+        )
+        await self.write_and_read_reply(cmd)
 
-    async def power_on(self, channel):
-        """Turn on channel."""
-        await self.write_and_read_reply(self.cmd.POWER_ON.format(channel=channel))
+    async def get_current_temperature(self, channel = ""):
+        """Get temperature (in Celsius) from channel3."""
+        temp_state = await self.write_and_read_reply(self.cmd.H)
+        return 
 
-    async def power_off(self, channel):
-        """Turn off channel."""
-        await self.write_and_read_reply(self.cmd.POWER_OFF.format(channel=channel))
+
+    async def power_on(self):
+        """Turn on both devices, R2 and R4."""
+        await self.write_and_read_reply(self.cmd.POWER_ON)
+    async def power_off(self):
+        """Turn off both devices, R2 and R4."""
+        await self.write_and_read_reply(self.cmd.POWER_OFF)
+
+
 
     def pooling(self):
         while True:
-            self.last_state = parse(self._serial.write_async("sdjskal"))
+
+            # self.last_state = parse(self._serial.write_async("sdjskal"))
             # save to file
             time.sleep(1)
 
-    def components(self):
-        temp_limits = {
-            ch_num: TempRange(min=ureg.Quantity(t[0]), max=ureg.Quantity(t[1]))
-            for ch_num, t in enumerate(zip(self._min_t, self._max_t))
-        }
-        list_of_components = [
-            R4HeaterChannelControl(f"reactor{n+1}", self, n, temp_limits[n])
-            for n in range(4)
-        ]
-
-        list_of_components.append(R2InjectionValveA)
-        list_of_components.append(R2InjectionValveB)
-        list_of_components.append(R2PumpA)
-        list_of_components.append(R2PumpB)
-
-        return list_of_components
+    # def components(self):
+    #     temp_limits = {
+    #         ch_num: TempRange(min=ureg.Quantity(t[0]), max=ureg.Quantity(t[1]))
+    #         for ch_num, t in enumerate(zip(self._min_t, self._max_t))
+    #     }
+    #     list_of_components = [
+    #         R4HeaterChannelControl(f"reactor{n+1}", self, n, temp_limits[n])
+    #         for n in range(4)
+    #     ]
+    #
+    #     list_of_components.append(R2InjectionValveA)
+    #     list_of_components.append(R2InjectionValveB)
+    #     list_of_components.append(R2PumpA)
+    #     list_of_components.append(R2PumpB)
+    #
+    #     return list_of_components
 
 
 if __name__ == "__main__":
@@ -232,13 +290,13 @@ if __name__ == "__main__":
 
     Vapourtec_R2 = R2(port="COM4")
 
-    async def main(heat):
+    async def main(Vapourtec_R2):
         """test function"""
         await Vapourtec_R2.initialize()
         # # Get reactors
-        # r1, r2, r3, r4 = heat.components()
+        # r1, r2, r3, r4 = Vapourtec_R2.components()
 
         # await r1.set_temperature("30 °C")
-        print(f"Temperature is {await r1.get_temperature()}")
+        # print(f"Temperature is {await r1.get_temperature()}")
 
-    asyncio.run(main(heat))
+    asyncio.run(main(Vapourtec_R2))
