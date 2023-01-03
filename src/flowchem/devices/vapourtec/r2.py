@@ -10,13 +10,12 @@ import pint
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.components.technical.temperature import TempRange
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vapourtec.r2_components_control import R2Main, R2HPLCPump, R2InjectionValve, R2TwoPortValve
-from flowchem.devices.vapourtec.r4_heater_channel_control import R4HeaterChannelControl
 from flowchem.utils.exceptions import InvalidConfiguration
 from flowchem.utils.people import *
+from flowchem.components.technical.temperature import TemperatureControl
 
 try:
     from flowchem_vapourtec import VapourtecR2Commands
@@ -169,20 +168,18 @@ class R2(FlowchemDevice):
         return State_dic[state.run_state]
 
 
-    async def get_setting_Flowrate(self, pump_code:int) -> pint.Quantity:  #pumpA:"0", pumpB:"1"
+    async def get_setting_Flowrate(self, pump_code:int) -> str:
         """Get pump flow rate"""
         state = await self.get_status()
-        return state[pump_code+1].to("ul/min")
+        return f"{state[pump_code+1]} ul/min"
     async def get_setting_Pressure_Limit(self) -> str:
         """Get system pressure limit"""
         state = await self.get_status()
         return state.presslimit
 
-    async def get_setting_Temperature(self, channel = 2)-> str:
-        # TODO: test which channel is enable to use
+    async def get_setting_Temperature(self)-> str:
         """Get temperature (in Celsius) from R4."""
         state = await self.get_status()
-        #check others channel can also be used with R2
         return "Off" if state.chan3_temp == "-1000" else state.chan3_temp
     async def get_valve_Position(self, valve_code:int)-> str:
         "Get specific valves position"
@@ -190,25 +187,33 @@ class R2(FlowchemDevice):
         return "{0:05b}".format(int(state.LEDs_bitmap))[-(valve_code+1)]  # return 0 or 1
 
     # Set parameters
-    async def set_Flowrate(self, pump:int , flowrate: pint.Quantity):
+    async def set_Flowrate(self, pump:int , flowrate: str):
         "Set flowrate to pump"   # pump A = 0; pump B = 1
+        if flowrate.isnumeric():
+            flowrate = flowrate + "ul/min"
+            logger.warning("No units provided to set_temperature, assuming microliter/minutes.")
+        set_f = ureg.Quantity(flowrate)
+
         cmd =self.cmd.SET_FLOWRATE.format(
-            pump=str(pump), rate_in_ul_min=round(flowrate.m_as("ul/min"))
+            pump=str(pump), rate_in_ul_min=round(set_f.m_as("ul/min"))
         )
         await self.write_and_read_reply(cmd)
 
-    # async def set_Temperature(self, channel="2", temp: pint.Quantity):
-    #     TODO: check others channel can also be used with R2
-    #     TODO: Current Commands did not worked, check with Vapourtec
-    #     """Set temperature to channel3.
-    #
-    #     Args:
-    #         temperature (object):
-    #     """
-    #     cmd = self.cmd.SET_TEMPERATURE.format(
-    #         channel=channel, temperature_in_C=round(temperature.m_as("°C"))
-    #     )
-    #     await self.write_and_read_reply(cmd)
+    async def set_Temperature(self, temp: str, channel: str ="2", ramp_rate: str = None):
+        """Set temperature to channel3: range -40 to 80°C
+        Args:
+            temperature (object):
+        """
+        if temp.isnumeric():
+            temp = temp + "°C"
+            logger.warning("No units provided to set_temperature, assuming Celsius.")
+        set_t = ureg.Quantity(temp)
+
+        cmd = self.cmd.SET_TEMPERATURE.format(
+            channel= channel, temperature_in_C=round(set_t.m_as("°C")), ramp_rate = ramp_rate
+        )
+        await self.write_and_read_reply(cmd)
+
     async def set_Pressure(self, pressure: pint.Quantity):
         """set maximum system pressure: range 1,000 to 50,000 mbar"""
         cmd = self.cmd.SET_MAX_PRESSURE.format(
@@ -235,7 +240,6 @@ class R2(FlowchemDevice):
         await self.write_and_read_reply(self.cmd.POWER_OFF)
 
     async def get_current_temperature(self, channel =2):
-        # TODO: channel ckeck
         """Get temperature (in Celsius) from channel3."""
         state = await self.write_and_read_reply(self.cmd.HISTORY_TEMPERATURE)
         temp_state = state.split("&")[0].split(",")
@@ -283,7 +287,7 @@ class R2(FlowchemDevice):
         #     ch_num: TempRange(min=ureg.Quantity(t[0]), max=ureg.Quantity(t[1]))
         #     for ch_num, t in enumerate(zip(self._min_t, self._max_t))
         # }
-        list_of_components = [R2Main(),
+        list_of_components = [R2Main("r2",self),
                               R2HPLCPump("HPLCPump_A", self, 0), R2HPLCPump("HPLCPump_B", self, 1),
                               R2TwoPortValve("TwoPortValve_A", self, 0),R2TwoPortValve("TwoPortValve_B", self, 1),
                               R2TwoPortValve("TwoPortValve_C", self, 4),
@@ -301,10 +305,19 @@ if __name__ == "__main__":
     async def main(Vapourtec_R2):
         """test function"""
         await Vapourtec_R2.initialize()
-        # Get
-        r2,pA, pA, vA, vB, vC, ivA, ivB = Vapourtec_R2.components()
+        # Get valve and pump
+        r2, pA, pB, vA, vB, vC, ivA, ivB = Vapourtec_R2.components()
 
-        # await r1.set_temperature("30 °C")
-        # print(f"Temperature is {await r1.get_temperature()}")
+        print(f"The system state is {await Vapourtec_R2.get_Run_State()}")
+        # await Vapourtec_R2.set_Temperature("30 °C")
+        # print(f"Temperature is {await Vapourtec_R2.get_setting_Temperature()}")
+        # await pA.set_flowrate("100 ul/min")
+        # print(f"Flow rate of pump A is {await pA.get_setting_flow()}")
+        # print(f"{await Vapourtec_R2.get_valve_Position(2)}")
+        print(f"Injection valve A {await ivA.get_position()}")
+        await ivA.set_position("inject")
+        await asyncio.sleep(0.5)
+        print(f"Injection valve A {await ivA.get_position()}")
+
 
     asyncio.run(main(Vapourtec_R2))
