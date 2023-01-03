@@ -222,12 +222,14 @@ class PhidgetBubbleSensor(FlowchemDevice):
 
 
 if __name__ == "__main__":
+    # turn on the  power of the bubble tube
     power= PhidgetBubbleSensor_power(
         vint_serial_number=627768,
         vint_hub_port =3,
         vint_channel=0,
     )
 
+    # turn on the sensor
     BubbleSensor_1 = PhidgetBubbleSensor(
         vint_serial_number=627768,
         vint_hub_port = 0,
