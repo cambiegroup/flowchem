@@ -1,11 +1,16 @@
-"""Use Phidgets to control lab devices. So far, only 0-5 volt interface for bubble-sensor."""
+"""Use Phidgets to control lab devices. So far, only 0-5 volt interface for bubble-sensor.
+
+PhidgetBubbleSensor_power control the power of the bubble sensor
+PhidgetBubbleSensor measure the signal of the bubble sensor
+
+"""
 import time
 
 from loguru import logger
 
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-
+from flowchem.devices.phidgets.bubble_sensor_component import PhidgetPressureSensorComponent
 from flowchem.utils.people import *
 
 try:
@@ -63,7 +68,7 @@ class PhidgetBubbleSensor_power(FlowchemDevice):
 
         try:
             self.phidget.openWaitForAttachment(1000)
-            logger.debug("tube sensor power is connected and turn on!")
+            logger.debug("power of tube sensor is connected!")
         except PhidgetException as phidget_error:
             raise InvalidConfiguration(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
@@ -71,6 +76,7 @@ class PhidgetBubbleSensor_power(FlowchemDevice):
 
         # Set power supply to 5V to provide power
         self.phidget.setDutyCycle(1.0)
+        logger.debug("power of tube sensor is turn on!")
         # self.phidget.setState(True)  #setting DutyCycle to 1.0
 
 
@@ -85,6 +91,15 @@ class PhidgetBubbleSensor_power(FlowchemDevice):
     def __del__(self):
         """Ensure connection closure upon deletion."""
         self.phidget.close()
+
+    def power_on(self):
+        """Control the power of the device"""
+        self.phidget.setDutyCycle(1.0)  #self.phidget.setState(True)
+        logger.debug("tube sensor power is turn on!")
+
+    def power_off(self):
+        self.phidget.setState(False)
+        logger.debug("tube sensor power is turn off!")
 
     def is_attached(self) -> bool:
         """Whether the device is connected."""
@@ -153,7 +168,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
 
         try:
             self.phidget.openWaitForAttachment(1000)
-            logger.debug("tube sensor connected!")
+            logger.debug("tube sensor is connected!")
         except PhidgetException as phidget_error:
             raise InvalidConfiguration(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
@@ -161,6 +176,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
 
         # Set power supply to 12V to start measurement
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_12V)
+        logger.debug("tube sensor is turn on, default data interval is 200 ms!")
         self.phidget.setDataInterval(200)  # 200ms
 
         self.metadata = DeviceInfo(
@@ -175,6 +191,16 @@ class PhidgetBubbleSensor(FlowchemDevice):
         """Ensure connection closure upon deletion."""
         self.phidget.close()
 
+    def power_on(self):
+        """turn on the measurement of the bubble sensor"""
+        self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_12V)
+        logger.debug("measurement of tube sensor is turn on!")
+
+    def power_off(self):
+        """turn off the supply to stop measurement"""
+        self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_OFF)
+        logger.debug("measurement of tube sensor is turn off!")
+
     def is_attached(self) -> bool:
         """Whether the device is connected."""
         return bool(self.phidget.getAttached())
@@ -188,25 +214,13 @@ class PhidgetBubbleSensor(FlowchemDevice):
         logger.debug(f"change data interval to {datainterval}!")
 
     def _voltage_to_intensity(self, voltage_in_volt: float) -> float:
-        """Convert current reading into pressure value."""
+        """Convert current reading into percentage."""
         intensity_reading = voltage_in_volt *20
         logger.debug(f"Read intensity {intensity_reading}!")
         return intensity_reading
 
     def read_intensity(self) -> float:  # type: ignore
-        """
-        Read intensity from the sensor and returns it as float.
-
-        This is the main class method, and it never fails, but rather return None. Why?
-
-        Well, initialization exception are fair play, upon startup any misconfiguration
-        should be addressed.
-        However, during experiment execution temporarily unavailability of a datasource
-        should not be critical when the sensor is readonly.
-        If the P-sensor is safety-critical than an event handler should be attached to it.
-        If not we can live with it, returning None and letting the caller decide what
-        to do with that.
-        """
+        """Read intensity from the sensor and returns it as float."""
         try:
             voltage = self.phidget.getVoltage()
             logger.debug(f"Actual voltage: {voltage}")
@@ -216,9 +230,13 @@ class PhidgetBubbleSensor(FlowchemDevice):
         else:
             return self._voltage_to_intensity(voltage)
 
-    # def components(self):
-    #     """Return an IRSpectrometer component."""
-    #     return (PhidgetBubbleSensorComponent("bubble-sensor", self),)
+
+    # def getMaxVoltage(self):
+        # https: // www.phidgets.com /?view = api
+
+    def components(self):
+        """Return an component."""
+        return (PhidgetPressureSensorComponent("bubble-sensor", self),)
 
 
 if __name__ == "__main__":
