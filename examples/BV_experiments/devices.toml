@@ -2,8 +2,8 @@
 address = 0
 type = "Elite11"
 port = "COM5"
-syringe_diameter = "14.567 mm"
-syringe_volume = "10 ml"
+syringe_diameter = "4.61 mm"
+syringe_volume = "1 ml"
 baudrate = 115200
 
 [device.solvent]
@@ -17,19 +17,52 @@ syringe_volume = "10 ml"
 address = 4
 type = "Elite11"
 port = "COM5"
-syringe_diameter = "14.567 mm"
-syringe_volume = "10 ml"
+syringe_diameter = "4.61 mm"
+syringe_volume = "1 ml"
 
 [device.quencher]
 address = 5
 type = "Elite11"
 port = "COM5"
-syringe_diameter = "14.567 mm"
-syringe_volume = "10 ml"
+syringe_diameter = "7.28 mm"
+syringe_volume = "2.5 ml"
 
-[device.sm]
+[device.smis]
 address = 6
 type = "Elite11"
 port = "COM5"
-syringe_diameter = "14.567 mm"
-syringe_volume = "10 ml"
+syringe_diameter = "7.28 mm"
+syringe_volume = "2.5 ml"
+
+[device.r2]
+type = "R2"
+port = "COM4"
+
+#[device.MFC]
+#type = "MFC"
+#port = "COM6"
+
+[device.bubble_sensor_power]
+type = "PhidgetBubbleSensor_power"
+vint_serial_number=627768
+vint_hub_port =3
+vint_channel=0
+
+[device.bubble_sensor_measure]
+type = "PhidgetBubbleSensor"
+vint_serial_number=627768
+vint_hub_port =0
+vint_channel=0
+
+[device.Knauer_valve_6PortCollector]
+type = "KnauerValve"
+mac_address = "00:80:a3:ce:7f:08"
+
+#[device.Knauer_valve_cce8e47]
+#type = "KnauerValve"
+#mac_address = "00:80:a3:ce:8e:47"
+
+#[device.Knauer_pump_cbaef3b]
+#type = "AzuraCompact"
+#mac_address = "00:80:a3:ba:ef:3b"
+
