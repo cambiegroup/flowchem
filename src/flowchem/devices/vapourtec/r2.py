@@ -177,7 +177,7 @@ class R2(FlowchemDevice):
         state = await self.get_status()
         return state.presslimit
 
-    async def get_setting_Temperature(self)-> str:
+    async def get_setting_Temperature(self) -> str:
         """Get temperature (in Celsius) from R4."""
         state = await self.get_status()
         return "Off" if state.chan3_temp == "-1000" else state.chan3_temp
@@ -214,10 +214,15 @@ class R2(FlowchemDevice):
         )
         await self.write_and_read_reply(cmd)
 
-    async def set_Pressure(self, pressure: pint.Quantity):
+    async def set_Pressure_limit(self, pressure: str):
         """set maximum system pressure: range 1,000 to 50,000 mbar"""
+        if pressure.isnumeric():
+            pressure = pressure + "mbar"
+            logger.warning("No units provided to set_temperature, assuming mbar.")
+        set_p = ureg.Quantity(pressure)
+
         cmd = self.cmd.SET_MAX_PRESSURE.format(
-            max_p_in_mbar=round(pressure.m_as("mbar")/500)*500
+            max_p_in_mbar=round(set_p.m_as("mbar")/500)*500
         )
         await self.write_and_read_reply(cmd)
     async def set_UV(self, power:str = "100",heated: str = "0"):
@@ -239,48 +244,64 @@ class R2(FlowchemDevice):
         """Turn off both devices, R2 and R4."""
         await self.write_and_read_reply(self.cmd.POWER_OFF)
 
-    async def get_current_temperature(self, channel =2):
+    async def get_current_temperature(self, channel =2) -> float:
         """Get temperature (in Celsius) from channel3."""
         state = await self.write_and_read_reply(self.cmd.HISTORY_TEMPERATURE)
         temp_state = state.split("&")[0].split(",")
-        return temp_state[0], temp_state[channel*2+1], float(temp_state[channel*3])/10
+        # 0: time, 5: cooling, heating, or ... 6: temp
+        return float(temp_state[channel*3])/10
 
-    async def get_current_pressure(self) :
+    async def get_current_pressure(self, pump_code:int = -1) -> float:
         """Get current pressure (in mbar)"""
         state = await self.write_and_read_reply(self.cmd.HISTORY_PRESSURE)
-        press_state = state.split("&")[0].split(",")
-        return press_state[0], press_state[1], press_state[2]
+        press_state_list = state.split("&")[0].split(",")
+        # 0: time, 1: system pressure, 2: pump A, 3: pump_B
+        return float(press_state_list[pump_code+2])/10  # not sure the unit
 
-    async def get_current_flow(self) -> namedtuple :
+    async def get_current_flow(self, pump_code: int) -> float:
         """Get current flow rate (in ul/min)"""
         state = await self.write_and_read_reply(self.cmd.HISTORY_FLOW)
-        AllState = namedtuple("flowstate", ["time", "pumpA_flow", "pumpB_flow"])
-        return AllState._make(state.split("&")[0].split(","))
-        # return press_state[0], press_state[1], press_state[2] # time, pumpA_flow
+        # AllState = namedtuple("flowstate", ["time", "pumpA_flow", "pumpB_flow"])
+        flow_state_list = state.split("&")[0].split(",")
+        # 0: time, 1: pump A, 2: pump B
+        return float(flow_state_list[pump_code+1])/10
 
-    async def get_current_power(self):
+    async def get_current_power(self) -> str:
         """Get power"""
         state = await self.write_and_read_reply(self.cmd.HISTORY_POWER)
         if state.find("&"):
             power_state = state.split("&")[0].split(",")
         else:
             power_state = state.split(",")
-        return power_state[0], power_state[3] #time, channel 3 power
+        # 0: time, 3: channel 3 power
+        return power_state[3]
 
 
 
-    async def pooling(self):
+    async def pooling(self) -> dict:
+        """extract all reaction parameters"""
+        AllState = dict()
         while True:
-            # TODO: database or  csv save record
-            await self.get_Run_State()
-            await self.get_current_pressure()
-            await self.get_current_flow()
-            await self.get_current_temperature()
-            await self.get_current_power()
-
+            state = await self.get_status()
+            AllState["RunState_code"] = state.run_state
+            # AllState["ValveState_code"] = state.LEDs_bitmap
+            AllState["allValve"] = "{0:05b}".format(int(state.LEDs_bitmap))
+            # AllState["2PortValveA"] = await self.get_valve_Position(0)
+            # AllState["2PortValveB"] = await self.get_valve_Position(1)
+            # AllState["InjValveA"] = await self.get_valve_Position(2)
+            # AllState["InjValveA"] = await self.get_valve_Position(3)
+            # AllState["2PortValveC"] = await self.get_valve_Position(4)
+            # AllState["sysState"] = await self.get_Run_State()
+            AllState["sysP"] = await self.get_current_pressure()
+            # AllState["pupmA_P"] = await self.get_current_pressure(pump_code = 0)
+            # AllState["pupmB_P"] = await self.get_current_pressure(pump_code = 1)
+            # AllState["pumpA_flow"] =await self.get_current_flow(pump_code=0)
+            # AllState["pumpB_flow"] =await self.get_current_flow(pump_code=1)
+            AllState["Temp"] = await self.get_current_temperature()
+            AllState["UVpower"] = await self.get_current_power()
             # self.last_state = parse(self._serial.write_async("sdjskal"))
-            # save to file
-            time.sleep(1)
+            # time.sleep(1)
+            return AllState
 
     def components(self):
         # temp_limits = {
@@ -291,7 +312,7 @@ class R2(FlowchemDevice):
                               R2HPLCPump("HPLCPump_A", self, 0), R2HPLCPump("HPLCPump_B", self, 1),
                               R2TwoPortValve("TwoPortValve_A", self, 0),R2TwoPortValve("TwoPortValve_B", self, 1),
                               R2TwoPortValve("TwoPortValve_C", self, 4),
-                              R2InjectionValve("InjectionVavle_A", self, 2), R2InjectionValve("InketionValve_B", self, 3)
+                              R2InjectionValve("InjectionValve_A", self, 2), R2InjectionValve("InjectionValve_B", self, 3)
         ]
 
         return list_of_components

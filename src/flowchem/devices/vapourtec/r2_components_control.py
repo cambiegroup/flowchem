@@ -13,15 +13,15 @@ if TYPE_CHECKING:
     from .r2 import R2
     from .r4_heater import R4Heater
 
-AllValveDic= {"TwoPortValve_A":0,
-              "TwoPortValve_B":1,
-              "InjectionVavle_A":2,
-              "InketionValve_B":3,
-              "TwoPortValve_C":4
+AllValveDic = {"TwoPortValve_A": 0,
+               "TwoPortValve_B": 1,
+               "InjectionValve_A": 2,
+               "InjectionValve_B": 3,
+               "TwoPortValve_C": 4
+               }
+AllPumpDic = {"HPLCPump_A": 0,
+              "HPLCPump_B": 1
               }
-AllPumpDic= {"HPLCPump_A":0,
-             "HPLCPump_B":1
-             }
 
 
 class R2Main(FlowchemComponent):
@@ -36,17 +36,49 @@ class R2Main(FlowchemComponent):
     async def power_on(self):
         """Turn on whole system"""
         return await self.hw_device.power_on()
+
     async def power_off(self):
         """Turn off whole system."""
         return await self.hw_device.power_off()
-    async def monitor_sys(self):
-        """monitor the system performance"""
-        # await self.hw_device.pooling()
-        pass
 
-    async def get_run_state(self):
+    async def monitor_sys(self) -> dict:
+        """monitor the system performance"""
+        return await self.hw_device.pooling()
+
+    async def get_run_state(self) -> str:
+        """Get current system state"""
         return await self.hw_device.get_Run_State()
 
+    async def set_temperature(self, temp: str):
+        """Set reactor temperature"""
+        await self.hw_device.set_Temperature(temp)
+
+    async def get_setting_temperature(self) -> str:
+        """Get setting temperature"""
+        return await self.hw_device.get_setting_Temperature()
+
+    async def get_current_temperature(self) -> float:
+        """Get current reactor temperature"""
+        return await self.hw_device.get_current_temperature()
+
+    async def set_UV(self, power: str = "100"):
+        """Set UV light intensity at the range 50-100%"""
+        await self.hw_device.set_UV(power)
+
+    async def get_current_power(self) -> str:
+        """Get current reactor power state"""
+        return await self.hw_device.get_current_power()
+
+    async def get_sys_pressure(self) -> float:
+        """Get system pressure"""
+        return await self.hw_device.get_current_pressure()
+
+    async def set_sys_pressure_limit(self, pressure : str):
+        """Set maximum system pressure: range 1,000 to 50,000 mbar"""
+        await self.hw_device.set_Pressure_limit(pressure)
+    async def get_setting_Pressure_Limit(self) -> str:
+        """Get setting system pressure limit"""
+        return await self.hw_device.get_setting_Pressure_Limit()
 
 
 class R2InjectionValve(SixPortTwoPosition):
@@ -67,13 +99,14 @@ class R2InjectionValve(SixPortTwoPosition):
         """Get current valve position."""
         position = await self.hw_device.get_valve_Position(self.valve_code)
         # self.hw_device.last_state.valve[self.valve_number]
-        return f"position is %s" %self._reverse_position_mapping[position]
+        return f"position is %s" % self._reverse_position_mapping[position]
 
-    async def set_position(self, position:str):
+    async def set_position(self, position: str):
         target_pos = self.position_mapping[position]
-        await self.hw_device.trigger_Key_Press(str(self.valve_code*2+int(target_pos)))
+        await self.hw_device.trigger_Key_Press(str(self.valve_code * 2 + int(target_pos)))
 
-class R2TwoPortValve(TwoPortDistribution): #total 3 valve (A, B, Collection)
+
+class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
     """R2 reactor injection loop valve control class."""
     hw_device: R2  # for typing's sake
 
@@ -87,19 +120,20 @@ class R2TwoPortValve(TwoPortDistribution): #total 3 valve (A, B, Collection)
 
     async def get_position(self) -> str:
         """Get current valve position."""
-        position= await self.hw_device.get_valve_Position(self.valve_code)
+        position = await self.hw_device.get_valve_Position(self.valve_code)
         # self.hw_device.last_state.valve[self.valve_number]
         return f"inlet is %s" % self._reverse_position_mapping[position]
 
     async def set_position(self, position: str):
         """Move valve to position."""
         target_pos = self.position_mapping[position]
-        await self.hw_device.trigger_Key_Press(str(self.valve_code*2+int(target_pos)))
+        await self.hw_device.trigger_Key_Press(str(self.valve_code * 2 + int(target_pos)))
 
 
 class R2HPLCPump(HPLCPump):
     """R2 reactor injection loop valve control class."""
     hw_device: R2  # for typing's sake
+
     def __init__(self, name: str, hw_device: R2, pump_code: int):
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
@@ -109,14 +143,15 @@ class R2HPLCPump(HPLCPump):
         """Get current setting flow rate."""
         return await self.hw_device.get_setting_Flowrate(self.pump_code)
 
-    async def get_current_flow(self):
+    async def get_current_flow(self) -> float:
         """Get current flow rate."""
         # return await self.hw_device.pooling()
-        pass
+        return await self.hw_device.get_current_flow(self.pump_code)
 
     async def set_flowrate(self, flowrate: str):
         """Set flow rate to the pump"""
         await self.hw_device.set_Flowrate(self.pump_code, flowrate)
 
-
-
+    async def get_current_pressure(self) -> float:
+        """Get current pump pressure."""
+        return await self.hw_device.get_current_pressure(self.pump_code)
