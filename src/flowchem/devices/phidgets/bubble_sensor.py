@@ -10,7 +10,7 @@ from loguru import logger
 
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.phidgets.bubble_sensor_component import PhidgetPressureSensorComponent
+from flowchem.devices.phidgets.bubble_sensor_component import PhidgetBubbleSensorComponent
 from flowchem.utils.people import *
 
 try:
@@ -209,7 +209,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         return self.phidget.getDataInterval()
 
     def set_dataInterval(self, datainterval: int) -> None:
-        """ Set new Data Omterval"""
+        """ Set new Data Interval"""
         self.phidget.setDataInterval(datainterval)
         logger.debug(f"change data interval to {datainterval}!")
 
@@ -236,7 +236,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
 
     def components(self):
         """Return an component."""
-        return (PhidgetPressureSensorComponent("bubble-sensor", self),)
+        return (PhidgetBubbleSensorComponent("bubble-sensor", self),)
 
 
 if __name__ == "__main__":
