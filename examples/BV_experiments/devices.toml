@@ -38,9 +38,9 @@ syringe_volume = "2.5 ml"
 type = "R2"
 port = "COM4"
 
-#[device.MFC]
-#type = "MFC"
-#port = "COM6"
+[device.MFC]
+type = "MFC"
+port = "COM6"
 
 [device.bubble_sensor_power]
 type = "PhidgetBubbleSensor_power"

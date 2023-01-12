@@ -10,7 +10,8 @@ from loguru import logger
 
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.phidgets.bubble_sensor_component import PhidgetBubbleSensorComponent
+from flowchem.devices.phidgets.bubble_sensor_component import \
+    PhidgetBubbleSensorComponent, PhidgetBubbleSensorPowerComponent
 from flowchem.utils.people import *
 
 try:
@@ -108,20 +109,9 @@ class PhidgetBubbleSensor_power(FlowchemDevice):
     def is_poweron(self) -> bool:
         """Wheteher the power is on"""
         return bool(self.phidget.getState())
-
-from flowchem.components.sensors.base_sensor import Sensor
-
-# class PhidgetBubbleSensorComponent(Sensor):
-#     hw_device: PhidgetBubbleSensor  # just for typing
-#
-#     def __init__(self, name: str, hw_device: FlowchemDevice):
-#         """ """
-#         super().__init__(name, hw_device)
-#
-#     async def read_intensity(self):
-#         """Read from sensor, result to be expressed in units (optional)."""
-#         return self.hw_device.read_intensity()
-
+    def components(self):
+        """Return a component."""
+        return (PhidgetBubbleSensorPowerComponent("bubble_sensor_power", self),)
 
 class PhidgetBubbleSensor(FlowchemDevice):
     """Use a Phidget voltage input to translate a Tube Liquid Sensor OPB350 5 Valtage signal to the corresponding light penetration value."""
@@ -209,7 +199,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         return self.phidget.getDataInterval()
 
     def set_dataInterval(self, datainterval: int) -> None:
-        """ Set new Data Interval"""
+        """ Set Data Interval: 20-6000 ms"""
         self.phidget.setDataInterval(datainterval)
         logger.debug(f"change data interval to {datainterval}!")
 
@@ -230,12 +220,11 @@ class PhidgetBubbleSensor(FlowchemDevice):
         else:
             return self._voltage_to_intensity(voltage)
 
-
     # def getMaxVoltage(self):
         # https: // www.phidgets.com /?view = api
 
     def components(self):
-        """Return an component."""
+        """Return a component."""
         return (PhidgetBubbleSensorComponent("bubble-sensor", self),)
 
 
