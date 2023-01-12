@@ -6,6 +6,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 if TYPE_CHECKING:
     from .bubble_sensor import PhidgetBubbleSensor, PhidgetBubbleSensor_power
+
 from flowchem.components.sensors.base_sensor import Sensor
 from flowchem.components.base_component import FlowchemComponent
 
@@ -28,12 +29,11 @@ class PhidgetBubbleSensorComponent(Sensor):
         self.hw_device.power_off()
 
     async def set_dataInterval(self, datainterval: int):
-        """set data interval """
-        # TODO: check the range
+        """set data interval at the range 20-60000 ms"""
         self.hw_device.set_dataInterval(datainterval)
 
 
-class PhidgetBubbleSensorPowerComponent(Sensor):
+class PhidgetBubbleSensorPowerComponent(FlowchemComponent):
     hw_device: PhidgetBubbleSensor_power  # just for typing
 
     def __init__(self, name: str, hw_device: FlowchemDevice):
