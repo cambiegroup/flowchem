@@ -69,7 +69,7 @@ class R2Main(FlowchemComponent):
         """Get current reactor power state"""
         return await self.hw_device.get_current_power()
 
-    async def get_sys_pressure(self) -> float:
+    async def get_sys_pressure(self) -> int:
         """Get system pressure"""
         return await self.hw_device.get_current_pressure()
 
@@ -152,6 +152,6 @@ class R2HPLCPump(HPLCPump):
         """Set flow rate to the pump"""
         await self.hw_device.set_Flowrate(self.pump_code, flowrate)
 
-    async def get_current_pressure(self) -> float:
+    async def get_current_pressure(self) -> int:
         """Get current pump pressure."""
         return await self.hw_device.get_current_pressure(self.pump_code)

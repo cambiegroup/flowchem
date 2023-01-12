@@ -188,7 +188,7 @@ class R2(FlowchemDevice):
 
     # Set parameters
     async def set_Flowrate(self, pump:int , flowrate: str):
-        "Set flowrate to pump"   # pump A = 0; pump B = 1
+        "Set flow rate to pump"   # pump A = 0; pump B = 1
         if flowrate.isnumeric():
             flowrate = flowrate + "ul/min"
             logger.warning("No units provided to set_temperature, assuming microliter/minutes.")
@@ -251,12 +251,12 @@ class R2(FlowchemDevice):
         # 0: time, 5: cooling, heating, or ... 6: temp
         return float(temp_state[channel*3])/10
 
-    async def get_current_pressure(self, pump_code:int = -1) -> float:
+    async def get_current_pressure(self, pump_code:int = -1) -> int:
         """Get current pressure (in mbar)"""
         state = await self.write_and_read_reply(self.cmd.HISTORY_PRESSURE)
         press_state_list = state.split("&")[0].split(",")
         # 0: time, 1: system pressure, 2: pump A, 3: pump_B
-        return float(press_state_list[pump_code+2])/10  # not sure the unit
+        return int(press_state_list[pump_code+2])*10
 
     async def get_current_flow(self, pump_code: int) -> float:
         """Get current flow rate (in ul/min)"""
@@ -264,7 +264,7 @@ class R2(FlowchemDevice):
         # AllState = namedtuple("flowstate", ["time", "pumpA_flow", "pumpB_flow"])
         flow_state_list = state.split("&")[0].split(",")
         # 0: time, 1: pump A, 2: pump B
-        return float(flow_state_list[pump_code+1])/10
+        return float(flow_state_list[pump_code+1])
 
     async def get_current_power(self) -> str:
         """Get power"""
@@ -309,10 +309,13 @@ class R2(FlowchemDevice):
         #     for ch_num, t in enumerate(zip(self._min_t, self._max_t))
         # }
         list_of_components = [R2Main("r2",self),
-                              R2HPLCPump("HPLCPump_A", self, 0), R2HPLCPump("HPLCPump_B", self, 1),
-                              R2TwoPortValve("TwoPortValve_A", self, 0),R2TwoPortValve("TwoPortValve_B", self, 1),
+                              R2HPLCPump("HPLCPump_A", self, 0),
+                              R2HPLCPump("HPLCPump_B", self, 1),
+                              R2TwoPortValve("TwoPortValve_A", self, 0),
+                              R2TwoPortValve("TwoPortValve_B", self, 1),
                               R2TwoPortValve("TwoPortValve_C", self, 4),
-                              R2InjectionValve("InjectionValve_A", self, 2), R2InjectionValve("InjectionValve_B", self, 3)
+                              R2InjectionValve("InjectionValve_A", self, 2),
+                              R2InjectionValve("InjectionValve_B", self, 3)
         ]
 
         return list_of_components
