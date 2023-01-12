@@ -12,10 +12,10 @@ from loguru import logger
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.vapourtec.r2_components_control import R2Main, R2HPLCPump, R2InjectionValve, R2TwoPortValve
+from flowchem.devices.vapourtec.r2_components_control import R2GeneralSensor, R2PhotoReactor, R2HPLCPump,\
+    R2InjectionValve, R2TwoPortValve, R2PumpPressureSensor
 from flowchem.utils.exceptions import InvalidConfiguration
 from flowchem.utils.people import *
-from flowchem.components.technical.temperature import TemperatureControl
 
 try:
     from flowchem_vapourtec import VapourtecR2Commands
@@ -308,14 +308,17 @@ class R2(FlowchemDevice):
         #     ch_num: TempRange(min=ureg.Quantity(t[0]), max=ureg.Quantity(t[1]))
         #     for ch_num, t in enumerate(zip(self._min_t, self._max_t))
         # }
-        list_of_components = [R2Main("r2",self),
+        list_of_components = [R2GeneralSensor("GSensor2",self),
+                              R2PhotoReactor("PhotoReactor",self),
                               R2HPLCPump("HPLCPump_A", self, 0),
                               R2HPLCPump("HPLCPump_B", self, 1),
                               R2TwoPortValve("TwoPortValve_A", self, 0),
                               R2TwoPortValve("TwoPortValve_B", self, 1),
                               R2TwoPortValve("TwoPortValve_C", self, 4),
                               R2InjectionValve("InjectionValve_A", self, 2),
-                              R2InjectionValve("InjectionValve_B", self, 3)
+                              R2InjectionValve("InjectionValve_B", self, 3),
+                              R2PumpPressureSensor("PumpSensor_A",self, 0),
+                              R2PumpPressureSensor("PumpSensor_B",self, 1)
         ]
 
         return list_of_components
@@ -330,7 +333,7 @@ if __name__ == "__main__":
         """test function"""
         await Vapourtec_R2.initialize()
         # Get valve and pump
-        r2, pA, pB, vA, vB, vC, ivA, ivB = Vapourtec_R2.components()
+        Gs, pr2, pA, pB, vA, vB, vC, ivA, ivB, sA, sB = Vapourtec_R2.components()
 
         print(f"The system state is {await Vapourtec_R2.get_Run_State()}")
         # await Vapourtec_R2.set_Temperature("30 °C")
