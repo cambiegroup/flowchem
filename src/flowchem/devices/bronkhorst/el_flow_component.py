@@ -15,6 +15,8 @@ class MFCComponent(FlowchemComponent):
     def __init__(self, name: str, hw_device: FlowchemDevice):
         """A generic power supply"""
         super().__init__(name, hw_device)
+        self.add_api_route("/setpoint", self.get_setpoint, methods=["GET"])
+        self.add_api_route("/setpoint", self.set_flow_setpoint, methods=["PUT"])
 
     async def set_flow_setpoint(self, flowrate: str):
         """Set flow rate to the instrument"""
