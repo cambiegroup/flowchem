@@ -1,24 +1,41 @@
 import contextlib
 
-import requests #
+import requests
 from loguru import logger
 
 HOST = "127.0.0.1"
 PORT = 8000
 
 api_base = f"http://{HOST}:{PORT}"
-socl2_endpoint = f"{api_base}/socl2"
-hexyldecanoic_endpoint = f"{api_base}/hexyldecanoic"
-r4_channel = 0
-r4_endpoint = f"{api_base}/r4-heater/{r4_channel}"
-flowir_endpoint = f"{api_base}/flowir"
+eosinY_endpoint = f"{api_base}/eosinY"
+activator_endpoint = f"{api_base}/activator"
+quencher_endpoint = f"{api_base}/quencher"
+solvent_endpoint = f"{api_base}/solvent"
+SMIS_endpoint = f"{api_base}/SMIS"
+
+bubble_sensor_measure_endpoint = f"{api_base}/bubble_sensor_measure"
+bubble_sensor_power_endpoint = f"{api_base}/bubble_sensor_power"
+
+MFC_endpoint = f"{api_base}/MFC"
+r2_endpoint = f"{api_base}/r2"
+collector_endpoint = f"{api_base}/6PortValve"
+
+# analytic devices
+# hplc_endpoint = f"{api_base}/hplc"
 
 __all__ = [
-    "socl2_endpoint",
-    "hexyldecanoic_endpoint",
-    "r4_endpoint",
+    "eosinY_endpoint",
+    "activator_endpoint",
+    "quencher_endpoint",
+    "solvent_endpoint",
+    "SMIS_endpoint",
+    "bubble_sensor_measure_endpoint",
+    "bubble_sensor_power_endpoint",
+    "MFC_endpoint",
+    "r2_endpoint",
+    "collector_endpoint",
     "command_session",
-    "flowir_endpoint",
+    # "hplc_endpoint",
 ]
 
 
