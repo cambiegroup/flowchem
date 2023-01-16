@@ -47,7 +47,7 @@ def log_responses(resp, *args, **kwargs):
     logger.debug(f"Reply: {resp.text} on {resp.url}")
 
 
-@contextlib.contextmanager
+@contextlib.contextmanager  #decorator: add __enter__ and __exit__
 def command_session():
     with requests.Session() as session:
         session.hooks["response"] = [log_responses, check_for_errors]

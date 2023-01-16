@@ -43,7 +43,7 @@ type = "MFC"
 port = "COM6"
 
 [device.bubble_sensor_power]
-type = "PhidgetBubbleSensor_power"
+type = "PhidgetPowerSource5V"
 vint_serial_number=627768
 vint_hub_port =3
 vint_channel=0
