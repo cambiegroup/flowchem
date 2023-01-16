@@ -1,107 +1,127 @@
 import time
+import asyncio
 
-import numpy as np
-import pandas as pd
+# import numpy as np
+# import pandas as pd
 from _hw_control import *
 from loguru import logger
-from scipy import integrate
+# from scipy import integrate
 
-from collections import namedtuple
+from flowchem.devices.harvardapparatus.elite11 import Elite11
+from flowchem.devices.vapourtec import R2
+from flowchem.devices.knauer import KnauerValve
+from flowchem.devices.bronkhorst import MFC
+
+LOOP_VOLUME = 0.1  # ml
+FILLING_TIME = 2.5  # min
+total_infusion_rate = LOOP_VOLUME / FILLING_TIME  # 0.02  ml/min
+TUBE_BF_LOOP = 0.0212  # ml = 0.30 (m)*70.69 (ul/m)
+REACTOR_VOLUME = 2.5  # ml
+BPR = 0.0  # ml
+TUBE_BPR_TO_VALVEC = 0.069  # in ml = 0.97 (m)*70.69 (ul/m)
+TUBE_SENSOR_TO_VALVEC = 0.007  # in ml = 0.10 (m)*70.69 (ul/m)
+TUBE_VALVEC_TO_PUMPB = 0.196  # in ml = 0.25 (m)*785.4 (ul/m)
+TUBE_PUMPB_TO_SEPARATOR = 0.220  # in ml = 0.28 (m)*785.4 (ul/m)
+SEPAEATOR = 0.5  # ml
+TUBE_SEPAEATOR_TO_COLLECTOR = 0.393  # in ml = 0.50 (m)*785.4 (ul/m)
 
 
-def calculate_for_injection_loop(Equiv_dict: dict)-> list:
-    """
-    Calculate the time and the
+def calc_inj_rate(exp_condition: dict) -> dict[str:float]:
+    # TODO: find way to save all
+    SOLN = {"EY": 0.05, "H3BO3": 1.00}  # in M (mol/L)
+    SUB = {"SM": {"MW": 146.19, "density": 1.230},
+           "Tol": {"MW": 92.14, "density": 0.866},
+           "DIEPA": {"MW": 129.25, "density": 0.742}}  # {MW in g/mol, density in g/mL}
+    SOL = {"MeOH": {"MW": 32.04, "density": 0.792}, "MeCN": {"MW": 41.05, "density": 0.786}}
 
-    pump0: EosinY ---|
-
-
-
-    Args:
-        Equiv_dict: the equivalent of substrates (in mole)
-        total_infusion_rate: the speed of filling the loop, default 0.02 ml/min
-
-    Returns:dict with pump name/address and flow rate in uL/min
-
-    """
-    LOOP_VOLUME = 0.1  # ml
-    FILLING_TIME = 5  # min
-    total_infusion_rate = LOOP_VOLUME / FILLING_TIME  # 0.02  ml/min
-    FIRST_MIX_TUBE = 0.0106  # ml
-    SECOND_MIX_TUBE = 0.0212  # mL
-
-    # EY: 0.05M, Boric acid: 1.00M in methanol
-    # SUB ={SM :{"MW":146.19, "density":1.230}, Tol :{"MW":92.14, "density":0.866}, DIEPA :{"MW":129.25, "density":0.742}}
-
-    # Calculate the required volume to fill the loop
-    vol_dict = {
-        "SMIS": 0.225, "EY": Equiv_dict["EY"] * 20, "Activator": Equiv_dict["H3BO3"] * 1,
-        "Quencher": Equiv_dict["DIPEA"] * 0.174, "Solvent": 0
+    VOL = {
+        "SMIS": 0.001 * (SUB["SM"]["MW"] / SUB["SM"]["density"] + SUB["Tol"]["MW"] / SUB["Tol"]["density"]),
+        "EY": exp_condition["eosinY_equiv"] / SOLN["EY"],
+        "Activator": exp_condition["activator_equiv"] / SOLN["H3BO3"],
+        "Quencher": exp_condition["quencher_equiv"] * SUB["DIEPA"]["MW"] * 0.001 / SUB["DIEPA"]["density"]
     }
-    flow_unit = total_infusion_rate / sum(vol_dict.values())
-    # Infuse flow rate
-    logger.debug((dict((s, str(vol_dict[s] * flow_unit) + " ml/min") for s in vol_dict)))
+    # VOL_ratio = {key: value / VOL["SMIS"] for key, value in VOL.items()}
 
-    # Calculate the time period (in min) of filling
-    frac_vol_list = [FIRST_MIX_TUBE+SECOND_MIX_TUBE * 0.5, LOOP_VOLUME * 1.1, FIRST_MIX_TUBE+SECOND_MIX_TUBE * 0.75, (FIRST_MIX_TUBE+SECOND_MIX_TUBE) * 3]
-    frac_speed_list = [flow_unit * (vol_dict["EY"] + vol_dict["Activator"]), total_infusion_rate, total_infusion_rate, total_infusion_rate * 1.5]
-    frac_time_list = [v/s for v,s in zip(frac_vol_list, frac_speed_list)]
+    # Calculate the required volume to fill the loop [0.1 mL]
+    # the required volume of SM for the loop = LOOP_VOLUME * conc_in_M * SUB["SM"]["MW"] * 0.001/ SUB["SM"]["density"]
 
-    return
+    mmol_of_SM = LOOP_VOLUME * exp_condition["SM_concentration"]  # concentration in M (mmol/mL)
+    # the volume of each substrate/syringe needed for the loop
+    ml_of_all = {key: value * mmol_of_SM for key, value in VOL.items()}
+    # the volume of make-up solvent to reach the concentration.....
+    total_vol = sum(ml_of_all.values())
+    ml_of_all["Solvent"] = LOOP_VOLUME - total_vol  # exp_condition["eosinY_equiv"] is useless??
+
+    # return Infuse flow rate in ml/min
+    rate_of_all = {key: value / FILLING_TIME for key, value in ml_of_all.items()}
+
+    # return Infuse flow rate in ml/min
+    # flow_unit = total_infusion_rate / sum(ml_of_all.values())
+    # rate_dict= {key: value * flow_unit for key, value in ml_of_all.items()}
+    return rate_of_all
 
 
-def calculate_injection_loop(SOCl2_equivalent: float, residence_time: float):
+def calc_gas_liquid_flow_rate(exp_condition: dict) -> dict[str:float]:
     """
-    Calculate pump flow rate based on target residence time and SOCl2 equivalents
 
-    Stream A: hexyldecanoic acid ----|
-                                     |----- REACTOR ---- IR ---- waste
-    Stream B: thionyl chloride   ----|
-
-    Args:
-        SOCl2_equivalent:
-        residence_time:
-
-    Returns: dict with pump names and flow rate in ml/min
-
+    Returns:
+        object:
     """
-    REACTOR_VOLUME = 10  # ml
-    HEXYLDECANOIC_ACID = 1.374  # Molar
-    SOCl2 = 13.768  # Molar
+    Oxygen_volume_per_mol = 22.4
+    total_flow_rate = REACTOR_VOLUME / exp_condition["time"]  # ml/min
 
-    total_flow_rate = REACTOR_VOLUME / residence_time  # ml/min
+    # parameters
+    conc = exp_condition["SM_concentration"]  # in M
+    vol_ratio_GtoL = Oxygen_volume_per_mol * conc * exp_condition["oxygen_equiv"]
+    compressed_G_vol = vol_ratio_GtoL / exp_condition["pressure"]
 
-    # Solving a system of 2 equations and 2 unknowns...
-    return {
-        "hexyldecanoic": (
-            a := (total_flow_rate * SOCl2)
-                 / (HEXYLDECANOIC_ACID * SOCl2_equivalent + SOCl2)
-        ),
-        "socl2": total_flow_rate - a,
-    }
+    # setting flow rate of liquid and gas (in ml/min)
+    set_liquid_flow = total_flow_rate / (1 + compressed_G_vol)
+    set_gas_flow = set_liquid_flow * vol_ratio_GtoL
+
+    # makeup_solvent flow rate (in ml/min)
+    ANAL_CONC = 0.0025  # HPLC sample in M
+    makeup_flow = conc * set_liquid_flow / ANAL_CONC - set_liquid_flow
+    return {"liquid-flow": set_liquid_flow, "gas-flow": set_gas_flow, "makeup_flow": makeup_flow}
 
 
-def set_parameters(rates: dict, temperature: float):
+async def loop_purging():
     with command_session() as sess:
-        sess.put(
-            socl2_endpoint + "/flow-rate", params={"rate": f"{rates['socl2']} ml/min"}
-        )
-        sess.put(
-            hexyldecanoic_endpoint + "/flow-rate",
-            params={"rate": f"{rates['hexyldecanoic']} ml/min"},
-        )
-
-        # Sets heater
-        heater_data = {"temperature": f"{temperature:.2f} °C"}
-        sess.put(r4_endpoint + "/temperature", params=heater_data)
+        sess.put(solvent_endpoint + "/infuse", params={"rate": f"{total_infusion_rate} ml/min"})
+        sess.put(eosinY_endpoint + "/infuse", params={"rate": "0 ml/min"})
+        sess.put(activator_endpoint + "/infuse", params={"rate": "0 ml/min"})
+        sess.put(quencher_endpoint + "/infuse", params={"rate": "0 ml/min"})
+    await asyncio.sleep(FILLING_TIME * 60)
+    with command_session() as sess:
+        sess.put(solvent_endpoint + "/infuse", params={"rate": "0 ml/min"})
 
 
-def wait_stable_temperature():
-    """Wait until the ste temperature has been reached."""
-    logger.info("Waiting for the reactor temperature to stabilize")
+# def set_parameters_for_rxn_mixture(rates: dict):
+#     with command_session() as sess:
+#
+#         # sess.put(
+#         #     hexyldecanoic_endpoint + "/flow-rate",
+#         #     params={"rate": f"{rates['hexyldecanoic']} ml/min"},
+#         # )
+#
+#         # Sets heater
+#         heater_data = {"temperature": f"{temperature:.2f} °C"}
+#         sess.put(r4_endpoint + "/temperature", params=heater_data)
+#
+# def set_parameters_for_reaction():
+#     pass
+
+def wait_stable_gas_liquid_mix():
+    """Wait until the flow is stable.
+
+    the intensity of gas should btw 0-0.5 voltage
+    methanol:
+    reaction mixture:
+    """
+    logger.info("Waiting for the flow to stabilize")
     while True:
         with command_session() as sess:
-            r = sess.get(r4_endpoint + "/target-reached")
+            r = sess.get(bubble_sensor_measure_endpoint + "/read_intensity")
             if r.text == "true":
                 logger.info("Stable temperature reached!")
                 break
@@ -109,106 +129,131 @@ def wait_stable_temperature():
                 time.sleep(5)
 
 
-def get_ir_once_stable():
-    """Keeps acquiring IR spectra until changes are small, then returns the spectrum."""
-    logger.info("Waiting for the IR spectrum to be stable")
-    with command_session() as sess:
-        # Wait for first spectrum to be available
-        while int(sess.get(flowir_endpoint + "/sample-count").text) == 0:
-            time.sleep(1)
-        # Get spectrum
-        previous_spectrum = pd.read_json(
-            sess.get(flowir_endpoint + "/sample/spectrum-treated").text
-        )
-        previous_spectrum = previous_spectrum.set_index("wavenumber")
-        # In case the id has changed between requests (highly unlikely)
-        last_sample_id = int(sess.get(flowir_endpoint + "/sample-count").text)
+def wait_color_change():
+    """Wait until the flow is stable."""
+    logger.info("Waiting for the reaction mixture came out.")
 
-    while True:
-        # Wait for a new spectrum
+    # consecutive 8 measurements show the similar results
+    for measure in range(8):
+
         while True:
             with command_session() as sess:
-                current_sample_id = int(
-                    sess.get(flowir_endpoint + "/sample-count").text
-                )
-            if current_sample_id > last_sample_id:
-                break
-            else:
-                time.sleep(2)
+                r = sess.get(bubble_sensor_measure_endpoint + "/read_intensity")
 
-        with command_session() as sess:
-            current_spectrum = pd.read_json(
-                sess.get(flowir_endpoint + "/sample/spectrum-treated").text
-            )
-            current_spectrum = current_spectrum.set_index("wavenumber")
-
-        previous_peaks = integrate_peaks(previous_spectrum)
-        current_peaks = integrate_peaks(current_spectrum)
-
-        delta_product_ratio = abs(current_peaks["product"] - previous_peaks["product"])
-        logger.info(f"Current product ratio is {current_peaks['product']}")
-        logger.debug(f"Delta product ratio is {delta_product_ratio}")
-
-        if delta_product_ratio < 0.002:  # 0.2% error on ratio
-            logger.info("IR spectrum stable!")
-            return current_peaks
-
-        previous_spectrum = current_spectrum
-        last_sample_id = current_sample_id
+                if 20 <= float(r.text) <= 55:
+                    logger.info("color change!")
+                    break
+                else:
+                    time.sleep(5)
+        measure += 1
 
 
-def integrate_peaks(ir_spectrum):
+def hplc_data_processing():
+    """Processing Clarity hplc data"""
+
+
+def integrate_peaks():
     """Integrate areas from `limits.in` in the spectrum provided."""
-    # List of peaks to be integrated
-    peak_list = np.recfromtxt("limits.in", encoding="UTF-8")
-
-    peaks = {}
-    for name, start, end in peak_list:
-        # This is a common mistake since wavenumber are plot in reverse order
-        if start > end:
-            start, end = end, start
-
-        df_view = ir_spectrum.loc[
-            (start <= ir_spectrum.index) & (ir_spectrum.index <= end)
-            ]
-        peaks[name] = integrate.trapezoid(df_view["intensity"])
-        logger.debug(f"Integral of {name} between {start} and {end} is {peaks[name]}")
-
-    # Normalize integrals
-
-    return {k: v / sum(peaks.values()) for k, v in peaks.items()}
 
 
-def run_experiment(
-        SOCl2_equivalent: float, temperature: float, residence_time: float
-) -> float:
-    """
-    Runs one experiment with the provided conditions
+async def run_experiment(condition: dict, inj_rate: dict, flow_rate: dict):
+    # inj_rate:inj_rate = {"SMIS": ,"EY": ,"Activator": ,"Quencher": , "Solvent": }
+    # flow_rate: {"liquid-flow":set_liquid_flow, "gas-flow": set_gas_flow, "makeup_flow":makeup_flow}
 
-    Args:
-        SOCl2_equivalent: SOCl2 to substrate ratio
-        temperature: in Celsius
-        residence_time: in minutes
-
-    Returns: IR product area / (SM + product areas)
-
-    """
     logger.info(
-        f"Starting experiment with {SOCl2_equivalent:.2f} eq SOCl2, {temperature:.1f} degC and {residence_time:.2f} min"
+        f"Starting experiment with the experiment code {condition[id]}"
     )
-    # Set stand-by flow-rate first
-    set_parameters({"hexyldecanoic": "0.1 ml/min", "socl2": "10 ul/min"}, temperature)
-    wait_stable_temperature()
-    # Set actual flow rate once the set temperature has been reached
-    pump_flow_rates = calculate_flow_rates(SOCl2_equivalent, residence_time)
-    set_parameters(pump_flow_rates, temperature)
-    # Wait 1 residence time
-    time.sleep(residence_time * 60)
-    # Start monitoring IR
-    peaks = get_ir_once_stable()
 
-    return peaks["product"]
+    with command_session() as sess:
+        # Set up the gas and pumpA
+        sess.put(r2_endpoint + "/Pump_A/infuse", params={"rate": f"{flow_rate['liquid-flow']} ml/min"})
+        sess.put(MFC_endpoint + "/el_flow_MFC/setpoint", params={"flowrate": f"{flow_rate['gas-flow']} ml/min"})
+
+        # Turn on the temperature and UV
+        sess.put(r2_endpoint + "/PhotoReactor/temperature", params={"temperature": f"{condition['temperature']} °C"})
+        sess.put(r2_endpoint + "/PhotoReactor/UV", params={"temperature": f"{condition['UV']} °C"})
+
+        # Start to fill the loop: FILLING_TIME(2.5 min)
+        sess.put(solvent_endpoint + "/infuse", params={"rate": f"{inj_rate['Solvent']} ml/min"})
+        sess.put(eosinY_endpoint + "/infuse", params={"rate": f"{inj_rate['EY']} ml/min"})
+        sess.put(activator_endpoint + "/infuse", params={"rate": f"{inj_rate['Activator']} ml/min"})
+        sess.put(quencher_endpoint + "/infuse", params={"rate": f"{inj_rate['Quencher']} ml/min"})
+        sess.put(SMIS_endpoint + "/infuse", params={"rate": f"{inj_rate['SMIS']} ml/min"}, )
+
+        time.sleep(FILLING_TIME * 1.1 * 60)  # period of filling
+
+        # push the mixture in the tube into the loop
+        sess.put(SMIS_endpoint + "/infuse", params={"rate": f"0 ml/min"}, )
+        sess.put(solvent_endpoint + "/infuse", params={"rate": f"{inj_rate['SMIS']} ml/min"})
+
+        time.sleep(TUBE_BF_LOOP / total_infusion_rate * 0.9 * 60)
+
+        # check the stability of the mixing of gas and liquid???
+
+        # switch the valveA to inject the reaction mixture
+        sess.put(r2_endpoint + "InjectionValve_A/", params={"position": "inject"})
+
+    # purge the tube
+    await loop_purging()
+
+    # Wait 1 residence time
+    time.sleep(condition[time] * 60)
+
+    # check the color change from the bubble sensor after residence time
+    wait_color_change()
+    # switch the valveC and pump in make-up  solvent (ACN) by pumpB
+
+    with command_session() as sess:
+        sess.put(r2_endpoint + "Pump_B/infuse", params={"rate": f"{flow_rate['makeup_flow']} ml/min"})
+        sess.put(r2_endpoint + "CollectionValve/position", params={"position": "Reagent"})
+
+        # the injection loop for HPLC and Clarity HPLC system should be use.... but the pump is not ready yet....
+
+        # collect the reaction mixture
+
+        return peaks["product"]
+
+
+async def main():
+    whh_136 = dict(name=f"WHH-136",
+                   SM_concentration=1.22,
+                   time=25.0,
+                   eosinY_equiv=0.01,
+                   activator_equiv=0.02,
+                   quencher_equiv=2.0,
+                   oxygen_equiv=2.0,
+                   solvent_equiv=10.0,
+                   pressure=4.0,
+                   temperature=30.0,
+                   UV=100,
+                   category=None,
+                   id="mongodb_id"
+                   )
+    # calculate the setting parameters
+    # set_syringe_rate  = calc_inj_rate(whh_136)
+    # print(f"syringe:{set_syringe_rate}")
+    # print(f"total volume{sum(set_syringe_rate.values()) * FILLING_TIME})
+    # set_gas_liquid_flow = calc_gas_liquid_flow_rate(whh_136)
+    # print(f"pump:{set_gas_liquid_flow}")
+
+    logger.info(f"test")
+    wait_color_change()
+    # await run_experiment(whh_136,set_syringe_rate,set_gas_liquid_flow)
+
+
+async def purge():
+    logger.info("starting purging")
+    await asyncio.sleep(5.0)
+    logger.debug("finishing purging")
+
+
+async def test():
+    logger.info(f"test")
+    await purge()
+    logger.info("start reaction")
+    await asyncio.sleep(30.0)
+    logger.debug("finishing reaction")
 
 
 if __name__ == "__main__":
-    print(get_ir_once_stable())
+    asyncio.run(main())
