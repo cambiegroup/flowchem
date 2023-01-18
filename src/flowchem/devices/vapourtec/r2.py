@@ -131,10 +131,19 @@ class R2(FlowchemDevice):
         self._serial.reset_input_buffer() #Clear input buffer, discarding all that is in the buffer.
         await self._write(command)
         logger.debug(f"Command {command} sent to R2!")
-        response = await self._read_reply()
 
-        if not response:
-            raise InvalidConfiguration("No response received from heating module!")
+        failure = 0
+        while True:
+            response = await self._read_reply()
+            logger.debug(f"response: {response}")
+            if not response:
+                failure += 1
+                logger.warning(f"{failure} time of failure!")
+                # Allows 3 failures...
+                if failure > 3:
+                    raise InvalidConfiguration("No response received from R2 module!")
+            else:
+                break
 
         logger.debug(f"Reply received: {response}")
         return response.rstrip()
@@ -261,6 +270,7 @@ class R2(FlowchemDevice):
     async def power_on(self):
         """Turn on both devices, R2 and R4."""
         await self.write_and_read_reply(self.cmd.POWER_ON)
+
     async def power_off(self):
         """Turn off both devices, R2 and R4."""
         await self.write_and_read_reply(self.cmd.POWER_OFF)
