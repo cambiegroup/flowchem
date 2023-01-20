@@ -275,6 +275,12 @@ class Elite11(FlowchemDevice):
         # Lower limit usually expressed in nl/min so unit-aware quantities are needed
         lower_limit, upper_limit = map(ureg, limits_raw.split(" to "))
 
+        # add units by assumption
+        # if rate.isnumeric():
+        #     rate = flowrate + "ml/min"
+        #     logger.warning("No units provided, assuming milliliter/minutes.")
+        # parsed_f = ureg.Quantity(flow)
+
         # Also add units to the provided rate
         set_rate = ureg.Quantity(rate)
 

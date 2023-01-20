@@ -12,7 +12,7 @@ from flowchem.components.pumps.hplc import HPLCPump
 from flowchem.components.technical.photo import PhotoControl
 from flowchem.components.sensors.base_sensor import Sensor
 from flowchem.components.sensors.pressure import PressureSensor
-
+from ...components.technical.power import PowerSwitch
 
 if TYPE_CHECKING:
     from .r2 import R2
@@ -33,18 +33,14 @@ class R2GeneralSensor(Sensor):
     def __init__(self, name: str, hw_device: R2):
         """A generic Syringe pump."""
         super().__init__(name, hw_device)
-        self.add_api_route("/read-pressure", self.read_pressure, methods=["GET"])
         self.add_api_route("/monitor-system", self.monitor_sys, methods=["GET"])
         self.add_api_route("/get-run-state", self.get_run_state, methods=["GET"])
         self.add_api_route("/set-system-max-pressure", self.set_sys_pressure_limit, methods=["PUT"])
 
 
-    async def read_pressure(self, units: str = "mbar") -> int:
-        """Get system pressure"""
-        return await self.hw_device.get_current_pressure()
-
     async def monitor_sys(self) -> dict:
         """monitor the system performance"""
+        # TODO: 500 Error: Internal Server Error occasionally pope out , but get_run_state won't
         return await self.hw_device.pooling()
 
     async def get_run_state(self) -> str:
@@ -53,6 +49,7 @@ class R2GeneralSensor(Sensor):
 
     async def set_sys_pressure_limit(self, pressure: str):
         """Set maximum system pressure: range 1,000 to 50,000 mbar"""
+        # TODO: change to accept different units
         await self.hw_device.set_Pressure_limit(pressure)
     #
     # async def get_setting_Pressure_Limit(self) -> str:
@@ -72,31 +69,32 @@ class R2PhotoReactor(PhotoControl):
         """Get current reactor power state"""
         return await self.hw_device.get_current_power()
 
-    async def set_temperature(self, temp: str):
+    async def set_temperature(self, temperature: str):
         """Set reactor temperature"""
-        await self.hw_device.set_Temperature(temp)
+        await self.hw_device.set_Temperature(temperature)
+        # TODO: add response body/return message
 
     async def get_temperature(self) -> float:
         """Get current reactor temperature"""
         return await self.hw_device.get_current_temperature()
 
-    async def is_target_reached(self) -> bool:  # type: ignore
-        """Return True if the set temperature target has been reached."""
-        c_temp = await self.hw_device.get_current_temperature()
-        s_temp = await self.hw_device.get_setting_Temperature()
-        return abs(c_temp - float(s_temp)) <= 1.5
+    # async def is_target_reached(self) -> bool:  # type: ignore
+    #     """Return True if the set temperature target has been reached."""
+    #     c_temp = await self.hw_device.get_current_temperature()
+    #     s_temp = await self.hw_device.get_setting_Temperature()
+    #     return abs(c_temp - float(s_temp)) <= 1.5
 
     async def set_UV(self, power: str = "100"):
         """Set UV light intensity at the range 50-100%"""
         await self.hw_device.set_UV(power)
 
-    async def power_on(self):
+    async def UV_power_on(self):
         """Turn on whole system"""
         return await self.hw_device.power_on()
 
-    async def power_off(self):
+    async def UV_power_off(self):
         """Turn off whole system."""
-        return await self.hw_device.power_off()
+        await self.hw_device.set_UV("0")
 
 
 class R2InjectionValve(SixPortTwoPosition):
@@ -119,7 +117,7 @@ class R2InjectionValve(SixPortTwoPosition):
         return f"position is %s" % self._reverse_position_mapping[position]
 
     async def set_position(self, position: str):
-        target_pos = self.position_mapping[position]
+        target_pos = self.position_mapping[position]  # load or inject
         await self.hw_device.trigger_Key_Press(str(self.valve_code * 2 + int(target_pos)))
 
     # async def connections(self) -> ValveInfo: pass
@@ -174,17 +172,7 @@ class R2HPLCPump(HPLCPump):
         await self.hw_device.set_Flowrate(self.pump_code, flowrate)
 
     async def infuse(self, rate: str = "", volume: str = ""):
-        """Start infusion."""
-        if volume:
-            logger.warning(f"Volume parameter ignored: not supported by {self.name}!")
-        if isfloat(rate):
-            rate = "0 ml/min"
-        if rate.isnumeric():
-            rate += " ml/min"
-            logger.warning("Units missing, assuming ml/min!")
-
-        # parsed_flowrate = ureg.Quantity(rate)
-
+        """set the flow rate: in ul/min and start infusion."""
         await self.hw_device.set_Flowrate(self.pump_code, rate)
         await self.hw_device.power_on()
 
@@ -205,7 +193,29 @@ class R2PumpPressureSensor(PressureSensor):
         super().__init__(name, hw_device)
         self.pump_code = pump_code
 
-
-    async def read_pressure(self, units: str = "mbar") -> int: # mbar
+    async def read_pressure(self, units: str = "mbar") -> int:  # mbar
         """Get current pump pressure."""
         return await self.hw_device.get_current_pressure(self.pump_code)
+
+
+class R2GeneralPressureSensor(PressureSensor):
+    hw_device: R2  # for typing's sake
+
+    def __init__(self, name: str, hw_device: R2):
+        """Create a ValveControl object."""
+        super().__init__(name, hw_device)
+
+    async def read_pressure(self, units: str = "mbar") -> int:
+        """Get system pressure"""
+        # TODO: now the output are always mbar, change it to fit the base component
+        return await self.hw_device.get_current_pressure()
+
+
+class R2MainSwitch(PowerSwitch):
+    hw_device: R2  # just for typing
+
+    async def power_on(self):
+        await self.hw_device.power_on()
+
+    async def power_off(self):
+        await self.hw_device.power_off()

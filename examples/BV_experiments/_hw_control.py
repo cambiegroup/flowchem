@@ -7,18 +7,19 @@ HOST = "127.0.0.1"
 PORT = 8000
 
 api_base = f"http://{HOST}:{PORT}"
-eosinY_endpoint = f"{api_base}/eosinY"
+eosinY_endpoint = f"{api_base}/eosin"
 activator_endpoint = f"{api_base}/activator"
 quencher_endpoint = f"{api_base}/quencher"
 solvent_endpoint = f"{api_base}/solvent"
-SMIS_endpoint = f"{api_base}/SMIS"
+SMIS_endpoint = f"{api_base}/smis"
 
-bubble_sensor_measure_endpoint = f"{api_base}/bubble_sensor_measure"
-bubble_sensor_power_endpoint = f"{api_base}/bubble_sensor_power"
+bubble_sensor_measure_endpoint = f"{api_base}/bubble-sensor-measure"
+bubble_sensor_power_endpoint = f"{api_base}/bubble-sensor-power"
 
 MFC_endpoint = f"{api_base}/MFC"
 r2_endpoint = f"{api_base}/r2"
-collector_endpoint = f"{api_base}/6PortValve"
+# pumpM_endpoint = f"{api_base}/Knauer-pumpM"
+collector_endpoint = f"{api_base}/Collector"
 
 # analytic devices
 # hplc_endpoint = f"{api_base}/hplc"
@@ -34,7 +35,7 @@ __all__ = [
     "MFC_endpoint",
     "r2_endpoint",
     "collector_endpoint",
-    "command_session",
+    # "pumpM_endpoint",
     # "hplc_endpoint",
 ]
 

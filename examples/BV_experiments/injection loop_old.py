@@ -1,9 +1,11 @@
+# Pervious vision of flowchem
+
 import asyncio
 from flowchem.components.devices.Harvard_Apparatus.HA_elite11 import (
     HarvardApparatusPumpIO,Elite11InfuseOnly
 )
 
-async def injection_loop(Equiv_dict:dict):
+def injection_loop(Equiv_dict:dict):
     Total_infusion_rate = 0.02 #ml/min
     vol_dict = {
         "SMIS": 0.225, "EY": Equiv_dict["EY"]*20, "Activator": Equiv_dict["H3BO3"]*1, "Quencher":Equiv_dict["DIPEA"]*0.174, "Solvent": 0
@@ -14,7 +16,6 @@ async def injection_loop(Equiv_dict:dict):
 
     fill_tube_time_1 = 2.0* (0.0106/(flow_unit*(vol_dict["EY"] + vol_dict["Activator"]))) #min #
     fill_tube_time_2 = 1.5* ((0.0212+0.1)/Total_infusion_rate) #min
-
 
     pump_EosinY = Elite11InfuseOnly.from_config(
         port="COM5", syringe_volume="1 ml", diameter="4.61 mm", address=0

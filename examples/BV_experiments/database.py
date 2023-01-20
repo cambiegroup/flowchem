@@ -95,8 +95,8 @@ def find_lastest_suggestion() -> dict:
 async def main_db():
     """ This is an asynchronous example, so we will access it from an async function"""
     # Beanie uses Motor async client under the hood
-
-    client = AsyncIOMotorClient("mongodb+srv://cynthiabour:mpikgchemistry2022@cluster0.glr1fvv.mongodb.net/test")
+    client = AsyncIOMotorClient("mongodb: // localhost: 27017")
+    # client = AsyncIOMotorClient("mongodb+srv://cynthiabour:mpikgchemistry2022@cluster0.glr1fvv.mongodb.net/test")
     # database: client.BV_experiments
     # collection = database.experiment
 

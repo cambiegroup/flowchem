@@ -30,8 +30,8 @@ class PhotoControl(FlowchemComponent):
         self.add_api_route("/temperature", self.set_temperature, methods=["PUT"])
         self.add_api_route("/temperature", self.get_temperature, methods=["GET"])
 
-        self.add_api_route("/power-on", self.power_on, methods=["PUT"])
-        self.add_api_route("/power-off", self.power_off, methods=["PUT"])
+        self.add_api_route("/UV-power-on", self.UV_power_on, methods=["PUT"])
+        self.add_api_route("/UV-power-off", self.UV_power_off, methods=["PUT"])
 
         self.add_api_route("/temp-reached", self.is_target_reached, methods=["GET"])
 
@@ -55,10 +55,10 @@ class PhotoControl(FlowchemComponent):
         """Return a dict with `min` and `max` temperature in Celsius."""
         return self._limits
 
-    async def power_on(self):
+    async def UV_power_on(self):
         """Turn on temperature control."""
         ...
 
-    async def power_off(self):
+    async def UV_power_off(self):
         """Turn off temperature control."""
         ...

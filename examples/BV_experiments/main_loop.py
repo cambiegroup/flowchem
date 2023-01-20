@@ -10,8 +10,6 @@ from run_experiment import calc_gas_liquid_flow_rate, calc_inj_rate
 # Initialize gryffin/Optimization
 
 # Initialize hardware
-
-
 with command_session() as sess:
     # Heater to r.t.
 

@@ -6,8 +6,30 @@ from flowchem.components.base_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class PowerControl(FlowchemComponent):
-    """A generic temperature controller."""
+class PowerSwitch(FlowchemComponent):
+    """A generic power on/off switch."""
+    def __init__(
+        self,
+        name: str,
+        hw_device: FlowchemDevice,
+    ):
+        """Create a TemperatureControl object."""
+        super().__init__(name, hw_device)
+
+        self.add_api_route("/power-on", self.power_on, methods=["PUT"])
+        self.add_api_route("/power-off", self.power_off, methods=["PUT"])
+
+    async def power_on(self):
+        """Turn power on."""
+        ...
+
+    async def power_off(self):
+        """Turn off power."""
+        ...
+
+
+class PowerControl(PowerSwitch):
+    """A generic power controller, adjusting voltage and/or current."""
 
     def __init__(
         self,
@@ -42,12 +64,4 @@ class PowerControl(FlowchemComponent):
 
     async def get_voltage(self) -> float:  # type: ignore
         """Return current in Volt."""
-        ...
-
-    async def power_on(self):
-        """Turn on temperature control."""
-        ...
-
-    async def power_off(self):
-        """Turn off temperature control."""
         ...

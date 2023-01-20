@@ -42,27 +42,27 @@ port = "COM4"
 type = "MFC"
 port = "COM6"
 
-[device.bubble_sensor_power]
-type = "PhidgetPowerSource5V"
-vint_serial_number=627768
-vint_hub_port =3
-vint_channel=0
+#[device.bubble-sensor-power]
+#type = "PhidgetPowerSource5V"
+#vint_serial_number=627768
+#vint_hub_port =3
+#vint_channel=0
+#
+#[device.bubble-sensor-measure]
+#type = "PhidgetBubbleSensor"
+#vint_serial_number=627768
+#vint_hub_port =0
+#vint_channel=0
+data_interval = "200 ms"
 
-[device.bubble_sensor_measure]
-type = "PhidgetBubbleSensor"
-vint_serial_number=627768
-vint_hub_port =0
-vint_channel=0
-
-[device.Knauer_valve_6PortCollector]
+[device.Collector]
 type = "KnauerValve"
 mac_address = "00:80:a3:ce:7f:08"
+#
+#[device.Knauer-pumpM]
+#type = "AzuraCompact"
+#mac_address = "00:80:a3:ba:ef:3b"
 
 #[device.Knauer_valve_cce8e47]
 #type = "KnauerValve"
 #mac_address = "00:80:a3:ce:8e:47"
-
-#[device.Knauer_pump_cbaef3b]
-#type = "AzuraCompact"
-#mac_address = "00:80:a3:ba:ef:3b"
-
