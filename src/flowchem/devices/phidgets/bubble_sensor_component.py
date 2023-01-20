@@ -17,29 +17,38 @@ class PhidgetBubbleSensorComponent(Sensor):
     def __init__(self, name: str, hw_device: FlowchemDevice):
         """A generic Syringe pump."""
         super().__init__(name, hw_device)
-        self.add_api_route("/set-dataIn", self.power_on, methods=["PUT"])
+        self.add_api_route("/set-data-Interval", self.power_on, methods=["PUT"])
+
         self.add_api_route("/read-intensity", self.read_intensity, methods=["GET"])
 
-    async def power_on(self):
+    async def power_on(self) -> bool:
         self.hw_device.power_on()
+        return True
 
-    async def power_off(self):
+    async def power_off(self) -> bool:
         self.hw_device.power_off()
+        return True
+
+    async def read_voltage(self) -> float:
+        """Read from sensor in Volt"""
+        return self.hw_device.read_voltage()
 
     async def read_intensity(self) -> float:
-        """Read from sensor, result to be expressed in percentage(%)"""
+        """transform the voltage from sensor to be expressed in percentage(%)"""
         return self.hw_device.read_intensity()
 
-    async def set_dataInterval(self, datainterval: int):
+    async def set_dataInterval(self, datainterval: int) -> bool:
         """set data interval at the range 20-60000 ms"""
         self.hw_device.set_dataInterval(datainterval)
-
+        return True
 
 class PhidgetBubbleSensorPowerComponent(PowerSwitch):
     hw_device: PhidgetPowerSource5V  # just for typing
 
-    async def power_on(self):
+    async def power_on(self) -> bool:
         self.hw_device.power_on()
+        return True
 
-    async def power_off(self):
+    async def power_off(self) -> bool:
         self.hw_device.power_off()
+        return True
