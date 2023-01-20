@@ -16,7 +16,7 @@ class MFCComponent(FlowchemComponent):
         """A generic power supply"""
         super().__init__(name, hw_device)
         self.add_api_route("/set-flow-rate", self.get_flow_setpoint, methods=["GET"])
-        self.add_api_route("/stop", self.stop, method=["PUT"])
+        self.add_api_route("/stop", self.stop, methods=["PUT"])
         self.add_api_route("/set-flow-rate", self.set_flow_setpoint, methods=["PUT"])
 
     async def set_flow_setpoint(self, flowrate: str) -> bool:
