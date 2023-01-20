@@ -19,5 +19,6 @@ class PhotoSensor(Sensor):
 
     async def power_on(self):
         ...
+
     async def power_off(self):
         ...

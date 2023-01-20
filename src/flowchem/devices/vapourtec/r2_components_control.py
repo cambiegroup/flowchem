@@ -17,26 +17,27 @@ from ...components.technical.power import PowerSwitch
 if TYPE_CHECKING:
     from .r2 import R2
 
-AllValveDic = {"TwoPortValve_A": 0,
-               "TwoPortValve_B": 1,
-               "InjectionValve_A": 2,
-               "InjectionValve_B": 3,
-               "TwoPortValve_C": 4
-               }
-AllPumpDic = {"HPLCPump_A": 0,
-              "HPLCPump_B": 1
-              }
+AllValveDic = {
+    "TwoPortValve_A": 0,
+    "TwoPortValve_B": 1,
+    "InjectionValve_A": 2,
+    "InjectionValve_B": 3,
+    "TwoPortValve_C": 4,
+}
+AllPumpDic = {"HPLCPump_A": 0, "HPLCPump_B": 1}
 
 
 class R2GeneralSensor(Sensor):
     hw_device: R2  # for typing's sake
+
     def __init__(self, name: str, hw_device: R2):
         """A generic Syringe pump."""
         super().__init__(name, hw_device)
         self.add_api_route("/monitor-system", self.monitor_sys, methods=["GET"])
         self.add_api_route("/get-run-state", self.get_run_state, methods=["GET"])
-        self.add_api_route("/set-system-max-pressure", self.set_sys_pressure_limit, methods=["PUT"])
-
+        self.add_api_route(
+            "/set-system-max-pressure", self.set_sys_pressure_limit, methods=["PUT"]
+        )
 
     async def monitor_sys(self) -> dict:
         """monitor the system performance"""
@@ -51,6 +52,7 @@ class R2GeneralSensor(Sensor):
         """Set maximum system pressure: range 1,000 to 50,000 mbar"""
         # TODO: change to accept different units
         await self.hw_device.set_Pressure_limit(pressure)
+
     #
     # async def get_setting_Pressure_Limit(self) -> str:
     #     """Get setting system pressure limit"""
@@ -59,6 +61,7 @@ class R2GeneralSensor(Sensor):
 
 class R2PhotoReactor(PhotoControl):
     """R2 reactor control class"""
+
     hw_device: R2  # for typing's sake
 
     def __init__(self, name: str, hw_device: R2):
@@ -99,6 +102,7 @@ class R2PhotoReactor(PhotoControl):
 
 class R2InjectionValve(SixPortTwoPosition):
     """R2 reactor injection loop valve control class."""
+
     hw_device: R2  # for typing's sake
 
     # get position
@@ -118,13 +122,16 @@ class R2InjectionValve(SixPortTwoPosition):
 
     async def set_position(self, position: str):
         target_pos = self.position_mapping[position]  # load or inject
-        await self.hw_device.trigger_Key_Press(str(self.valve_code * 2 + int(target_pos)))
+        await self.hw_device.trigger_Key_Press(
+            str(self.valve_code * 2 + int(target_pos))
+        )
 
     # async def connections(self) -> ValveInfo: pass
 
 
 class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
     """R2 reactor injection loop valve control class."""
+
     hw_device: R2  # for typing's sake
 
     position_mapping = {"Solvent": "0", "Reagent": "1"}
@@ -144,13 +151,16 @@ class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
     async def set_position(self, position: str):
         """Move valve to position."""
         target_pos = self.position_mapping[position]
-        await self.hw_device.trigger_Key_Press(str(self.valve_code * 2 + int(target_pos)))
+        await self.hw_device.trigger_Key_Press(
+            str(self.valve_code * 2 + int(target_pos))
+        )
 
     # async def connections(self) -> ValveInfo: pass
 
 
 class R2HPLCPump(HPLCPump):
     """R2 reactor injection loop valve control class."""
+
     hw_device: R2  # for typing's sake
 
     def __init__(self, name: str, hw_device: R2, pump_code: int):
@@ -178,7 +188,7 @@ class R2HPLCPump(HPLCPump):
 
     async def stop(self) -> bool:  # type: ignore
         """Stop infusion"""
-        await self.hw_device.set_Flowrate(pump=self.pump_code,flowrate="0 ul/min")
+        await self.hw_device.set_Flowrate(pump=self.pump_code, flowrate="0 ul/min")
 
     async def is_pumping(self) -> bool:
         c_flow = await self.hw_device.get_current_flow(self.pump_code)

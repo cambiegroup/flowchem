@@ -10,14 +10,16 @@ from loguru import logger
 
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.phidgets.bubble_sensor_component import \
-    PhidgetBubbleSensorComponent, PhidgetBubbleSensorPowerComponent
+from flowchem.devices.phidgets.bubble_sensor_component import (
+    PhidgetBubbleSensorComponent,
+    PhidgetBubbleSensorPowerComponent,
+)
 from flowchem.utils.people import *
 
 try:
     from Phidget22.Phidget import *
-    from Phidget22.Devices.DigitalOutput import DigitalOutput    # power source
-    from Phidget22.Devices.VoltageInput import VoltageInput, PowerSupply #Sensor
+    from Phidget22.Devices.DigitalOutput import DigitalOutput  # power source
+    from Phidget22.Devices.VoltageInput import VoltageInput, PowerSupply  # Sensor
     from Phidget22.Devices.Log import Log, LogLevel
     from Phidget22.PhidgetException import PhidgetException
 
@@ -26,8 +28,8 @@ except ImportError:
     HAS_PHIDGET = False
 
 
-from flowchem.utils.exceptions import InvalidConfiguration #configuration is not valid
-from flowchem import ureg #pint
+from flowchem.utils.exceptions import InvalidConfiguration  # configuration is not valid
+from flowchem import ureg  # pint
 
 
 class PhidgetPowerSource5V(FlowchemDevice):
@@ -81,7 +83,6 @@ class PhidgetPowerSource5V(FlowchemDevice):
         logger.debug("power of tube sensor is turn on!")
         # self.phidget.setState(True)  #setting DutyCycle to 1.0
 
-
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             maintainers=[dario],
@@ -96,7 +97,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
 
     def power_on(self):
         """Control the power of the device"""
-        self.phidget.setDutyCycle(1.0)  #self.phidget.setState(True)
+        self.phidget.setDutyCycle(1.0)  # self.phidget.setState(True)
         logger.debug("tube sensor power is turn on!")
 
     def power_off(self):
@@ -123,10 +124,10 @@ class PhidgetBubbleSensor(FlowchemDevice):
         self,
         # intensity_range: tuple[float, float] = (0, 100),
         vint_serial_number: int = -1,
-        vint_hub_port : int = -1,
+        vint_hub_port: int = -1,
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
-        data_interval = None,
+        data_interval=None,
         name: str = "",
     ):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
@@ -198,18 +199,19 @@ class PhidgetBubbleSensor(FlowchemDevice):
     def is_attached(self) -> bool:
         """Whether the device is connected."""
         return bool(self.phidget.getAttached())
+
     def get_dataInterval(self) -> int:
-        """ Get Data Interval form the initial setting"""
+        """Get Data Interval form the initial setting"""
         return self.phidget.getDataInterval()
 
     def set_dataInterval(self, datainterval: int) -> None:
-        """ Set Data Interval: 20-6000 ms"""
+        """Set Data Interval: 20-6000 ms"""
         self.phidget.setDataInterval(datainterval)
         logger.debug(f"change data interval to {datainterval}!")
 
     def _voltage_to_intensity(self, voltage_in_volt: float) -> float:
         """Convert current reading into percentage."""
-        intensity_reading = voltage_in_volt *20
+        intensity_reading = voltage_in_volt * 20
         logger.debug(f"Read intensity {intensity_reading}!")
         return intensity_reading
 
@@ -225,7 +227,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
             return self._voltage_to_intensity(voltage)
 
     # def getMaxVoltage(self):
-        # https: // www.phidgets.com /?view = api
+    # https: // www.phidgets.com /?view = api
 
     def components(self):
         """Return a component."""
@@ -234,16 +236,16 @@ class PhidgetBubbleSensor(FlowchemDevice):
 
 if __name__ == "__main__":
     # turn on the  power of the bubble tube
-    power= PhidgetPowerSource5V(
+    power = PhidgetPowerSource5V(
         vint_serial_number=627768,
-        vint_hub_port =3,
+        vint_hub_port=3,
         vint_channel=0,
     )
 
     # turn on the sensor
     BubbleSensor_1 = PhidgetBubbleSensor(
         vint_serial_number=627768,
-        vint_hub_port = 0,
+        vint_hub_port=0,
         vint_channel=0,
     )
 
