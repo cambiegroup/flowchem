@@ -17,11 +17,16 @@ class MFCComponent(FlowchemComponent):
         """A generic power supply"""
         super().__init__(name, hw_device)
         self.add_api_route("/setpoint", self.get_setpoint, methods=["GET"])
+        self.add_api_route("/stop", self.)
         self.add_api_route("/setpoint", self.set_flow_setpoint, methods=["PUT"])
 
-    async def set_flow_setpoint(self, flowrate: str):
-        """Set flow rate to the instrument"""
+    async def set_flow_setpoint(self, flowrate: str) -> bool:
+        """Set flow rate to the instrument; defaulf unit: ul/min"""
         await self.hw_device.set_flow_setpoint(flowrate)
 
     async def get_setpoint(self) -> float:
+        """get """
         return await self.hw_device.measure()
+
+    async def stop(self) -> bool:
+        await self.hw_device.set_flow_setpoint("0 ml/min")

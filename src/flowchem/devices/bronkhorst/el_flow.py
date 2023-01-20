@@ -17,9 +17,14 @@ from flowchem.devices.bronkhorst.el_flow_component import MFCComponent
 class MFC(FlowchemDevice):
     DEFAULT_CONFIG = {"address": 0x80, "baudrate": 38400}
 
-    def __init__(self, port: str, name=""):
+    def __init__(
+            self,
+            port: str,
+            name="",
+            max_flow: float = 9  # ml / min = 100 % = 32000
+    ):
         self.port = port
-        self.max_flow = 9  # ml / min = 100 % = 32000
+        self.max_flow = max_flow
         super().__init__(name)
 
         self.metadata = DeviceInfo(
@@ -50,7 +55,12 @@ class MFC(FlowchemDevice):
         set_f = ureg.Quantity(flowrate)
         set_n = round(set_f.m_as("ul/min") * 32 / self.max_flow)
         self.el_flow.setpoint = set_n
-        logger.debug(f"set the flow rate to {set_n/320}%")
+        logger.debug(f"set the flow rate to {set_n / 320}%")
+
+    async def get_flow_setpoint(self) -> float:
+        """Get current flow rate in ml/min"""
+        m_num = float(self.el_flow.measure)
+        return m_num / 32000 * self.max_flow
 
     async def measure(self) -> float:
         """Get current flow rate in percentage"""
@@ -72,12 +82,11 @@ class MFC(FlowchemDevice):
 
 
 async def gas_flow(target_flowrate: str, reaction_time: float):
-
     Oxygen_flow = MFC("COM6")
     await Oxygen_flow.set_flow_setpoint("900 ul/min")  # 10%
     await asyncio.sleep(2)
     for n in range(100):
-        print(f"{n} time: { await Oxygen_flow.measure()}%")
+        print(f"{n} time: {await Oxygen_flow.measure()}%")
 
     # Oxygen_flow.set_flow_setpoint(target_point*32000/9.0)
     # await asyncio.sleep(reaction_time*60)

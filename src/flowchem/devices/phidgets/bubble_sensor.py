@@ -41,7 +41,6 @@ class PhidgetPowerSource5V(FlowchemDevice):
         vint_hub_port: int = -1,
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
-        phidget_is_remote: bool = False,
         name: str = "",
     ):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
