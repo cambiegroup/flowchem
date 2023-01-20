@@ -20,7 +20,7 @@ class MFCComponent(FlowchemComponent):
         self.add_api_route("/set-flow-rate", self.set_flow_setpoint, methods=["PUT"])
 
     async def set_flow_setpoint(self, flowrate: str) -> bool:
-        """Set flow rate to the instrument; defaulf unit: ul/min"""
+        """Set flow rate to the instrument; default unit: ul/min"""
         await self.hw_device.set_flow_setpoint(flowrate)
         return True
 
