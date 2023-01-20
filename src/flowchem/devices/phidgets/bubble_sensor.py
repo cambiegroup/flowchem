@@ -29,7 +29,8 @@ except ImportError:
 from flowchem.utils.exceptions import InvalidConfiguration #configuration is not valid
 from flowchem import ureg #pint
 
-class PhidgetBubbleSensor_power(FlowchemDevice):
+
+class PhidgetPowerSource5V(FlowchemDevice):
     """Use a Phidget power source to apply power to the sensor"""
 
     def __init__(
@@ -109,9 +110,11 @@ class PhidgetBubbleSensor_power(FlowchemDevice):
     def is_poweron(self) -> bool:
         """Wheteher the power is on"""
         return bool(self.phidget.getState())
+
     def components(self):
         """Return a component."""
-        return (PhidgetBubbleSensorPowerComponent("bubble_sensor_power", self),)
+        return (PhidgetBubbleSensorPowerComponent("5V", self),)
+
 
 class PhidgetBubbleSensor(FlowchemDevice):
     """Use a Phidget voltage input to translate a Tube Liquid Sensor OPB350 5 Valtage signal to the corresponding light penetration value."""
@@ -123,6 +126,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         vint_hub_port : int = -1,
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
+        data_interval = None,
         name: str = "",
     ):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
@@ -230,7 +234,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
 
 if __name__ == "__main__":
     # turn on the  power of the bubble tube
-    power= PhidgetBubbleSensor_power(
+    power= PhidgetPowerSource5V(
         vint_serial_number=627768,
         vint_hub_port =3,
         vint_channel=0,

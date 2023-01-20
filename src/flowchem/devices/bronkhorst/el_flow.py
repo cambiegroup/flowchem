@@ -11,7 +11,8 @@ from flowchem import ureg
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.utils.people import *
-from .el_flow_component import MFCComponent
+from flowchem.devices.bronkhorst.el_flow_component import MFCComponent
+
 class MFC(FlowchemDevice):
     DEFAULT_CONFIG ={"address" :0x80, "baudrate" :38400}
 
@@ -36,6 +37,10 @@ class MFC(FlowchemDevice):
             raise ConnectionError(
                 f"Error connecting to {self.port} -- {e}"
             ) from e
+
+    async def initialize(self):
+        """Ensure connection."""
+        await self.set_flow_setpoint("0 ul/min")
 
 
     async def set_flow_setpoint(self, flowrate: str):
@@ -77,7 +82,7 @@ async def gas_flow(target_flowrate: str, reaction_time:float):
     # Oxygen_flow.set_flow_setpoint(target_point*32000/9.0)
     # await asyncio.sleep(reaction_time*60)
 
-    await Oxygen_flow.set_flow_setpoint("0")
+    await Oxygen_flow.set_flow_setpoint("0 ml/min")
 
 if __name__ == "__main__":
     asyncio.run(gas_flow("0.05 ml/min", 25))

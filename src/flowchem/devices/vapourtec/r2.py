@@ -99,7 +99,7 @@ class R2(FlowchemDevice):
         logger.info(f"Connected with R2 version {self.metadata.version}")
 
         # Sets all pump to 0
-        await self.set_Flowrate(0, "0")
+        await self.set_Flowrate(0, "0 ul/min")
         await self.set_Flowrate(1, "0 ul/min")
         # Sets all temp to room temp.
         await self.set_Temperature("24°C")
@@ -112,6 +112,7 @@ class R2(FlowchemDevice):
         await self.trigger_Key_Press("2")
         await self.trigger_Key_Press("4")
         await self.trigger_Key_Press("6")
+        await self.trigger_Key_Press("8")
         await self.power_on()
 
     async def _write(self, command: str):
@@ -135,7 +136,6 @@ class R2(FlowchemDevice):
         failure = 0
         while True:
             response = await self._read_reply()
-            logger.debug(f"response: {response}")
             if not response:
                 failure += 1
                 logger.warning(f"{failure} time of failure!")
@@ -282,12 +282,21 @@ class R2(FlowchemDevice):
         # 0: time, 5: cooling, heating, or ... 6: temp
         return float(temp_state[channel*3])/10
 
-    async def get_current_pressure(self, pump_code:int = -1) -> int:
+    async def get_pressure_history(self) -> namedtuple/dict:
+        """Get pressure history and returns it as [ (in mbar)"""
+        # Get a `&` separated list of pressures for all sensors every second
+        pressure_history = await self.write_and_read_reply(self.cmd.HISTORY_PRESSURE)
+        # Each pressure data point consists of four values: time and three pressures
+        _, *pressures = pressure_history[0].split(",")  # e.g. 45853,94,193,142
+        # Converts to mbar
+        p_in_mbar = [int(x)*10 for x in pressures]
+        return p_in_mbar[1], p_in_mbar[2], p_in_mbar[0]  # pumpA, pumpB, system
+
+    async def get_current_pressure(self, pump_code: int = 2) -> int:
         """Get current pressure (in mbar)"""
-        state = await self.write_and_read_reply(self.cmd.HISTORY_PRESSURE)
-        press_state_list = state.split("&")[0].split(",")
-        # 0: time, 1: system pressure, 2: pump A, 3: pump_B
-        return int(press_state_list[pump_code+2])*10
+        press_state_list = await self.get_pressure_history()
+        # 0: pump A, 1: pump_B, 2: system pressure
+        return press_state_list[pump_code]
 
     async def get_current_flow(self, pump_code: int) -> float:
         """Get current flow rate (in ul/min)"""
