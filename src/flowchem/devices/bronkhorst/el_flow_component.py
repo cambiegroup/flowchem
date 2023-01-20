@@ -9,6 +9,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 if TYPE_CHECKING:
     from .el_flow import MFC
 
+
 class MFCComponent(FlowchemComponent):
     hw_device: MFC  # just for typing
 

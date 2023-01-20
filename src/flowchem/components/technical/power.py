@@ -9,6 +9,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 class PowerSwitch(FlowchemComponent):
     """A generic power on/off switch."""
+
     def __init__(
         self,
         name: str,

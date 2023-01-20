@@ -35,10 +35,10 @@ class PhotoControl(FlowchemComponent):
 
         self.add_api_route("/temp-reached", self.is_target_reached, methods=["GET"])
 
-
     async def set_UV(self, power: str):
         """Set UV light intensity"""
         ...
+
     async def set_temperature(self, temp: str):
         """Set the target temperature to the given string in natural language."""
         ...
