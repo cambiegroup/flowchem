@@ -41,6 +41,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
         vint_hub_port: int = -1,
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
+        phidget_is_remote: bool = False,
         name: str = "",
     ):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
@@ -127,7 +128,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         vint_hub_port: int = -1,
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
-        data_interval=None,
+        data_interval=250,  # ms
         name: str = "",
     ):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
@@ -172,7 +173,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         # Set power supply to 12V to start measurement
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_12V)
         logger.debug("tube sensor is turn on, default data interval is 200 ms!")
-        self.phidget.setDataInterval(200)  # 200ms
+        self.phidget.setDataInterval(data_interval)
 
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
@@ -215,16 +216,21 @@ class PhidgetBubbleSensor(FlowchemDevice):
         logger.debug(f"Read intensity {intensity_reading}!")
         return intensity_reading
 
-    def read_intensity(self) -> float:  # type: ignore
+
+    def read_voltage(self) -> float:  # type: ignore
         """Read intensity from the sensor and returns it as float."""
         try:
             voltage = self.phidget.getVoltage()
             logger.debug(f"Actual voltage: {voltage}")
+            return voltage
         except PhidgetException:
             logger.error("Cannot read intensity!")
             return 0
-        else:
-            return self._voltage_to_intensity(voltage)
+
+    def read_intensity(self) -> float:  # type: ignore
+        """Read intensity from voltage"""
+        voltage = self.read_voltage()
+        return self._voltage_to_intensity(voltage)
 
     # def getMaxVoltage(self):
     # https: // www.phidgets.com /?view = api
