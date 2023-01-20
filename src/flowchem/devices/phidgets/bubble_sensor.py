@@ -27,7 +27,6 @@ try:
 except ImportError:
     HAS_PHIDGET = False
 
-
 from flowchem.utils.exceptions import InvalidConfiguration  # configuration is not valid
 from flowchem import ureg  # pint
 
@@ -36,12 +35,12 @@ class PhidgetPowerSource5V(FlowchemDevice):
     """Use a Phidget power source to apply power to the sensor"""
 
     def __init__(
-        self,
-        vint_serial_number: int = -1,
-        vint_hub_port: int = -1,
-        vint_channel: int = -1,
-        phidget_is_remote: bool = False,
-        name: str = "",
+            self,
+            vint_serial_number: int = -1,
+            vint_hub_port: int = -1,
+            vint_channel: int = -1,
+            phidget_is_remote: bool = False,
+            name: str = "",
     ):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
@@ -121,14 +120,14 @@ class PhidgetBubbleSensor(FlowchemDevice):
     """Use a Phidget voltage input to translate a Tube Liquid Sensor OPB350 5 Valtage signal to the corresponding light penetration value."""
 
     def __init__(
-        self,
-        # intensity_range: tuple[float, float] = (0, 100),
-        vint_serial_number: int = -1,
-        vint_hub_port: int = -1,
-        vint_channel: int = -1,
-        phidget_is_remote: bool = False,
-        data_interval=250,  # ms
-        name: str = "",
+            self,
+            # intensity_range: tuple[float, float] = (0, 100),
+            vint_serial_number: int = -1,
+            vint_hub_port: int = -1,
+            vint_channel: int = -1,
+            phidget_is_remote: bool = False,
+            data_interval: int = 250,  # ms
+            name: str = "",
     ):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
@@ -214,7 +213,6 @@ class PhidgetBubbleSensor(FlowchemDevice):
         intensity_reading = voltage_in_volt * 20
         logger.debug(f"Read intensity {intensity_reading}!")
         return intensity_reading
-
 
     def read_voltage(self) -> float:  # type: ignore
         """Read intensity from the sensor and returns it as float."""
