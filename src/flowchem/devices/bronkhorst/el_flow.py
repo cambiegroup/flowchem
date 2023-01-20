@@ -48,21 +48,25 @@ class MFC(FlowchemDevice):
     async def set_flow_setpoint(self, flowrate: str):
         """Set the setpoint of the instrument (0-32000 = 0-max flowrate = 0-100%)."""
         if flowrate.isnumeric():
-            flowrate = flowrate + "ul/min"
+            flowrate = flowrate + "ml/min"
             logger.warning(
-                "No units provided to set_temperature, assuming microliter/minutes."
+                "No units provided to set_temperature, assuming milliliter/minutes."
             )
         set_f = ureg.Quantity(flowrate)
-        set_n = round(set_f.m_as("ul/min") * 32 / self.max_flow)
-        self.el_flow.setpoint = set_n
-        logger.debug(f"set the flow rate to {set_n / 320}%")
+        set_n = round(set_f.m_as("ul/min") * 32000 / self.max_flow)
+        if set_n > 32000:
+            self.el_flow.setpoint = 32000
+            logger.debug("setting higher than maximum flow rate! set the flow rate to 100%")
+        else:
+            self.el_flow.setpoint = set_n
+            logger.debug(f"set the flow rate to {set_n / 320}%")
 
     async def get_flow_setpoint(self) -> float:
         """Get current flow rate in ml/min"""
         m_num = float(self.el_flow.measure)
         return m_num / 32000 * self.max_flow
 
-    async def measure(self) -> float:
+    async def get_flow_precentage(self) -> float:
         """Get current flow rate in percentage"""
         m_num = float(self.el_flow.measure)
         return m_num / 320
