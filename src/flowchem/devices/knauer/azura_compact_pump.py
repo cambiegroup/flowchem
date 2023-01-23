@@ -38,9 +38,9 @@ class AzuraCompactPump(HPLCPump):
             rate += " ml/min"
             logger.warning("Units missing, assuming ml/min!")
 
-        parsed_flowrate = ureg.Quantity(rate)
+        parsed_rate = ureg.Quantity(rate)
 
-        await self.hw_device.set_flow_rate(rate=parsed_flowrate)
+        await self.hw_device.set_flow_rate(rate=parsed_rate)
         return await self.hw_device.infuse()
 
     async def stop(self) -> bool:
