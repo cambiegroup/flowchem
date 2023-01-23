@@ -29,8 +29,7 @@ class Elite11PumpOnly(SyringePump):
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
         """Infuse."""
         if await self.is_pumping():
-            logger.warning("Cannot start infusion: pump already moving!")
-            return False
+            logger.warning("Pump already moving! change to different flow rate!!!")
 
         if rate:  # Else previous rate will be used
             await self.hw_device.set_flow_rate(rate)
