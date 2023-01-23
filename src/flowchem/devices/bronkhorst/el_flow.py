@@ -53,7 +53,7 @@ class MFC(FlowchemDevice):
                 "No units provided to set_temperature, assuming milliliter/minutes."
             )
         set_f = ureg.Quantity(flowrate)
-        set_n = round(set_f.m_as("ul/min") * 32000 / self.max_flow)
+        set_n = round(set_f.m_as("ml/min") * 32000 / self.max_flow)
         if set_n > 32000:
             self.el_flow.setpoint = 32000
             logger.debug("setting higher than maximum flow rate! set the flow rate to 100%")
@@ -90,7 +90,7 @@ async def gas_flow(target_flowrate: str, reaction_time: float):
     await Oxygen_flow.set_flow_setpoint("900 ul/min")  # 10%
     await asyncio.sleep(2)
     for n in range(100):
-        print(f"{n} time: {await Oxygen_flow.measure()}%")
+        print(f"{n} time: {await Oxygen_flow.get_flow_setpoint()}%")
 
     # Oxygen_flow.set_flow_setpoint(target_point*32000/9.0)
     # await asyncio.sleep(reaction_time*60)
