@@ -1,7 +1,6 @@
 """ Control module for the Vapourtec R2 valves """
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING
 from loguru import logger
 from flowchem import ureg
@@ -41,22 +40,17 @@ class R2GeneralSensor(Sensor):
 
     async def monitor_sys(self) -> dict:
         """monitor the system performance"""
-        # TODO: 500 Error: Internal Server Error occasionally pope out , but get_run_state won't
         return await self.hw_device.pooling()
 
     async def get_run_state(self) -> str:
         """Get current system state"""
         return await self.hw_device.get_Run_State()
 
-    async def set_sys_pressure_limit(self, pressure: str):
+    async def set_sys_pressure_limit(self, pressure: str) -> bool:
         """Set maximum system pressure: range 1,000 to 50,000 mbar"""
         # TODO: change to accept different units
         await self.hw_device.set_Pressure_limit(pressure)
-
-    #
-    # async def get_setting_Pressure_Limit(self) -> str:
-    #     """Get setting system pressure limit"""
-    #     return await self.hw_device.get_setting_Pressure_Limit()
+        return True
 
 
 class R2PhotoReactor(PhotoControl):
@@ -68,14 +62,14 @@ class R2PhotoReactor(PhotoControl):
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
 
-    async def get_current_power(self) -> str:
-        """Get current reactor power state"""
-        return await self.hw_device.get_current_power()
+    # async def get_current_power(self) -> str:
+    #     """Get current reactor power state"""
+    #     return await self.hw_device.get_current_power()
 
-    async def set_temperature(self, temperature: str):
+    async def set_temperature(self, temperature: str) -> bool:
         """Set reactor temperature"""
         await self.hw_device.set_Temperature(temperature)
-        # TODO: add response body/return message
+        return True
 
     async def get_temperature(self) -> float:
         """Get current reactor temperature"""
@@ -87,17 +81,21 @@ class R2PhotoReactor(PhotoControl):
     #     s_temp = await self.hw_device.get_setting_Temperature()
     #     return abs(c_temp - float(s_temp)) <= 1.5
 
-    async def set_UV(self, power: str = "100"):
+    async def set_UV(self, power: str = "100") -> float:
         """Set UV light intensity at the range 50-100%"""
         await self.hw_device.set_UV(power)
+        return True
 
-    async def UV_power_on(self):
+    async def UV_power_on(self) -> bool:
         """Turn on whole system"""
-        return await self.hw_device.power_on()
+        await self.hw_device.set_UV("100")
+        await self.hw_device.power_on()
+        return True
 
-    async def UV_power_off(self):
+    async def UV_power_off(self) -> bool:
         """Turn off whole system."""
         await self.hw_device.set_UV("0")
+        return True
 
 
 class R2InjectionValve(SixPortTwoPosition):
@@ -120,13 +118,12 @@ class R2InjectionValve(SixPortTwoPosition):
         # self.hw_device.last_state.valve[self.valve_number]
         return f"position is %s" % self._reverse_position_mapping[position]
 
-    async def set_position(self, position: str):
+    async def set_position(self, position: str) -> bool:
         target_pos = self.position_mapping[position]  # load or inject
         await self.hw_device.trigger_Key_Press(
             str(self.valve_code * 2 + int(target_pos))
         )
-
-    # async def connections(self) -> ValveInfo: pass
+        return True
 
 
 class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
@@ -134,6 +131,7 @@ class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
 
     hw_device: R2  # for typing's sake
 
+    # TODO: the mapping name is not applivable
     position_mapping = {"Solvent": "0", "Reagent": "1"}
     _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
@@ -148,14 +146,13 @@ class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
         # self.hw_device.last_state.valve[self.valve_number]
         return f"inlet is %s" % self._reverse_position_mapping[position]
 
-    async def set_position(self, position: str):
+    async def set_position(self, position: str) -> bool:
         """Move valve to position."""
         target_pos = self.position_mapping[position]
         await self.hw_device.trigger_Key_Press(
             str(self.valve_code * 2 + int(target_pos))
         )
-
-    # async def connections(self) -> ValveInfo: pass
+        return True
 
 
 class R2HPLCPump(HPLCPump):
@@ -177,14 +174,16 @@ class R2HPLCPump(HPLCPump):
         # return await self.hw_device.pooling()
         return await self.hw_device.get_current_flow(self.pump_code)
 
-    async def set_flowrate(self, flowrate: str):
+    async def set_flowrate(self, flowrate: str) -> bool:
         """Set flow rate to the pump"""
         await self.hw_device.set_Flowrate(self.pump_code, flowrate)
+        return True
 
-    async def infuse(self, rate: str = "", volume: str = ""):
+    async def infuse(self, rate: str = "", volume: str = "") -> bool:
         """set the flow rate: in ul/min and start infusion."""
         await self.hw_device.set_Flowrate(self.pump_code, rate)
         await self.hw_device.power_on()
+        return True
 
     async def stop(self) -> bool:  # type: ignore
         """Stop infusion"""
@@ -204,7 +203,7 @@ class R2PumpPressureSensor(PressureSensor):
         self.pump_code = pump_code
 
     async def read_pressure(self, units: str = "mbar") -> int:  # mbar
-        """Get current pump pressure."""
+        """Get current pump pressure in mbar."""
         return await self.hw_device.get_current_pressure(self.pump_code)
 
 
@@ -224,8 +223,10 @@ class R2GeneralPressureSensor(PressureSensor):
 class R2MainSwitch(PowerSwitch):
     hw_device: R2  # just for typing
 
-    async def power_on(self):
+    async def power_on(self) -> bool:
         await self.hw_device.power_on()
+        return True
 
-    async def power_off(self):
+    async def power_off(self) -> bool:
         await self.hw_device.power_off()
+        return True
