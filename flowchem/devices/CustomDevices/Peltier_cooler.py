@@ -274,6 +274,23 @@ class PeltierCommands:
         command_string="GPW", reply_lines=1, requires_argument=False
     )
 
+class PeltierDefaults:
+    HEATING_PID = [0.64,0.53,0.13]
+    COOLING_PID = [2.83,2.36,0.59]
+    CURRENT_LIMIT_HEATING=10
+    CURRENT_LIMIT_COOLING=14
+    T_MAX=50
+    T_MIN=-55
+
+
+class PeltierLowCoolingDefaults(PeltierDefaults):
+    HEATING_PID = [0.8,0.4,0]
+    COOLING_PID = [0.8, 0.4, 0]
+    CURRENT_LIMIT_HEATING=3
+    CURRENT_LIMIT_COOLING=6.5 # TODO check
+    CURRENT_LIMIT_LOW_COOLING=7.8
+    T_MAX=20
+    T_MIN=-66
 
 class PeltierCooler:
 
