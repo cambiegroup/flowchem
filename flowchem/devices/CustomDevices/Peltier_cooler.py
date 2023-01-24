@@ -294,15 +294,10 @@ class PeltierLowCoolingDefaults(PeltierDefaults):
 
 class PeltierCooler:
 
-    #TODO check sink temperature and throw error if to high - if not doable from controller
-
-    heating_pid = [0.64,0.53,0.13]
-    cooling_pid = [2.83,2.36,0.59]
-    low_cooling_pid = [2.83,2.36,0.59]
-
     def __init__(self,
         peltier_io: PeltierIO,
-        address: int = 0,
+        defaults: PeltierDefaults,
+        address: int = 0
     ):
         self.peltier_io = peltier_io
 
@@ -313,14 +308,22 @@ class PeltierCooler:
         # This command is used to test connection: failure handled by PumpIO
         self.log.info(
             f"Connected to peltier on port {self.peltier_io._serial.port}:{address}!")
-        self.set_default_values()
+        self.set_default_values(defaults)
+        self.cooling_pid = defaults.COOLING_PID
+        self.heating_pid = defaults.HEATING_PID
+        self.current_limit_cooling = defaults.CURRENT_LIMIT_COOLING
+        try:
+            self.current_limit_cooling_low = defaults.CURRENT_LIMIT_LOW_COOLING
+        except AttributeError:
+            self.current_limit_cooling_low = defaults.CURRENT_LIMIT_COOLING
+        # TODO set low and medium current
 
-    def set_default_values(self):
-        self._set_current_limit_heating(10)
-        self._set_current_limit_cooling(14)
-        self._set_max_temperature(50)
-        self._set_min_temperature(-55)
-        self.set_pid_parameters(*self.cooling_pid)
+    def set_default_values(self, defaults:PeltierDefaults):
+        self._set_current_limit_heating(defaults.CURRENT_LIMIT_HEATING)
+        self._set_current_limit_cooling(defaults.CURRENT_LIMIT_COOLING)
+        self._set_max_temperature(defaults.T_MAX)
+        self._set_min_temperature(defaults.T_MIN)
+        self.set_pid_parameters(*defaults.COOLING_PID)
         self.disable_slope()
 
     def send_command_and_read_reply( self, command_template: PeltierCommandTemplate, parameter: int= "", parse=True
