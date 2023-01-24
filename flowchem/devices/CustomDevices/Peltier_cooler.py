@@ -432,7 +432,9 @@ class PeltierCooler:
             #set_heating_parameters
             self.set_pid_parameters(*self.heating_pid)
         else:
-            if new_T_setpoint > -30:
+            if new_T_setpoint > -60:
                 self.set_pid_parameters(*self.cooling_pid)
+                self._set_current_limit_cooling(self.current_limit_cooling)
             else:
                 self.set_pid_parameters(*self.low_cooling_pid)
+                self._set_current_limit_cooling(self.current_limit_cooling_low)
