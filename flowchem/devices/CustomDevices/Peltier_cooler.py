@@ -287,7 +287,7 @@ class PeltierLowCoolingDefaults(PeltierDefaults):
     HEATING_PID = [0.8,0.4,0]
     COOLING_PID = [0.8, 0.4, 0]
     CURRENT_LIMIT_HEATING=3
-    CURRENT_LIMIT_COOLING=6.5 # TODO check
+    CURRENT_LIMIT_COOLING=6.5
     CURRENT_LIMIT_LOW_COOLING=7.8
     T_MAX=20
     T_MIN=-66
@@ -309,6 +309,7 @@ class PeltierCooler:
         self.log.info(
             f"Connected to peltier on port {self.peltier_io._serial.port}:{address}!")
         self.set_default_values(defaults)
+        self.defaults=defaults
         self.cooling_pid = defaults.COOLING_PID
         self.heating_pid = defaults.HEATING_PID
         self.current_limit_cooling = defaults.CURRENT_LIMIT_COOLING
@@ -334,8 +335,31 @@ class PeltierCooler:
         )
 
     def set_temperature(self, temperature: float):
+        self.stop_control()
         self._set_state_dependant_parameters(temperature)
+        # start softly
+        self._set_current_limit_cooling(0.5)
+        self._set_current_limit_heating(0.5)
         self._set_temperature(temperature)
+        self.start_control()
+        sleep(10)
+        # Now start with power
+        self.set_default_values(self.defaults)
+        # this is a procedure necessary for reaching -65 °C.
+        if temperature < -60:
+            # The idea is to go to -60 with limited power, so the
+            # supporting chiller (the one cooling the pealtier sink) is not challenged.
+            self.set_temperature(-60)
+            # Once the -60 are reached, the
+            # peltier controller will go down in powern  provided.
+            while self.get_temperature() > -60:
+                sleep(5)
+            #  Wait a short while so the support chiller recovers.
+            sleep(60)
+            # Now go to full power
+            self.set_temperature(temperature)
+            self._set_current_limit_cooling(self.current_limit_cooling_low)
+
 
     def _set_temperature(self, temperature: float):
         reply = self.send_command_and_read_reply(PeltierCommands.SET_TEMPERATURE, int(temperature*100))
@@ -432,7 +456,5 @@ class PeltierCooler:
             #set_heating_parameters
             self.set_pid_parameters(*self.heating_pid)
         else:
-            if new_T_setpoint > -30:
-                self.set_pid_parameters(*self.cooling_pid)
-            else:
-                self.set_pid_parameters(*self.low_cooling_pid)
+            self.set_pid_parameters(*self.cooling_pid)
+            self._set_current_limit_cooling(self.current_limit_cooling)
