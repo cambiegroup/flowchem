@@ -334,7 +334,7 @@ class PeltierCooler:
         )
 
     def set_temperature(self, temperature: float):
-        self._set_state_dependant_pid_parameters(temperature)
+        self._set_state_dependant_parameters(temperature)
         self._set_temperature(temperature)
 
     def _set_temperature(self, temperature: float):
@@ -420,7 +420,7 @@ class PeltierCooler:
         reply = self.send_command_and_read_reply(PeltierCommands.SET_T_MIN, int(t_min * 100))
         assert reply == t_min
 
-    def _set_state_dependant_pid_parameters(self, new_T_setpoint):
+    def _set_state_dependant_parameters(self, new_T_setpoint):
         current_T = self.get_temperature()
         if current_T < new_T_setpoint:
             #set_heating_parameters
