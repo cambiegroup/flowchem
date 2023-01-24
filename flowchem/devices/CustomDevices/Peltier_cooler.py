@@ -358,6 +358,12 @@ class PeltierCooler:
         assert type(reply) == float
         return reply
 
+    def get_sink_temperature(self) -> float:
+        reply = self.send_command_and_read_reply(PeltierCommands.GET_SINK_TEMPERATURE)
+        assert type(reply) == float
+        return reply
+
+
     def stop_control(self):
         reply = self.send_command_and_read_reply(PeltierCommands.SWITCH_OFF)
         assert int(reply) == 0
