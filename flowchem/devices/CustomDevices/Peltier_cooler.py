@@ -428,7 +428,7 @@ class PeltierCooler:
 
     def _set_state_dependant_parameters(self, new_T_setpoint):
         current_T = self.get_temperature()
-        if current_T < new_T_setpoint:
+        if self.get_sink_temperature() < new_T_setpoint:
             #set_heating_parameters
             self.set_pid_parameters(*self.heating_pid)
         else:
