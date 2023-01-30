@@ -66,12 +66,12 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         """Initialize connection."""
         await super().initialize()
 
-        # if self._d2:
-        #     await self.lamp("d2", True)
-        #     await asyncio.sleep(1)
-        # if self._hal:
-        #     await self.lamp("hal", True)
-        #     await asyncio.sleep(15)
+        if self._d2:
+            await self.lamp("d2", True)
+            await asyncio.sleep(1)
+        if self._hal:
+            await self.lamp("hal", True)
+            await asyncio.sleep(15)
 
         if self._control:
             await self.display_control(True)
