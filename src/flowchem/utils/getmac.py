@@ -25,7 +25,7 @@ from subprocess import DEVNULL
 
 from loguru import logger
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional  # noqa
 
 if TYPE_CHECKING:
     pass
