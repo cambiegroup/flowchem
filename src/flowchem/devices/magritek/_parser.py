@@ -17,7 +17,7 @@ class StatusNotification(Enum):
     UNKNOWN = 7
 
 
-def parse_status_notification(xml_message: etree.Element):
+def parse_status_notification(xml_message: etree._Element):
     """Parse a status notification reply."""
     status_notification = xml_message.find(".//StatusNotification")
     assert status_notification is not None, "a StatusNotification tree is needed"

@@ -88,7 +88,9 @@ class Spinsolve(FlowchemDevice):
             try:
                 self.schema = etree.XMLSchema(file=str(default_schema))
             except etree.XMLSchemaParseError:  # i.e. not found
-                self.schema = None
+                raise ConnectionError(
+                    f"Cannot find RemoteControl.xsd in {default_schema}!"
+                )
         else:
             self.schema = xml_schema
 
@@ -204,8 +206,10 @@ class Spinsolve(FlowchemDevice):
     async def set_user_data(self, data: dict):
         """Set user data. The items provide will appear in `acqu.par`."""
         user_data = set_attribute("UserData")
+        node = user_data.find(".//UserData")
+        assert isinstance(node, etree._Element)
         for key, value in data.items():
-            etree.SubElement(user_data.find(".//UserData"), "Data", {key: value})
+            etree.SubElement(node, "Data", {key: value})
         await self.send_message(user_data)
 
     async def _transmit(self, message: bytes):
@@ -217,7 +221,7 @@ class Spinsolve(FlowchemDevice):
         self._io_writer.write(message)
         await self._io_writer.drain()
 
-    async def send_message(self, root: etree.Element):
+    async def send_message(self, root: etree._Element):
         """Send the tree connected XML etree.Element provided."""
         # Turn the etree.Element provided into an ElementTree
         tree = etree.ElementTree(root)
@@ -226,7 +230,7 @@ class Spinsolve(FlowchemDevice):
         message = etree.tostring(tree, xml_declaration=True, encoding="utf-8")
 
         # Send request
-        logger.debug(f"Transmitting request to spectrometer: {message}")
+        logger.debug(f"Transmitting request to spectrometer: {message!r}")
         await self._transmit(message)
 
     async def hw_request(self):

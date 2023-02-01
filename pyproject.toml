@@ -73,6 +73,7 @@ types = [
     "types-lxml",
     "types-PyYAML",
     "types-requests",
+
 ]
 
 [project.urls]
