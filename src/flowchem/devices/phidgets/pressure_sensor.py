@@ -9,11 +9,10 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.phidgets.pressure_sensor_component import (
     PhidgetPressureSensorComponent,
 )
-from flowchem.utils.people import *
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 try:
     from Phidget22.Devices.CurrentInput import CurrentInput, PowerSupply
-    from Phidget22.Devices.Log import Log, LogLevel
     from Phidget22.PhidgetException import PhidgetException
 
     HAS_PHIDGET = True
@@ -67,7 +66,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         try:
             self.phidget.openWaitForAttachment(1000)
             logger.debug("Pressure sensor connected!")
-        except PhidgetException as phidget_error:
+        except PhidgetException:
             raise InvalidConfiguration(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
             )

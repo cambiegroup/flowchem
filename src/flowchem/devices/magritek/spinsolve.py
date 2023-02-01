@@ -21,7 +21,7 @@ from flowchem.devices.magritek._parser import StatusNotification
 from flowchem.devices.magritek.spinsolve_control import SpinsolveControl
 from flowchem.devices.magritek.utils import create_folder_mapper
 from flowchem.devices.magritek.utils import get_my_docs_path
-from flowchem.utils.people import *
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 __all__ = ["Spinsolve"]
 

@@ -84,7 +84,7 @@ def _get_local_ip() -> str:
     if local_ip := next((ip for ip in machine_ips if ip.startswith("100.")), False):
         return local_ip  # type: ignore
 
-    logger.warning(f"Could not reliably determine local IP!")
+    logger.warning("Could not reliably determine local IP!")
     hostname = socket.gethostname()
 
     # Only accept local IP

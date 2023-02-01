@@ -15,7 +15,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
 from flowchem.devices.hamilton.ml600_valve import ML600Valve
 from flowchem.utils.exceptions import InvalidConfiguration
-from flowchem.utils.people import *
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 if TYPE_CHECKING:
     import pint
@@ -237,8 +237,8 @@ class ML600(FlowchemDevice):
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
             raise InvalidConfiguration(
-                f"Invalid syringe volume provided."
-                f"The syringe volume is a string with units! e.g. '5 ml'"
+                "Invalid syringe volume provided."
+                "The syringe volume is a string with units! e.g. '5 ml'"
             ) from attribute_error
 
         if self.syringe_volume.m_as("ml") not in ML600.VALID_SYRINGE_VOLUME:

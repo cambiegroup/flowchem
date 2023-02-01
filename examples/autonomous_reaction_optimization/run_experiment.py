@@ -2,7 +2,13 @@ import time
 
 import numpy as np
 import pandas as pd
-from _hw_control import *
+from examples.autonomous_reaction_optimization._hw_control import (
+    command_session,
+    socl2_endpoint,
+    r4_endpoint,
+    hexyldecanoic_endpoint,
+    flowir_endpoint,
+)
 from loguru import logger
 from scipy import integrate
 

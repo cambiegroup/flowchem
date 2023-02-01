@@ -40,9 +40,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "mypy",
-    "flake8",
+    "ruff",
     "black",
-    "pylint",
     "tox",
     "pre-commit"
 ]
@@ -107,6 +106,11 @@ markers = [
     "Spinsolve: tests requiring a connection to Spinsolve.",
     "FlowIR: tests requiring a connection to a FlowIR.",
     "KPump: tests for Azura compact" ]
+
+[tool.ruff]
+line-length = 120
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F403"]
 
 [tool.tox]
 legacy_tox_ini = """

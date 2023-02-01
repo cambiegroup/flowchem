@@ -55,7 +55,8 @@ class ML600Pump(SyringePump):
     async def withdraw(self, rate: str = "1 ml/min", volume: str | None = None) -> bool:
         """Start withdraw with given rate and volume (both optional).
 
-        If no rate is specified, the default (1 ml/min) is used, can be set on per-pump basis via `default_withdraw_rate`
+        If no rate is specified, the default (1 ml/min) is used.
+        The default can be set on per-pump basis via `default_withdraw_rate`.
         If no volume is specified, the max possible volume is infused.
         """
         if not rate:

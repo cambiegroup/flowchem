@@ -31,7 +31,7 @@ def parse_toml(stream: typing.BinaryIO) -> dict:
     except tomllib.TOMLDecodeError as parser_error:
         logger.exception(parser_error)
         raise InvalidConfiguration(
-            f"The configuration provided does not contain valid TOML!"
+            "The configuration provided does not contain valid TOML!"
         ) from parser_error
 
 

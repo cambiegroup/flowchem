@@ -1,5 +1,4 @@
 """Syringe pump component, two flavours, infuse only, infuse-withdraw."""
-from loguru import logger
 
 from flowchem.components.pumps.base_pump import BasePump
 from flowchem.devices.flowchem_device import FlowchemDevice
