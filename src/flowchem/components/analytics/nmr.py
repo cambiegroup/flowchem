@@ -1,10 +1,7 @@
 """An NMR control component."""
 from flowchem.components.base_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from fastapi import BackgroundTasks
+from fastapi import BackgroundTasks
 
 
 class NMRControl(FlowchemComponent):
