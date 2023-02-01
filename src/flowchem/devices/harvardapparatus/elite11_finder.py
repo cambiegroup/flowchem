@@ -44,7 +44,7 @@ def elite11_finder(serial_port) -> list[str]:
             syringe_volume="10 ml",
             address=address,
         )
-        info = asyncio.run(test_pump.pump_info())
+        asyncio.run(test_pump.pump_info())
     except InvalidConfiguration:
         # This is necessary only on failure to release the port for the other inspector
         link._serial.close()

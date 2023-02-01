@@ -6,9 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .chiller import HuberChiller
 
-from loguru import logger
 
-from flowchem import ureg
 from flowchem.components.technical.temperature import TemperatureControl
 
 

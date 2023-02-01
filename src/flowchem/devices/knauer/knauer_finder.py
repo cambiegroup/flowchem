@@ -84,7 +84,7 @@ def _get_local_ip() -> str:
     if local_ip := next((ip for ip in machine_ips if ip.startswith("100.")), False):
         return local_ip  # type: ignore
 
-    logger.warning(f"Could not reliably determine local IP!")
+    logger.warning("Could not reliably determine local IP!")
     hostname = socket.gethostname()
 
     # Only accept local IP
@@ -98,7 +98,7 @@ def _get_local_ip() -> str:
         return ""
 
 
-async def send_broadcast_and_receive_replies(source_ip):
+async def send_broadcast_and_receive_replies(source_ip: str):
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:

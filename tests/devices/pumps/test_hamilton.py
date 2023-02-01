@@ -1,15 +1,15 @@
-import asyncio
-import sys
-
-import aioserial
-import pytest
-from fastapi import FastAPI
-from httpx import AsyncClient
-
-from flowchem.server.api_server import create_server_for_devices
-from flowchem.server.configuration_parser import instantiate_device
-
-
+# import asyncio
+# import sys
+#
+# import aioserial
+# import pytest
+# from fastapi import FastAPI
+# from httpx import AsyncClient
+#
+# from flowchem.server.api_server import create_server_for_devices
+# from flowchem.server.configuration_parser import instantiate_device
+#
+#
 # class FakeSerial(aioserial.AioSerial):
 #     """Mock AioSerial."""
 #

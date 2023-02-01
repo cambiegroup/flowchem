@@ -1,11 +1,16 @@
 import time
 
-from _hw_control import *
 from gryffin import Gryffin
 from loguru import logger
 from run_experiment import run_experiment
 
-from examples.autonomous_reaction_optimization._hw_control import command_session
+from examples.autonomous_reaction_optimization._hw_control import (
+    command_session,
+    socl2_endpoint,
+    r4_endpoint,
+    hexyldecanoic_endpoint,
+    flowir_endpoint,
+)
 
 logger.add("./xp.log", level="INFO")
 
@@ -24,6 +29,7 @@ config = {
 # Initialize gryffin
 gryffin = Gryffin(config_dict=config)
 observations = []
+
 
 # Initialize hardware
 with command_session() as sess:

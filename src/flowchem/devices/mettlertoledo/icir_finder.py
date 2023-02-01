@@ -28,7 +28,7 @@ async def generate_icir_config() -> str:
     if await is_iCIR_running_locally():
         logger.debug("Local iCIR found!")
         return dedent(
-            f"""
+            """
                [device.icir-local]
                type = "IcIR"
                template = ""  # Add template name with acquisition settings!

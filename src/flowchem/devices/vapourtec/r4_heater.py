@@ -1,7 +1,6 @@
 """ Control module for the Vapourtec R4 heater """
 from __future__ import annotations
 
-import time
 from collections import namedtuple
 from collections.abc import Iterable
 
@@ -15,7 +14,7 @@ from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vapourtec.r4_heater_channel_control import R4HeaterChannelControl
 from flowchem.utils.exceptions import InvalidConfiguration
-from flowchem.utils.people import *
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 try:
     from flowchem_vapourtec import VapourtecR4Commands

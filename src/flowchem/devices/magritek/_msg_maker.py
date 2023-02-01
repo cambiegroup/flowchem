@@ -14,7 +14,7 @@ def create_message(sub_element_name, attributes=None):
     return root
 
 
-def set_attribute(name, value="") -> etree.Element:
+def set_attribute(name, value="") -> etree._Element:
     """
     Create a Set <Message>.
 
@@ -26,7 +26,7 @@ def set_attribute(name, value="") -> etree.Element:
     return base
 
 
-def get_request(name) -> etree.Element:
+def get_request(name) -> etree._Element:
     """
     Create a Get <Message> element.
 
@@ -37,21 +37,23 @@ def get_request(name) -> etree.Element:
     return base
 
 
-def set_data_folder(location) -> etree.Element:
+def set_data_folder(location) -> etree._Element:
     """Create a Set DataFolder message."""
     # Get base request
     data_folder = set_attribute("DataFolder")
 
     # Add folder specific tag
-    full_tree = etree.SubElement(data_folder.find(".//DataFolder"), "TimeStampTree")
-    full_tree.text = (
-        location.as_posix() if isinstance(location, WindowsPath) else location
-    )
+    data_folder_node = data_folder.find(".//DataFolder")
+    if data_folder_node:
+        full_tree = etree.SubElement(data_folder, "TimeStampTree")
+        full_tree.text = (
+            location.as_posix() if isinstance(location, WindowsPath) else location
+        )
 
     return data_folder
 
 
-def create_protocol_message(name: str, options: dict) -> etree.Element:
+def create_protocol_message(name: str, options: dict) -> etree._Element:
     """Create an XML request to run a protocol."""
     xml_root = create_message("Start", {"protocol": name})
     start_tag = xml_root.find("Start")
