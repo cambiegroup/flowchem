@@ -69,8 +69,10 @@ docs = [
     "sphinxcontrib-openapi",
 ]
 types = [
-    "types-lxml",
     "data-science-types",
+    "types-lxml",
+    "types-PyYAML",
+    "types-requests",
 ]
 
 [project.urls]
