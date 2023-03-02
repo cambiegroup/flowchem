@@ -5,7 +5,6 @@ https://bronkhorst-propar.readthedocs.io/en/latest/introduction.html
 import propar
 import asyncio
 from loguru import logger
-from typing import Optional
 
 from flowchem import ureg
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -18,13 +17,12 @@ class EPC(FlowchemDevice):
     DEFAULT_CONFIG = {"channel": 1, "baudrate": 38400}  # "address": 0x80
 
     def __init__(
-            self,
-            port: str,
-            name="",
-            channel: int = 1,
-            address: int = 0x80,
-            max_pressure: float = 10  # bar = 100 % = 32000
-
+        self,
+        port: str,
+        name="",
+        channel: int = 1,
+        address: int = 0x80,
+        max_pressure: float = 10,  # bar = 100 % = 32000
     ):
         self.port = port
         self.channel = channel
@@ -40,7 +38,9 @@ class EPC(FlowchemDevice):
         )
 
         try:
-            self.el_press = propar.instrument(self.port, address=self.address, channel=self.channel)
+            self.el_press = propar.instrument(
+                self.port, address=self.address, channel=self.channel
+            )
             self.id = self.el_press.id()
             logger.debug(f"Connected {self.id} to {self.port}")
             return
@@ -55,14 +55,14 @@ class EPC(FlowchemDevice):
         """Set the setpoint of the instrument (0-32000 = 0-max pressure = 0-100%)."""
         if pressure.isnumeric():
             pressure = pressure + "bar"
-            logger.warning(
-                "No units provided to set_pressure, assuming bar."
-            )
+            logger.warning("No units provided to set_pressure, assuming bar.")
         set_p = ureg.Quantity(pressure)
         set_n = round(set_p.m_as("bar") * 32000 / self.max_pressure)
         if set_n > 32000:
             self.el_press.setpoint = 32000
-            logger.debug("setting higher than maximum flow rate! set the flow rate to 100%")
+            logger.debug(
+                "setting higher than maximum flow rate! set the flow rate to 100%"
+            )
         else:
             self.el_press.setpoint = set_n
             logger.debug(f"set the pressure to {set_n / 320}%")
@@ -95,12 +95,12 @@ class MFC(FlowchemDevice):
     DEFAULT_CONFIG = {"channel": 1, "baudrate": 38400}  # "address": 0x80
 
     def __init__(
-            self,
-            port: str,
-            name="",
-            channel: int = 1,
-            address: int = 0x80,
-            max_flow: float = 9  # ml / min = 100 % = 32000
+        self,
+        port: str,
+        name="",
+        channel: int = 1,
+        address: int = 0x80,
+        max_flow: float = 9,  # ml / min = 100 % = 32000
     ):
         self.port = port
         self.channel = channel
@@ -116,7 +116,9 @@ class MFC(FlowchemDevice):
         )
 
         try:
-            self.el_flow = propar.instrument(self.port, address=self.address, channel=self.channel)
+            self.el_flow = propar.instrument(
+                self.port, address=self.address, channel=self.channel
+            )
             self.id = self.el_flow.id()
             logger.debug(f"Connected {self.id} to {self.port}")
             return
@@ -138,7 +140,9 @@ class MFC(FlowchemDevice):
         set_n = round(set_f.m_as("ml/min") * 32000 / self.max_flow)
         if set_n > 32000:
             self.el_flow.setpoint = 32000
-            logger.debug("setting higher than maximum flow rate! set the flow rate to 100%")
+            logger.debug(
+                "setting higher than maximum flow rate! set the flow rate to 100%"
+            )
         else:
             self.el_flow.setpoint = set_n
             logger.debug(f"set the flow rate to {set_n / 320}%")
@@ -198,13 +202,13 @@ def find_devices_info(port: str):
     # Read the usertag of all nodes
     for node in nodes:
         print(node)
-        user_tag = master.read(node['address'], 113, 6, propar.PP_TYPE_STRING)
+        user_tag = master.read(node["address"], 113, 6, propar.PP_TYPE_STRING)
         print(user_tag)
 
 
 async def pressure_control():
     # Connect to an instrument by specifying the channel number to connect to
-
+    ...
 
 
 if __name__ == "__main__":
