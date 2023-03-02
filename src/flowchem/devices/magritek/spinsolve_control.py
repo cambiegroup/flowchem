@@ -36,7 +36,9 @@ class SpinsolveControl(NMRControl):
             "/is-busy", self.hw_device.is_protocol_running, methods=["GET"]
         )
 
-    async def acquire_spectrum(self, background_tasks: BackgroundTasks, protocol="H", options=None) -> int:  # type: ignore
+    async def acquire_spectrum(
+        self, background_tasks: BackgroundTasks, protocol="H", options=None
+    ) -> int:
         """
         Acquire an NMR spectrum.
 

@@ -1,6 +1,7 @@
 """An NMR control component."""
 from flowchem.components.base_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
+from fastapi import BackgroundTasks
 
 
 class NMRControl(FlowchemComponent):
@@ -13,7 +14,7 @@ class NMRControl(FlowchemComponent):
         # Ontology: fourier transformation NMR instrument
         self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0000487"
 
-    async def acquire_spectrum(self):
+    async def acquire_spectrum(self, background_tasks: BackgroundTasks):
         """Acquire an NMR spectrum."""
         ...
 

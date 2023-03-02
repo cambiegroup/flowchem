@@ -40,10 +40,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "mypy",
-    "flake8",
+    "ruff",
     "black",
-    "pylint",
-    "tox",
     "pre-commit"
 ]
 test = [
@@ -71,8 +69,11 @@ docs = [
     "sphinxcontrib-openapi",
 ]
 types = [
-    "types-lxml",
     "data-science-types",
+    "types-lxml",
+    "types-PyYAML",
+    "types-requests",
+
 ]
 
 [project.urls]
@@ -108,25 +109,7 @@ markers = [
     "FlowIR: tests requiring a connection to a FlowIR.",
     "KPump: tests for Azura compact" ]
 
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-envlist = mypy,flake8,test
-isolated_build = true
-minversion = 3.10
-
-[testenv:{mypy,flake8,test}]
-envdir = {toxworkdir}/.tox
-changedir = {envtmpdir}
-extras =
-    dev
-    test
-description =
-    mypy: Run mypy
-    flake8: Run flake8
-    test: Run the tests with pytest under {basepython}
-commands =
-    mypy: mypy --check-untyped-defs --python-version 3.10 --ignore-missing-imports {toxinidir}/src
-    flake8: flake8 --count --select=E9,F63,F7,F82 --show-source --statistics
-    test: python -m pytest {posargs} {toxinidir}
-"""
+[tool.ruff]
+line-length = 120
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F403"]

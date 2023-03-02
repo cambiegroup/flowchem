@@ -120,7 +120,7 @@ class HarvardApparatusPumpIO:
 
         if not response:
             logger.error("No reply received from pump!")
-            raise InvalidConfiguration(f"No response received. Is the address right?")
+            raise InvalidConfiguration("No response received. Is the address right?")
 
         pump_address, status, parsed_response = self.parse_response(response)
 

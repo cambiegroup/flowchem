@@ -151,7 +151,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
 
     def components(self):
         """Create the right type of Valve components based on head type."""
-        match self.metadata.additional_info["valve-type"]:
+        match self.metadata.additional_info["valve-type"]:  # noqa
             case KnauerValveHeads.SIX_PORT_TWO_POSITION:
                 return KnauerInjectionValve("injection-valve", self)
             case KnauerValveHeads.SIX_PORT_SIX_POSITION:

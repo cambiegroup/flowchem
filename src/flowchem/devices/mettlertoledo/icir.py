@@ -13,7 +13,7 @@ from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.mettlertoledo.icir_control import IcIRControl
 from flowchem.utils.exceptions import DeviceError
-from flowchem.utils.people import *
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 
 class ProbeInfo(BaseModel):

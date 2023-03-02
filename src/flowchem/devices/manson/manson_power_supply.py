@@ -13,7 +13,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.manson.manson_component import MansonPowerControl
 from flowchem.utils.exceptions import DeviceError
 from flowchem.utils.exceptions import InvalidConfiguration
-from flowchem.utils.people import *
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 
 class MansonPowerSupply(FlowchemDevice):

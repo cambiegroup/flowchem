@@ -25,6 +25,12 @@ from subprocess import DEVNULL
 
 from loguru import logger
 
+from typing import TYPE_CHECKING, Optional  # noqa
+
+if TYPE_CHECKING:
+    pass
+
+
 # Configure logging
 log = logger
 
@@ -73,14 +79,6 @@ HOSTNAME = 3
 MAC_RE_COLON = r"([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5})"
 MAC_RE_DASH = r"([0-9a-fA-F]{2}(?:-[0-9a-fA-F]{2}){5})"
 MAC_RE_DARWIN = r"([0-9a-fA-F]{1,2}(?::[0-9a-fA-F]{1,2}){5})"
-
-# Used for mypy (a data type analysis tool)
-# If you're copying the code, this section can be safely removed
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import Optional
 
 # Ensure we only log the Python compatibility warning once
 WARNED_UNSUPPORTED_PYTHONS = False

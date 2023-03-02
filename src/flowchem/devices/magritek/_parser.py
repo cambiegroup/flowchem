@@ -17,13 +17,13 @@ class StatusNotification(Enum):
     UNKNOWN = 7
 
 
-def parse_status_notification(xml_message: etree.Element):
+def parse_status_notification(xml_message: etree._Element):
     """Parse a status notification reply."""
     status_notification = xml_message.find(".//StatusNotification")
     assert status_notification is not None, "a StatusNotification tree is needed"
 
     # StatusNotification child can be <State> (w/ submsg), <Progress>, <Completed> or <Error>
-    match status_notification[0].tag, status_notification[0].get("status"):
+    match status_notification[0].tag, status_notification[0].get("status"):  # noqa
         case ["State", "Running"]:
             status = StatusNotification.STARTED
         case ["State", "Ready"]:
