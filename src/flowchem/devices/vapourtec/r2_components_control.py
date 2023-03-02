@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from loguru import logger
-from flowchem import ureg
 
 from flowchem.components.valves.injection_valves import SixPortTwoPosition
 from flowchem.components.valves.distribution_valves import TwoPortDistribution
@@ -116,7 +114,7 @@ class R2InjectionValve(SixPortTwoPosition):
         """Get current valve position."""
         position = await self.hw_device.get_valve_Position(self.valve_code)
         # self.hw_device.last_state.valve[self.valve_number]
-        return f"position is %s" % self._reverse_position_mapping[position]
+        return "position is %s" % self._reverse_position_mapping[position]
 
     async def set_position(self, position: str) -> bool:
         target_pos = self.position_mapping[position]  # load or inject
@@ -144,7 +142,7 @@ class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
         """Get current valve position."""
         position = await self.hw_device.get_valve_Position(self.valve_code)
         # self.hw_device.last_state.valve[self.valve_number]
-        return f"inlet is %s" % self._reverse_position_mapping[position]
+        return "inlet is %s" % self._reverse_position_mapping[position]
 
     async def set_position(self, position: str) -> bool:
         """Move valve to position."""
