@@ -84,7 +84,7 @@ class EPC(FlowchemDevice):
 
     async def get_id(self):
         """Reads the Serial Number (SN) of the instrument."""
-        return self.el_press.id()
+        return self.el_press.id
 
     def components(self):
         """Return a component."""
@@ -164,7 +164,7 @@ class MFC(FlowchemDevice):
 
     async def get_id(self):
         """Reads the ID parameter of the instrument."""
-        return self.el_flow.id()
+        return self.el_flow.id
 
     def components(self):
         """Return a component."""
@@ -172,16 +172,17 @@ class MFC(FlowchemDevice):
 
 
 async def gas_flow(port: str, target_flowrate: str, reaction_time: float):
-    Oxygen_flow = MFC("COM6", max_flow=9)
+    Oxygen_flow = MFC(port, max_flow=9)
     await Oxygen_flow.initialize()
     await Oxygen_flow.set_flow_setpoint("900 ul/min")  # 10%
-    await asyncio.sleep(2)
-    for n in range(100):
-        print(f"{n} time: {await Oxygen_flow.get_flow_setpoint()}%")
-
-    # Oxygen_flow.set_flow_setpoint(target_point*32000/9.0)
-    # await asyncio.sleep(reaction_time*60)
-
+    # await asyncio.sleep(2)
+    # for n in range(100):
+    #     print(f"{n} time: {await Oxygen_flow.get_flow_setpoint()}%")
+    #
+    # # Oxygen_flow.set_flow_setpoint(target_point*32000/9.0)
+    # # await asyncio.sleep(reaction_time*60)
+    O2_flow_id = await Oxygen_flow.get_id()
+    print(O2_flow_id)
     await Oxygen_flow.set_flow_setpoint("0 ml/min")
 
 
@@ -204,11 +205,6 @@ def find_devices_info(port: str):
         print(node)
         user_tag = master.read(node["address"], 113, 6, propar.PP_TYPE_STRING)
         print(user_tag)
-
-
-async def pressure_control():
-    # Connect to an instrument by specifying the channel number to connect to
-    ...
 
 
 if __name__ == "__main__":
