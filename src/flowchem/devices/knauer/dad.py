@@ -6,7 +6,6 @@ from loguru import logger
 from flowchem.components.analytics.dad import DADControl
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
-from flowchem.devices.list_known_device_type import autodiscover_third_party
 from flowchem.utils.exceptions import InvalidConfiguration
 
 try:
