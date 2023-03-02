@@ -40,7 +40,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "mypy",
-    "ruff",
+    "ruff>=0.0.252",
     "black",
     "pre-commit"
 ]

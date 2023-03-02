@@ -6,7 +6,6 @@ from loguru import logger
 from flowchem.components.analytics.dad import DADControl
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
-from flowchem.devices.list_known_device_type import autodiscover_third_party
 from flowchem.utils.exceptions import InvalidConfiguration
 
 try:
@@ -83,7 +82,7 @@ class KnauerDADControl(DADControl):
 
     async def set_lamp(self, state: bool, lamp_name: str):
         """Lamp status."""
-        match lamp_name:  # noqa
+        match lamp_name:
             case "d2":
                 await self.hw_device.d2(state)
             case "hal":

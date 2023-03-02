@@ -12,7 +12,7 @@ from flowchem.devices.knauer.knauer_valve_component import Knauer16PortDistribut
 from flowchem.devices.knauer.knauer_valve_component import Knauer6PortDistribution
 from flowchem.devices.knauer.knauer_valve_component import KnauerInjectionValve
 from flowchem.utils.exceptions import DeviceError
-from flowchem.utils.people import *
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 
 class KnauerValveHeads(Enum):
@@ -151,7 +151,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
 
     def components(self):
         """Create the right type of Valve components based on head type."""
-        match self.metadata.additional_info["valve-type"]:  # noqa
+        match self.metadata.additional_info["valve-type"]:
             case KnauerValveHeads.SIX_PORT_TWO_POSITION:
                 return KnauerInjectionValve("injection-valve", self)
             case KnauerValveHeads.SIX_PORT_SIX_POSITION:
