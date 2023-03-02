@@ -4,6 +4,7 @@ import time
 
 from loguru import logger
 from typing import Union
+
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.knauer.dad_component import DADChannelControl, KnauerDADLampControl
 from flowchem.utils.people import *
@@ -11,6 +12,10 @@ from flowchem.utils.people import *
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.utils.exceptions import InvalidConfiguration
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from flowchem.components.base_component import FlowchemComponent
 
 try:
     from flowchem_knauer import KnauerDADCommands
@@ -31,7 +36,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
             turn_on_d2: bool = True,
             turn_on_halogen: bool = True,
             display_control: bool = True,
-    ) -> object:
+    ):
         super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"
         self._d2 = turn_on_d2
@@ -214,7 +219,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
             return int(response)
 
     def components(self):
-        list_of_components = [KnauerDADLampControl("d2",self),KnauerDADLampControl("hal",self)]
+        list_of_components: list[FlowchemComponent] = [KnauerDADLampControl("d2",self),KnauerDADLampControl("hal",self)]
         list_of_components.extend(
         [
             DADChannelControl(f"channel{n + 1}", self, n+1) for n in range(4)
@@ -223,14 +228,12 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
 
 
 if __name__ == "__main__":
-    import asyncio
+    k_dad = KnauerDAD(ip_address="192.168.1.123", turn_on_d2=False, turn_on_halogen=True)
 
-    DAD = KnauerDAD(ip_address="192.168.1.123", turn_on_d2=False, turn_on_halogen=True)
-
-    async def main(DAD):
+    async def main(dad):
         """test function"""
-        await DAD.initialize()
-        lamp_d2, lamp_hal, ch1, ch2, ch3, ch4 = DAD.components()
+        await dad.initialize()
+        lamp_d2, lamp_hal, ch1, ch2, ch3, ch4 = dad.components()
 
         # set signal of channel 1 to zero
         # await DAD.set_signal(1)
@@ -251,5 +254,4 @@ if __name__ == "__main__":
             print(await ch1.acquire_signal())
             await asyncio.sleep(2)
 
-
-    asyncio.run(main(DAD))
+    asyncio.run(main(k_dad))
