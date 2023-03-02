@@ -10,6 +10,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 if TYPE_CHECKING:
     from .el_flow import MFC, EPC
 
+
 class EPCComponent(PressureSensor):
     hw_device: EPC  # just for typing
 

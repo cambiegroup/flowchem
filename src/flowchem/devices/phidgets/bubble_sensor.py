@@ -14,13 +14,11 @@ from flowchem.devices.phidgets.bubble_sensor_component import (
     PhidgetBubbleSensorComponent,
     PhidgetBubbleSensorPowerComponent,
 )
-from flowchem.utils.people import *
+from flowchem.utils.people import wei_hsin, dario, jakob
 
 try:
-    from Phidget22.Phidget import *
     from Phidget22.Devices.DigitalOutput import DigitalOutput  # power source
     from Phidget22.Devices.VoltageInput import VoltageInput, PowerSupply  # Sensor
-    from Phidget22.Devices.Log import Log, LogLevel
     from Phidget22.PhidgetException import PhidgetException
 
     HAS_PHIDGET = True
@@ -28,19 +26,18 @@ except ImportError:
     HAS_PHIDGET = False
 
 from flowchem.utils.exceptions import InvalidConfiguration  # configuration is not valid
-from flowchem import ureg  # pint
 
 
 class PhidgetPowerSource5V(FlowchemDevice):
     """Use a Phidget power source to apply power to the sensor"""
 
     def __init__(
-            self,
-            vint_serial_number: int = -1,
-            vint_hub_port: int = -1,
-            vint_channel: int = -1,
-            phidget_is_remote: bool = False,
-            name: str = "",
+        self,
+        vint_serial_number: int = -1,
+        vint_hub_port: int = -1,
+        vint_channel: int = -1,
+        phidget_is_remote: bool = False,
+        name: str = "",
     ):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
@@ -72,7 +69,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
         try:
             self.phidget.openWaitForAttachment(1000)
             logger.debug("power of tube sensor is connected!")
-        except PhidgetException as phidget_error:
+        except PhidgetException:
             raise InvalidConfiguration(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
             )
@@ -117,17 +114,18 @@ class PhidgetPowerSource5V(FlowchemDevice):
 
 
 class PhidgetBubbleSensor(FlowchemDevice):
-    """Use a Phidget voltage input to translate a Tube Liquid Sensor OPB350 5 Valtage signal to the corresponding light penetration value."""
+    """Use a Phidget voltage input to translate a Tube Liquid Sensor OPB350 5 Valtage signal
+    to the corresponding light penetration value."""
 
     def __init__(
-            self,
-            # intensity_range: tuple[float, float] = (0, 100),
-            vint_serial_number: int = -1,
-            vint_hub_port: int = -1,
-            vint_channel: int = -1,
-            phidget_is_remote: bool = False,
-            data_interval: int = 250,  # ms
-            name: str = "",
+        self,
+        # intensity_range: tuple[float, float] = (0, 100),
+        vint_serial_number: int = -1,
+        vint_hub_port: int = -1,
+        vint_channel: int = -1,
+        phidget_is_remote: bool = False,
+        data_interval: int = 250,  # ms
+        name: str = "",
     ):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
@@ -163,7 +161,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         try:
             self.phidget.openWaitForAttachment(1000)
             logger.debug("tube sensor is connected!")
-        except PhidgetException as phidget_error:
+        except PhidgetException:
             raise InvalidConfiguration(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
             )

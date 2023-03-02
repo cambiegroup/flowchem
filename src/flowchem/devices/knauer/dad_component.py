@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING
 from ...components.sensors.photo import PhotoSensor
 
 if TYPE_CHECKING:
-    from .knauer_valve import KnauerValve
+    from flowchem.devices.knauer.dad import KnauerDAD
 from flowchem.components.technical.power import PowerSwitch
-from flowchem.devices.knauer.dad import *
 
 
 class KnauerDADLampControl(PowerSwitch):
@@ -46,21 +45,21 @@ class KnauerDADLampControl(PowerSwitch):
         #     case _:
         #         logger.error("unknown lamp name!")
 
+
 class DADChannelControl(PhotoSensor):
     hw_device: KnauerDAD
 
-    def __init__(
-        self, name: str, hw_device: KnauerDAD, channel: int
-    ):
+    def __init__(self, name: str, hw_device: KnauerDAD, channel: int):
         """Create a DADControl object."""
         super().__init__(name, hw_device)
         self.channel = channel
 
         # additional parameters
         self.add_api_route("/set-wavelength", self.power_on, methods=["PUT"])
-        self.add_api_route("/set-integration-time", self.set_integration_time, methods=["PUT"])
+        self.add_api_route(
+            "/set-integration-time", self.set_integration_time, methods=["PUT"]
+        )
         self.add_api_route("/set-bandwidth", self.set_bandwidth, methods=["PUT"])
-
 
         # Ontology: diode array detector
         self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/CHMO_0002503"
@@ -77,7 +76,7 @@ class DADChannelControl(PhotoSensor):
         """set acquisition wavelength (nm) in the range of 0-999 nm"""
         return await self.hw_device.set_wavelength(self.channel, wavelength)
 
-    async def set_integration_time(self,int_time: int):
+    async def set_integration_time(self, int_time: int):
         """set integration time in the range of 10 - 2000 ms"""
         return await self.hw_device.integration_time(int_time)
 
@@ -93,6 +92,7 @@ class DADChannelControl(PhotoSensor):
         """deactivate the measurement channel"""
         reply = await self.hw_device.set_wavelength(self.channel, 0)
         return reply
+
     #
     # async def acquire_spectrum(self):
     #     """Acquire an UV/VIS signal."""

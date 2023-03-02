@@ -3,13 +3,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from loguru import logger
+
 from flowchem.components.valves.injection_valves import SixPortTwoPosition
 from flowchem.components.valves.distribution_valves import TwoPortDistribution
 from flowchem.components.pumps.hplc import HPLCPump
-from flowchem.components.technical.photo import PhotoControl
+from flowchem.components.technical.photo import Photoreactor
 from flowchem.components.sensors.base_sensor import Sensor
 from flowchem.components.sensors.pressure import PressureSensor
-from ...components.technical.power import PowerSwitch
+from flowchem.components.technical.power import PowerSwitch
+from flowchem.components.technical.temperature import TemperatureControl, TempRange
 
 if TYPE_CHECKING:
     from .r2 import R2
@@ -37,63 +40,83 @@ class R2GeneralSensor(Sensor):
         )
 
     async def monitor_sys(self) -> dict:
-        """monitor the system performance"""
+        """Monitor system performance."""
         return await self.hw_device.pooling()
 
     async def get_run_state(self) -> str:
         """Get current system state"""
-        return await self.hw_device.get_Run_State()
+        return await self.hw_device.get_state()
 
     async def set_sys_pressure_limit(self, pressure: str) -> bool:
         """Set maximum system pressure: range 1,000 to 50,000 mbar"""
         # TODO: change to accept different units
-        await self.hw_device.set_Pressure_limit(pressure)
+        await self.hw_device.set_pressure_limit(pressure)
         return True
 
 
-class R2PhotoReactor(PhotoControl):
+class R4Reactor(TemperatureControl):
+    """R4 reactor heater channel controlled via the R2."""
+
+    hw_device: R2  # for typing's sake
+
+    def __init__(self, name: str, hw_device: R2, channel: int, temp_limits: TempRange):
+        """Create a TemperatureControl object."""
+        super().__init__(name, hw_device, temp_limits)
+        self.channel = channel
+
+    async def set_temperature(self, temp: str):
+        """Set the target temperature to the given string in natural language."""
+        set_t = await super().set_temperature(temp)
+        return await self.hw_device.set_temperature(self.channel, set_t)
+
+    async def get_temperature(self) -> float:  # type: ignore
+        """Return temperature in Celsius."""
+        # TODO:
+        raise NotImplementedError
+
+    async def is_target_reached(self) -> bool:  # type: ignore
+        """Return True if the set temperature target has been reached."""
+        # TODO:
+        raise NotImplementedError
+
+    async def power_on(self):
+        """Turn on temperature control."""
+        return await self.hw_device.power_on()
+
+    async def power_off(self):
+        """Turn off temperature control."""
+        return await self.hw_device.power_off()
+
+
+class UV150PhotoReactor(Photoreactor):
     """R2 reactor control class"""
 
     hw_device: R2  # for typing's sake
 
     def __init__(self, name: str, hw_device: R2):
-        """Create a ValveControl object."""
         super().__init__(name, hw_device)
+        self._intensity = 0  # 0 set upon device init
 
-    # async def get_current_power(self) -> str:
-    #     """Get current reactor power state"""
-    #     return await self.hw_device.get_current_power()
-
-    async def set_temperature(self, temperature: str) -> bool:
-        """Set reactor temperature"""
-        await self.hw_device.set_Temperature(temperature)
-        return True
-
-    async def get_temperature(self) -> float:
-        """Get current reactor temperature"""
-        return await self.hw_device.get_current_temperature()
-
-    # async def is_target_reached(self) -> bool:  # type: ignore
-    #     """Return True if the set temperature target has been reached."""
-    #     c_temp = await self.hw_device.get_current_temperature()
-    #     s_temp = await self.hw_device.get_setting_Temperature()
-    #     return abs(c_temp - float(s_temp)) <= 1.5
-
-    async def set_UV(self, power: str = "100") -> float:
+    async def set_intensity(self, percent: int = 100):
         """Set UV light intensity at the range 50-100%"""
-        await self.hw_device.set_UV(power)
-        return True
+        self._intensity = percent
+        await self.hw_device.set_UV150(percent)
 
-    async def UV_power_on(self) -> bool:
-        """Turn on whole system"""
-        await self.hw_device.set_UV("100")
-        await self.hw_device.power_on()
-        return True
+    async def get_intensity(self) -> int:
+        """Return last set intensity."""
+        return self._intensity
 
-    async def UV_power_off(self) -> bool:
-        """Turn off whole system."""
-        await self.hw_device.set_UV("0")
-        return True
+    async def power_on(self):
+        """Turn on the whole system, no way to power UV150 independently."""
+        if self._intensity:
+            await self.hw_device.power_on()
+            return
+        logger.error("UV150 power on requested without setting intensity first!")
+
+    async def power_off(self):
+        """Turn off light."""
+        self._intensity = 0
+        await self.hw_device.set_UV150(0)
 
 
 class R2InjectionValve(SixPortTwoPosition):
@@ -118,7 +141,7 @@ class R2InjectionValve(SixPortTwoPosition):
 
     async def set_position(self, position: str) -> bool:
         target_pos = self.position_mapping[position]  # load or inject
-        await self.hw_device.trigger_Key_Press(
+        await self.hw_device.trigger_key_press(
             str(self.valve_code * 2 + int(target_pos))
         )
         return True
@@ -147,7 +170,7 @@ class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
     async def set_position(self, position: str) -> bool:
         """Move valve to position."""
         target_pos = self.position_mapping[position]
-        await self.hw_device.trigger_Key_Press(
+        await self.hw_device.trigger_key_press(
             str(self.valve_code * 2 + int(target_pos))
         )
         return True
@@ -158,34 +181,32 @@ class R2HPLCPump(HPLCPump):
 
     hw_device: R2  # for typing's sake
 
-    def __init__(self, name: str, hw_device: R2, pump_code: int):
+    def __init__(self, name: str, hw_device: R2, pump_code: str):
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
         self.pump_code = pump_code
 
-    # async def get_setting_flow(self) -> str:
-    #     """Get current setting flow rate."""
-    #     return await self.hw_device.get_setting_Flowrate(self.pump_code)
-
     async def get_current_flow(self) -> float:
         """Get current flow rate."""
-        # return await self.hw_device.pooling()
         return await self.hw_device.get_current_flow(self.pump_code)
 
     async def set_flowrate(self, flowrate: str) -> bool:
         """Set flow rate to the pump"""
-        await self.hw_device.set_Flowrate(self.pump_code, flowrate)
+        await self.hw_device.set_flowrate(self.pump_code, flowrate)
         return True
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
         """set the flow rate: in ul/min and start infusion."""
-        await self.hw_device.set_Flowrate(self.pump_code, rate)
+        if volume:
+            logger.warning(f"Volume parameter ignored: not supported by {self.name}!")
+
+        await self.hw_device.set_flowrate(self.pump_code, rate)
         await self.hw_device.power_on()
         return True
 
     async def stop(self):
         """Stop infusion"""
-        await self.hw_device.set_Flowrate(pump=self.pump_code, flowrate="0 ul/min")
+        await self.hw_device.set_flowrate(pump=self.pump_code, flowrate="0 ul/min")
 
     async def is_pumping(self) -> bool:
         c_flow = await self.hw_device.get_current_flow(self.pump_code)

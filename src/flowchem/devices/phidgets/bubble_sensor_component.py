@@ -42,6 +42,7 @@ class PhidgetBubbleSensorComponent(Sensor):
         self.hw_device.set_dataInterval(datainterval)
         return True
 
+
 class PhidgetBubbleSensorPowerComponent(PowerSwitch):
     hw_device: PhidgetPowerSource5V  # just for typing
 
