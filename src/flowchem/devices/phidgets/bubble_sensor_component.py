@@ -18,8 +18,8 @@ class PhidgetBubbleSensorComponent(Sensor):
         """A generic Syringe pump."""
         super().__init__(name, hw_device)
         self.add_api_route("/set-data-Interval", self.power_on, methods=["PUT"])
-
-        self.add_api_route("/read-intensity", self.read_intensity, methods=["GET"])
+        self.add_api_route("/read-voltage", self.read_voltage, methods=["GET"])
+        self.add_api_route("/acquire-signal", self.acquire_signal, methods=["GET"])
 
     async def power_on(self) -> bool:
         self.hw_device.power_on()
@@ -33,7 +33,7 @@ class PhidgetBubbleSensorComponent(Sensor):
         """Read from sensor in Volt"""
         return self.hw_device.read_voltage()
 
-    async def read_intensity(self) -> float:
+    async def acquire_signal(self) -> float:
         """transform the voltage from sensor to be expressed in percentage(%)"""
         return self.hw_device.read_intensity()
 
