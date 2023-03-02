@@ -82,7 +82,7 @@ class KnauerDADControl(DADControl):
 
     async def set_lamp(self, state: bool, lamp_name: str):
         """Lamp status."""
-        match lamp_name:
+        match lamp_name:  # noqa
             case "d2":
                 await self.hw_device.d2(state)
             case "hal":
