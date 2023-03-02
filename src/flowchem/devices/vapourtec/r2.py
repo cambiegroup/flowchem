@@ -123,7 +123,11 @@ class R2(FlowchemDevice):
         await self.set_flowrate("A", "0 ul/min")
         await self.set_flowrate("B", "0 ul/min")
         # Sets all temp to room temp.
-        await self.set_temperature("20 °C")
+        rt = ureg("20 °C")
+        await self.set_temperature(0, rt)
+        await self.set_temperature(1, rt)
+        await self.set_temperature(2, rt)
+        await self.set_temperature(3, rt)
         # set UV to 0%
         await self.set_UV150(power=0, heated=False)
         # set max pressure to  10 bar
