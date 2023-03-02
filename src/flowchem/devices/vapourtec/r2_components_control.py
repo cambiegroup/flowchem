@@ -131,7 +131,7 @@ class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
 
     hw_device: R2  # for typing's sake
 
-    # TODO: the mapping name is not applivable
+    # TODO: the mapping name is not applicable
     position_mapping = {"Solvent": "0", "Reagent": "1"}
     _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
@@ -185,7 +185,7 @@ class R2HPLCPump(HPLCPump):
         await self.hw_device.power_on()
         return True
 
-    async def stop(self) -> bool:  # type: ignore
+    async def stop(self):
         """Stop infusion"""
         await self.hw_device.set_Flowrate(pump=self.pump_code, flowrate="0 ul/min")
 

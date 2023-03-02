@@ -11,3 +11,8 @@ class HPLCPump(BasePump):
 
         # Ontology: HPLC isocratic pump
         self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0000556"
+
+    @staticmethod
+    def is_withdrawing_capable() -> bool:
+        """HPLC pump cannot reverse flow direction (fundamental limit due to displacement + check valves)."""
+        return False
