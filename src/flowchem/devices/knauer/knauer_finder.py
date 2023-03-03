@@ -4,6 +4,7 @@ import queue
 import socket
 import sys
 from textwrap import dedent
+from anyio.from_thread import start_blocking_portal
 
 from loguru import logger
 
@@ -84,6 +85,10 @@ def _get_local_ip() -> str:
     if local_ip := next((ip for ip in machine_ips if ip.startswith("100.")), False):
         return local_ip  # type: ignore
 
+    # 141.x subnet 3rd priority (Tailscale)
+    if local_ip := next((ip for ip in machine_ips if ip.startswith("141.")), False):
+        return local_ip  # type: ignore
+
     logger.warning("Could not reliably determine local IP!")
     hostname = socket.gethostname()
 
@@ -103,7 +108,6 @@ async def send_broadcast_and_receive_replies(source_ip: str):
         loop = asyncio.get_running_loop()
     except RuntimeError:
         loop = asyncio.new_event_loop()
-
     device_q: queue.Queue = queue.Queue()
     transport, protocol = await loop.create_datagram_endpoint(
         lambda: BroadcastProtocol(("255.255.255.255", 30718), response_queue=device_q),
@@ -111,8 +115,7 @@ async def send_broadcast_and_receive_replies(source_ip: str):
         allow_broadcast=True,
     )
     try:
-        await asyncio.sleep(2)  # Serve for 1 hour.
-
+        await asyncio.sleep(2)
     finally:
         transport.close()
 
@@ -145,7 +148,8 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
         return dict()
     logger.info(f"Starting detection from IP {source_ip}")
 
-    device_list = asyncio.run(send_broadcast_and_receive_replies(source_ip))
+    with start_blocking_portal() as portal:
+        device_list = portal.call(send_broadcast_and_receive_replies, source_ip)
 
     device_info: dict[str, str] = {}
     device_ip: str
@@ -189,9 +193,10 @@ def knauer_finder(source_ip=None):
         elif device_type == "KnauerValve":
             dev_config.add(
                 dedent(
-                    f"""\n\n[device.valve-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
+                    f"""
+                        [device.valve-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
                         type = "KnauerValve"
-                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n"""
+                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n\n"""
                 )
             )
 

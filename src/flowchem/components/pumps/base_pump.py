@@ -17,7 +17,7 @@ class BasePump(FlowchemComponent):
         """Start infusion."""
         ...
 
-    async def stop(self) -> bool:  # type: ignore
+    async def stop(self):  # type: ignore
         """Stop pumping."""
         ...
 

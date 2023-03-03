@@ -8,9 +8,9 @@ import pint
 from loguru import logger
 from pydantic import BaseModel
 
-from ._pumpio import HarvardApparatusPumpIO
-from ._pumpio import Protocol11Command
-from ._pumpio import PumpStatus
+from flowchem.devices.harvardapparatus._pumpio import HarvardApparatusPumpIO
+from flowchem.devices.harvardapparatus._pumpio import Protocol11Command
+from flowchem.devices.harvardapparatus._pumpio import PumpStatus
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -275,6 +275,12 @@ class Elite11(FlowchemDevice):
         # Lower limit usually expressed in nl/min so unit-aware quantities are needed
         lower_limit, upper_limit = map(ureg, limits_raw.split(" to "))
 
+        # add units by assumption
+        # if rate.isnumeric():
+        #     rate = flowrate + "ml/min"
+        #     logger.warning("No units provided, assuming milliliter/minutes.")
+        # parsed_f = ureg.Quantity(flow)
+
         # Also add units to the provided rate
         set_rate = ureg.Quantity(rate)
 
@@ -357,8 +363,12 @@ class Elite11(FlowchemDevice):
 
     async def set_target_volume(self, volume: str):
         """Set target volume in ml. If the volume is set to 0, the target is cleared."""
+        # logger.info("Clear current infused volume!")
+        await self._send_command_and_read_reply("civolume")
+
         target_volume = ureg.Quantity(volume)
         if target_volume.magnitude == 0:
+            # logger.info(f"send comment to clear the target volume")
             await self._send_command_and_read_reply("ctvolume")
         else:
             set_vol = await self._send_command_and_read_reply(
@@ -387,16 +397,17 @@ class Elite11(FlowchemDevice):
 
 if __name__ == "__main__":
     pump = Elite11.from_config(
-        port="COM4", syringe_volume="10 ml", syringe_diameter="10 mm"
+        port="COM5", syringe_volume="10 ml", syringe_diameter="14.567 mm", address=3
     )
 
     async def main():
         """Test function."""
         await pump.initialize()
         # assert await pump.get_infused_volume() == 0
-        await pump.set_syringe_diameter("30 mm")
-        await pump.set_flow_rate("0.1 ml/min")
-        await pump.set_target_volume("0.05 ml")
+        # await pump.set_syringe_diameter("30 mm")
+        # await pump.set_syringe_diameter("30 mm")
+        await pump.set_flow_rate("0.001 ml/min")
+        await pump.set_target_volume("0.001 ml")
         await pump.infuse()
         await asyncio.sleep(2)
         await pump.pump_info()
