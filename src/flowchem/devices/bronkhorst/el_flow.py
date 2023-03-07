@@ -186,6 +186,9 @@ async def gas_flow(port: str, target_flowrate: str, reaction_time: float):
     await Oxygen_flow.set_flow_setpoint("0 ml/min")
 
 
+
+
+
 def find_devices_info(port: str):
     """
     It is also possible to only create a master.
@@ -209,10 +212,9 @@ def find_devices_info(port: str):
 
 if __name__ == "__main__":
     # find_devices_info("COM7")
-    # asyncio.run(gas_flow("COM6","0.05 ml/min", 25))
-    flow = MFC("COM7", address=1, max_flow=10)
-    pressure = EPC("COM7", address=2, max_pressure=10)
-    O2_flow = MFC("COM7", address=3, max_flow=10)
+    # asyncio.run(gas_flow("COM7", "0.05 ml/min", 25))
+    asyncio.run(mutiple_connect())
+    # print(flow.wink())
 
     print(pressure.id)
     print(flow.id)
