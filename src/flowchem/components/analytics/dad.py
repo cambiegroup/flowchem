@@ -1,6 +1,4 @@
 """A Diode Array Detector control component."""
-from flowchem.components.base_component import FlowchemComponent
-from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 # class DADSwitch(FlowchemComponent):

@@ -20,12 +20,13 @@ class KnauerDADLampControl(PowerSwitch):
         self.add_api_route("/lamp_status", self.get_lamp, methods=["GET"])
         self.add_api_route("/_keep_connection", self.keep_connection, methods=["PUT"])
         self.add_api_route("/status", self.get_status, methods=["GET"])
+
     async def keep_connection(self):
         """Keep connection with DAD alive"""
         await self.hw_device.bg_keep_connect()
 
     async def get_status(self) -> str:
-        """Get status of the instrument """
+        """Get status of the instrument"""
         return await self.hw_device.status()
 
     async def get_lamp(self):
@@ -65,7 +66,9 @@ class DADChannelControl(PhotoSensor):
 
         # additional parameters
         self.add_api_route("/set-wavelength", self.set_wavelength, methods=["PUT"])
-        self.add_api_route("/set-integration-time", self.set_integration_time, methods=["PUT"])
+        self.add_api_route(
+            "/set-integration-time", self.set_integration_time, methods=["PUT"]
+        )
         self.add_api_route("/set-bandwidth", self.set_bandwidth, methods=["PUT"])
 
         # Ontology: diode array detector
@@ -92,7 +95,7 @@ class DADChannelControl(PhotoSensor):
         return await self.hw_device.bandwidth(bandwidth)
 
     async def set_shutter(self, status: str):
-        """set the shutter to "CLOSED" or "OPEN" or "FILTER". """
+        """set the shutter to "CLOSED" or "OPEN" or "FILTER"."""
         return await self.hw_device.shutter(status)
 
     async def power_on(self) -> str:
@@ -103,5 +106,3 @@ class DADChannelControl(PhotoSensor):
         """deactivate the measurement channel"""
         reply = await self.hw_device.set_wavelength(self.channel, 0)
         return reply
-
-

@@ -196,7 +196,6 @@ async def mutiple_connect():
     print(await O2_flow.get_id())
 
 
-
 def find_devices_info(port: str):
     """
     It is also possible to only create a master.
@@ -224,7 +223,5 @@ if __name__ == "__main__":
     asyncio.run(mutiple_connect())
     # print(flow.wink())
 
-    print(pressure.id)
-    print(flow.id)
     db = propar.database()
     parameters = db.get_parameters([8, 9, 11, 142])
