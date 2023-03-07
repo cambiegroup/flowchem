@@ -244,6 +244,11 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
             response = await self._send_and_receive(cmd)
             return int(response)
 
+    def repeated_task(self):
+        async def keepalive():
+            await self.status()
+        return 30, keepalive
+
     def components(self) -> list["FlowchemComponent"]:
         list_of_components: list[FlowchemComponent] = [
             KnauerDADLampControl("d2", self),
