@@ -3,20 +3,38 @@ from flowchem.components.base_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class DADControl(FlowchemComponent):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
-        """DAD Control component."""
-        super().__init__(name, hw_device)
-        self.add_api_route("/lamp", self.get_lamp, methods=["GET"])
-        self.add_api_route("/lamp", self.set_lamp, methods=["PUT"])
+# class DADSwitch(FlowchemComponent):
+#     def __init__(self, name: str, hw_device: FlowchemDevice):
+#         """DAD Control component."""
+#         super().__init__(name, hw_device)
+#         self.add_api_route("/lamp", self.get_lamp, methods=["GET"])
+#         self.add_api_route("/lamp", self.set_lamp, methods=["PUT"])
+#
 
-        # Ontology: diode array detector
-        self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/CHMO_0002503"
-
-    async def get_lamp(self):
-        """Lamp status."""
-        ...
-
-    async def set_lamp(self, state: bool, lamp_name: str):
-        """Lamp status."""
-        ...
+#
+#     async def get_lamp(self):
+#         """Lamp status."""
+#         ...
+#
+#     async def set_lamp(self, state: bool):
+#         """Lamp status."""
+#         ...
+#
+#
+# class DADControl(FlowchemComponent):
+#     def __init__(self, name: str, hw_device: FlowchemDevice):
+#         """NMR Control component."""
+#         super().__init__(name, hw_device)
+#         self.add_api_route()
+#         self.add_api_route("/acquire-spectrum", self.acquire_signal, methods=["PUT"])
+#         self.add_api_route("/stop", self.stop, methods=["PUT"])
+#
+#
+#
+#     async def acquire_signal(self):
+#         """Acquire an ."""
+#         ...
+#
+#     async def stop(self):
+#         """Stops acquisition and exit gracefully."""
+#         ...
