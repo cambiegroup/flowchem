@@ -83,22 +83,16 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         logger.info(f"Knauer DAD info: {await self.identify()} {await self.info()}")
         logger.info(f"Knauer DAD status: {await self.status()}")
 
-        # await self.set_wavelength(1, 254)
-        # await self.bandwidth(8)
-        # # await self.integration_time("75")
-        # logger.info(f"default channel 1 : WL = 254 nm, BW = 8nm ")
-
-        await self.set_wavelength(1, 514)
-        await self.bandwidth(20)
+        await self.set_wavelength(1, 254)
+        await self.bandwidth(8)
         # await self.integration_time("75")
-        logger.info("set channel 1 : WL = 514 nm, BW = 20nm ")
+        logger.info(f"set channel 1 : WL = 514 nm, BW = 20nm ")
 
     async def bg_keep_connect(self):
         # 1 min without sending anything will lose connection
         while True:
-            await self.status(
-        )
-        await asyncio.sleep(59)
+            await self.status()
+            await asyncio.sleep(59)
 
     # async def bg_keep_connect_1(self):
     #     await self.info()
@@ -132,9 +126,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         }
         _reverse_lampstatus_mapping = {v: k for k, v in lampstatus_mapping.items()}
 
-        cmd = self.cmd.LAMP.format(
-            lamp=lamp_mapping[lamp], state=lampstatus_mapping[state]
-        )
+        cmd = self.cmd.LAMP.format(lamp=lamp_mapping[lamp], state=lampstatus_mapping[state])
         response = await self._send_and_receive(cmd)  # 'LAMP_D2:0'
         return response
         #if response.isnumeric() else _reverse_lampstatus_mapping[response[response.find(":") + 1:]]
@@ -179,9 +171,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
 
         cmd = self.cmd.SHUTTER.format(state=shutter_mapping[shutter])
         response = await self._send_and_receive(cmd)
-        return (
-            response if not response.isnumeric() else _reverse_shutter_mapping[response[response.find(":") + 1:]]
-        )
+        return response if not response.isnumeric() else _reverse_shutter_mapping[response[response.find(":") + 1:]]
 
     async def signal_type(self, s_type: str = "microAU") -> str:
         """Set and get the type of signal shown on the display
