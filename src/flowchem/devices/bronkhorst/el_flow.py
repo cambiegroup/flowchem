@@ -186,6 +186,14 @@ async def gas_flow(port: str, target_flowrate: str, reaction_time: float):
     await Oxygen_flow.set_flow_setpoint("0 ml/min")
 
 
+async def mutiple_connect():
+    flow = MFC("COM7", address=1, max_flow=10)
+    pressure = EPC("COM7", address=2, max_pressure=10)
+    O2_flow = MFC("COM7", address=6, max_flow=10)
+
+    print(await pressure.get_id())
+    print(await flow.get_id())
+    print(await O2_flow.get_id())
 
 
 
