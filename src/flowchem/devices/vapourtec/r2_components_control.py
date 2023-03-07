@@ -1,6 +1,7 @@
 """ Control module for the Vapourtec R2 valves """
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING
 
 from loguru import logger
@@ -140,6 +141,7 @@ class R2InjectionValve(SixPortTwoPosition):
         return "position is %s" % self._reverse_position_mapping[position]
 
     async def set_position(self, position: str) -> bool:
+        """Set position: 'load' or 'inject'."""
         target_pos = self.position_mapping[position]  # load or inject
         await self.hw_device.trigger_key_press(
             str(self.valve_code * 2 + int(target_pos))

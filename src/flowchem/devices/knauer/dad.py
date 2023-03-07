@@ -63,21 +63,17 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
             model="DAD",
         )
 
-    # LAMP_mapping = {"D2": "_D2", "HAL": "_HAL"}
-    #
-    # lampstatus_mapping = {"REQUEST": "?", "OFF": "0", "ON": "1", "HEAT": "2", "ERROR": "3"}
-    # _reverse_lampstatus_mapping = {v: k for k, v in lampstatus_mapping.items()}
-
     async def initialize(self):
         """Initialize connection."""
         await super().initialize()
 
-        if self._d2:
-            await self.lamp("d2", True)
-            await asyncio.sleep(1)
-        if self._hal:
-            await self.lamp("hal", True)
-            await asyncio.sleep(15)
+        # to avoid the frequent switch the lamp on and off,
+        # if self._d2:
+        #     await self.lamp("d2", True)
+        #     await asyncio.sleep(1)
+        # if self._hal:
+        #     await self.lamp("hal", True)
+        #     await asyncio.sleep(15)
 
         if self._control:
             await self.display_control(True)
@@ -87,16 +83,26 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         logger.info(f"Knauer DAD info: {await self.identify()} {await self.info()}")
         logger.info(f"Knauer DAD status: {await self.status()}")
 
-        await self.set_wavelength(1, 254)
-        await self.bandwidth(8)
-        # await self.integration_time("75")
-        logger.info("default channel 1 : WL = 254 nm, BW = 8nm ")
+        # await self.set_wavelength(1, 254)
+        # await self.bandwidth(8)
+        # # await self.integration_time("75")
+        # logger.info(f"default channel 1 : WL = 254 nm, BW = 8nm ")
 
-        # SIG = 0?
-        logger.info(
-            f"signal of channel 1  is: {await self._send_and_receive('SIG1 ?')}"
+        await self.set_wavelength(1, 514)
+        await self.bandwidth(20)
+        # await self.integration_time("75")
+        logger.info("set channel 1 : WL = 514 nm, BW = 20nm ")
+
+    async def bg_keep_connect(self):
+        # 1 min without sending anything will lose connection
+        while True:
+            await self.status(
         )
-        logger.info(f"signal of channel 1  is: {await self.read_signal(1)}")
+        await asyncio.sleep(59)
+
+    # async def bg_keep_connect_1(self):
+    #     await self.info()
+    #     await asyncio.sleep(59)
 
     async def d2(self, state: bool = True) -> str:
         """Turn off or on the deuterium lamp."""
@@ -129,8 +135,9 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         cmd = self.cmd.LAMP.format(
             lamp=lamp_mapping[lamp], state=lampstatus_mapping[state]
         )
-        response = await self._send_and_receive(cmd)
-        return _reverse_lampstatus_mapping[response]
+        response = await self._send_and_receive(cmd)  # 'LAMP_D2:0'
+        return response
+        #if response.isnumeric() else _reverse_lampstatus_mapping[response[response.find(":") + 1:]]
         # return response if not response.isnumeric() else _reverse_lampstatus_mapping[response]
 
     async def serial_num(self) -> str:
@@ -173,7 +180,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         cmd = self.cmd.SHUTTER.format(state=shutter_mapping[shutter])
         response = await self._send_and_receive(cmd)
         return (
-            response if not response.isnumeric() else _reverse_shutter_mapping[response]
+            response if not response.isnumeric() else _reverse_shutter_mapping[response[response.find(":") + 1:]]
         )
 
     async def signal_type(self, s_type: str = "microAU") -> str:
@@ -186,7 +193,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
 
         cmd = self.cmd.SIGNAL_TYPE.format(state=type_mapping[s_type])
         response = await self._send_and_receive(cmd)
-        return response if not response.isnumeric() else _reverse_type_mapping[response]
+        return response if not response.isnumeric() else _reverse_type_mapping[response[response.find(":") + 1:]]
 
     async def get_wavelength(self, channel: int) -> int:
         cmd = self.cmd.WAVELENGTH.format(channel=channel, wavelength="?")
@@ -202,14 +209,23 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         cmd = self.cmd.SIGNAL.format(channel=channel, signal=signal)
         return await self._send_and_receive(cmd)
 
-    async def read_signal(self, channel: int) -> float:
+    async def read_signal(self, channel: int) -> float | None:
         """Read signal
         -9999999 to +9999999 (μAU, SIG_SRC = 0); 0 to 1000000 (INT, SIG_SRC = 1)
         """
         cmd = self.cmd.SIGNAL.format(channel=channel, signal="?")
         response = await self._send_and_receive(cmd)
-        return float(response[5:]) / 1000  # mAu
-        # -10000000 if the lamp is not ready
+        return float(response[5:]) / 1000
+
+        # in order of running keep alive in the background, response might get 'STATUS:0,1,0,1,0,0,0,0,0,0,0,0'
+        # try:
+        #     return float(response[5:]) / 1000  # mAu
+        #     # -10000000 if the lamp is not ready
+        # except ValueError:
+        #     logger.warning("ValueError:the reply is not a float..")
+        #     return None
+
+
 
     async def integration_time(self, integ_time: Union[int | str] = "?") -> str | int:
         """set and read the integration time in 10 - 2000 ms"""
@@ -238,7 +254,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         ]
         list_of_components.extend(
             [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)]
-        )
+            )
         return list_of_components
 
 
@@ -247,10 +263,27 @@ if __name__ == "__main__":
         ip_address="192.168.1.123", turn_on_d2=False, turn_on_halogen=True
     )
 
-    async def main(dad):
-        """test function"""
-        await dad.initialize()
-        lamp_d2, lamp_hal, ch1, ch2, ch3, ch4 = dad.components()
+
+
+async def main(dad):
+    """test function"""
+    await dad.initialize()
+    lamp_d2, lamp_hal, ch1, ch2, ch3, ch4 = dad.components()
+    bg1 = DAD.bg_keep_connect()
+    bg2 = DAD.info()
+    await asyncio.gather(asyncio.to_thread(bg1), bg2)
+
+    # # set signal of channel 1 to zero
+    # # await DAD.set_signal(1)
+    # await ch1.set_wavelength(520)
+    # await ch1.set_integration_time(70)
+    # await ch1.set_bandwidth(4)
+    # # await ch1.calibrate_zero()
+    # logger.info(f"set signal to zero")
+    # await ch1.acquire_signal()
+    # await asyncio.sleep(60)
+    # await DAD.initialize()
+    # await ch1.acquire_signal()
 
         # set signal of channel 1 to zero
         # await DAD.set_signal(1)
@@ -261,13 +294,7 @@ if __name__ == "__main__":
         logger.info("set signal to zero")
         await ch1.acquire_signal()
 
-        start_aq_time = time.monotonic()
-        # acquire signal of channel 1
-        aq_time = 0.2
-        end_time = start_aq_time + aq_time * 60
-        while time.monotonic() < end_time:
-            # print(await DAD.read_signal(1))
-            print(await ch1.acquire_signal())
-            await asyncio.sleep(2)
+        if __name__ == "__main__":
+    import asyncio
 
     asyncio.run(main(k_dad))

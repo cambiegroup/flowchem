@@ -17,7 +17,16 @@ class KnauerDADLampControl(PowerSwitch):
         """A generic Syringe pump."""
         super().__init__(name, hw_device)
         self.lamp = name
-        self.add_api_route("/lamp", self.get_lamp, methods=["GET"])
+        self.add_api_route("/lamp_status", self.get_lamp, methods=["GET"])
+        self.add_api_route("/_keep_connection", self.keep_connection, methods=["PUT"])
+        self.add_api_route("/status", self.get_status, methods=["GET"])
+    async def keep_connection(self):
+        """Keep connection with DAD alive"""
+        await self.hw_device.bg_keep_connect()
+
+    async def get_status(self) -> str:
+        """Get status of the instrument """
+        return await self.hw_device.status()
 
     async def get_lamp(self):
         """Lamp status."""
@@ -55,10 +64,8 @@ class DADChannelControl(PhotoSensor):
         self.channel = channel
 
         # additional parameters
-        self.add_api_route("/set-wavelength", self.power_on, methods=["PUT"])
-        self.add_api_route(
-            "/set-integration-time", self.set_integration_time, methods=["PUT"]
-        )
+        self.add_api_route("/set-wavelength", self.set_wavelength, methods=["PUT"])
+        self.add_api_route("/set-integration-time", self.set_integration_time, methods=["PUT"])
         self.add_api_route("/set-bandwidth", self.set_bandwidth, methods=["PUT"])
 
         # Ontology: diode array detector
@@ -84,6 +91,10 @@ class DADChannelControl(PhotoSensor):
         """set bandwidth in the range of 4 to 25 nm"""
         return await self.hw_device.bandwidth(bandwidth)
 
+    async def set_shutter(self, status: str):
+        """set the shutter to "CLOSED" or "OPEN" or "FILTER". """
+        return await self.hw_device.shutter(status)
+
     async def power_on(self) -> str:
         """check the lamp status"""
         return f"d2 lamp is {await self.hw_device.lamp('d2')}; halogen lamp is {await self.hw_device.lamp('hal')}"
@@ -93,12 +104,4 @@ class DADChannelControl(PhotoSensor):
         reply = await self.hw_device.set_wavelength(self.channel, 0)
         return reply
 
-    #
-    # async def acquire_spectrum(self):
-    #     """Acquire an UV/VIS signal."""
-    #     pass
-    #
-    # async def stop(self):
-    #     """Stops acquisition and exit gracefully."""
-    #     pass
-    #
+
