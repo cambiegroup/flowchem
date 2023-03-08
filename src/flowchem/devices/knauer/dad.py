@@ -198,7 +198,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         cmd = self.cmd.SIGNAL.format(channel=channel, signal=signal)
         return await self._send_and_receive(cmd)
 
-    async def read_signal(self, channel: int) -> float | None:
+    async def read_signal(self, channel: int) -> float:
         """Read signal
         -9999999 to +9999999 (μAU, SIG_SRC = 0); 0 to 1000000 (INT, SIG_SRC = 1)
         """
