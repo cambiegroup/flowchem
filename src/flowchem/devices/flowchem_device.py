@@ -27,8 +27,8 @@ class DeviceInfo(BaseModel):
     maintainers: "list[Person]"
     manufacturer: str
     model: str
-    serial_number = "unknown"
-    version = ""
+    serial_number: str | int = "unknown"
+    version: str = ""
     additional_info: dict = {}
 
 
