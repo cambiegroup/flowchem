@@ -18,12 +18,7 @@ class KnauerDADLampControl(PowerSwitch):
         super().__init__(name, hw_device)
         self.lamp = name
         self.add_api_route("/lamp_status", self.get_lamp, methods=["GET"])
-        self.add_api_route("/_keep_connection", self.keep_connection, methods=["PUT"])
         self.add_api_route("/status", self.get_status, methods=["GET"])
-
-    async def keep_connection(self):
-        """Keep connection with DAD alive"""
-        await self.hw_device.bg_keep_connect()
 
     async def get_status(self) -> str:
         """Get status of the instrument"""

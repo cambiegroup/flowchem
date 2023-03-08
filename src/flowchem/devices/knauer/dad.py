@@ -87,16 +87,6 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         # await self.integration_time("75")
         logger.info("set channel 1 : WL = 514 nm, BW = 20nm ")
 
-    async def bg_keep_connect(self):
-        # 1 min without sending anything will lose connection
-        while True:
-            await self.status()
-            await asyncio.sleep(59)
-
-    # async def bg_keep_connect_1(self):
-    #     await self.info()
-    #     await asyncio.sleep(59)
-
     async def d2(self, state: bool = True) -> str:
         """Turn off or on the deuterium lamp."""
         cmd = self.cmd.D2_LAMP_ON if state else self.cmd.D2_LAMP_OFF
@@ -247,6 +237,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
     def repeated_task(self):
         async def keepalive():
             await self.status()
+
         return 30, keepalive
 
     def components(self) -> list["FlowchemComponent"]:
