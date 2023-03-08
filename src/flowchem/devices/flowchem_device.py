@@ -35,7 +35,8 @@ class DeviceInfo(BaseModel):
 DeviceInfo.update_forward_refs()
 
 
-RepeatedTaskInfo = namedtuple("RepeatedTaskInfo", ['seconds_every', 'task'])
+RepeatedTaskInfo = namedtuple("RepeatedTaskInfo", ["seconds_every", "task"])
+
 
 class FlowchemDevice(ABC):
     """
@@ -50,10 +51,12 @@ class FlowchemDevice(ABC):
         self.name = name
 
     async def initialize(self):
+        """Use for setting up async connection to the device."""
         pass
 
-    def repeated_task(self) -> RepeatedTaskInfo:
-        return ()
+    def repeated_task(self) -> RepeatedTaskInfo | None:
+        """Use for repeated background task, e.g. session keepalive."""
+        return None
 
     def get_metadata(self) -> DeviceInfo:
         try:
