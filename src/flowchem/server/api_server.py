@@ -38,23 +38,23 @@ async def create_server_from_file(
 
     config: Path to the toml file with the device config or dict.
     """
-    # Parse config create object instances for all hw devices
-    parsed_config = parse_config(config_file)
+    # Parse config (it also creates object instances for all hw dev in config["device"])
+    config = parse_config(config_file)
 
-    # Run `initialize` method of all hw devices
-    logger.info("Initializing devices...")  # all devices are initialized in parallel
-    await asyncio.gather(*[dev.initialize() for dev in parsed_config["device"]])
-    repeated_tasks = [
-        dev.repeated_task() for dev in parsed_config["device"] if dev.repeated_task()
-    ]
-
+    logger.info("Initializing devices...")
+    # Run `initialize` method of all hw devices in parallel
+    await asyncio.gather(*[dev.initialize() for dev in config["device"]])
+    # Collect background repeated tasks for each device (will need to schedule+start these)
+    bg_tasks = [dev.repeated_task() for dev in config["device"] if dev.repeated_task()]
     logger.info("Device initialization complete!")
 
-    return await create_server_for_devices(parsed_config, repeated_tasks, host)
+    return await create_server_for_devices(config, bg_tasks, host)
 
 
 async def create_server_for_devices(
-    config: dict, repeated_tasks: Iterable[RepeatedTaskInfo] = (), host="127.0.0.1"
+    config: dict,
+    repeated_tasks: Iterable[RepeatedTaskInfo] = (),
+    host: str = "127.0.0.1",
 ) -> FlowchemInstance:
     """Initialize and create API endpoints for device object provided."""
     dev_list = config["device"]
