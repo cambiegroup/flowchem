@@ -9,7 +9,7 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 ::::{grid} 1 2 3 4
 
 :::{grid-item}
-:columns: 1
+:columns: auto
 
 ```{button-ref} getting_started
 :color: primary
@@ -17,7 +17,7 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 ```
 :::
 :::{grid-item}
-:columns: 1
+:columns: auto
 
 ```{button-ref} learning/tutorial
 :color: secondary
@@ -25,7 +25,7 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 ```
 :::
 :::{grid-item}
-:columns: 1
+:columns: auto
 
 ```{button-ref} examples/index
 :color: secondary
@@ -33,7 +33,7 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 ```
 :::
 :::{grid-item}
-:columns: 1
+:columns: auto
 
 ```{button-ref} api/index
 :color: secondary
