@@ -1,8 +1,17 @@
 # Getting started
+This guide will help you with the installation of flowchem.
 
-This guide will guide you through the installation and setup of a flowchem server.
+## Overview
+In a typical scenario, flowchem:
+1. reads a configuration file listing the devices to be controlled and their settings;
+2. creates connections with each device and ensures a reproducible state at start-up;
+3. provides access to the capabilities of each device (such as pumping, heating etc...) via a web interface.
 
+![Flowchem software architecture](./_static/architecture_v1.svg | width=100%)
 
+Since flowchem leverages web technologies, flowchem devices can be controlled directly with a web browser or by clients
+written in different languages and from almost any operative system, including Android and iOS.
+A set of python clients interfacing with the flowchem API are also provided and used in examples.
 
 ## Install flowchem
 To use it, you need to have Python installed. Flowchem requires a Python version of 3.10 or later.
