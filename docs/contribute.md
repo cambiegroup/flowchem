@@ -111,3 +111,13 @@ Moreover, the source code in the `flowchem` packages is organized in:
 * `devices` - containing the code to control the different devices, sorted by manufacturer
 * `server` - the modules related to configuration parsing and API server initialization.
 * `utils` - various helper functions
+
+
+```{toctree}
+:maxdepth: 2
+
+learning/index
+add_device/index
+learning/faq
+
+```
