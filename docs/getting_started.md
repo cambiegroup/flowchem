@@ -3,9 +3,9 @@
 This guide will guide you through the installation and setup of a flowchem server.
 
 
+
 ## Install flowchem
-Flowchem is a command-line tool that generates an API to control a variety of instruments commonly found in chemistry
-labs. To use it, you need to have Python installed. Flowchem requires a Python version of 3.10 or later.
+To use it, you need to have Python installed. Flowchem requires a Python version of 3.10 or later.
 
 To get started with flowchem run:
 ```shell
