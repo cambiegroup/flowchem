@@ -76,7 +76,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 # html_logo = "http://placekitten.com/200/90"
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 html_theme_options = {
     "collapse_navigation": False,
     "navigation_depth": 3,
@@ -90,6 +90,5 @@ html_show_sphinx = False
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_css_files = [
-    "custom.css",
     "rtd_dark.css",
 ]
