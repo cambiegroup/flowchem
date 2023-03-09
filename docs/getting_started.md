@@ -7,6 +7,14 @@ In a typical scenario, flowchem:
 2. creates connections with each device and ensures a reproducible state at start-up;
 3. provides access to the capabilities of each device (such as pumping, heating etc...) via a web interface.
 
+:::{figure-md} flowchem-architecture
+<img src="./_static/architecture_v1.svg" alt="Flowchem software architecture (devices/config/server)" class="bg-primary mb-1" width="100%">
+
+Schematic representation of flowchem software architecture.
+An heterogeneous collection of devices is physically connected to a control PC.
+The configuration file in TOML format specifies the connection parameters for each device.
+After running flowchem with that configuration, a web server is started to control each device via a single API.
+:::
 ![Flowchem software architecture](./_static/architecture_v1.svg | width=100%)
 
 Since flowchem leverages web technologies, flowchem devices can be controlled directly with a web browser or by clients
