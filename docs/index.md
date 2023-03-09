@@ -3,17 +3,6 @@
 Flowchem is an application to simplify the control of instruments and devices commonly found in chemistry labs.
 Flowchem acts as unifying layer exposing devices using different command syntax and protocols under a single API.
 
-In a typical scenario, flowchem:
-1. reads a configuration file listing the devices to be controlled and their settings;
-2. creates connections with each device and ensures a reproducible state at start-up;
-3. provides access to the capabilities of each device (such as pumping, heating etc...) via a web interface.
-
-![Flowchem software architecture](./_static/architecture_v1.svg)
-
-Since flowchem leverages web technologies, flowchem devices can be controlled directly with a web browser or by clients
-written in different languages and from almost any operative system, including Android and iOS.
-A set of python clients interfacing with the flowchem API are also provided and used in examples.
-
 ::::{grid} 1 2 3 4
 
 :::{grid-item}
@@ -21,20 +10,23 @@ A set of python clients interfacing with the flowchem API are also provided and 
 
 ```{button-ref} getting_started
 :color: primary
+:tooltip: Getting started guide
 ```
 :::
 :::{grid-item}
 :columns: 1
 
-```{button-ref} Tutorial
+```{button-ref} learning/tutorial
 :color: secondary
+:tooltip: Introductory tutorial: learning-oriented practical steps
 ```
 :::
 :::{grid-item}
 :columns: 1
 
-```{button-ref} Examples
+```{button-ref} examples/index
 :color: secondary
+:tooltip: Introductory tutorial: task-oriented practical steps
 ```
 :::
 :::{grid-item}
@@ -42,10 +34,15 @@ A set of python clients interfacing with the flowchem API are also provided and 
 
 ```{button-ref} api/index
 :color: secondary
+:tooltip: API reference: information-oriented theoretical knowledge
 ```
 :::
 ::::
+
 ---
+
+## Supported devices
+An up-to-date list of all supported devices [is available here](devices/supported_devices)!
 
 ## Install flowchem
 To install `flowchem`, ensure you have Python installed, then run:
@@ -54,19 +51,19 @@ pip install flowchem
 ```
 More information on [installing flowchem](./getting_started.md).
 
----
-
 ## Tutorial
-Follow the [Introduction tutorial]() for a hands-on introduction to flowchem:
+Follow the [Introduction tutorial](./learning/tutorial.md) for a hands-on introduction to flowchem:
 
-```toml
-[device.example1]
-type="FakeDevice"
-```
-```{button-ref} ./examples/hallo-world
+
+## Example
+See some example of the use of flowchem in automated reaction control systems!
+
+```{button-ref} Example 1
 :color: primary
 ```
----
+```{button-ref} Example 2
+:color: primary
+```
 
 <!--
 TODO: add ref to paper once out.
@@ -80,14 +77,12 @@ If you use flowchem for your paper, please remember to cite it!
 
 getting_started
 
-learning/index
+learning/tutorial
 
-devices/supported_devices
+examples/index
 
 api/index
 
 contribute
-
-add_device/index
 
 ```
