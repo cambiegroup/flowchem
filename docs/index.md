@@ -1,11 +1,18 @@
-Flowchem documentation
-======================
+# Flowchem
 
+Flowchem is an application to simplify the control of instruments and devices commonly found in chemistry labs.
+Flowchem acts as unifying layer exposing devices using different command syntax and protocols under a single API.
 
-Flowchem is a library to control instruments and devices commonly found in chemistry labs
-via an interoperable web API.
+In a typical scenario, flowchem:
+1. reads a configuration file listing the devices to be controlled and their settings;
+2. creates connections with each device and ensures a reproducible state at start-up;
+3. provides access to the capabilities of each device (such as pumping, heating etc...) via a web interface.
 
-Lear more about [how flowchem works](./learning/index.md).
+![Flowchem software architecture](./_static/architecture_v1.svg)
+
+Since flowchem leverages web technologies, flowchem devices can be controlled directly with a web browser or by clients
+written in different languages and from almost any operative system, including Android and iOS.
+A set of python clients interfacing with the flowchem API are also provided and used in examples.
 
 ::::{grid} 1 2 3 3
 
@@ -32,6 +39,13 @@ Lear more about [how flowchem works](./learning/index.md).
 :color: secondary
 ```
 :::
+:::{grid-item}
+:columns: auto
+
+```{button-ref} api/index
+:color: secondary
+```
+:::
 ::::
 ---
 
@@ -40,18 +54,13 @@ To install `flowchem`, ensure you have Python installed, then run:
 ```shell
 pip install flowchem
 ```
-or install it with `pipx`:
-```shell
-pip install pipx
-pipx ensurepath
-pipx install flowchem
-```
-Read more about [installing flowchem](./getting_started.md).
+More information on [installing flowchem](./getting_started.md).
 
 ---
 
 ## Tutorial
-View the [Simple Reactor Control Tutorial]() for a hands-on introduction to flowchem:
+Follow the [Introduction tutorial]() for a hands-on introduction to flowchem:
+
 ```toml
 [device.example1]
 type="FakeDevice"
@@ -61,10 +70,11 @@ type="FakeDevice"
 ```
 ---
 
+<!--
+TODO: add ref to paper once out.
 ## Citation
 If you use flowchem for your paper, please remember to cite it!
-
-[//]: # (TODO: add ref to paper once out)
+-->
 
 ```{toctree}
 :maxdepth: 2

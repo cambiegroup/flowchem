@@ -69,6 +69,7 @@ docs = [
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
     "sphinxcontrib-openapi",
+    "textual",
 ]
 types = [
     "data-science-types",
