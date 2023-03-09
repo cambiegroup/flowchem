@@ -3,6 +3,9 @@
 Flowchem is an application to simplify the control of instruments and devices commonly found in chemistry labs.
 Flowchem acts as unifying layer exposing devices using different command syntax and protocols under a single API.
 
+<!--
+See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getbootstrap.com/docs/5.0/layout/grid/
+-->
 ::::{grid} 1 2 3 4
 
 :::{grid-item}
