@@ -14,33 +14,31 @@ Since flowchem leverages web technologies, flowchem devices can be controlled di
 written in different languages and from almost any operative system, including Android and iOS.
 A set of python clients interfacing with the flowchem API are also provided and used in examples.
 
-::::{grid} 1 2 3 3
+::::{grid} 1 2 3 4
 
 :::{grid-item}
-:columns: auto
+:columns: 1
 
 ```{button-ref} getting_started
 :color: primary
 ```
 :::
-
 :::{grid-item}
-:columns: auto
+:columns: 1
 
 ```{button-ref} Tutorial
 :color: secondary
 ```
 :::
-
 :::{grid-item}
-:columns: auto
+:columns: 1
 
 ```{button-ref} Examples
 :color: secondary
 ```
 :::
 :::{grid-item}
-:columns: auto
+:columns: 1
 
 ```{button-ref} api/index
 :color: secondary
