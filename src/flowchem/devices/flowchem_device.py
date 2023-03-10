@@ -1,5 +1,6 @@
 """Base object for all hardware-control device classes."""
 from abc import ABC
+from collections import namedtuple
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
@@ -26,12 +27,15 @@ class DeviceInfo(BaseModel):
     maintainers: "list[Person]"
     manufacturer: str
     model: str
-    serial_number = "unknown"
-    version = ""
+    serial_number: str | int = "unknown"
+    version: str = ""
     additional_info: dict = {}
 
 
 DeviceInfo.update_forward_refs()
+
+
+RepeatedTaskInfo = namedtuple("RepeatedTaskInfo", ["seconds_every", "task"])
 
 
 class FlowchemDevice(ABC):
@@ -47,7 +51,12 @@ class FlowchemDevice(ABC):
         self.name = name
 
     async def initialize(self):
+        """Use for setting up async connection to the device."""
         pass
+
+    def repeated_task(self) -> RepeatedTaskInfo | None:
+        """Use for repeated background task, e.g. session keepalive."""
+        return None
 
     def get_metadata(self) -> DeviceInfo:
         try:

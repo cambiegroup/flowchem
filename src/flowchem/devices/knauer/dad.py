@@ -1,6 +1,5 @@
 """Control module for the Knauer DAD."""
 import asyncio
-import time
 
 from loguru import logger
 from typing import Union
@@ -86,17 +85,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         await self.set_wavelength(1, 254)
         await self.bandwidth(8)
         # await self.integration_time("75")
-        logger.info(f"set channel 1 : WL = 514 nm, BW = 20nm ")
-
-    async def bg_keep_connect(self):
-        # 1 min without sending anything will lose connection
-        while True:
-            await self.status()
-            await asyncio.sleep(59)
-
-    # async def bg_keep_connect_1(self):
-    #     await self.info()
-    #     await asyncio.sleep(59)
+        logger.info("set channel 1 : WL = 514 nm, BW = 20nm ")
 
     async def d2(self, state: bool = True) -> str:
         """Turn off or on the deuterium lamp."""
@@ -126,10 +115,12 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         }
         _reverse_lampstatus_mapping = {v: k for k, v in lampstatus_mapping.items()}
 
-        cmd = self.cmd.LAMP.format(lamp=lamp_mapping[lamp], state=lampstatus_mapping[state])
+        cmd = self.cmd.LAMP.format(
+            lamp=lamp_mapping[lamp], state=lampstatus_mapping[state]
+        )
         response = await self._send_and_receive(cmd)  # 'LAMP_D2:0'
         return response
-        #if response.isnumeric() else _reverse_lampstatus_mapping[response[response.find(":") + 1:]]
+        # if response.isnumeric() else _reverse_lampstatus_mapping[response[response.find(":") + 1:]]
         # return response if not response.isnumeric() else _reverse_lampstatus_mapping[response]
 
     async def serial_num(self) -> str:
@@ -171,7 +162,11 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
 
         cmd = self.cmd.SHUTTER.format(state=shutter_mapping[shutter])
         response = await self._send_and_receive(cmd)
-        return response if not response.isnumeric() else _reverse_shutter_mapping[response[response.find(":") + 1:]]
+        return (
+            response
+            if not response.isnumeric()
+            else _reverse_shutter_mapping[response[response.find(":") + 1 :]]
+        )
 
     async def signal_type(self, s_type: str = "microAU") -> str:
         """Set and get the type of signal shown on the display
@@ -183,7 +178,11 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
 
         cmd = self.cmd.SIGNAL_TYPE.format(state=type_mapping[s_type])
         response = await self._send_and_receive(cmd)
-        return response if not response.isnumeric() else _reverse_type_mapping[response[response.find(":") + 1:]]
+        return (
+            response
+            if not response.isnumeric()
+            else _reverse_type_mapping[response[response.find(":") + 1 :]]
+        )
 
     async def get_wavelength(self, channel: int) -> int:
         cmd = self.cmd.WAVELENGTH.format(channel=channel, wavelength="?")
@@ -199,7 +198,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         cmd = self.cmd.SIGNAL.format(channel=channel, signal=signal)
         return await self._send_and_receive(cmd)
 
-    async def read_signal(self, channel: int) -> float | None:
+    async def read_signal(self, channel: int) -> float:
         """Read signal
         -9999999 to +9999999 (μAU, SIG_SRC = 0); 0 to 1000000 (INT, SIG_SRC = 1)
         """
@@ -214,8 +213,6 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         # except ValueError:
         #     logger.warning("ValueError:the reply is not a float..")
         #     return None
-
-
 
     async def integration_time(self, integ_time: Union[int | str] = "?") -> str | int:
         """set and read the integration time in 10 - 2000 ms"""
@@ -237,6 +234,12 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
             response = await self._send_and_receive(cmd)
             return int(response)
 
+    def repeated_task(self):
+        async def keepalive():
+            await self.status()
+
+        return 30, keepalive
+
     def components(self) -> list["FlowchemComponent"]:
         list_of_components: list[FlowchemComponent] = [
             KnauerDADLampControl("d2", self),
@@ -244,7 +247,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         ]
         list_of_components.extend(
             [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)]
-            )
+        )
         return list_of_components
 
 
@@ -254,13 +257,12 @@ if __name__ == "__main__":
     )
 
 
-
 async def main(dad):
     """test function"""
     await dad.initialize()
     lamp_d2, lamp_hal, ch1, ch2, ch3, ch4 = dad.components()
-    bg1 = DAD.bg_keep_connect()
-    bg2 = DAD.info()
+    bg1 = dad.bg_keep_connect()
+    bg2 = dad.info()
     await asyncio.gather(asyncio.to_thread(bg1), bg2)
 
     # # set signal of channel 1 to zero
@@ -275,16 +277,16 @@ async def main(dad):
     # await DAD.initialize()
     # await ch1.acquire_signal()
 
-        # set signal of channel 1 to zero
-        # await DAD.set_signal(1)
-        await ch1.set_wavelength(520)
-        await ch1.set_integration_time(70)
-        await ch1.set_bandwidth(4)
-        await ch1.calibrate_zero()
-        logger.info("set signal to zero")
-        await ch1.acquire_signal()
+    # set signal of channel 1 to zero
+    # await DAD.set_signal(1)
+    await ch1.set_wavelength(520)
+    await ch1.set_integration_time(70)
+    await ch1.set_bandwidth(4)
+    await ch1.calibrate_zero()
+    logger.info("set signal to zero")
+    await ch1.acquire_signal()
 
-        if __name__ == "__main__":
-    import asyncio
 
+if __name__ == "__main__":
+    k_dad = KnauerDAD(...)
     asyncio.run(main(k_dad))

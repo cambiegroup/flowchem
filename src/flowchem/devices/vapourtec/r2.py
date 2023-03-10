@@ -1,11 +1,9 @@
 """ Control module for the Vapourtec R2 """
 from __future__ import annotations
 
-import time
 from asyncio import Lock
 from collections import namedtuple
 from collections.abc import Iterable
-from typing import Tuple
 
 import aioserial
 import pint
@@ -177,7 +175,9 @@ class R2(FlowchemDevice):
                     await self._write(command)
                     # Allows 4 failures...
                     if failure > 3:
-                        raise InvalidConfiguration("No response received from R2 module!")
+                        raise InvalidConfiguration(
+                            "No response received from R2 module!"
+                        )
                 else:
                     break
 
@@ -199,11 +199,8 @@ class R2(FlowchemDevice):
         raw_status = await self.write_and_read_reply(self.cmd.GET_STATUS)
         if raw_status == "OK":
             logger.warning("ValueError:the reply of get status command is OK..")
-            return R2.AllComponentStatus._make((0,)*len(R2.AllComponentStatus._fields))
-        else:
-            return R2.AllComponentStatus._make(raw_status.split(" "))
-
-
+            return await self.get_status()
+        return R2.AllComponentStatus._make(raw_status.split(" "))
 
     # Get specific state of individual component
     async def get_state(self) -> str:
@@ -312,27 +309,31 @@ class R2(FlowchemDevice):
         temp_history = await self.write_and_read_reply(self.cmd.HISTORY_TEMPERATURE)
         if temp_history == "OK":
             logger.warning("ValueError:the reply of get temperature command is OK..")
-            return None
-        else:
-            # 0: time, 1..8: cooling, heating, or ...  / temp (alternating per channel)
-            temp_time, *temps = temp_history[0].split(",")
-            return float(temps[channel * 2 - 1]) / 10
+            return await self.get_current_temperature(channel)
 
-    async def get_pressure_history(self) -> tuple[None, None, None] | tuple[int, int, int]:
+        # 0: time, 1..8: cooling, heating, or ...  / temp (alternating per channel)
+        temp_time, *temps = temp_history[0].split(",")
+        return float(temps[channel * 2 - 1]) / 10
+
+    async def get_pressure_history(
+        self,
+    ) -> tuple[int, int, int]:
         """Get pressure history and returns it as (in mbar)"""
         # Get a `&` separated list of pressures for all sensors every second
         pressure_history = await self.write_and_read_reply(self.cmd.HISTORY_PRESSURE)
         if pressure_history == "OK":
             logger.warning("ValueError:the reply for get pressure command is OK....")
-            return None, None, None
-        else:
-            # Each pressure data point consists of four values: time and three pressures
-            _, *pressures = pressure_history.split("&")[0].split(",")  # e.g. 45853,94,193,142
-            # Converts to mbar
-            p_in_mbar = [int(x) * 10 for x in pressures]
-            return p_in_mbar[1], p_in_mbar[2], p_in_mbar[0]  # pumpA, pumpB, system
+            # This may give an infinite loop
+            return await self.get_pressure_history()
+        # Each pressure data point consists of four values: time and three pressures
+        _, *pressures = pressure_history.split("&")[0].split(
+            ","
+        )  # e.g. 45853,94,193,142
+        # Converts to mbar
+        p_in_mbar = [int(x) * 10 for x in pressures]
+        return p_in_mbar[1], p_in_mbar[2], p_in_mbar[0]  # pumpA, pumpB, system
 
-    async def get_current_pressure(self, pump_code: int = 2) -> None | int:
+    async def get_current_pressure(self, pump_code: int = 2) -> int:
         """Get current pressure (in mbar)"""
         press_state_list = await self.get_pressure_history()
         # 0: pump A, 1: pump_B, 2: system pressure
@@ -342,22 +343,14 @@ class R2(FlowchemDevice):
         """Get current flow rate (in ul/min)"""
         state = await self.write_and_read_reply(self.cmd.HISTORY_FLOW)
         if state == "OK":
-            # raise ValueError("the flow output is not what is required..")
             logger.warning("ValueError:the reply of get flow command is OK....")
-        # AllState = namedtuple("flowstate", ["time", "pumpA_flow", "pumpB_flow"])
-        flow_state_list = state.split("&")[0].split(",")
-        # 0: time, 1: pump A, 2: pump B
-        return float(flow_state_list[pump_code + 1])
+            return await self.get_current_flow(pump_code)
 
-    # async def get_current_power(self) -> str:
-    #     """Get power: the comment only return -999 no matter the power is on or off""
-    #     state = await self.write_and_read_reply(self.cmd.HISTORY_POWER)
-    #     if state.find("&"):
-    #         power_state = state.split("&")[0].split(",")
-    #     else:
-    #         power_state = state.split(",")
-    #     # 0: time, 3: channel 3 power
-    #     return power_state[3]
+        pump_flow = {}
+        # _: time, A: pump A, B: pump B
+        _, pump_flow["A"], pump_flow["B"] = state.split("&")[0].split(",")
+        # 0: time, 1: pump A, 2: pump B
+        return float(pump_flow[pump_code])
 
     async def pooling(self) -> dict:
         """extract all reaction parameters"""
@@ -373,7 +366,11 @@ class R2(FlowchemDevice):
             # AllState["InjValveA"] = await self.get_valve_Position(3)
             # AllState["2PortValveC"] = await self.get_valve_Position(4)
             # AllState["sysState"] = await self.get_Run_State()
-            AllState["pumpA_P"], AllState["pumpB_P"], AllState["sysP (mbar)"] = await self.get_pressure_history()
+            (
+                AllState["pumpA_P"],
+                AllState["pumpB_P"],
+                AllState["sysP (mbar)"],
+            ) = await self.get_pressure_history()
             # AllState["sysP (mbar)"] = await self.get_current_pressure()
             # AllState["pumpA_P"] = await self.get_current_pressure(pump_code = 0)
             # AllState["pumpB_P"] = await self.get_current_pressure(pump_code = 1)
@@ -421,8 +418,6 @@ class R2(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    import asyncio
-
     Vapourtec_R2 = R2(port="COM4")
 
     async def main(Vapourtec_R2):
@@ -452,7 +447,6 @@ if __name__ == "__main__":
         while True:
             # await pA.infuse("10 ul/min")
             print(f"{await Vapourtec_R2.pooling()}")
-
 
             # print(f"current pressure of pump A is {await sA.read_pressure()}")
 

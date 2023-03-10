@@ -1,7 +1,6 @@
 """ Control module for the Vapourtec R2 valves """
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING
 
 from loguru import logger
@@ -223,7 +222,7 @@ class R2PumpPressureSensor(PressureSensor):
         super().__init__(name, hw_device)
         self.pump_code = pump_code
 
-    async def read_pressure(self, units: str = "mbar") -> int:  # mbar
+    async def read_pressure(self, units: str = "mbar") -> int | None:  # mbar
         """Get current pump pressure in mbar."""
         return await self.hw_device.get_current_pressure(self.pump_code)
 

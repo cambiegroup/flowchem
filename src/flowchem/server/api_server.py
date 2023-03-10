@@ -3,13 +3,15 @@ import asyncio
 from importlib.metadata import metadata
 from io import BytesIO
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, Iterable
 
 from fastapi import FastAPI
+from fastapi_utils.tasks import repeat_every
 from loguru import logger
 from starlette.responses import RedirectResponse
 
 import flowchem
+from flowchem.devices.flowchem_device import RepeatedTaskInfo
 from flowchem.server.configuration_parser import parse_config
 from flowchem.server.zeroconf_server import ZeroconfServer
 
@@ -36,18 +38,24 @@ async def create_server_from_file(
 
     config: Path to the toml file with the device config or dict.
     """
-    # Parse config create object instances for all hw devices
-    parsed_config = parse_config(config_file)
+    # Parse config (it also creates object instances for all hw dev in config["device"])
+    config = parse_config(config_file)
 
-    # Run `initialize` method of all hw devices
-    logger.info("Initializing devices...")  # all devices are initialized in parallel
-    await asyncio.gather(*[dev.initialize() for dev in parsed_config["device"]])
+    logger.info("Initializing devices...")
+    # Run `initialize` method of all hw devices in parallel
+    await asyncio.gather(*[dev.initialize() for dev in config["device"]])
+    # Collect background repeated tasks for each device (will need to schedule+start these)
+    bg_tasks = [dev.repeated_task() for dev in config["device"] if dev.repeated_task()]
     logger.info("Device initialization complete!")
 
-    return await create_server_for_devices(parsed_config, host)
+    return await create_server_for_devices(config, bg_tasks, host)
 
 
-async def create_server_for_devices(config: dict, host="127.0.0.1") -> FlowchemInstance:
+async def create_server_for_devices(
+    config: dict,
+    repeated_tasks: Iterable[RepeatedTaskInfo] = (),
+    host: str = "127.0.0.1",
+) -> FlowchemInstance:
     """Initialize and create API endpoints for device object provided."""
     dev_list = config["device"]
     port = config.get("port", 8000)
@@ -65,6 +73,14 @@ async def create_server_for_devices(config: dict, host="127.0.0.1") -> FlowchemI
 
     mdns = ZeroconfServer(port=port, debug=False)
     api_base_url = r"http://" + f"{host}:{port}"
+
+    for seconds_delay, task_to_repeat in repeated_tasks:
+
+        @app.on_event("startup")
+        @repeat_every(seconds=seconds_delay)
+        async def my_task():
+            logger.debug("Running repeated task...")
+            await task_to_repeat()
 
     @app.route("/")
     def home_redirect_to_docs(root_path):
