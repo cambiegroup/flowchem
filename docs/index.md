@@ -21,7 +21,7 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 
 ```{button-ref} learning/tutorial
 :color: secondary
-:tooltip: Introductory tutorial: learning-oriented practical steps
+:tooltip: Introductory tutorial - learning-oriented practical steps
 ```
 :::
 :::{grid-item}
@@ -29,7 +29,7 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 
 ```{button-ref} examples/index
 :color: secondary
-:tooltip: Introductory tutorial: task-oriented practical steps
+:tooltip: Introductory tutorial - task-oriented practical steps
 ```
 :::
 :::{grid-item}
@@ -37,7 +37,7 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 
 ```{button-ref} api/index
 :color: secondary
-:tooltip: API reference: information-oriented theoretical knowledge
+:tooltip: API reference - information-oriented theoretical knowledge
 ```
 :::
 ::::
@@ -77,6 +77,8 @@ If you use flowchem for your paper, please remember to cite it!
 ```{toctree}
 :maxdepth: 2
 :hidden:
+
+devices/supported_devices
 
 getting_started
 
