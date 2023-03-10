@@ -58,6 +58,14 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for HTML output -------------------------------------------------
 # html_logo = "http://placekitten.com/200/90"
 html_theme = "furo"
+html_theme_options = {
+    "light_css_variables": {
+        "primary-color": "#005555",
+    },
+    "dark_css_variables": {
+        "primary-color": "#e5c07b",
+    },
+}
 html_show_copyright = False
 html_show_sphinx = False
 
