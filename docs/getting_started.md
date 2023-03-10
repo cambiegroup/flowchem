@@ -15,7 +15,6 @@ An heterogeneous collection of devices is physically connected to a control PC.
 The configuration file in TOML format specifies the connection parameters for each device.
 After running flowchem with that configuration, a web server is started to control each device via a single API.
 :::
-![Flowchem software architecture](./_static/architecture_v1.svg | width=100%)
 
 Since flowchem leverages web technologies, flowchem devices can be controlled directly with a web browser or by clients
 written in different languages and from almost any operative system, including Android and iOS.
