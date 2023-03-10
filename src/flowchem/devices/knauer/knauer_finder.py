@@ -36,7 +36,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
 
 
 async def get_device_type(ip_address: str) -> str:
-    """Return either 'Pump', 'Valve' or 'Unknown'."""
+    """Detects the device type based on the reply to a test command or IP heuristic."""
     fut = asyncio.open_connection(host=ip_address, port=10001)
     try:
         reader, writer = await asyncio.wait_for(fut, timeout=3)
@@ -44,7 +44,7 @@ async def get_device_type(ip_address: str) -> str:
         return "ConnectionError"
     except asyncio.TimeoutError:
         if ip_address == "192.168.1.2":
-            return "TimeoutError - Nice FlowIR that you have :D"
+            return "FlowIR"
         return "TimeoutError"
 
     # Test Pump
@@ -52,18 +52,24 @@ async def get_device_type(ip_address: str) -> str:
     try:
         reply = await asyncio.wait_for(reader.readuntil(separator=b"\r"), timeout=1)
     except asyncio.TimeoutError:
-        return "TimeoutError"
-
-    if reply.startswith(b"HEADTYPE"):
-        logger.debug(f"Device {ip_address} is a Pump")
-        return "AzuraCompact"
+        pass
+    else:
+        if reply.startswith(b"HEADTYPE"):
+            logger.debug(f"Device {ip_address} is a pump")
+            return "AzuraCompact"
+    logger.debug("Not a pump")
 
     # Test Valve
     writer.write(b"T:?\n\r")
-    reply = await reader.readuntil(separator=b"\r")
-    if reply.startswith(b"VALVE"):
-        logger.debug(f"Device {ip_address} is a Valve")
-        return "KnauerValve"
+    try:
+        reply = await asyncio.wait_for(reader.readuntil(separator=b"\r"), timeout=1)
+    except asyncio.TimeoutError:
+        pass
+    else:
+        if reply.startswith(b"VALVE"):
+            logger.debug(f"Device {ip_address} is a valve")
+            return "KnauerValve"
+    logger.debug("Not a valve")
 
     return "Unknown"
 
@@ -177,28 +183,39 @@ def knauer_finder(source_ip=None):
         logger.info(f"Determining device type for device at {ip} [{mac_address}]")
         # Device Type
         device_type = asyncio.run(get_device_type(ip))
-        logger.info(f"Found a {device_type} on IP {ip}")
+        logger.info(f"Device type detected for IP {ip}: {device_type}")
 
-        if device_type == "AzuraCompact":
-            dev_config.add(
-                dedent(
-                    f"""
-                       [device.pump-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
-                       type = "AzuraCompact"
-                       ip_address = "{ip}"  # MAC address during discovery: {mac_address}
-                       # max_pressure = "XX bar"
-                       # min_pressure = "XX bar"\n\n"""
+        match device_type:
+            case "AzuraCompact":
+                dev_config.add(
+                    dedent(
+                        f"""
+                        [device.pump-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
+                        type = "AzuraCompact"
+                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}
+                        # max_pressure = "XX bar"
+                        # min_pressure = "XX bar"\n\n"""
+                    )
                 )
-            )
-        elif device_type == "KnauerValve":
-            dev_config.add(
-                dedent(
-                    f"""
+            case "KnauerValve":
+                dev_config.add(
+                    dedent(
+                        f"""
                         [device.valve-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
                         type = "KnauerValve"
                         ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n\n"""
+                    )
                 )
-            )
+            case "FlowIR":
+                dev_config.add(
+                    dedent(
+                        """
+                        [device.flowir]
+                        type = "IcIR"
+                        url = "opc.tcp://localhost:62552/iCOpcUaServer"  # Default, replace with IP of PC with IcIR
+                        template = "some-template.iCIRTemplate"  # Replace with valid template name, see docs.\n\n"""
+                    )
+                )
 
     return dev_config
 
