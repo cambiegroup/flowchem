@@ -74,15 +74,16 @@ TODO: add ref to paper once out.
 If you use flowchem for your paper, please remember to cite it!
 -->
 
+## Contents
+caption: User Guide
 ```{toctree}
 :maxdepth: 2
-:hidden:
-
-devices/supported_devices
 
 getting_started
 
 learning/tutorial
+
+devices/supported_devices
 
 examples/index
 

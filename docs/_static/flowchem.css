@@ -1,0 +1,19 @@
+:root {
+  --green: #005555;
+}
+
+div.sidebar-tree ul {
+    border-bottom: 1px solid var(--green);
+    padding: 1em 0;
+}
+
+hr.docutils {background-color: var(--green);}
+
+a:link, a:visited {color: var(--green);}
+
+.nav-overlay-icon .icon svg, .toc-overlay-icon .icon svg, .theme-toggle svg {color: var(--green);}
+
+.toc-tree li.scroll-current>.reference {color: var(--green);}
+
+table.docutils thead {border-bottom: 1px solid var(--green);}
+table.docutils td, table.docutils th {border-right: 1px solid var(--green);}
