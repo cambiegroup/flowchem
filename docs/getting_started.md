@@ -15,33 +15,37 @@ An heterogeneous collection of devices is physically connected to a control PC.
 The configuration file in TOML format specifies the connection parameters for each device.
 After running flowchem with that configuration, a web server is started to control each device via a single API.
 :::
-
+### Interoperability
 Since flowchem leverages web technologies, flowchem devices can be controlled directly with a web browser or by clients
 written in different languages and from almost any operative system, including Android and iOS.
 A set of python clients interfacing with the flowchem API are also provided and used in examples.
 
 ## Install flowchem
-To use it, you need to have Python installed. Flowchem requires a Python version of 3.10 or later.
+Flowchem requires a Python version of 3.10 or later.
+You can get the latest version of Python from [python.org](https://www.python.org/downloads/).
 
-To get started with flowchem run:
+To get started with flowchem run (preferably in a dedicated [virtual environment](https://peps.python.org/pep-0405/)):
 ```shell
 pip install flowchem
 ```
-or install it with `pipx`:
+or install it with [pipx](https://pypa.github.io/pipx/), a tool to install and run python applications in isolated
+environments:
 ```shell
 pip install pipx
 pipx ensurepath
 pipx install flowchem
 ```
 
-The use of `pipx` is the recommended way because it will:
-* install flowchem in a virtualenv, without interfering with other packages installed globally
+The use of `pipx` is recommended because it:
+* installs flowchem in a virtualenv, without interfering with other packages installed globally;
 * ensure that the `flowchem` and `flowchem-autodiscover` commands are available system-wide, by adding the pipx binary
-  folder to the system PATH.
-
-If you don’t have Python yet, you can download it from [python.org](https://www.python.org/downloads/).
+  folder to the system PATH (the `pipx ensurepath` step).
 
 To verify the installation has been completed successfully you can run `flowchem --version`.
+
+## Flowchem configuration
+
+
 
 ## Generate configuration file
 To autogenerate a flowchem configuration file, run the autodiscover tool:

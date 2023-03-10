@@ -42,13 +42,11 @@ See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getboo
 :::
 ::::
 
----
-
 ## Supported devices
-An up-to-date list of all supported devices [is available here](devices/supported_devices)!
+The list of all supported devices [is available here](devices/supported_devices)!
 
 ## Install flowchem
-To install `flowchem`, ensure you have Python installed, then run:
+To install flowchem, ensure you have Python installed, then run:
 ```shell
 pip install flowchem
 ```
@@ -57,8 +55,8 @@ More information on [installing flowchem](./getting_started.md).
 ## Tutorial
 Follow the [Introduction tutorial](./learning/tutorial.md) for a hands-on introduction to flowchem:
 
-
-## Example
+<!--
+## Examples
 See some example of the use of flowchem in automated reaction control systems!
 
 ```{button-ref} Example 1
@@ -67,6 +65,7 @@ See some example of the use of flowchem in automated reaction control systems!
 ```{button-ref} Example 2
 :color: primary
 ```
+-->
 
 <!--
 TODO: add ref to paper once out.
@@ -75,9 +74,9 @@ If you use flowchem for your paper, please remember to cite it!
 -->
 
 ## Contents
-caption: User Guide
 ```{toctree}
 :maxdepth: 2
+:caption: User Guide
 
 getting_started
 
@@ -87,6 +86,11 @@ devices/supported_devices
 
 examples/index
 
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Development
 api/index
 
 contribute
