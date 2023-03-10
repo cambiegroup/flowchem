@@ -15,6 +15,7 @@ An heterogeneous collection of devices is physically connected to a control PC.
 The configuration file in TOML format specifies the connection parameters for each device.
 After running flowchem with that configuration, a web server is started to control each device via a single API.
 :::
+
 ### Interoperability
 Since flowchem leverages web technologies, flowchem devices can be controlled directly with a web browser or by clients
 written in different languages and from almost any operative system, including Android and iOS.
@@ -35,16 +36,17 @@ pip install pipx
 pipx ensurepath
 pipx install flowchem
 ```
-
+<!--
 The use of `pipx` is recommended because it:
 * installs flowchem in a virtualenv, without interfering with other packages installed globally;
 * ensure that the `flowchem` and `flowchem-autodiscover` commands are available system-wide, by adding the pipx binary
-  folder to the system PATH (the `pipx ensurepath` step).
+  folder to the system PATH (the `pipx ensurepath` step).-->
 
 To verify the installation has been completed successfully you can run `flowchem --version`.
 
 ## Flowchem configuration
-
+Flowchem needs a configuration file with the connection parameter of the device to be controlled.
+In its simplest
 
 
 ## Generate configuration file
