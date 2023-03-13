@@ -92,7 +92,7 @@ examples/index
 :maxdepth: 2
 :caption: Development
 
-api/index
 contribute
+api/index
 
 ```

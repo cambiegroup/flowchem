@@ -6,10 +6,24 @@ new device, that would be awesome as well!
 % See also https://rdflib.readthedocs.io/en/stable/developers.html
 % And https://diataxis.fr/how-to-guides/
 
-<!--## Community
-We aim at creating a community around flowchem, by incentive the participation from a diverse group of contributors.
-Please read the [Contributor Covenant](https://www.contributor-covenant.org/) we adopted as Code of Conduct for guidance
-on how to interact with others in a way that makes the community thrive.-->
+## Repository structure
+The repository is structured as follows:
+* `docs` - documentation
+* `examples` - example of use
+* `src` - source code
+* `tests` - test files (pytest)
+We follow the "src-layout", read [this article](https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout) for more details.
+
+Moreover, the source code in the `flowchem` packages is organized in:
+* `components` - the abstract components representing specific device capabilities (e.g. pumping).
+* `devices` - containing the code to control the different devices, sorted by manufacturer
+* `server` - the modules related to configuration parsing and API server initialization.
+* `utils` - various helper functions
+
+% ## Community
+% We aim at creating a community around flowchem, by incentive the participation from a diverse group of contributors.
+% Please read the [Contributor Covenant](https://www.contributor-covenant.org/) we adopted as Code of Conduct for guidance
+% on how to interact with others in a way that makes the community thrive.
 
 ## Development process
 1. If you are a first-time contributor:
@@ -72,7 +86,7 @@ on how to interact with others in a way that makes the community thrive.-->
    * If your change introduces support for a new device make sure to add the relevant documentation for it.
      As conceptual framework for our documentation we are inspired by [Diátaxis](https://diataxis.fr).
 
-## Guidelines
+### Guidelines
 
 * All code should be documented with docstrings (in Google format) and comments where appropriate.
 * Possibly, all new code should have tests.
@@ -81,14 +95,15 @@ on how to interact with others in a way that makes the community thrive.-->
   See our `.pre-commit-config.yml` for details.
 %  The use of linter and import re-ordering is aimed at reducing diff size and merge conflicts in pull request.
 
-## Tests
+### Testing with `pytest`
 To run the tests `pytest` and some pytest plugins are needed.
 To install them run:
 ```shell
 pip install flowchem[test]
 ```
+If possible, new code should be accompanied by relevant unit tests.
 
-## Building docs
+## Documentation
 The documentation is automatically build for each commit at [readthedocs.com](https://readthedocs.org/projects/flowchem/).
 To build it locally, sphynx, myst-parser and other packages are needed.
 To install them run:
@@ -97,21 +112,6 @@ pip install flowchem[docs]
 ```
 
 Then from the docs folder run `make html` to generate html files in the _build subdirectory.
-
-## Repository structure
-The repository is structured as follows:
-* `docs` - documentation
-* `examples` - example of use
-* `src` - source code
-* `tests` - test files (pytest)
-We follow the "src-layout", read [this article](https://setuptools.pypa.io/en/latest/userguide/package_discovery.html#src-layout) for more details.
-
-Moreover, the source code in the `flowchem` packages is organized in:
-* `components` - the abstract components representing specific device capabilities (e.g. pumping).
-* `devices` - containing the code to control the different devices, sorted by manufacturer
-* `server` - the modules related to configuration parsing and API server initialization.
-* `utils` - various helper functions
-
 
 ```{toctree}
 :maxdepth: 2
