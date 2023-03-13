@@ -1,7 +1,7 @@
 Device API
 ==========
 
-Select a device to see the relevantAPI reference:
+Select a device to open the relevant API reference:
 
 ```{toctree}
 :maxdepth: 2

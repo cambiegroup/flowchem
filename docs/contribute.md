@@ -6,10 +6,10 @@ new device, that would be awesome as well!
 % See also https://rdflib.readthedocs.io/en/stable/developers.html
 % And https://diataxis.fr/how-to-guides/
 
-## Community
+<!--## Community
 We aim at creating a community around flowchem, by incentive the participation from a diverse group of contributors.
 Please read the [Contributor Covenant](https://www.contributor-covenant.org/) we adopted as Code of Conduct for guidance
-on how to interact with others in a way that makes the community thrive.
+on how to interact with others in a way that makes the community thrive.-->
 
 ## Development process
 1. If you are a first-time contributor:

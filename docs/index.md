@@ -90,7 +90,7 @@ examples/index
 
 ```{toctree}
 :maxdepth: 2
-:caption: Developmen
+:caption: Development
 
 api/index
 contribute
