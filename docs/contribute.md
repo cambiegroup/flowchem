@@ -104,14 +104,20 @@ pip install flowchem[test]
 If possible, new code should be accompanied by relevant unit tests.
 
 ## Documentation
-The documentation is automatically build for each commit at [readthedocs.com](https://readthedocs.org/projects/flowchem/).
-To build it locally, sphynx, myst-parser and other packages are needed.
-To install them run:
+The documentation is written in [Markdown](https://www.markdownguide.org/) and a new version of it is automatically
+build after each commit in the `main` and `docs` branches on
+[readthedocs.com](https://readthedocs.org/projects/flowchem/).
+
+It is also possible to build the documentation locally.
+Install the packages required (sphynx, myst-parser and more) by running:
 ```shell
 pip install flowchem[docs]
 ```
-
-Then from the docs folder run `make html` to generate html files in the _build subdirectory.
+Then, from the `./docs` folder:
+```shell
+make html
+```
+This will generate html files in the `_build/html` subdirectory.
 
 ```{toctree}
 :maxdepth: 2
