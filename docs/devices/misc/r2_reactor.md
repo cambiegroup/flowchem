@@ -1,5 +1,11 @@
 # Vapourtec R2 reactor
+```{admonition} Additional software needed!
+:class: attention
 
+To control the Vapourtec R2 reactor, a set of serial commands are required.
+These cannot be provided with flowchem as they were provided under the terms of an NDA.
+You can contact your Vapourtec representative for further help on this matter.
+```
 The Vapourtec R2 reactor is a complex device that integrates several independent components.
 
 ```{note}

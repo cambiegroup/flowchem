@@ -1,4 +1,11 @@
 # Vapourtec R4 heating module
+```{admonition} Additional software needed!
+:class: attention
+
+To control the Vapourtec R2 reactor, a set of serial commands are required.
+These cannot be provided with flowchem as they were provided under the terms of an NDA.
+You can contact your Vapourtec representative for further help on this matter.
+```
 
 The Vapourtec R4 module can be used both as a standalone reactor temperature control unit or as a part of an R2 assembly.
 Here the former case is assumed, for a description of the R2 reactor visit the [R2 reactor](../misc/r2_reactor.md) page.

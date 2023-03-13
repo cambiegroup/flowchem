@@ -1,4 +1,10 @@
 # Magritek Spinsolve
+```{admonition} Additional software needed!
+:class: attention
+
+To use a Spinsolve spectrometer, the manufacturer software should be installed on the PC connected to the spectrometer
+with the remote control option enabled (see manufacturer manual for details).
+```
 
 ## Introduction
 The bench-top NMRs from Magritek are controlled by the proprietary software Spinsolve.
