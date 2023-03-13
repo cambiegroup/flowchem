@@ -14,5 +14,6 @@ automatically used:
 * stopbits 1
 * bytesize 8
 ```
+
 ## API methods
 See the [device API reference](../../api/r4_heater/api.md) for a description of the available methods.
