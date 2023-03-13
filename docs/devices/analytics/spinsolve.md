@@ -17,8 +17,8 @@ Configuration sample showing all possible parameters:
 ```toml
 [device.my-benchtop-nmr]
 type = "Spinsolve"
-host = "127.0.0.1"  # IP address of the PC running Spinsolve, 127.0.0.1 for local machine. Only necessary parameter.
-port = 13000  # Default spinsolve port
+host = "127.0.0.1"  # IP address of the PC running Spinsolve. All other parameters are optional.
+port = 13000
 sample_name = "automated-experiment"
 solvent = "chloroform-d"
 data_folder = "D:\\data2q\\my-experiment"
