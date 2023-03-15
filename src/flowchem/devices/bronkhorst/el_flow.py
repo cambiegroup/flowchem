@@ -41,7 +41,7 @@ class EPC(FlowchemDevice):
             self.el_press = propar.instrument(
                 self.port, address=self.address, channel=self.channel
             )
-            self.id = self.el_press.id()
+            self.id = self.el_press.id
             logger.debug(f"Connected {self.id} to {self.port}")
             return
         except OSError as e:
@@ -119,7 +119,7 @@ class MFC(FlowchemDevice):
             self.el_flow = propar.instrument(
                 self.port, address=self.address, channel=self.channel
             )
-            self.id = self.el_flow.id()
+            self.id = self.el_flow.id
             logger.debug(f"Connected {self.id} to {self.port}")
             return
         except OSError as e:
@@ -172,7 +172,7 @@ class MFC(FlowchemDevice):
 
 
 async def gas_flow(port: str, target_flowrate: str, reaction_time: float):
-    Oxygen_flow = MFC(port, max_flow=9)
+    Oxygen_flow = MFC(port, max_flow=10, address=6)
     await Oxygen_flow.initialize()
     await Oxygen_flow.set_flow_setpoint("900 ul/min")  # 10%
     # await asyncio.sleep(2)
@@ -190,10 +190,10 @@ async def mutiple_connect():
     flow = MFC("COM7", address=1, max_flow=10)
     pressure = EPC("COM7", address=2, max_pressure=10)
     O2_flow = MFC("COM7", address=6, max_flow=10)
-
-    print(await pressure.get_id())
-    print(await flow.get_id())
-    print(await O2_flow.get_id())
+    O2_id = O2_flow.get_id
+    # print(await pressure.get_id)
+    # print(await flow.get_id)
+    print(O2_id)
 
 
 def find_devices_info(port: str):
