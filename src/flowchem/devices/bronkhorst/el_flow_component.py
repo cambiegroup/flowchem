@@ -21,25 +21,25 @@ class EPCComponent(PressureSensor):
         self.add_api_route("/stop", self.stop, methods=["PUT"])
         self.add_api_route("/set-pressure", self.set_pressure_setpoint, methods=["PUT"])
 
-    async def read_pressure(self, units: str = "bar"):
-        """Read from sensor, result to be expressed in units."""
-        p = await self.hw_device.get_pressure()
-        return p * ureg(units)
 
     async def set_pressure_setpoint(self, pressure: str) -> bool:
         """Set controlled pressure to the instrument; default unit: bar"""
         await self.hw_device.set_pressure(pressure)
         return True
 
-    async def get_pressure(self) -> float:
-        """get current system pressure in bar"""
-        return await self.hw_device.get_pressure()
-
     async def stop(self) -> bool:
         """Stop pressure controller"""
         await self.hw_device.set_pressure("0 bar")
         return True
 
+    async def read_pressure(self, units: str = "bar"):
+        """Read from sensor, result to be expressed in units."""
+        p = await self.hw_device.get_pressure()
+        return p * ureg(units)  # <Quantity(4.56, 'bar')>
+
+    async def get_pressure(self) -> float:
+        """get current system pressure in bar"""
+        return await self.hw_device.get_pressure()
 
 class MFCComponent(FlowchemComponent):
     hw_device: MFC  # just for typing

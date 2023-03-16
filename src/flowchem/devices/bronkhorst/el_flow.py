@@ -51,9 +51,16 @@ class EPC(FlowchemDevice):
         """Ensure connection."""
         await self.set_pressure("0 bar")
 
+    def isfloat(self, num):
+        try:
+            float(num)
+            return True
+        except ValueError:
+            return False
+
     async def set_pressure(self, pressure: str):
         """Set the setpoint of the instrument (0-32000 = 0-max pressure = 0-100%)."""
-        if pressure.isnumeric():
+        if pressure.isnumeric() or self.isfloat(pressure):
             pressure = pressure + "bar"
             logger.warning("No units provided to set_pressure, assuming bar.")
         set_p = ureg.Quantity(pressure)
@@ -129,13 +136,21 @@ class MFC(FlowchemDevice):
         """Ensure connection."""
         await self.set_flow_setpoint("0 ul/min")
 
+    def isfloat(self, num):
+        try:
+            float(num)
+            return True
+        except ValueError:
+            return False
+
     async def set_flow_setpoint(self, flowrate: str):
-        """Set the setpoint of the instrument (0-32000 = 0-max flowrate = 0-100%)."""
-        if flowrate.isnumeric():
+        """Set the setpoint of the instrument in ml/min (0-32000 = 0-max flowrate = 0-100%)."""
+        if flowrate.isnumeric() or self.isfloat(flowrate):
             flowrate = flowrate + "ml/min"
             logger.warning(
-                "No units provided to set_temperature, assuming milliliter/minutes."
+                "No units provided to set_flow_rate, assuming milliliter/minutes."
             )
+
         set_f = ureg.Quantity(flowrate)
         set_n = round(set_f.m_as("ml/min") * 32000 / self.max_flow)
         if set_n > 32000:
@@ -190,10 +205,11 @@ async def mutiple_connect():
     flow = MFC("COM7", address=1, max_flow=10)
     pressure = EPC("COM7", address=2, max_pressure=10)
     O2_flow = MFC("COM7", address=6, max_flow=10)
-    O2_id = O2_flow.get_id
+    # O2_id = O2_flow.get_id
     # print(await pressure.get_id)
     # print(await flow.get_id)
-    print(O2_id)
+    await flow.set_flow_setpoint("0.5")
+    await flow.set_flow_setpoint("0")
 
 
 def find_devices_info(port: str):
