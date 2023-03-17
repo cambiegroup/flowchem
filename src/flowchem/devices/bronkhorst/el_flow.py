@@ -13,7 +13,7 @@ from flowchem.utils.people import jakob, dario, wei_hsin
 from flowchem.devices.bronkhorst.el_flow_component import MFCComponent, EPCComponent
 
 
-def isfloat(self, num):
+def isfloat(num):
     try:
         float(num)
         return True
