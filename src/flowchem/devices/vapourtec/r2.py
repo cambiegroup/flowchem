@@ -224,10 +224,11 @@ class R2(FlowchemDevice):
         state = await self.get_status()
         return state.presslimit
 
-    async def get_setting_Temperature(self) -> str:
+    async def get_target_temperature(self, channel) -> float:
         """Get temperature (in Celsius) from R4."""
         state = await self.get_status()
-        return "Off" if state.chan3_temp == "-1000" else state.chan3_temp
+        temp_list = [state.chan1_temp, state.chan2_temp, state.chan3_temp, state.chan4_temp]
+        return float(temp_list[channel])
 
     async def get_valve_Position(self, valve_code: int) -> str:
         "Get specific valves position"
@@ -262,7 +263,7 @@ class R2(FlowchemDevice):
         await self.write_and_read_reply(cmd)
 
     async def set_temperature(
-        self, channel: int, temp: pint.Quantity, ramp_rate: str | None = None
+        self, channel: int, temp: pint.Quantity, ramp_rate: str = "80"
     ):
         """Set temperature to R4 channel. If a UV150 is present then channel 3 range is limited to -40 to 80 °C."""
         cmd = self.cmd.SET_TEMPERATURE.format(
@@ -305,7 +306,7 @@ class R2(FlowchemDevice):
         """Turn off both devices, R2 and R4."""
         await self.write_and_read_reply(self.cmd.POWER_OFF)
 
-    async def get_current_temperature(self, channel=2) -> float | None:
+    async def get_current_temperature(self, channel) -> float | None:
         """Get temperature (in Celsius) from channel3."""
         temp_history = await self.write_and_read_reply(self.cmd.HISTORY_TEMPERATURE)
         if temp_history == "OK":
@@ -313,8 +314,8 @@ class R2(FlowchemDevice):
             return await self.get_current_temperature(channel)
 
         # 0: time, 1..8: cooling, heating, or ...  / temp (alternating per channel)
-        temp_time, *temps = temp_history[0].split(",")
-        return float(temps[channel * 2 - 1]) / 10
+        temp_time, *temps = temp_history.split(",")
+        return float(temps[channel * 2 + 1]) / 10
 
     async def get_pressure_history(
         self,
@@ -377,7 +378,7 @@ class R2(FlowchemDevice):
             # AllState["pumpB_P"] = await self.get_current_pressure(pump_code = 1)
             # AllState["pumpA_flow"] =await self.get_current_flow(pump_code=0)
             # AllState["pumpB_flow"] =await self.get_current_flow(pump_code=1)
-            AllState["Temp"] = await self.get_current_temperature()
+            AllState["Temp"] = await self.get_current_temperature(2)
             # AllState["UVpower"] = await self.get_current_power()
             # self.last_state = parse(self._serial.write_async("sdjskal"))
             # time.sleep(1)
@@ -419,7 +420,7 @@ class R2(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    Vapourtec_R2 = R2(port="COM4")
+    Vapourtec_R2 = R2(port="COM6")
 
     async def main(Vapourtec_R2):
         """test function"""
@@ -439,11 +440,16 @@ if __name__ == "__main__":
             ivB,
             sA,
             sB,
+            r1,
+            r2,
+            r3,
+            r4
         ) = Vapourtec_R2.components()
 
         # print(f"The system state is {await Vapourtec_R2.get_Run_State()}")
-        # await Vapourtec_R2.set_Temperature("30 °C")
-        # print(f"Temperature is {await Vapourtec_R2.get_setting_Temperature()}")
+        await r3.set_temperature("30°C")
+
+        print(f"Temperature is {await Vapourtec_R2.get_target_temperature(2)}")
         # await pA.set_flowrate("100 ul/min")
         while True:
             # await pA.infuse("10 ul/min")
