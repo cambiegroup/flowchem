@@ -1,6 +1,7 @@
 """ Control module for the Vapourtec R2 valves """
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING
 
 from loguru import logger
@@ -71,13 +72,19 @@ class R4Reactor(TemperatureControl):
 
     async def get_temperature(self) -> float:  # type: ignore
         """Return temperature in Celsius."""
-        # TODO:
-        raise NotImplementedError
+        return await self.hw_device.get_current_temperature(self.channel)
+
 
     async def is_target_reached(self) -> bool:  # type: ignore
         """Return True if the set temperature target has been reached."""
-        # TODO:
-        raise NotImplementedError
+        current_temp = await self.hw_device.get_current_temperature(self.channel)
+        target_temp = await self.hw_device.get_target_temperature(self.channel)
+        if target_temp == "-1000":
+            return "Off"
+        elif abs(current_temp-target_temp) <=2:
+            return True
+        else:
+            return False
 
     async def power_on(self):
         """Turn on temperature control."""
