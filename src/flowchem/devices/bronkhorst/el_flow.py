@@ -13,6 +13,13 @@ from flowchem.utils.people import jakob, dario, wei_hsin
 from flowchem.devices.bronkhorst.el_flow_component import MFCComponent, EPCComponent
 
 
+def isfloat(self, num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
+
 class EPC(FlowchemDevice):
     DEFAULT_CONFIG = {"channel": 1, "baudrate": 38400}  # "address": 0x80
 
@@ -51,16 +58,10 @@ class EPC(FlowchemDevice):
         """Ensure connection."""
         await self.set_pressure("0 bar")
 
-    def isfloat(self, num):
-        try:
-            float(num)
-            return True
-        except ValueError:
-            return False
 
     async def set_pressure(self, pressure: str):
         """Set the setpoint of the instrument (0-32000 = 0-max pressure = 0-100%)."""
-        if pressure.isnumeric() or self.isfloat(pressure):
+        if pressure.isnumeric() or isfloat(pressure):
             pressure = pressure + "bar"
             logger.warning("No units provided to set_pressure, assuming bar.")
         set_p = ureg.Quantity(pressure)
@@ -136,16 +137,9 @@ class MFC(FlowchemDevice):
         """Ensure connection."""
         await self.set_flow_setpoint("0 ul/min")
 
-    def isfloat(self, num):
-        try:
-            float(num)
-            return True
-        except ValueError:
-            return False
-
     async def set_flow_setpoint(self, flowrate: str):
         """Set the setpoint of the instrument in ml/min (0-32000 = 0-max flowrate = 0-100%)."""
-        if flowrate.isnumeric() or self.isfloat(flowrate):
+        if flowrate.isnumeric() or isfloat(flowrate):
             flowrate = flowrate + "ml/min"
             logger.warning(
                 "No units provided to set_flow_rate, assuming milliliter/minutes."
