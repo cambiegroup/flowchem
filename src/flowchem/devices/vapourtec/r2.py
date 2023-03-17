@@ -88,8 +88,9 @@ class R2(FlowchemDevice):
         if not isinstance(max_temp, Iterable):
             max_temp = [max_temp] * 4
         assert len(min_temp) == len(max_temp) == 4
-        self._min_t = min_temp
-        self._max_t = max_temp
+
+        self._min_t = min_temp * ureg.degreeC
+        self._max_t = max_temp * ureg.degreeC
 
         if not HAS_VAPOURTEC_COMMANDS:
             raise InvalidConfiguration(
