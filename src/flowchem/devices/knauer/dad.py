@@ -35,8 +35,8 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         ip_address: object = None,
         mac_address: object = None,
         name: str | None = None,
-        turn_on_d2: bool = True,
-        turn_on_halogen: bool = True,
+        turn_on_d2: bool = False,
+        turn_on_halogen: bool = False,
         display_control: bool = True,
     ):
         super().__init__(ip_address, mac_address, name=name)
@@ -85,19 +85,19 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         await self.set_wavelength(1, 254)
         await self.bandwidth(8)
         # await self.integration_time("75")
-        logger.info("set channel 1 : WL = 514 nm, BW = 20nm ")
+        logger.info("set channel 1 : WL = 254 nm, BW = 8nm ")
 
-    async def d2(self, state: bool = True) -> str:
-        """Turn off or on the deuterium lamp."""
-        cmd = self.cmd.D2_LAMP_ON if state else self.cmd.D2_LAMP_OFF
-        self._state_d2 = state
-        return await self._send_and_receive(cmd)
-
-    async def hal(self, state: bool = True) -> str:
-        """Turn off or on the halogen lamp."""
-        cmd = self.cmd.HAL_LAMP_ON if state else self.cmd.HAL_LAMP_OFF
-        self._state_hal = state
-        return await self._send_and_receive(cmd)
+    # async def d2(self, state: bool = False) -> str:
+    #     """Turn off or on the deuterium lamp."""
+    #     cmd = self.cmd.D2_LAMP_ON if state else self.cmd.D2_LAMP_OFF
+    #     self._state_d2 = state
+    #     return await self._send_and_receive(cmd)
+    #
+    # async def hal(self, state: bool = False) -> str:
+    #     """Turn off or on the halogen lamp."""
+    #     cmd = self.cmd.HAL_LAMP_ON if state else self.cmd.HAL_LAMP_OFF
+    #     self._state_hal = state
+    #     return await self._send_and_receive(cmd)
 
     async def lamp(self, lamp: str, state: Union[bool, str] = "REQUEST") -> str:
         """Turn on or off the lamp, or request lamp state"""
@@ -144,7 +144,8 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
     async def status(self):
         """Get status of the instrument
         Sending spectra (ON = 1, OFF = 0),
-        D2 Lamp (OFF = 0, ON = 1, HEAT= 2, ERROR = 3), HAL Lamp (OFF = 0, ON = 1, ERROR = 3),
+        D2 Lamp (OFF = 0, ON = 1, HEAT= 2, ERROR = 3),
+        HAL Lamp (OFF = 0, ON = 1, ERROR = 3),
         Shutter(OFF = 0, ON=1, FILTER=2),
         External Error IN, External Start IN, External Autozero IN,
         Event1 OUT, Event2 OUT, Event3 OUT, Valve OUT, Error Code
@@ -204,15 +205,24 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         """
         cmd = self.cmd.SIGNAL.format(channel=channel, signal="?")
         response = await self._send_and_receive(cmd)
-        return float(response[5:]) / 1000
-
-        # in order of running keep alive in the background, response might get 'STATUS:0,1,0,1,0,0,0,0,0,0,0,0'
-        # try:
-        #     return float(response[5:]) / 1000  # mAu
-        #     # -10000000 if the lamp is not ready
-        # except ValueError:
-        #     logger.warning("ValueError:the reply is not a float..")
-        #     return None
+        logger.info(f"signal: {response}")  #SIG1:113545,
+        pursed_response = response.split(":")
+        if pursed_response[1] == "OK":
+            logger.warning(f"ValueError[{channel}]:the reply of get signal command is OK..")
+            # await asyncio.sleep(1.2)
+            # return await self.read_signal(channel)
+            return -10000000
+        elif pursed_response[0] == "STATUS":
+            logger.warning(f"ValueError[{channel}]: receive the reply of get state command...")   # happen every 45 second due to keepalive
+            # await asyncio.sleep(1.2)
+            # return await self.read_signal(channel)
+            return -10000000
+        elif pursed_response[0] == f"SIG{channel}":
+            return float(pursed_response[1]) / 10000
+        else:
+            logger.warning(f"ValueError[{channel}]: receive the reply not for channel{channel}!")
+            await asyncio.sleep(0.1*channel**2)
+            return await self.read_signal(channel)
 
     async def integration_time(self, integ_time: Union[int | str] = "?") -> str | int:
         """set and read the integration time in 10 - 2000 ms"""
@@ -238,7 +248,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         async def keepalive():
             await self.status()
 
-        return 30, keepalive
+        return 45, keepalive
 
     def components(self) -> list["FlowchemComponent"]:
         list_of_components: list[FlowchemComponent] = [
@@ -250,28 +260,19 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         )
         return list_of_components
 
-
-if __name__ == "__main__":
-    k_dad = KnauerDAD(
-        ip_address="192.168.1.123", turn_on_d2=False, turn_on_halogen=True
-    )
-
-
 async def main(dad):
     """test function"""
     await dad.initialize()
     lamp_d2, lamp_hal, ch1, ch2, ch3, ch4 = dad.components()
-    bg1 = dad.bg_keep_connect()
+    # bg1 = dad.bg_keep_connect()
     bg2 = dad.info()
-    await asyncio.gather(asyncio.to_thread(bg1), bg2)
+    # await asyncio.gather(asyncio.to_thread(bg2), bg2)
 
     # # set signal of channel 1 to zero
     # # await DAD.set_signal(1)
     # await ch1.set_wavelength(520)
     # await ch1.set_integration_time(70)
     # await ch1.set_bandwidth(4)
-    # # await ch1.calibrate_zero()
-    # logger.info(f"set signal to zero")
     # await ch1.acquire_signal()
     # await asyncio.sleep(60)
     # await DAD.initialize()
@@ -279,14 +280,14 @@ async def main(dad):
 
     # set signal of channel 1 to zero
     # await DAD.set_signal(1)
-    await ch1.set_wavelength(520)
+    await ch1.set_wavelength(500)
     await ch1.set_integration_time(70)
-    await ch1.set_bandwidth(4)
-    await ch1.calibrate_zero()
-    logger.info("set signal to zero")
+    await ch1.set_bandwidth(8)
     await ch1.acquire_signal()
 
 
 if __name__ == "__main__":
-    k_dad = KnauerDAD(...)
+    k_dad = KnauerDAD(
+        ip_address="192.168.10.7", turn_on_d2=False, turn_on_halogen=False
+    )
     asyncio.run(main(k_dad))
