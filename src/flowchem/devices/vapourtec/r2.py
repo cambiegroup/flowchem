@@ -8,6 +8,8 @@ from collections.abc import Iterable
 import aioserial
 import pint
 import asyncio
+import time
+import serial
 from loguru import logger
 
 from flowchem import ureg
@@ -40,7 +42,7 @@ class R2(FlowchemDevice):
     """R2 reactor module class."""
 
     DEFAULT_CONFIG = {
-        "timeout": 0.1,
+        "timeout": 0.25,  #0.22
         "baudrate": 19200,
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
@@ -92,6 +94,9 @@ class R2(FlowchemDevice):
         self._min_t = min_temp * ureg.degreeC
         self._max_t = max_temp * ureg.degreeC
 
+        self._heated = False
+        self._UV_power = 0
+
         if not HAS_VAPOURTEC_COMMANDS:
             raise InvalidConfiguration(
                 "You tried to use a Vapourtec device but the relevant commands are missing!\n"
@@ -128,13 +133,13 @@ class R2(FlowchemDevice):
         await self.set_flowrate("A", "0 ul/min")
         await self.set_flowrate("B", "0 ul/min")
         # Sets all temp to room temp.
-        rt = ureg("20 °C")
+        rt = ureg("26 °C")
         await self.set_temperature(0, rt)
         await self.set_temperature(1, rt)
         await self.set_temperature(2, rt)
         await self.set_temperature(3, rt)
         # set UV to 0%
-        await self.set_UV150(power=0, heated=False)
+        await self.set_UV150(power=self._UV_power)
         # set max pressure to  10 bar
         await self.set_pressure_limit("10 bar")
         # Set valve to default position
@@ -184,7 +189,6 @@ class R2(FlowchemDevice):
 
         logger.debug(f"Reply received: {response}")
         return response.rstrip()
-
     # Specific Commands
     # Get instrument information
     async def version(self):
@@ -265,10 +269,20 @@ class R2(FlowchemDevice):
     async def set_temperature(
         self, channel: int, temp: pint.Quantity, ramp_rate: str = "80"
     ):
-        """Set temperature to R4 channel. If a UV150 is present then channel 3 range is limited to -40 to 80 °C."""
+        """Set temperature to R4 channel. If a UV150 is present then channel 3 range is limited to -40 to 80 °C.
+           The heating setting range from 20 to 80 °C; cooling range from -40 to 80 °C.
+        """
+        # TODO: better threshold for control cooling/heating. For 520 nm green light the temp wo cooling is 31 °C
+        set_t = round(temp.m_as("°C"))
+        if set_t > 31:
+            self._heated = True
+        else:
+            self._heated = False
+        cmd = self.cmd.SET_UV150.format(power_percent=self._UV_power, heater_on=int(self._heated))
+        await self.write_and_read_reply(cmd)
         cmd = self.cmd.SET_TEMPERATURE.format(
             channel=channel,
-            temperature_in_C=round(temp.m_as("°C")),
+            temperature_in_C=set_t,
             ramp_rate=ramp_rate,
         )
         await self.write_and_read_reply(cmd)
@@ -285,12 +299,13 @@ class R2(FlowchemDevice):
         )
         await self.write_and_read_reply(cmd)
 
-    async def set_UV150(self, power: int, heated: bool = False):
+    async def set_UV150(self, power: int):
         """set intensity of the UV light: 0 or 50 to 100"""
         # Fixme: ideally the state (heated or not) of the reactor is kept as instance variable so that the light
         #  intensity can be changed without affecting the heating state (i.e. with new default heated=None that keeps
         #  the previous state unchanged
-        cmd = self.cmd.SET_UV150.format(power_percent=power, heater_on=int(heated))
+        self._UV_power = power
+        cmd = self.cmd.SET_UV150.format(power_percent=self._UV_power, heater_on=int(self._heated))
         await self.write_and_read_reply(cmd)
 
     async def trigger_key_press(self, keycode: str):
@@ -315,6 +330,7 @@ class R2(FlowchemDevice):
 
         # 0: time, 1..8: cooling, heating, or ...  / temp (alternating per channel)
         temp_time, *temps = temp_history.split(",")
+        print(temps)
         return float(temps[channel * 2 + 1]) / 10
 
     async def get_pressure_history(
