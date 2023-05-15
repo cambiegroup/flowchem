@@ -208,20 +208,12 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         logger.info(f"signal: {response}")  #SIG1:113545,
         pursed_response = response.split(":")
         if pursed_response[1] == "OK":
-            logger.warning(f"ValueError[{channel}]:the reply of get signal command is OK..")
-            # await asyncio.sleep(1.2)
-            # return await self.read_signal(channel)
-            return -10000000
-        elif pursed_response[0] == "STATUS":
-            logger.warning(f"ValueError[{channel}]: receive the reply of get state command...")   # happen every 45 second due to keepalive
-            # await asyncio.sleep(1.2)
-            # return await self.read_signal(channel)
-            return -10000000
+            logger.warning(f"ValueError[channel{channel}]:the reply of 'get signal' command is OK..")
+            return await self.read_signal(channel)
         elif pursed_response[0] == f"SIG{channel}":
             return float(pursed_response[1]) / 10000
         else:
-            logger.warning(f"ValueError[{channel}]: receive the reply not for channel{channel}!")
-            await asyncio.sleep(0.1*channel**2)
+            logger.warning(f"ValueError[channel{channel}]: receive the reply not for channel{channel}!")
             return await self.read_signal(channel)
 
     async def integration_time(self, integ_time: Union[int | str] = "?") -> str | int:

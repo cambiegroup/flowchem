@@ -43,6 +43,9 @@ class KnauerEthernetDevice:
         # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by the subclasses
         self.eol = b""
 
+        # Lock communication between write and read reply
+        self._lock = asyncio.Lock()
+
     def _ip_from_mac(self, mac_address: str) -> str:
         """Get IP from MAC."""
         # Autodiscover IP from MAC address
@@ -75,9 +78,10 @@ class KnauerEthernetDevice:
             ) from timeout_error
 
     async def _send_and_receive(self, message: str) -> str:
-        self._writer.write(message.encode("ascii") + self.eol)
-        await self._writer.drain()
-        logger.debug(f"WRITE >>> '{message}' ")
-        reply = await self._reader.readuntil(separator=b"\r")
+        async with self._lock:
+            self._writer.write(message.encode("ascii") + self.eol)
+            await self._writer.drain()
+            logger.debug(f"WRITE >>> '{message}' ")
+            reply = await self._reader.readuntil(separator=b"\r")
         logger.debug(f"READ <<< '{reply.decode().strip()}' ")
         return reply.decode("ascii").strip()
