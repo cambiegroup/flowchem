@@ -1,85 +1,98 @@
-Flowchem documentation
-======================
+# Flowchem
 
+Flowchem is an application to simplify the control of instruments and devices commonly found in chemistry labs.
+Flowchem acts as unifying layer exposing devices using different command syntax and protocols under a single API.
 
-Flowchem is a library to control instruments and devices commonly found in chemistry labs
-via an interoperable web API.
-
-Lear more about [how flowchem works](./learning/index.md).
-
-::::{grid} 1 2 3 3
+<!--
+See https://sphinx-design.readthedocs.io/en/latest/grids.html and https://getbootstrap.com/docs/5.0/layout/grid/
+-->
+::::{grid} 1 2 3 4
 
 :::{grid-item}
 :columns: auto
 
 ```{button-ref} getting_started
 :color: primary
+:tooltip: Getting started guide
 ```
 :::
-
 :::{grid-item}
 :columns: auto
 
-```{button-ref} Tutorial
+```{button-ref} learning/tutorial
 :color: secondary
+:tooltip: Introductory tutorial - learning-oriented practical steps
 ```
 :::
-
 :::{grid-item}
 :columns: auto
 
-```{button-ref} Examples
+```{button-ref} examples/index
 :color: secondary
+:tooltip: Introductory tutorial - task-oriented practical steps
+```
+:::
+:::{grid-item}
+:columns: auto
+
+```{button-ref} api/index
+:color: secondary
+:tooltip: API reference - information-oriented theoretical knowledge
 ```
 :::
 ::::
----
+
+## Supported devices
+The list of all supported devices [is available here](devices/supported_devices)!
 
 ## Install flowchem
-To install `flowchem`, ensure you have Python installed, then run:
+To install flowchem, ensure you have Python installed, then run:
 ```shell
 pip install flowchem
 ```
-or install it with `pipx`:
-```shell
-pip install pipx
-pipx ensurepath
-pipx install flowchem
-```
-Read more about [installing flowchem](./getting_started.md).
-
----
+More information on [installing flowchem](./getting_started.md).
 
 ## Tutorial
-View the [Simple Reactor Control Tutorial]() for a hands-on introduction to flowchem:
-```toml
-[device.example1]
-type="FakeDevice"
-```
-```{button-ref} ./examples/hallo-world
+Follow the [Introduction tutorial](./learning/tutorial.md) for a hands-on introduction to flowchem:
+
+<!--
+## Examples
+See some example of the use of flowchem in automated reaction control systems!
+
+```{button-ref} Example 1
 :color: primary
 ```
----
+```{button-ref} Example 2
+:color: primary
+```
+-->
 
+<!--
+TODO: add ref to paper once out.
 ## Citation
 If you use flowchem for your paper, please remember to cite it!
+-->
 
-[//]: # (TODO: add ref to paper once out)
-
+## Contents
 ```{toctree}
 :maxdepth: 2
-:hidden:
+:caption: User Guide
 
 getting_started
 
-learning/index
+learning/tutorial
 
 devices/supported_devices
 
-api/index
+examples/index
+
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Development
 
 contribute
-
-add_device/index
+api/index
 
 ```

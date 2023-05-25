@@ -1,4 +1,9 @@
-# DataApex Clarity (HPLC software)
+# DataApex Clarity (HPLC control software)
+```{admonition} Additional software needed!
+:class: attention
+
+Data Apex Clarity is a third-party HPLC control software that can be controlled via a CLI tool.
+```
 
 Clarity is a chromatography data software for data acquisition, processing, and instrument control that can be
 controlled via a command line interface (CLI) as described on the [manufacturer website](https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line).

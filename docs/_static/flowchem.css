@@ -1,0 +1,33 @@
+.sidebar-brand-text, h1, h2, h3, h4, h5 {
+    color: var(--primary-color);
+}
+
+div.sidebar-tree ul {
+    border-bottom: 1px solid var(--primary-color);
+    padding: 1em 0;
+}
+
+div.sidebar-tree li > ul {
+    border-bottom: 0;
+}
+
+.toctree-wrapper .caption {
+    font-weight: bold;
+    font-size: large;
+}
+
+hr.docutils {background-color: var(--primary-color);}
+
+a:link, a:visited {
+    color: var(--primary-color);}
+
+.sidebar-tree .toctree-l1 > .reference, .sidebar-tree .toctree-l1 > label .icon {
+    color: var(--primary-color);
+}
+
+.nav-overlay-icon .icon svg, .toc-overlay-icon .icon svg, .theme-toggle svg {color: var(--primary-color);}
+
+.toc-tree li.scroll-current>.reference {color: var(--primary-color);}
+
+table.docutils thead {border-bottom: 1px solid var(--primary-color);}
+table.docutils td, table.docutils th {border-right: 1px solid var(--primary-color);}

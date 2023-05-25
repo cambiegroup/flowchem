@@ -1,4 +1,10 @@
 # Phidgets
+```{admonition} Additional software needed!
+:class: attention
+
+To control the Phidget devices you need to install their software first.
+Visit the [phidget website](https://www.phidgets.com/docs/Main_Page) for more details.
+```
 
 ## Introduction
 [Phidgets](https://www.phidgets.com/docs/What_is_a_Phidget%3F) are building-blocks for sensing and control and enable
