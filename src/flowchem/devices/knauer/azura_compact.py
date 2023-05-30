@@ -340,7 +340,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
 
     async def read_pressure(self) -> pint.Quantity:
         """Return pressure if the pump has a pressure sensor."""
-        return await self._transmit_and_parse_reply(PRESSURE) * ureg.bar
+        return int(await self._transmit_and_parse_reply(PRESSURE)) * 0.1 * ureg.bar
 
     async def read_extflow(self) -> float:
         """Read the set flowrate from analog in."""
