@@ -1,4 +1,4 @@
-# Pump Azura Compact (P 2.1S)
+# Knauer Pump Azura Compact (P 2.1S)
 ## Introduction
 The Knauer Azura Compact pumps can be controlled via flowchem.
 
