@@ -94,7 +94,7 @@ class R2(FlowchemDevice):
         self._min_t = min_temp * ureg.degreeC
         self._max_t = max_temp * ureg.degreeC
 
-        self._heated = False
+        self._heated = True  #to saving the dry ice
         self._UV_power = 0
 
         if not HAS_VAPOURTEC_COMMANDS:
@@ -133,7 +133,7 @@ class R2(FlowchemDevice):
         await self.set_flowrate("A", "0 ul/min")
         await self.set_flowrate("B", "0 ul/min")
         # Sets all temp to room temp.
-        rt = ureg("26 °C")
+        rt = ureg("25 °C")
         await self.set_temperature(0, rt)
         await self.set_temperature(1, rt)
         await self.set_temperature(2, rt)
@@ -278,8 +278,10 @@ class R2(FlowchemDevice):
             self._heated = True
         else:
             self._heated = False
+        # change the setting of heating
         cmd = self.cmd.SET_UV150.format(power_percent=self._UV_power, heater_on=int(self._heated))
         await self.write_and_read_reply(cmd)
+        # set the temperature
         cmd = self.cmd.SET_TEMPERATURE.format(
             channel=channel,
             temperature_in_C=set_t,
@@ -301,9 +303,6 @@ class R2(FlowchemDevice):
 
     async def set_UV150(self, power: int):
         """set intensity of the UV light: 0 or 50 to 100"""
-        # Fixme: ideally the state (heated or not) of the reactor is kept as instance variable so that the light
-        #  intensity can be changed without affecting the heating state (i.e. with new default heated=None that keeps
-        #  the previous state unchanged
         self._UV_power = power
         cmd = self.cmd.SET_UV150.format(power_percent=self._UV_power, heater_on=int(self._heated))
         await self.write_and_read_reply(cmd)
