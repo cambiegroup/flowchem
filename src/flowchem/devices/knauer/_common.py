@@ -14,7 +14,7 @@ class KnauerEthernetDevice:
     BUFFER_SIZE = 1024
     _id_counter = 0
 
-    def __init__(self, ip_address, mac_address, **kwargs):
+    def __init__(self, ip_address, mac_address, source_ip="", **kwargs):
         """
         Knauer Ethernet Device - either pump or valve.
 
@@ -32,7 +32,7 @@ class KnauerEthernetDevice:
 
         # MAC address
         if mac_address:
-            self.ip_address = self._ip_from_mac(mac_address.lower())
+            self.ip_address = self._ip_from_mac(mac_address.lower(), source_ip=source_ip)
         else:
             self.ip_address = ip_address
 
@@ -46,10 +46,10 @@ class KnauerEthernetDevice:
         # Lock communication between write and read reply
         self._lock = asyncio.Lock()
 
-    def _ip_from_mac(self, mac_address: str) -> str:
+    def _ip_from_mac(self, mac_address: str, source_ip="") -> str:
         """Get IP from MAC."""
         # Autodiscover IP from MAC address
-        available_devices = autodiscover_knauer()
+        available_devices = autodiscover_knauer(source_ip)
         # IP if found, None otherwise
         ip_address = available_devices.get(mac_address)
         if ip_address is None:

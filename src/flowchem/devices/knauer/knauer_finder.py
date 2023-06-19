@@ -68,10 +68,13 @@ async def get_device_type(ip_address: str) -> str:
     return "Unknown"
 
 
+def _get_all_local_ips() -> list[str]:
+    return [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
+
 def _get_local_ip() -> str:
     """Guess the most suitable local IP for autodiscovery."""
     # These are all the local IPs (different interfaces)
-    machine_ips = [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
+    machine_ips = _get_all_local_ips()
 
     # 192.168 subnet 1st priority
     if local_ip := next((ip for ip in machine_ips if ip.startswith("192.168.")), False):
@@ -140,6 +143,17 @@ def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
     Returns:
         List of tuples (IP, MAC, device_type), one per device replying to autodiscover
     """
+
+    # If the source IP is not fully defined try to fin d a match among all the local IPs available
+    if "*" in source_ip:
+        fixed_part, *_ = source_ip.split("*")
+
+        if local_ip := next((ip for ip in _get_all_local_ips() if ip.startswith(fixed_part)), False):
+            source_ip = local_ip
+        else:
+            raise RuntimeError(f"The provided IP query {source_ip} does not match any available local IP."
+                               f"[Available are {_get_all_local_ips()}]")
+
     # Define source IP resolving local hostname.
     if not source_ip:
         source_ip = _get_local_ip()
