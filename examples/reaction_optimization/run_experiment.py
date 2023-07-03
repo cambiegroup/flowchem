@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 import pandas as pd
-from examples.autonomous_reaction_optimization._hw_control import (
+from examples.reaction_optimization._hw_control import (
     command_session,
     socl2_endpoint,
     r4_endpoint,
