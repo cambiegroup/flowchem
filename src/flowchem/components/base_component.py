@@ -8,8 +8,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.flowchem_device import DeviceInfo
+    from flowchem.devices.flowchem_device import FlowchemDevice, DeviceInfo
 
 
 class ComponentInfo(BaseModel):
