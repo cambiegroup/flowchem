@@ -15,6 +15,7 @@ class MyListener(ServiceListener):
             # Convert IPv4 from bytes to string
             device_ip = socket.inet_ntoa(info.addresses[0])
             print(f"Service {name} added, IP address: {device_ip}")
+            print(f"Device properties are: {info.properties}")
 
 
 zeroconf = Zeroconf()
