@@ -8,7 +8,7 @@ from loguru import logger
 
 from flowchem import ureg
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import jakob, dario, wei_hsin
 from flowchem.devices.bronkhorst.el_flow_component import MFCComponent, EPCComponent
 

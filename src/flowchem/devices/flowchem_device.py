@@ -5,35 +5,12 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from loguru import logger
-from pydantic import BaseModel
 
-from flowchem import __version__
+from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.exceptions import DeviceError
 
 if TYPE_CHECKING:
     from flowchem.components.base_component import FlowchemComponent
-
-
-class Person(BaseModel):
-    name: str
-    email: str
-
-
-class DeviceInfo(BaseModel):
-    """Metadata associated with hardware devices."""
-
-    backend = f"flowchem v. {__version__}"
-    authors: "list[Person]"
-    maintainers: "list[Person]"
-    manufacturer: str
-    model: str
-    serial_number: str | int = "unknown"
-    version: str = ""
-    additional_info: dict = {}
-
-
-DeviceInfo.update_forward_refs()
-
 
 RepeatedTaskInfo = namedtuple("RepeatedTaskInfo", ["seconds_every", "task"])
 

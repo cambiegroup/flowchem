@@ -5,22 +5,11 @@ from typing import TYPE_CHECKING
 
 from fastapi import APIRouter
 from loguru import logger
-from pydantic import BaseModel
+
+from flowchem.components.component_info import ComponentInfo
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.flowchem_device import DeviceInfo
-
-
-class ComponentInfo(BaseModel):
-    """Metadata associated with flowchem components."""
-
-    name: str = ""
-    owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0000968"  # 'device'
-    hw_device: DeviceInfo
-
-
-ComponentInfo.update_forward_refs()
 
 
 class FlowchemComponent:

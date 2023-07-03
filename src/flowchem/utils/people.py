@@ -1,4 +1,4 @@
-from flowchem.devices.flowchem_device import Person
+from flowchem.components.device_info import Person
 
 __all__ = ["dario", "jakob", "wei_hsin"]
 

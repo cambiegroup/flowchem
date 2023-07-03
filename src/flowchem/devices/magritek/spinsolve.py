@@ -9,7 +9,7 @@ from loguru import logger
 from lxml import etree
 from packaging import version
 
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.magritek._msg_maker import create_message
 from flowchem.devices.magritek._msg_maker import create_protocol_message

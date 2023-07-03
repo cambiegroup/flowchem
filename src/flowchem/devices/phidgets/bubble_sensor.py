@@ -8,7 +8,7 @@ import time
 
 from loguru import logger
 
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.phidgets.bubble_sensor_component import (
     PhidgetBubbleSensorComponent,

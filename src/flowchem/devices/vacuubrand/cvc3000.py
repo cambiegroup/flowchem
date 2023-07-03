@@ -5,7 +5,7 @@ import aioserial
 import pint
 from loguru import logger
 
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vacuubrand.cvc3000_pressure_control import CVC3000PressureControl
 from flowchem.devices.vacuubrand.utils import ProcessStatus

@@ -8,7 +8,7 @@ import aioserial
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.manson.manson_component import MansonPowerControl
 from flowchem.utils.exceptions import DeviceError

@@ -155,7 +155,8 @@ commands to our device and some metadata about our device:
 ```python
 ...
 from flowchem.devices.weasley.extendable_ear_microphone import ExtendableEarMicrophone
-from flowchem.devices.flowchem_device import FlowchemDevice, DeviceInfo, Person
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.components.device_info import DeviceInfo, Person
 
 
 class ExtendableEar(FlowchemDevice):
@@ -172,8 +173,9 @@ class ExtendableEar(FlowchemDevice):
     def send_command(self, command):
         print(command)  # This is in place of actual communication with the device
 
-   def components(self):
-        return ExtendableEarMicrophone("microphone", self),
+
+def components(self):
+    return ExtendableEarMicrophone("microphone", self),
 ```
 
 Now if we run `flowchem ear.toml` again the server will start successfully and show the metadata info together with the

@@ -7,7 +7,7 @@ from loguru import logger
 
 from flowchem import ureg
 from flowchem.components.technical.temperature import TempRange
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.huber.huber_temperature_control import HuberTemperatureControl
 from flowchem.devices.huber.pb_command import PBCommand

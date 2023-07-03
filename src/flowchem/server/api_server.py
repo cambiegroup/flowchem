@@ -5,12 +5,13 @@ from io import BytesIO
 from pathlib import Path
 from typing import TypedDict, Iterable
 
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi_utils.tasks import repeat_every
 from loguru import logger
 from starlette.responses import RedirectResponse
 
 import flowchem
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import RepeatedTaskInfo
 from flowchem.server.configuration_parser import parse_config
 from flowchem.server.zeroconf_server import ZeroconfServer
@@ -97,6 +98,15 @@ async def create_server_for_devices(
 
         # Advertise devices (not components!)
         await mdns.add_device(name=device.name, url=api_base_url)
+        # Base device endpoint
+        device_root = APIRouter(prefix=f"/{device.name}", tags=[device.name])
+        device_root.add_api_route(
+            "/",
+            device.get_metadata,  # TODO: add components in the device info response!
+            methods=["GET"],
+            response_model=DeviceInfo,
+        )
+        app.include_router(device_root)
 
         for component in components:
             # API endpoints registration

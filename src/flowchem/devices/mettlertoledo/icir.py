@@ -9,7 +9,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from flowchem.components.analytics.ir import IRSpectrum
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.mettlertoledo.icir_control import IcIRControl
 from flowchem.utils.exceptions import DeviceError

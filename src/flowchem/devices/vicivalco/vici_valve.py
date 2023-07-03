@@ -7,7 +7,7 @@ import aioserial
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vicivalco.vici_valve_component import ViciInjectionValve
 from flowchem.utils.exceptions import InvalidConfiguration

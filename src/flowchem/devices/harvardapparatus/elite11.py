@@ -12,7 +12,7 @@ from flowchem.devices.harvardapparatus._pumpio import HarvardApparatusPumpIO
 from flowchem.devices.harvardapparatus._pumpio import Protocol11Command
 from flowchem.devices.harvardapparatus._pumpio import PumpStatus
 from flowchem import ureg
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.harvardapparatus.elite11_pump import Elite11PumpOnly
 from flowchem.devices.harvardapparatus.elite11_pump import Elite11PumpWithdraw

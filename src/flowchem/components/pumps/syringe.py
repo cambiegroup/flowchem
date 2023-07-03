@@ -1,5 +1,5 @@
 """Syringe pump component, two flavours, infuse only, infuse-withdraw."""
-from flowchem.components.base_component import ComponentInfo
+from flowchem.components.component_info import ComponentInfo
 from flowchem.components.pumps.base_pump import BasePump
 
 

@@ -4,7 +4,7 @@ import asyncio
 from loguru import logger
 from typing import Union
 
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.knauer.dad_component import (
     DADChannelControl,
     KnauerDADLampControl,

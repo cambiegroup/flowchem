@@ -4,7 +4,7 @@ from enum import Enum
 
 from loguru import logger
 
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.knauer.knauer_valve_component import Knauer12PortDistribution
