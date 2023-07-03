@@ -60,7 +60,7 @@ async def create_server_for_devices(
     dev_list = config["device"]
     port = config.get("port", 8000)
 
-    # FastAPI server
+    # HTTP server (FastAPI)
     app = FastAPI(
         title=f"Flowchem - {config.get('filename')}",
         description=metadata("flowchem")["Summary"],
@@ -71,7 +71,8 @@ async def create_server_for_devices(
         },
     )
 
-    mdns = ZeroconfServer(port=port, debug=False)
+    # mDNS server (Zeroconfig)
+    mdns = ZeroconfServer(port=port)
     api_base_url = r"http://" + f"{host}:{port}"
 
     for seconds_delay, task_to_repeat in repeated_tasks:
@@ -91,17 +92,16 @@ async def create_server_for_devices(
     for device in dev_list:
         # Get components (some compounded devices can return multiple components)
         components = device.components()
+        device_info = device.get_metadata()
         logger.debug(f"Got {len(components)} components from {device.name}")
+
+        # Advertise devices (not components!)
+        await mdns.add_device(name=device.name, url=api_base_url, info=device_info)
 
         for component in components:
             # API endpoints registration
             app.include_router(component.router, tags=component.router.tags)
             logger.debug(f"Router <{component.router.prefix}> added to app!")
-
-            # Advertise component via zeroconfig
-            await mdns.add_component(
-                name=component.router.prefix, url=api_base_url + component.router.prefix
-            )
 
     return {"api_server": app, "mdns_server": mdns, "port": port}
 

@@ -72,6 +72,18 @@ def instantiate_device(config: dict) -> dict:
     return config
 
 
+def ensure_device_name_is_valid(device_name: str) -> None:
+    """
+    Device name validator
+
+    Uniqueness of names is ensured by their toml dict key nature,"""
+    if len(device_name) > 42:
+        # This is because f"{name}._labthing._tcp.local." has to be shorter than 64 in zerconfig
+        raise InvalidConfiguration(
+            f"Name for device '{device_name}' is too long. Max 42 characters please."
+        )
+
+
 def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
     """
     Parse device config and return a device object.
@@ -79,6 +91,7 @@ def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
     Exception handling to provide more specific and diagnostic messages upon errors in the configuration file.
     """
     device_name, device_config = dev_settings
+    ensure_device_name_is_valid(device_name)
 
     # Get device class
     try:
