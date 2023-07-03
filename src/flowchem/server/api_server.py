@@ -92,11 +92,11 @@ async def create_server_for_devices(
     for device in dev_list:
         # Get components (some compounded devices can return multiple components)
         components = device.components()
-        device_info = device.get_metadata()
+        device.get_metadata()
         logger.debug(f"Got {len(components)} components from {device.name}")
 
         # Advertise devices (not components!)
-        await mdns.add_device(name=device.name, url=api_base_url, info=device_info)
+        await mdns.add_device(name=device.name, url=api_base_url)
 
         for component in components:
             # API endpoints registration

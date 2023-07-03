@@ -7,8 +7,6 @@ from zeroconf import IPVersion
 from zeroconf import ServiceInfo
 from zeroconf import Zeroconf
 
-from flowchem.devices.flowchem_device import DeviceInfo
-
 
 class ZeroconfServer:
     """ZeroconfServer to advertise FlowchemComponents."""
@@ -27,15 +25,14 @@ class ZeroconfServer:
             and not ip.startswith("169.254")  # Remove invalid IPs
         ]
 
-    async def add_device(self, name: str, url: str, info: DeviceInfo):
+    async def add_device(self, name: str, url: str):
         """Adds device to the server."""
         logger.debug(f"Adding zeroconf component {name}")
 
-        base_info = {
-            "path": url,
+        properites = {
+            "path": url + f"/{name}/",
             "id": f"{name}:{uuid.uuid4()}".replace(" ", ""),
         }
-        properites = base_info | dict(info)
 
         # LabThing service
         service_info = ServiceInfo(
