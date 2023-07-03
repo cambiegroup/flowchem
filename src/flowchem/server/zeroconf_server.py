@@ -27,7 +27,7 @@ class ZeroconfServer:
             and not ip.startswith("169.254")  # Remove invalid IPs
         ]
 
-    async def add_device(self, name: str, url: str, device_info: DeviceInfo):
+    async def add_device(self, name: str, url: str, info: DeviceInfo):
         """Adds device to the server."""
         logger.debug(f"Adding zeroconf component {name}")
 
@@ -35,12 +35,12 @@ class ZeroconfServer:
             "path": url,
             "id": f"{name}:{uuid.uuid4()}".replace(" ", ""),
         }
-        properites = base_info | device_info
+        properites = base_info | dict(info)
 
         # LabThing service
         service_info = ServiceInfo(
             type_="_labthing._tcp.local.",
-            name=name,
+            name=name + "._labthing._tcp.local.",
             port=self.port,
             properties=properites,
             parsed_addresses=self.mdns_addresses,

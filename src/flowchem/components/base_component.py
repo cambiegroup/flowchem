@@ -8,7 +8,8 @@ from loguru import logger
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from flowchem.devices.flowchem_device import FlowchemDevice, DeviceInfo
+    from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.flowchem_device import DeviceInfo
 
 
 class ComponentInfo(BaseModel):
@@ -17,6 +18,9 @@ class ComponentInfo(BaseModel):
     name: str = ""
     owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0000968"  # 'device'
     hw_device: DeviceInfo
+
+
+ComponentInfo.update_forward_refs()
 
 
 class FlowchemComponent:
