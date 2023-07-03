@@ -4,7 +4,6 @@ import sys
 import typing
 from io import BytesIO
 from pathlib import Path
-from textwrap import dedent
 
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.list_known_device_type import autodiscover_device_classes
@@ -80,7 +79,7 @@ def ensure_device_name_is_valid(device_name: str) -> None:
     if len(device_name) > 42:
         # This is because f"{name}._labthing._tcp.local." has to be shorter than 64 in zerconfig
         raise InvalidConfiguration(
-            f"Name for device '{device_name}' is too long. Max 42 characters please."
+            f"Name for device '{device_name}' is too long ({len(device_name)} characters, max is 42)"
         )
 
 
@@ -158,43 +157,3 @@ def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
         logger.error(
             f"The following mandatory parameters were missing in the configuration: {missing_parameters}"
         )
-
-
-if __name__ == "__main__":
-    cfg_txt = BytesIO(
-        dedent(
-            """config_version = "1.0"
-    simulation = true
-
-    [device.donor]
-    type = "Elite11InfuseOnly"
-    port = "COM11"
-    address = 0
-    syringe_diameter = "4.6 mm"
-    syringe_volume = "1 ml"
-
-    [device.activator]
-    type = "Elite11InfuseOnly"
-    port = "COM11"
-    address= 1
-    syringe_diameter = "4.6 mm"
-    syringe_volume = "1 ml"
-
-    [device.quencher]
-    type = "AxuraCompactPump"
-    mac_address = "00:80:A3:BA:C3:4A"
-    max_pressure = "13 bar"
-
-    [device.sample-loop]
-    type = "ViciValve"
-    port = "COM13"
-    address = 0
-
-    [device.chiller]
-    type = "HubeerChiller"
-    port = "COM3"
-    """
-        ).encode("utf-8")
-    )
-    cfg = parse_config(cfg_txt)
-    print(cfg)
