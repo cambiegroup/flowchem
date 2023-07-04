@@ -20,9 +20,7 @@ from flowchem.server.api_server import run_create_server_from_file
 @click.option(
     "-l", "--log", "logfile", type=click.Path(), default=None, help="Save logs to file."
 )
-@click.option(
-    "-h", "--host", "host", type=str, default="127.0.0.1", help="Server host."
-)
+@click.option("-h", "--host", "host", type=str, default="0.0.0.0", help="Server host.")
 @click.option("-d", "--debug", is_flag=True, help="Print debug info.")
 @click.version_option()
 @click.command()
