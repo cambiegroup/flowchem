@@ -11,6 +11,7 @@ from typing import Union, List, Optional, Tuple
 from dataclasses import dataclass
 from time import sleep
 import serial
+import numpy as np
 
 
 """
@@ -277,26 +278,25 @@ class PeltierCommands:
 class PeltierDefaults:
     HEATING_PID = [0.64,0.53,0.13]
     COOLING_PID = [2.83,2.36,0.59]
-    CURRENT_LIMIT_HEATING=10
-    CURRENT_LIMIT_COOLING=14
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array([[-55,50],[14,14],[10,10]]).transpose()
     T_MAX=50
     T_MIN=-55
 
 
 class PeltierLowCoolingDefaults(PeltierDefaults):
-    HEATING_PID = [0.8,0.4,0]
-    COOLING_PID = [0.8, 0.4, 0]
-    CURRENT_LIMIT_HEATING=3
-    CURRENT_LIMIT_COOLING=6.5
-    CURRENT_LIMIT_LOW_COOLING=7.8
-    T_MAX=20
+    HEATING_PID = [2,0.03,0]
+    COOLING_PID = HEATING_PID
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array([[-65,-60, -55,-50,-40,-30,-20,-10,0,10,20],[7.5,6.5,5,4,3,3,1,0,0,0,0],[0,0,0,0,0,1,1,1,2,3,3.5]]).transpose()
+    T_MAX=30
     T_MIN=-66
+    
+    
 
 class PeltierCooler:
 
     def __init__(self,
         peltier_io: PeltierIO,
-        defaults: PeltierDefaults,
+        peltier_defaults: PeltierDefaults,
         address: int = 0
     ):
         self.peltier_io = peltier_io
@@ -308,23 +308,15 @@ class PeltierCooler:
         # This command is used to test connection: failure handled by PumpIO
         self.log.info(
             f"Connected to peltier on port {self.peltier_io._serial.port}:{address}!")
-        self.set_default_values(defaults)
-        self.defaults=defaults
-        self.cooling_pid = defaults.COOLING_PID
-        self.heating_pid = defaults.HEATING_PID
-        self.current_limit_cooling = defaults.CURRENT_LIMIT_COOLING
-        try:
-            self.current_limit_cooling_low = defaults.CURRENT_LIMIT_LOW_COOLING
-        except AttributeError:
-            self.current_limit_cooling_low = defaults.CURRENT_LIMIT_COOLING
-        # TODO set low and medium current
+        self.peltier_defaults = peltier_defaults
+        self.set_default_values()
+        self.set_pid_parameters(*self.peltier_defaults.COOLING_PID)
 
-    def set_default_values(self, defaults:PeltierDefaults):
-        self._set_current_limit_heating(defaults.CURRENT_LIMIT_HEATING)
-        self._set_current_limit_cooling(defaults.CURRENT_LIMIT_COOLING)
-        self._set_max_temperature(defaults.T_MAX)
-        self._set_min_temperature(defaults.T_MIN)
-        self.set_pid_parameters(*defaults.COOLING_PID)
+    def set_default_values(self):
+        self._set_max_temperature(self.peltier_defaults.T_MAX)
+        self._set_min_temperature(self.peltier_defaults.T_MIN)
+        self._set_current_limit_heating(self.peltier_defaults.CURRENT_LIMIT_HEATING)
+        self._set_current_limit_cooling(self.peltier_defaults.CURRENT_LIMIT_COOLING)
         self.disable_slope()
 
     def send_command_and_read_reply( self, command_template: PeltierCommandTemplate, parameter: int= "", parse=True
@@ -336,7 +328,6 @@ class PeltierCooler:
 
     def set_temperature(self, temperature: float):
         self.stop_control()
-        self._set_state_dependant_parameters(temperature)
         # start softly
         self._set_current_limit_cooling(0.5)
         self._set_current_limit_heating(0.5)
@@ -344,22 +335,9 @@ class PeltierCooler:
         self.start_control()
         sleep(10)
         # Now start with power
-        self.set_default_values(self.defaults)
-        # this is a procedure necessary for reaching -65 °C.
-        if temperature < -60:
-            # The idea is to go to -60 with limited power, so the
-            # supporting chiller (the one cooling the pealtier sink) is not challenged.
-            self.set_temperature(-60)
-            # Once the -60 are reached, the
-            # peltier controller will go down in powern  provided.
-            while self.get_temperature() > -60:
-                sleep(5)
-            #  Wait a short while so the support chiller recovers.
-            sleep(60)
-            # Now go to full power
-            self.set_temperature(temperature)
-            self._set_current_limit_cooling(self.current_limit_cooling_low)
-
+        self.set_default_values()
+        self._set_state_dependant_parameters(temperature)
+        # TODO include error catching in case temp is out of bounds
 
     def _set_temperature(self, temperature: float):
         reply = self.send_command_and_read_reply(PeltierCommands.SET_TEMPERATURE, int(temperature*100))
@@ -454,7 +432,18 @@ class PeltierCooler:
         current_T = self.get_temperature()
         if self.get_sink_temperature() < new_T_setpoint:
             #set_heating_parameters
-            self.set_pid_parameters(*self.heating_pid)
+            self.set_pid_parameters(*self.peltier_defaults.HEATING_PID)
         else:
-            self.set_pid_parameters(*self.cooling_pid)
-            self._set_current_limit_cooling(self.current_limit_cooling)
+            self.set_pid_parameters(*self.peltier_defaults.COOLING_PID)
+        if new_T_setpoint > current_T:
+            # set current limit for heating
+            settings=self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[
+                      np.where((self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[::, 0] >= new_T_setpoint))[0][0]]
+            
+        else:
+            # set to cooling
+            settings=self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[
+                      np.where((self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[::, 0] <= new_T_setpoint))[0][-1]]
+        self._set_current_limit_cooling(settings[1])
+        self._set_current_limit_heating(settings[2])
+
