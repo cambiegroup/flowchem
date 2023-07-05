@@ -11,6 +11,7 @@ from typing import Union, List, Optional, Tuple
 from dataclasses import dataclass
 from time import sleep
 import serial
+import numpy as np
 
 
 """
@@ -277,20 +278,19 @@ class PeltierCommands:
 class PeltierDefaults:
     HEATING_PID = [0.64,0.53,0.13]
     COOLING_PID = [2.83,2.36,0.59]
-    CURRENT_LIMIT_HEATING=10
-    CURRENT_LIMIT_COOLING=14
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array([[-55,50],[14,14],[10,10]]).transpose()
     T_MAX=50
     T_MIN=-55
 
 
 class PeltierLowCoolingDefaults(PeltierDefaults):
-    HEATING_PID = [0.8,0.4,0]
-    COOLING_PID = [0.8, 0.4, 0]
-    CURRENT_LIMIT_HEATING=3
-    CURRENT_LIMIT_COOLING=6.5
-    CURRENT_LIMIT_LOW_COOLING=7.8
-    T_MAX=20
+    HEATING_PID = [2,0.03,0]
+    COOLING_PID = HEATING_PID
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array([[-65,-60, -55,-50,-40,-30,-20,-10,0,10,20],[7.5,6.5,5,4,3,3,1,0,0,0,0],[0,0,0,0,0,1,1,1,2,3,3.5]]).transpose()
+    T_MAX=30
     T_MIN=-66
+    
+    
 
 class PeltierCooler:
 
@@ -434,5 +434,16 @@ class PeltierCooler:
             #set_heating_parameters
             self.set_pid_parameters(*self.peltier_defaults.HEATING_PID)
         else:
-            self.set_pid_parameters(*self.cooling_pid)
-            self._set_current_limit_cooling(self.current_limit_cooling)
+            self.set_pid_parameters(*self.peltier_defaults.COOLING_PID)
+        if new_T_setpoint > current_T:
+            # set current limit for heating
+            settings=self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[
+                      np.where((self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[::, 0] >= new_T_setpoint))[0][0]]
+            
+        else:
+            # set to cooling
+            settings=self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[
+                      np.where((self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[::, 0] <= new_T_setpoint))[0][-1]]
+        self._set_current_limit_cooling(settings[1])
+        self._set_current_limit_heating(settings[2])
+
