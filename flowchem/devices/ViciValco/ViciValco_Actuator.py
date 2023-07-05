@@ -358,8 +358,8 @@ if __name__ == "__main__":
     import asyncio
 
     conf = {
-        "port": "COM13",
-        "address": 0,
+        "port": "COM7",
+        "address": 1,
         "name": "test1",
 
     }
