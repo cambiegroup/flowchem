@@ -19,20 +19,12 @@ class AutoLynxQueueFile:
         self.queue_path = Path(path_to_AutoLynxQ)
         self.run_duration = None
 
-    def record_mass_spec(self, sample_name: str, run_duration: int = 0, queue_name = "next.txt", do_conversion: bool = False, append=False):
+    def record_mass_spec(self, sample_name: str, run_duration: int = 0, queue_name = "next.txt", do_conversion: bool = False):
         # Autolynx behaves weirdly, it expects a .txt file and that the fields are separated by tabs. A csv file
         # separated w commas however does not work... Autolynx has to be set to look for csv files
         file_path = self.queue_path/Path(queue_name)
-        if file_path.is_file() and file_path.exists():
-            if append == False:
-                file_path.unlink()
-            else:
-                append=True
-        else:
-            append = False
-        with open(file_path,'a') as f:
-            if append == False:
-                f.write(self.fields)
+        with open(file_path,'w') as f:
+            f.write(self.fields)
             f.write(f"\n{sample_name}{self.rows}")
         if do_conversion:
             c = Converter(output_dir=r"W:\BS-FlowChemistry\data\open_format_ms")
