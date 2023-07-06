@@ -340,11 +340,11 @@ class PeltierCooler:
         # TODO include error catching in case temp is out of bounds
 
     def _set_temperature(self, temperature: float):
-        reply = self.send_command_and_read_reply(PeltierCommands.SET_TEMPERATURE, int(temperature*100))
+        reply = self.send_command_and_read_reply(PeltierCommands.SET_TEMPERATURE, round(temperature*100))
         assert reply == temperature
 
     def set_slope(self, slope: float):
-        reply = self.send_command_and_read_reply(PeltierCommands.SET_SLOPE, int(slope*100))
+        reply = self.send_command_and_read_reply(PeltierCommands.SET_SLOPE, round(slope*100))
         assert reply == slope
 
     def disable_slope(self):
@@ -390,12 +390,12 @@ class PeltierCooler:
 
     def _set_current_limit_cooling(self, current_limit):
         # current in amp
-        reply = self.send_command_and_read_reply(PeltierCommands.COOLING_CURRENT_LIMIT, int(current_limit*100))
+        reply = self.send_command_and_read_reply(PeltierCommands.COOLING_CURRENT_LIMIT, round(current_limit*100))
         assert reply == current_limit
 
     def _set_current_limit_heating(self, current_limit):
         # current in amp
-        reply = self.send_command_and_read_reply(PeltierCommands.HEATING_CURRENT_LIMIT, int(current_limit*100))
+        reply = self.send_command_and_read_reply(PeltierCommands.HEATING_CURRENT_LIMIT, round(current_limit*100))
         assert reply == current_limit
 
     def set_pid_parameters(self, proportional, integral, differential):
@@ -405,27 +405,27 @@ class PeltierCooler:
 
     def _set_d_of_pid(self, differential):
         # max 10
-        reply = self.send_command_and_read_reply(PeltierCommands.SET_DIFFERENTIAL_PID, int(differential * 100))
+        reply = self.send_command_and_read_reply(PeltierCommands.SET_DIFFERENTIAL_PID, round(differential * 100))
         assert reply == differential
 
     def _set_i_of_pid(self, integral):
         # max 10
-        reply = self.send_command_and_read_reply(PeltierCommands.SET_INTEGRAL_PID, int(integral * 100))
+        reply = self.send_command_and_read_reply(PeltierCommands.SET_INTEGRAL_PID, round(integral * 100))
         assert reply == integral
 
     def _set_p_of_pid(self, proportional):
         # max 10
-        reply = self.send_command_and_read_reply(PeltierCommands.SET_PROPORTIONAL_PID, int(proportional * 100))
+        reply = self.send_command_and_read_reply(PeltierCommands.SET_PROPORTIONAL_PID, round(proportional * 100))
         assert reply == proportional
 
     def _set_max_temperature(self, t_max):
         # max 10
-        reply = self.send_command_and_read_reply(PeltierCommands.SET_T_MAX, int(t_max * 100))
+        reply = self.send_command_and_read_reply(PeltierCommands.SET_T_MAX, round(t_max * 100))
         assert reply == t_max
 
     def _set_min_temperature(self, t_min):
         # max 10
-        reply = self.send_command_and_read_reply(PeltierCommands.SET_T_MIN, int(t_min * 100))
+        reply = self.send_command_and_read_reply(PeltierCommands.SET_T_MIN, round(t_min * 100))
         assert reply == t_min
 
     def _set_state_dependant_parameters(self, new_T_setpoint):
