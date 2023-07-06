@@ -315,8 +315,8 @@ class PeltierCooler:
     def set_default_values(self):
         self._set_max_temperature(self.peltier_defaults.T_MAX)
         self._set_min_temperature(self.peltier_defaults.T_MIN)
-        self._set_current_limit_heating(self.peltier_defaults.CURRENT_LIMIT_HEATING)
-        self._set_current_limit_cooling(self.peltier_defaults.CURRENT_LIMIT_COOLING)
+        self._set_current_limit_heating(self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[2][-1])
+        self._set_current_limit_cooling(self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[1][0])
         self.disable_slope()
 
     def send_command_and_read_reply( self, command_template: PeltierCommandTemplate, parameter: int= "", parse=True
