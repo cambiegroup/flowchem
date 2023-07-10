@@ -274,6 +274,10 @@ class PeltierCommands:
     GET_CURRENT = PeltierCommandTemplate(
         command_string="GPW", reply_lines=1, requires_argument=False
     )
+    GET_SETTINGS = PeltierCommandTemplate(
+        command_string="GPA", reply_lines=1, requires_argument=False
+    )
+
 
 class PeltierDefaults:
     HEATING_PID = [0.64,0.53,0.13]
@@ -386,6 +390,12 @@ class PeltierCooler:
         # return power in W
         reply = self.send_command_and_read_reply(PeltierCommands.GET_CURRENT)
         assert type(reply)==float
+        return reply
+
+    def get_parameters(self) -> int:
+        # return parameter list
+        reply = self.send_command_and_read_reply(PeltierCommands.GET_SETTINGS)
+
         return reply
 
     def _set_current_limit_cooling(self, current_limit):
