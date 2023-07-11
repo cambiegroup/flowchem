@@ -87,7 +87,7 @@ repository = "https://github.com/cambiegroup/flowchem"
 
 [project.scripts]
 flowchem = "flowchem.__main__:main"
-flowchem-autodiscover = "flowchem.utils.autodiscover:main"
+flowchem-autodiscover = "flowchem.utils.device_finder:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
