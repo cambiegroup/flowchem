@@ -13,6 +13,17 @@ from flowchem.client.common import (
 )
 
 
+class FlowchemDeviceListener(FlowchemCommonDeviceListener):
+    def _save_device_info(self, zc: Zeroconf, type_: str, name: str) -> None:
+        if service_info := zc.get_service_info(type_, name):
+            device_name = zeroconf_name_to_device_name(name)
+            self.flowchem_devices[device_name] = device_url_from_service_info(
+                service_info, device_name
+            )
+        else:
+            logger.warning(f"No info for service {name}!")
+
+
 def get_flowchem_device_by_name(device_name, timeout: int = 3000) -> URL:
     """
     Given a flowchem device name, search for it via mDNS and return its URL if found.
@@ -34,17 +45,6 @@ def get_flowchem_device_by_name(device_name, timeout: int = 3000) -> URL:
         return device_url_from_service_info(service_info, device_name)
 
 
-class FlowchemDeviceListener(FlowchemCommonDeviceListener):
-    def _save_device_info(self, zc: Zeroconf, type_: str, name: str) -> None:
-        if service_info := zc.get_service_info(type_, name):
-            device_name = zeroconf_name_to_device_name(name)
-            self.flowchem_devices[device_name] = device_url_from_service_info(
-                service_info, device_name
-            )
-        else:
-            logger.warning(f"No info for service {name}!")
-
-
 def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, URL]:
     """
     Search for flowchem devices and returns them in a dict (key=name, value=IPv4Address)
@@ -63,3 +63,9 @@ if __name__ == "__main__":
 
     dev_info = get_all_flowchem_devices()
     print(dev_info)
+
+    from flowchem.client.common import FlowchemDeviceClient
+
+    for name, url in get_all_flowchem_devices().items():
+        dev = FlowchemDeviceClient(url)
+        print(dev)

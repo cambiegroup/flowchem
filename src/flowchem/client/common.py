@@ -1,7 +1,10 @@
 import ipaddress
 
+import requests
 from loguru import logger
 from zeroconf import ServiceListener, Zeroconf, ServiceInfo
+
+from flowchem.components.device_info import DeviceInfo
 
 FLOWCHEM_SUFFIX = "._labthing._tcp.local."
 FLOWCHEM_TYPE = FLOWCHEM_SUFFIX[1:]
@@ -59,3 +62,37 @@ class FlowchemCommonDeviceListener(ServiceListener):
 
     def _save_device_info(self, zc: Zeroconf, type_: str, name: str) -> None:
         raise NotImplementedError()
+
+
+class FlowchemDeviceClient:
+    def __init__(self, url: URL):
+        self.base_url = url
+        self._session = requests.Session()
+        # Log every request and always raise for status
+        self._session.hooks["response"] = [
+            FlowchemDeviceClient.log_responses,
+            FlowchemDeviceClient.raise_for_status,
+        ]
+
+        # Connect and get device info
+        self.info = DeviceInfo.model_validate_json(self.get(url).text)
+
+    @staticmethod
+    def raise_for_status(resp, *args, **kwargs):
+        resp.raise_for_status()
+
+    @staticmethod
+    def log_responses(resp, *args, **kwargs):
+        logger.debug(f"Reply: {resp.text} on {resp.url}")
+
+    def get(self, url, **kwargs):
+        """Sends a GET request. Returns :class:`Response` object."""
+        return self._session.get(url, **kwargs)
+
+    def post(self, url, data=None, json=None, **kwargs):
+        """Sends a POST request. Returns :class:`Response` object."""
+        return self._session.post(url, data=data, json=json, **kwargs)
+
+    def put(self, url, data=None, **kwargs):
+        """Sends a PUT request. Returns :class:`Response` object."""
+        return self._session.put(url, data=data, **kwargs)

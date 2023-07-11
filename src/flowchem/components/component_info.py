@@ -7,4 +7,4 @@ class ComponentInfo(BaseModel):
     """Metadata associated with flowchem components."""
 
     name: str = ""
-    owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0000968"  # 'device'
+    owl_subclass_of: str = "http://purl.obolibrary.org/obo/OBI_0000968"  # 'device'

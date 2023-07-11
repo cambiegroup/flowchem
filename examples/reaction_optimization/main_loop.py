@@ -4,7 +4,7 @@ from gryffin import Gryffin
 from loguru import logger
 from run_experiment import run_experiment
 
-from examples.autonomous_reaction_optimization._hw_control import (
+from examples.reaction_optimization._hw_control import (
     command_session,
     socl2_endpoint,
     r4_endpoint,

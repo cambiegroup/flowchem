@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import TypedDict, Iterable
 
 from fastapi import FastAPI, APIRouter
-from fastapi_utils.tasks import repeat_every
+
+# from fastapi_utils.tasks import repeat_every
+from flowchem.utils.repeat_every import repeat_every
 from loguru import logger
 from starlette.responses import RedirectResponse
 
