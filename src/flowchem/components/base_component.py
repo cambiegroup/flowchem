@@ -17,9 +17,7 @@ class FlowchemComponent:
         """Initialize component."""
         self.name = name
         self.hw_device = hw_device
-        self.metadata = ComponentInfo(
-            hw_device=self.hw_device.get_metadata(), name=name
-        )
+        self.metadata = ComponentInfo(parent_device=self.hw_device.name, name=name)
 
         # Initialize router
         self._router = APIRouter(

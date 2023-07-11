@@ -26,6 +26,7 @@ dependencies = [
     "anyio",
     "asyncua>=1.0.2",
     "bronkhorst-propar>=1.1.0",
+    "click<=8.1.3", # Temporary due to https://github.com/pallets/click/issues/2558
     "fastapi>=0.100.0",
     "loguru>=0.7.0",
     "lxml>=4.9.2",

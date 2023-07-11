@@ -50,6 +50,8 @@ async def async_get_flowchem_device_by_name(device_name, timeout: int = 3000) ->
     )
     if service_info:
         return device_url_from_service_info(service_info, device_name)
+    else:
+        return URL()
 
 
 async def async_get_all_flowchem_devices(timeout: float = 3000) -> dict[str, URL]:
