@@ -27,9 +27,7 @@ class ZeroconfServer:
 
     async def add_device(self, name: str, url: str):
         """Adds device to the server."""
-        logger.debug(f"Adding zeroconf component {name}")
-
-        properites = {
+        properties = {
             "path": url + f"/{name}/",
             "id": f"{name}:{uuid.uuid4()}".replace(" ", ""),
         }
@@ -39,12 +37,12 @@ class ZeroconfServer:
             type_="_labthing._tcp.local.",
             name=name + "._labthing._tcp.local.",
             port=self.port,
-            properties=properites,
+            properties=properties,
             parsed_addresses=self.mdns_addresses,
         )
 
         await self.server.async_register_service(service_info)
-        logger.debug(f"Registered {name} on the mDNS server! [ -> {url}]")
+        logger.debug(f"Device {name} registered as Zeroconf service!")
 
 
 if __name__ == "__main__":

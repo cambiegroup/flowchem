@@ -79,7 +79,12 @@ def ensure_device_name_is_valid(device_name: str) -> None:
     if len(device_name) > 42:
         # This is because f"{name}._labthing._tcp.local." has to be shorter than 64 in zerconfig
         raise InvalidConfiguration(
-            f"Name for device '{device_name}' is too long ({len(device_name)} characters, max is 42)"
+            f"Invalid name for device '{device_name}': too long ({len(device_name)} characters, max is 42)"
+        )
+    if "." in device_name:
+        # This is not strictly needed but avoids potential zeroconf problems
+        raise InvalidConfiguration(
+            f"Invalid name for device '{device_name}': '.' character not allowed"
         )
 
 
