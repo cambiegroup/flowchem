@@ -2,7 +2,7 @@ import pytest
 import os
 from click.testing import CliRunner
 
-from flowchem.utils.autodiscover import main
+from flowchem.utils.device_finder import main
 
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"

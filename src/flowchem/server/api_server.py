@@ -23,16 +23,8 @@ class FlowchemInstance(TypedDict):
     port: int
 
 
-async def run_create_server_from_file(
-    config_file: BytesIO | Path, host: str = "127.0.0.1"
-) -> FlowchemInstance:
-    """Make create_server_from_file a sync function for CLI."""
-
-    return await create_server_from_file(config_file, host)
-
-
 async def create_server_from_file(
-    config_file: BytesIO | Path, host: str
+    config_file: BytesIO | Path, host: str = "0.0.0.0"
 ) -> FlowchemInstance:
     """
     Based on the toml device config provided, initialize connection to devices and create API endpoints.
@@ -55,7 +47,7 @@ async def create_server_from_file(
 async def create_server_for_devices(
     config: dict,
     repeated_tasks: Iterable[RepeatedTaskInfo] = (),
-    host: str = "127.0.0.1",
+    host: str = "0.0.0.0",
 ) -> FlowchemInstance:
     """Initialize and create API endpoints for device object provided."""
     dev_list = config["device"]
@@ -74,6 +66,7 @@ async def create_server_for_devices(
 
     # mDNS server (Zeroconfig)
     mdns = ZeroconfServer(port=port)
+    logger.debug(f"Zeroconf server up, broadcasting on IPs: {mdns.mdns_addresses}")
     api_base_url = r"http://" + f"{host}:{port}"
 
     for seconds_delay, task_to_repeat in repeated_tasks:
@@ -121,7 +114,7 @@ if __name__ == "__main__":
     import uvicorn
 
     async def main():
-        flowchem_instance = await run_create_server_from_file(
+        flowchem_instance = await create_server_from_file(
             config_file=io.BytesIO(
                 b"""[device.test-device]\n
         type = "FakeDevice"\n"""

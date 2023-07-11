@@ -39,7 +39,7 @@ def parse_config(file_path: BytesIO | Path) -> dict:
     # StringIO used for testing without creating actual files
     if isinstance(file_path, BytesIO):
         config = parse_toml(file_path)
-        config["filename"] = "StringIO"
+        config["filename"] = "BytesIO"
     else:
         assert (
             file_path.exists() and file_path.is_file()
