@@ -115,5 +115,7 @@ markers = [
 
 [tool.ruff]
 line-length = 120
+# Allow imports relative to the "src" and "test" directories.
+src = ["src", "test"]
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["F403"]
