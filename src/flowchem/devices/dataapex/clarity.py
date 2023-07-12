@@ -13,12 +13,6 @@ from flowchem.utils.people import dario, jakob, wei_hsin
 
 
 class Clarity(FlowchemDevice):
-    metadata = DeviceInfo(
-        authors=[dario, jakob, wei_hsin],
-        manufacturer="DataApex",
-        model="Clarity Chromatography",
-    )
-
     def __init__(
         self,
         name,
@@ -32,6 +26,11 @@ class Clarity(FlowchemDevice):
         cfg_file: str = "",
     ):
         super().__init__(name=name)
+        self.device_info = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            manufacturer="DataApex",
+            model="Clarity Chromatography",
+        )
 
         # Validate executable
         if which(executable):

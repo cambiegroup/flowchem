@@ -79,7 +79,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
         logger.debug("power of tube sensor is turn on!")
         # self.phidget.setState(True)  #setting DutyCycle to 1.0
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Phidget",
             model="VINT",
@@ -170,7 +170,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         logger.debug("tube sensor is turn on, default data interval is 200 ms!")
         self.phidget.setDataInterval(data_interval)
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Phidget",
             model="VINT",

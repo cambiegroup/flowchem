@@ -4,7 +4,9 @@ from flowchem.components.pumps.base_pump import BasePump
 
 
 class SyringePump(BasePump):
-    def get_metadata(self) -> ComponentInfo:
+    def get_component_info(self) -> ComponentInfo:
         # Ontology: syringe pump
-        self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0400100"
-        return super().get_metadata()
+        self.component_info.owl_subclass_of = (
+            "http://purl.obolibrary.org/obo/OBI_0400100"
+        )
+        return super().get_component_info()

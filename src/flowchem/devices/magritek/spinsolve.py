@@ -43,7 +43,7 @@ class Spinsolve(FlowchemDevice):
         """Control a Spinsolve instance via HTTP XML API."""
         super().__init__(name)
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Magritek",
             model="Spinsolve",
@@ -123,18 +123,20 @@ class Spinsolve(FlowchemDevice):
             raise ConnectionError("Spectrometer not connected to Spinsolve's PC!")
 
         # If connected parse and log instrument info
-        self.metadata.version = hw_info.find(".//SpinsolveSoftware").text
+        self.device_info.version = hw_info.find(".//SpinsolveSoftware").text
         hardware_type = hw_info.find(".//SpinsolveType").text
-        self.metadata.additional_info["hardware_type"] = hardware_type
-        logger.debug(f"Connected to model {hardware_type}, SW: {self.metadata.version}")
+        self.device_info.additional_info["hardware_type"] = hardware_type
+        logger.debug(
+            f"Connected to model {hardware_type}, SW: {self.device_info.version}"
+        )
 
         # Load available protocols
         await self.load_protocols()
 
         # Finally, check version
-        if version.parse(self.metadata.version) < version.parse("1.18.1.3062"):
+        if version.parse(self.device_info.version) < version.parse("1.18.1.3062"):
             warnings.warn(
-                f"Spinsolve v. {self.metadata.version} is not supported!"
+                f"Spinsolve v. {self.device_info.version} is not supported!"
                 f"Upgrade to a more recent version! (at least 1.18.1.3062)"
             )
 

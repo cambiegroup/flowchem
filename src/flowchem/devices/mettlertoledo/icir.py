@@ -35,13 +35,6 @@ class ProbeInfo(BaseModel):
 class IcIR(FlowchemDevice):
     """Object to interact with the iCIR software controlling the FlowIR and ReactIR."""
 
-    metadata = DeviceInfo(
-        authors=[dario, jakob, wei_hsin],
-        manufacturer="Mettler-Toledo",
-        model="iCIR",
-        version="",
-    )
-
     iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
     _supported_versions = {"7.1.91.0"}
     SOFTWARE_VERSION = "ns=2;s=Local.iCIR.SoftwareVersion"
@@ -62,6 +55,12 @@ class IcIR(FlowchemDevice):
     def __init__(self, template="", url="", name=""):
         """Initiate connection with OPC UA server."""
         super().__init__(name)
+        self.device_info = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            manufacturer="Mettler-Toledo",
+            model="iCIR",
+            version="",
+        )
 
         # Default (local) url if none provided
         if not url:
@@ -82,7 +81,7 @@ class IcIR(FlowchemDevice):
             ) from timeout_error
 
         # Ensure iCIR version is supported
-        self.metadata.version = await self.opcua.get_node(
+        self.device_info.version = await self.opcua.get_node(
             self.SOFTWARE_VERSION
         ).get_value()  # e.g. "7.1.91.0"
 
@@ -95,7 +94,7 @@ class IcIR(FlowchemDevice):
         # Start acquisition! Ensures the device is ready when a spectrum is needed
         await self.start_experiment(name="Flowchem", template=self._template)
         probe = await self.probe_info()
-        self.metadata.additional_info = probe.dict()
+        self.device_info.additional_info = probe.dict()
 
     def is_local(self):
         """Return true if the server is on the same machine running the python code."""
@@ -106,7 +105,7 @@ class IcIR(FlowchemDevice):
     def ensure_version_is_supported(self):
         """Check if iCIR is installed and open and if the version is supported."""
         try:
-            if self.metadata.version not in self._supported_versions:
+            if self.device_info.version not in self._supported_versions:
                 logger.warning(
                     f"The current version of iCIR [self.version] has not been tested!"
                     f"Pleas use one of the supported versions: {self._supported_versions}"

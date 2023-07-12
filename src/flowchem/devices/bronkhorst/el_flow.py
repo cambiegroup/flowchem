@@ -30,7 +30,7 @@ class EPC(FlowchemDevice):
         self.max_pressure = max_pressure
         super().__init__(name)
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="bronkhorst",
             model="EPC",
@@ -107,7 +107,7 @@ class MFC(FlowchemDevice):
         self.max_flow = max_flow
         super().__init__(name)
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="bronkhorst",
             model="MFC",

@@ -39,7 +39,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
     def __init__(self, ip_address=None, mac_address=None, **kwargs):
         super().__init__(ip_address, mac_address, **kwargs)
         self.eol = b"\r\n"
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Knauer",
             model="Valve",
@@ -51,7 +51,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         await super().initialize()
 
         # Detect valve type
-        self.metadata.additional_info["valve-type"] = await self.get_valve_type()
+        self.device_info.additional_info["valve-type"] = await self.get_valve_type()
 
     @staticmethod
     def handle_errors(reply: str):
@@ -150,7 +150,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
 
     def components(self):
         """Create the right type of Valve components based on head type."""
-        match self.metadata.additional_info["valve-type"]:  # noqa
+        match self.device_info.additional_info["valve-type"]:  # noqa
             case KnauerValveHeads.SIX_PORT_TWO_POSITION:
                 return (KnauerInjectionValve("injection-valve", self),)
             case KnauerValveHeads.SIX_PORT_SIX_POSITION:

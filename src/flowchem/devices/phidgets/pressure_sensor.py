@@ -75,7 +75,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)
         self.phidget.setDataInterval(200)  # 200ms
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Phidget",
             model="VINT",

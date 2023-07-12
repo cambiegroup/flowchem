@@ -160,12 +160,12 @@ from flowchem.components.device_info import DeviceInfo, Person
 
 
 class ExtendableEar(FlowchemDevice):
-    metadata = DeviceInfo(
-        authors=[Person(name="George Weasley", email="george.weasley@gmail.com"),
-                 Person(name="Fred Weasley", email="fred.weasley@gmail.com")],
-        manufacturer="Weasley & Weasley",
-        model="Extendable Ear",
-    )
+    def __init__(self, name):
+        super().__init__(name)
+        self.device_info.manufacturer = "Weasley & Weasley",
+        self.device_info.authors = [Person(name="George Weasley", email="george.weasley@gmail.com"),
+                     Person(name="Fred Weasley", email="fred.weasley@gmail.com")]
+        self.device_info.model = "Extendable Ear"
 
     ...
 

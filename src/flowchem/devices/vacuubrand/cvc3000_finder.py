@@ -24,7 +24,7 @@ def cvc3000_finder(serial_port) -> list[str]:
         cvc._serial.close()
         return []
 
-    logger.info(f"CVC3000 {cvc.metadata.version} found on <{serial_port}>")
+    logger.info(f"CVC3000 {cvc.component_info.version} found on <{serial_port}>")
 
     return [
         dedent(

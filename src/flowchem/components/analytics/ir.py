@@ -25,7 +25,9 @@ class IRControl(FlowchemComponent):
         self.add_api_route("/stop", self.stop, methods=["PUT"])
 
         # Ontology: high performance liquid chromatography instrument
-        self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0001057"
+        self.component_info.owl_subclass_of = (
+            "http://purl.obolibrary.org/obo/OBI_0001057"
+        )
 
     async def acquire_spectrum(self) -> IRSpectrum:  # type: ignore
         """Acquire an IR spectrum."""

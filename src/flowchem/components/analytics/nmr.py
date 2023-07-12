@@ -12,7 +12,9 @@ class NMRControl(FlowchemComponent):
         self.add_api_route("/stop", self.stop, methods=["PUT"])
 
         # Ontology: fourier transformation NMR instrument
-        self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0000487"
+        self.component_info.owl_subclass_of = (
+            "http://purl.obolibrary.org/obo/OBI_0000487"
+        )
 
     async def acquire_spectrum(self, background_tasks: BackgroundTasks):
         """Acquire an NMR spectrum."""

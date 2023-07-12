@@ -17,7 +17,9 @@ class FlowchemComponent:
         """Initialize component."""
         self.name = name
         self.hw_device = hw_device
-        self.metadata = ComponentInfo(parent_device=self.hw_device.name, name=name)
+        self.component_info = ComponentInfo(
+            parent_device=self.hw_device.name, name=name
+        )
 
         # Initialize router
         self._router = APIRouter(
@@ -25,7 +27,7 @@ class FlowchemComponent:
         )
         self.add_api_route(
             "/",
-            self.get_metadata,
+            self.get_component_info,
             methods=["GET"],
             response_model=ComponentInfo,
         )
@@ -40,6 +42,6 @@ class FlowchemComponent:
         logger.debug(f"Adding route {path} for router of {self.name}")
         self._router.add_api_route(path, endpoint, **kwargs)
 
-    def get_metadata(self) -> ComponentInfo:
+    def get_component_info(self) -> ComponentInfo:
         """Return metadata."""
-        return self.metadata
+        return self.component_info

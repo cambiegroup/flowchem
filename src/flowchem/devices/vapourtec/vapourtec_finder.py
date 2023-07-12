@@ -29,8 +29,8 @@ def r4_finder(serial_port) -> list[str]:
         r4._serial.close()
         return []
 
-    if r4.metadata.version:
-        logger.info(f"R4 version {r4.metadata.version} found on <{serial_port}>")
+    if r4.device_info.version:
+        logger.info(f"R4 version {r4.device_info.version} found on <{serial_port}>")
         # Local variable for enumeration
         r4_finder.counter += 1  # type: ignore
         cfg = f"[device.r4-heater-{r4_finder.counter}]"  # type:ignore

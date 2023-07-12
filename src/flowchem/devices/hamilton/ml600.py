@@ -177,12 +177,6 @@ class ML600(FlowchemDevice):
         "default_withdraw_rate": "1 ml/min",
     }
 
-    metadata = DeviceInfo(
-        authors=[dario, jakob, wei_hsin],
-        manufacturer="Hamilton",
-        model="ML600",
-    )
-
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
     _io_instances: set[HamiltonPumpIO] = set()
     # The mutable object (a set) as class variable creates a shared state across all the instances.
@@ -223,6 +217,11 @@ class ML600(FlowchemDevice):
             name: 'cause naming stuff is important.
         """
         super().__init__(name)
+        self.device_info = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            manufacturer="Hamilton",
+            model="ML600",
+        )
         # HamiltonPumpIO
         self.pump_io = pump_io
         ML600._io_instances.add(self.pump_io)  # See above for details.
@@ -289,9 +288,9 @@ class ML600(FlowchemDevice):
         await self.pump_io.initialize()
         # Test connectivity by querying the pump's firmware version
         fw_cmd = Protocol1Command(command="U", target_pump_num=self.address)
-        self.metadata.version = await self.pump_io.write_and_read_reply_async(fw_cmd)
+        self.device_info.version = await self.pump_io.write_and_read_reply_async(fw_cmd)
         logger.info(
-            f"Connected to Hamilton ML600 {self.name} - FW version: {self.metadata.version}!"
+            f"Connected to Hamilton ML600 {self.name} - FW version: {self.device_info.version}!"
         )
 
         if hw_init:

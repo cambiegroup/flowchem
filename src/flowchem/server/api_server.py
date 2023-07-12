@@ -98,9 +98,6 @@ async def create_server_for_devices(
         device_root.add_api_route(
             "/",
             device.get_device_info,  # TODO: add components in the device info response!
-            # TODO: also, fix confusion between device get_device_info and
-            #  components. Device get_metadata equivalent could be implemented here to
-            #  add the components info but it would miss the owl class that is coming
             methods=["GET"],
             response_model=DeviceInfo,
         )

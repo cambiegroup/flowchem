@@ -72,7 +72,7 @@ class R4Heater(FlowchemDevice):
                 f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
             ) from ex
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Vapourtec",
             model="R4 reactor module",
@@ -80,8 +80,8 @@ class R4Heater(FlowchemDevice):
 
     async def initialize(self):
         """Ensure connection."""
-        self.metadata.version = await self.version()
-        logger.info(f"Connected with R4Heater version {self.metadata.version}")
+        self.device_info.version = await self.version()
+        logger.info(f"Connected with R4Heater version {self.device_info.version}")
 
     async def _write(self, command: str):
         """Writes a command to the pump"""

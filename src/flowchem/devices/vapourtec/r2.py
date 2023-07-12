@@ -109,7 +109,7 @@ class R2(FlowchemDevice):
                 f"Cannot connect to the R2 on the port <{config.get('port')}>"
             ) from ex
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Vapourtec",
             model="R2 reactor module",
@@ -118,8 +118,8 @@ class R2(FlowchemDevice):
 
     async def initialize(self):
         """Ensure connection."""
-        self.metadata.version = await self.version()
-        logger.info(f"Connected with R2 version {self.metadata.version}")
+        self.device_info.version = await self.version()
+        logger.info(f"Connected with R2 version {self.device_info.version}")
 
         # Sets all pump to 0 ml/min
         await asyncio.sleep(0.1)

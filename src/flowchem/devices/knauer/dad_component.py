@@ -67,7 +67,9 @@ class DADChannelControl(PhotoSensor):
         self.add_api_route("/set-bandwidth", self.set_bandwidth, methods=["PUT"])
 
         # Ontology: diode array detector
-        self.metadata.owl_subclass_of = "http://purl.obolibrary.org/obo/CHMO_0002503"
+        self.component_info.owl_subclass_of = (
+            "http://purl.obolibrary.org/obo/CHMO_0002503"
+        )
 
     async def calibrate_zero(self):
         """re-calibrate the sensors to their factory zero points"""

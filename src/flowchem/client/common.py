@@ -5,6 +5,7 @@ from loguru import logger
 from pydantic import AnyHttpUrl
 from zeroconf import ServiceListener, Zeroconf, ServiceInfo
 
+from flowchem.components.component_info import ComponentInfo
 from flowchem.components.device_info import DeviceInfo
 
 FLOWCHEM_SUFFIX = "._labthing._tcp.local."
@@ -53,26 +54,14 @@ class FlowchemCommonDeviceListener(ServiceListener):
         raise NotImplementedError()
 
 
-class FlowchemDeviceClient:
-    def __init__(self, url: AnyHttpUrl):
-        self.base_url = url
-        self._session = requests.Session()
-        # Log every request and always raise for status
-        self._session.hooks["response"] = [
-            FlowchemDeviceClient.log_responses,
-            FlowchemDeviceClient.raise_for_status,
-        ]
-
-        # Connect and get device info
-        self.info = DeviceInfo.model_validate_json(self.get(url).text)
-
-    @staticmethod
-    def raise_for_status(resp, *args, **kwargs):
-        resp.raise_for_status()
-
-    @staticmethod
-    def log_responses(resp, *args, **kwargs):
-        logger.debug(f"Reply: {resp.text} on {resp.url}")
+class FlowchemComponentClient:
+    def __init__(self, url: AnyHttpUrl, parent: "FlowchemDeviceClient"):
+        self.url = url
+        # Get ComponentInfo from
+        logger.warning(f"CREATE COMPONENT FOR URL {url}")
+        self._parent = parent
+        self._session = self._parent._session
+        self.component_info = ComponentInfo.model_validate_json(self.get(url).text)
 
     def get(self, url, **kwargs):
         """Sends a GET request. Returns :class:`Response` object."""
@@ -85,3 +74,32 @@ class FlowchemDeviceClient:
     def put(self, url, data=None, **kwargs):
         """Sends a PUT request. Returns :class:`Response` object."""
         return self._session.put(url, data=data, **kwargs)
+
+
+class FlowchemDeviceClient:
+    def __init__(self, url: AnyHttpUrl):
+        self.url = url
+
+        # Log every request and always raise for status
+        self._session = requests.Session()
+        self._session.hooks["response"] = [
+            FlowchemDeviceClient.log_responses,
+            FlowchemDeviceClient.raise_for_status,
+        ]
+
+        # Connect, get device info and populate components
+        self.device_info = DeviceInfo.model_validate_json(
+            self._session.get(self.url).text
+        )
+        self.components = [
+            FlowchemComponentClient(cmp_url, parent=self)
+            for cmp_url in self.device_info.components
+        ]
+
+    @staticmethod
+    def raise_for_status(resp, *args, **kwargs):
+        resp.raise_for_status()
+
+    @staticmethod
+    def log_responses(resp, *args, **kwargs):
+        logger.debug(f"Reply: {resp.text} on {resp.url}")

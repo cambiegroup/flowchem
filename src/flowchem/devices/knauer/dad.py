@@ -55,7 +55,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
             )
 
         self.cmd = KnauerDADCommands()
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Knauer",
             model="DAD",

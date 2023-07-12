@@ -65,10 +65,12 @@ class HuberChiller(FlowchemDevice):
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        self.metadata.serial_number = str(await self.serial_number())
-        if self.metadata.serial_number == "0":
+        self.device_info.serial_number = str(await self.serial_number())
+        if self.device_info.serial_number == "0":
             raise InvalidConfiguration("No reply received from Huber Chiller!")
-        logger.debug(f"Connected with Huber Chiller S/N {self.metadata.serial_number}")
+        logger.debug(
+            f"Connected with Huber Chiller S/N {self.device_info.serial_number}"
+        )
 
         # Validate temperature limits
         device_limits = await self.temperature_limits()

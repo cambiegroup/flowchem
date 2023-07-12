@@ -25,7 +25,7 @@ class MansonPowerSupply(FlowchemDevice):
         """Control class for Manson Power Supply."""
         super().__init__(name)
         self._serial = aio
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Manson",
             model="HCS-3***",
@@ -49,10 +49,10 @@ class MansonPowerSupply(FlowchemDevice):
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        self.metadata.model = await self.get_info()
-        if not self.metadata.model:
+        self.device_info.model = await self.get_info()
+        if not self.device_info.model:
             raise DeviceError("Communication with device failed!")
-        if self.metadata.model not in self.MODEL_ALT_RANGE:
+        if self.device_info.model not in self.MODEL_ALT_RANGE:
             raise InvalidConfiguration(
                 f"Device is not supported! [Supported models: {self.MODEL_ALT_RANGE}]"
             )

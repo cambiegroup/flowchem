@@ -33,7 +33,7 @@ class CVC3000(FlowchemDevice):
         self._serial = aio
         self._device_sn: int = None  # type: ignore
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="Vacuubrand",
             model="CVC3000",
@@ -60,8 +60,8 @@ class CVC3000(FlowchemDevice):
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        self.metadata.version = await self.version()
-        if not self.metadata.version:
+        self.device_info.version = await self.version()
+        if not self.device_info.version:
             raise InvalidConfiguration("No reply received from CVC3000!")
 
         # Set to CVC3000 mode and save
@@ -75,7 +75,7 @@ class CVC3000(FlowchemDevice):
         await self._send_command_and_read_reply("OUT_CFG 00001")
         await self.motor_speed(100)
 
-        logger.debug(f"Connected with CVC3000 version {self.metadata.version}")
+        logger.debug(f"Connected with CVC3000 version {self.device_info.version}")
 
     async def _send_command_and_read_reply(self, command: str) -> str:
         """
