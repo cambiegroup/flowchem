@@ -32,7 +32,6 @@ class EPC(FlowchemDevice):
 
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="bronkhorst",
             model="EPC",
         )
@@ -110,7 +109,6 @@ class MFC(FlowchemDevice):
 
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="bronkhorst",
             model="MFC",
         )

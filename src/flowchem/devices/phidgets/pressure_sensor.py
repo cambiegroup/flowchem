@@ -77,7 +77,6 @@ class PhidgetPressureSensor(FlowchemDevice):
 
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Phidget",
             model="VINT",
             serial_number=vint_serial_number,

@@ -142,7 +142,6 @@ class ViciValve(FlowchemDevice):
         self.address = address
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Vici-Valco",
             model="Universal Valve Actuator",
         )

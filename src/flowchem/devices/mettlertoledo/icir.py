@@ -37,7 +37,6 @@ class IcIR(FlowchemDevice):
 
     metadata = DeviceInfo(
         authors=[dario, jakob, wei_hsin],
-        maintainers=[dario],
         manufacturer="Mettler-Toledo",
         model="iCIR",
         version="",

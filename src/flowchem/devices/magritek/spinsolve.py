@@ -45,7 +45,6 @@ class Spinsolve(FlowchemDevice):
 
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Magritek",
             model="Spinsolve",
         )

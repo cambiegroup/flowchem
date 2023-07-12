@@ -35,7 +35,6 @@ class CVC3000(FlowchemDevice):
 
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Vacuubrand",
             model="CVC3000",
         )

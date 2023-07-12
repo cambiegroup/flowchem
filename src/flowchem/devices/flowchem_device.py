@@ -4,10 +4,7 @@ from collections import namedtuple
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from loguru import logger
-
 from flowchem.components.device_info import DeviceInfo
-from flowchem.utils.exceptions import DeviceError
 
 if TYPE_CHECKING:
     from flowchem.components.base_component import FlowchemComponent
@@ -26,6 +23,7 @@ class FlowchemDevice(ABC):
     def __init__(self, name):
         """All device have a name, which is the key in the config dict thus unique."""
         self.name = name
+        self.device_info = DeviceInfo()
 
     async def initialize(self):
         """Use for setting up async connection to the device."""
@@ -35,15 +33,8 @@ class FlowchemDevice(ABC):
         """Use for repeated background task, e.g. session keepalive."""
         return None
 
-    def get_metadata(self) -> DeviceInfo:
-        try:
-            return self.metadata  # type: ignore
-        except AttributeError as ae:
-            logger.error(f"Invalid device type for {self.name}!")
-            raise DeviceError(
-                f"Invalid device {self.name}!"
-                f"The attribute `metadata` is missing, should be a DeviceInfo variable!"
-            ) from ae
+    def get_device_info(self) -> DeviceInfo:
+        return self.device_info
 
     def components(self) -> Iterable["FlowchemComponent"]:
         return ()

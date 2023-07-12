@@ -15,7 +15,6 @@ from flowchem.utils.people import dario, jakob, wei_hsin
 class Clarity(FlowchemDevice):
     metadata = DeviceInfo(
         authors=[dario, jakob, wei_hsin],
-        maintainers=[dario],
         manufacturer="DataApex",
         model="Clarity Chromatography",
     )

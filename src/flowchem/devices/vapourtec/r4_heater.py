@@ -74,7 +74,6 @@ class R4Heater(FlowchemDevice):
 
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Vapourtec",
             model="R4 reactor module",
         )

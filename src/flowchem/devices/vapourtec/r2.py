@@ -111,7 +111,6 @@ class R2(FlowchemDevice):
 
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Vapourtec",
             model="R2 reactor module",
         )

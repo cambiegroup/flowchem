@@ -2,26 +2,13 @@ import ipaddress
 
 import requests
 from loguru import logger
+from pydantic import AnyHttpUrl
 from zeroconf import ServiceListener, Zeroconf, ServiceInfo
 
 from flowchem.components.device_info import DeviceInfo
 
 FLOWCHEM_SUFFIX = "._labthing._tcp.local."
 FLOWCHEM_TYPE = FLOWCHEM_SUFFIX[1:]
-
-
-class URL(str):
-    def __new__(cls, *value):
-        if value:
-            v0 = value[0]
-            if type(v0) is not str:
-                raise TypeError('Unexpected type for URL: "{type(v0)}"')
-            if not (v0.startswith("http://") or v0.startswith("https://")):
-                raise ValueError('Passed string value "{v0}" is not an "http*://" URL')
-        # else allow None to be passed. This allows an "empty" URL instance, e.g. `URL()`
-        # `URL()` evaluates False
-
-        return str.__new__(cls, *value)
 
 
 def zeroconf_name_to_device_name(zeroconf_name: str) -> str:
@@ -33,19 +20,21 @@ def device_name_to_zeroconf_name(device_name: str) -> str:
     return f"{device_name}{FLOWCHEM_SUFFIX}"
 
 
-def device_url_from_service_info(service_info: ServiceInfo, device_name: str) -> URL:
+def device_url_from_service_info(
+    service_info: ServiceInfo, device_name: str
+) -> AnyHttpUrl:
     if service_info.addresses:
         # Needed to convert IP from bytes to str
         device_ip = ipaddress.ip_address(service_info.addresses[0])
-        return URL(f"http://{device_ip}:{service_info.port}/{device_name}")
+        return AnyHttpUrl(f"http://{device_ip}:{service_info.port}/{device_name}")
     else:
         logger.warning(f"No address found for {device_name}!")
-        return URL()
+        return AnyHttpUrl()
 
 
 class FlowchemCommonDeviceListener(ServiceListener):
     def __init__(self):
-        self.flowchem_devices: dict[str, URL] = {}
+        self.flowchem_devices: dict[str, AnyHttpUrl] = {}
 
     def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
         logger.debug(f"Service {name} removed")
@@ -65,7 +54,7 @@ class FlowchemCommonDeviceListener(ServiceListener):
 
 
 class FlowchemDeviceClient:
-    def __init__(self, url: URL):
+    def __init__(self, url: AnyHttpUrl):
         self.base_url = url
         self._session = requests.Session()
         # Log every request and always raise for status

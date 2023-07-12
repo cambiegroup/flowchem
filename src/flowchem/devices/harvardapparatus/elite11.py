@@ -112,7 +112,6 @@ class Elite11(FlowchemDevice):
 
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="HarvardApparatus",
             model="Elite11",
             version="",

@@ -179,7 +179,6 @@ class ML600(FlowchemDevice):
 
     metadata = DeviceInfo(
         authors=[dario, jakob, wei_hsin],
-        maintainers=[dario],
         manufacturer="Hamilton",
         model="ML600",
     )

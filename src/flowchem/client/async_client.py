@@ -3,11 +3,11 @@ import asyncio
 from loguru import logger
 from zeroconf import Zeroconf
 from zeroconf.asyncio import AsyncZeroconf, AsyncServiceBrowser, AsyncServiceInfo
+from pydantic import AnyHttpUrl
 
 from flowchem.client.client import FlowchemCommonDeviceListener
 from flowchem.client.common import (
     FLOWCHEM_TYPE,
-    URL,
     device_name_to_zeroconf_name,
     device_url_from_service_info,
     zeroconf_name_to_device_name,
@@ -31,7 +31,9 @@ class FlowchemAsyncDeviceListener(FlowchemCommonDeviceListener):
         asyncio.ensure_future(self._resolve_service(zc, type_, name))
 
 
-async def async_get_flowchem_device_by_name(device_name, timeout: int = 3000) -> URL:
+async def async_get_flowchem_device_by_name(
+    device_name, timeout: int = 3000
+) -> AnyHttpUrl:
     """
     Given a flowchem device name, search for it via mDNS and return its URL if found.
 
@@ -51,10 +53,12 @@ async def async_get_flowchem_device_by_name(device_name, timeout: int = 3000) ->
     if service_info:
         return device_url_from_service_info(service_info, device_name)
     else:
-        return URL()
+        return AnyHttpUrl()
 
 
-async def async_get_all_flowchem_devices(timeout: float = 3000) -> dict[str, URL]:
+async def async_get_all_flowchem_devices(
+    timeout: float = 3000,
+) -> dict[str, AnyHttpUrl]:
     """
     Search for flowchem devices and returns them in a dict (key=name, value=IPv4Address)
     """

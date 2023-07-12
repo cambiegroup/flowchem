@@ -52,13 +52,6 @@ class AzuraPumpHeads(Enum):
 class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
     """Control module for Knauer Azura Compact pumps."""
 
-    metadata = DeviceInfo(
-        authors=[dario, jakob, wei_hsin],
-        maintainers=[dario],
-        manufacturer="knauer",
-        model="Azura Compact",
-    )
-
     def __init__(
         self,
         ip_address=None,
@@ -68,6 +61,11 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         name="",
     ):
         super().__init__(ip_address, mac_address, name=name)
+        self.device_info = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            manufacturer="knauer",
+            model="Azura Compact",
+        )
         self.eol = b"\n\r"
 
         # All the following are set upon initialize()

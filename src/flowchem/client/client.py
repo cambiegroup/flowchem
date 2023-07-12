@@ -1,13 +1,13 @@
 import time
 
 from loguru import logger
+from pydantic import AnyHttpUrl
 from zeroconf import ServiceBrowser, Zeroconf
 
 from flowchem.client.common import (
     FLOWCHEM_TYPE,
     zeroconf_name_to_device_name,
     device_name_to_zeroconf_name,
-    URL,
     device_url_from_service_info,
     FlowchemCommonDeviceListener,
 )
@@ -24,7 +24,7 @@ class FlowchemDeviceListener(FlowchemCommonDeviceListener):
             logger.warning(f"No info for service {name}!")
 
 
-def get_flowchem_device_by_name(device_name, timeout: int = 3000) -> URL:
+def get_flowchem_device_by_name(device_name, timeout: int = 3000) -> AnyHttpUrl:
     """
     Given a flowchem device name, search for it via mDNS and return its URL if found.
 
@@ -44,10 +44,10 @@ def get_flowchem_device_by_name(device_name, timeout: int = 3000) -> URL:
     if service_info:
         return device_url_from_service_info(service_info, device_name)
     else:
-        return URL()
+        return AnyHttpUrl()
 
 
-def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, URL]:
+def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, AnyHttpUrl]:
     """
     Search for flowchem devices and returns them in a dict (key=name, value=IPv4Address)
     """

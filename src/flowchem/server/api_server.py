@@ -88,7 +88,7 @@ async def create_server_for_devices(
     for device in dev_list:
         # Get components (some compounded devices can return multiple components)
         components = device.components()
-        device.get_metadata()
+        device.get_device_info()
         logger.debug(f"Got {len(components)} components from {device.name}")
 
         # Advertise devices (not components!)
@@ -97,8 +97,8 @@ async def create_server_for_devices(
         device_root = APIRouter(prefix=f"/{device.name}", tags=[device.name])
         device_root.add_api_route(
             "/",
-            device.get_metadata,  # TODO: add components in the device info response!
-            # TODO: also, fix confusion between device get_metadata and
+            device.get_device_info,  # TODO: add components in the device info response!
+            # TODO: also, fix confusion between device get_device_info and
             #  components. Device get_metadata equivalent could be implemented here to
             #  add the components info but it would miss the owl class that is coming
             methods=["GET"],

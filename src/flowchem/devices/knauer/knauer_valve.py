@@ -41,7 +41,6 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         self.eol = b"\r\n"
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Knauer",
             model="Valve",
         )

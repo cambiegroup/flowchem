@@ -27,7 +27,6 @@ class MansonPowerSupply(FlowchemDevice):
         self._serial = aio
         self.metadata = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Manson",
             model="HCS-3***",
         )

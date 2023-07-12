@@ -163,7 +163,6 @@ class ExtendableEar(FlowchemDevice):
     metadata = DeviceInfo(
         authors=[Person(name="George Weasley", email="george.weasley@gmail.com"),
                  Person(name="Fred Weasley", email="fred.weasley@gmail.com")],
-        maintainers=[Person(name="George Weasley", email="george.weasley@gmail.com")],
         manufacturer="Weasley & Weasley",
         model="Extendable Ear",
     )

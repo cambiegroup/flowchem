@@ -38,9 +38,8 @@ class HuberChiller(FlowchemDevice):
         self._min_t: float = min_temp
         self._max_t: float = max_temp
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Huber",
             model="generic chiller",
         )
