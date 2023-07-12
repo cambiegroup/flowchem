@@ -10,9 +10,10 @@ class HPLCPump(BasePump):
         super().__init__(name, hw_device)
 
         # Ontology: HPLC isocratic pump
-        self.component_info.owl_subclass_of = (
+        self.component_info.owl_subclass_of.append(
             "http://purl.obolibrary.org/obo/OBI_0000556"
         )
+        self.component_info.type = "HPLC Pump"
 
     @staticmethod
     def is_withdrawing_capable() -> bool:

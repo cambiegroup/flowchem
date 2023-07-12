@@ -13,7 +13,7 @@ class Sensor(FlowchemComponent):
         self.add_api_route("/power-on", self.power_on, methods=["PUT"])
         self.add_api_route("/power-off", self.power_off, methods=["PUT"])
         # Ontology: HPLC isocratic pump
-        self.component_info.owl_subclass_of = (
+        self.component_info.owl_subclass_of.append(
             "http://purl.obolibrary.org/obo/NCIT_C50166"
         )
 

@@ -1,15 +1,16 @@
 import time
 
 from loguru import logger
-from pydantic import AnyHttpUrl
 from zeroconf import ServiceBrowser, Zeroconf
 
+from flowchem.client.device_client import FlowchemDeviceClient
 from flowchem.client.common import (
     FLOWCHEM_TYPE,
     zeroconf_name_to_device_name,
     device_name_to_zeroconf_name,
     device_url_from_service_info,
     FlowchemCommonDeviceListener,
+    flowchem_devices_from_url_dict,
 )
 
 
@@ -24,7 +25,9 @@ class FlowchemDeviceListener(FlowchemCommonDeviceListener):
             logger.warning(f"No info for service {name}!")
 
 
-def get_flowchem_device_by_name(device_name, timeout: int = 3000) -> AnyHttpUrl:
+def get_flowchem_device_by_name(
+    device_name, timeout: int = 3000
+) -> FlowchemDeviceClient | None:
     """
     Given a flowchem device name, search for it via mDNS and return its URL if found.
 
@@ -42,12 +45,12 @@ def get_flowchem_device_by_name(device_name, timeout: int = 3000) -> AnyHttpUrl:
         timeout=timeout,
     )
     if service_info:
-        return device_url_from_service_info(service_info, device_name)
-    else:
-        return AnyHttpUrl()
+        return FlowchemDeviceClient(
+            device_url_from_service_info(service_info, device_name)
+        )
 
 
-def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, AnyHttpUrl]:
+def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, FlowchemDeviceClient]:
     """
     Search for flowchem devices and returns them in a dict (key=name, value=IPv4Address)
     """
@@ -56,7 +59,7 @@ def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, AnyHttpUrl]:
     time.sleep(timeout / 1000)
     browser.cancel()
 
-    return listener.flowchem_devices
+    return flowchem_devices_from_url_dict(listener.flowchem_devices)
 
 
 if __name__ == "__main__":
@@ -65,9 +68,3 @@ if __name__ == "__main__":
 
     dev_info = get_all_flowchem_devices()
     print(dev_info)
-
-    from flowchem.client.common import FlowchemDeviceClient
-
-    for name, url in get_all_flowchem_devices().items():
-        dev = FlowchemDeviceClient(url)
-        print(dev)

@@ -20,7 +20,14 @@ from flowchem.server.api_server import create_server_from_file
 @click.option(
     "-l", "--log", "logfile", type=click.Path(), default=None, help="Save logs to file."
 )
-@click.option("-h", "--host", "host", type=str, default="0.0.0.0", help="Server host.")
+@click.option(
+    "-h",
+    "--host",
+    "host",
+    type=str,
+    default="0.0.0.0",
+    help="Server host. 0.0.0.0 is used to bind to all addresses, do not use for internet-exposed devices!",
+)
 @click.option("-d", "--debug", is_flag=True, help="Print debug info.")
 @click.version_option()
 @click.command()
@@ -34,6 +41,7 @@ def main(device_config_file, logfile, host, debug):
         device_config_file: Flowchem configuration file specifying device connection settings (TOML)
         logfile: Output file for logs.
         host: IP on which the server will be listening. Loopback IP as default, use LAN IP to enable remote access.
+        debug: Print debug info
     """
 
     if sys.platform == "win32":
@@ -51,9 +59,7 @@ def main(device_config_file, logfile, host, debug):
 
     async def main_loop():
         """The loop must be shared between uvicorn and flowchem."""
-        flowchem_instance = await create_server_from_file(
-            Path(device_config_file), host=host
-        )
+        flowchem_instance = await create_server_from_file(Path(device_config_file))
         config = uvicorn.Config(
             flowchem_instance["api_server"],
             host=host,

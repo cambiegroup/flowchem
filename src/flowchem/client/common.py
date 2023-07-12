@@ -1,12 +1,10 @@
 import ipaddress
 
-import requests
 from loguru import logger
 from pydantic import AnyHttpUrl
 from zeroconf import ServiceListener, Zeroconf, ServiceInfo
 
-from flowchem.components.component_info import ComponentInfo
-from flowchem.components.device_info import DeviceInfo
+from flowchem.client.device_client import FlowchemDeviceClient
 
 FLOWCHEM_SUFFIX = "._labthing._tcp.local."
 FLOWCHEM_TYPE = FLOWCHEM_SUFFIX[1:]
@@ -19,6 +17,15 @@ def zeroconf_name_to_device_name(zeroconf_name: str) -> str:
 
 def device_name_to_zeroconf_name(device_name: str) -> str:
     return f"{device_name}{FLOWCHEM_SUFFIX}"
+
+
+def flowchem_devices_from_url_dict(
+    url_dict: dict[str, AnyHttpUrl]
+) -> dict[str, FlowchemDeviceClient]:
+    dev_dict = {}
+    for name, url in url_dict.items():
+        dev_dict[name] = FlowchemDeviceClient(url)
+    return dev_dict
 
 
 def device_url_from_service_info(
@@ -52,54 +59,3 @@ class FlowchemCommonDeviceListener(ServiceListener):
 
     def _save_device_info(self, zc: Zeroconf, type_: str, name: str) -> None:
         raise NotImplementedError()
-
-
-class FlowchemComponentClient:
-    def __init__(self, url: AnyHttpUrl, parent: "FlowchemDeviceClient"):
-        self.url = url
-        # Get ComponentInfo from
-        logger.warning(f"CREATE COMPONENT FOR URL {url}")
-        self._parent = parent
-        self._session = self._parent._session
-        self.component_info = ComponentInfo.model_validate_json(self.get(url).text)
-
-    def get(self, url, **kwargs):
-        """Sends a GET request. Returns :class:`Response` object."""
-        return self._session.get(url, **kwargs)
-
-    def post(self, url, data=None, json=None, **kwargs):
-        """Sends a POST request. Returns :class:`Response` object."""
-        return self._session.post(url, data=data, json=json, **kwargs)
-
-    def put(self, url, data=None, **kwargs):
-        """Sends a PUT request. Returns :class:`Response` object."""
-        return self._session.put(url, data=data, **kwargs)
-
-
-class FlowchemDeviceClient:
-    def __init__(self, url: AnyHttpUrl):
-        self.url = url
-
-        # Log every request and always raise for status
-        self._session = requests.Session()
-        self._session.hooks["response"] = [
-            FlowchemDeviceClient.log_responses,
-            FlowchemDeviceClient.raise_for_status,
-        ]
-
-        # Connect, get device info and populate components
-        self.device_info = DeviceInfo.model_validate_json(
-            self._session.get(self.url).text
-        )
-        self.components = [
-            FlowchemComponentClient(cmp_url, parent=self)
-            for cmp_url in self.device_info.components
-        ]
-
-    @staticmethod
-    def raise_for_status(resp, *args, **kwargs):
-        resp.raise_for_status()
-
-    @staticmethod
-    def log_responses(resp, *args, **kwargs):
-        logger.debug(f"Reply: {resp.text} on {resp.url}")

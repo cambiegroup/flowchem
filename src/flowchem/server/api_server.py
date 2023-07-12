@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TypedDict, Iterable
 
 from fastapi import FastAPI, APIRouter
+from zeroconf import NonUniqueNameException
 
 # from fastapi_utils.tasks import repeat_every
 from flowchem.vendor.repeat_every import repeat_every
@@ -25,9 +26,7 @@ class FlowchemInstance(TypedDict):
     port: int
 
 
-async def create_server_from_file(
-    config_file: BytesIO | Path, host: str = "0.0.0.0"
-) -> FlowchemInstance:
+async def create_server_from_file(config_file: BytesIO | Path) -> FlowchemInstance:
     """
     Based on the toml device config provided, initialize connection to devices and create API endpoints.
 
@@ -36,20 +35,19 @@ async def create_server_from_file(
     # Parse config (it also creates object instances for all hw dev in config["device"])
     config = parse_config(config_file)
 
-    logger.info("Initializing devices...")
+    logger.info("Initializing device connection(s)...")
     # Run `initialize` method of all hw devices in parallel
     await asyncio.gather(*[dev.initialize() for dev in config["device"]])
     # Collect background repeated tasks for each device (will need to schedule+start these)
     bg_tasks = [dev.repeated_task() for dev in config["device"] if dev.repeated_task()]
-    logger.info("Device initialization complete!")
+    logger.info("Device(s) connected")
 
-    return await create_server_for_devices(config, bg_tasks, host)
+    return await create_server_for_devices(config, bg_tasks)
 
 
 async def create_server_for_devices(
     config: dict,
     repeated_tasks: Iterable[RepeatedTaskInfo] = (),
-    host: str = "0.0.0.0",
 ) -> FlowchemInstance:
     """Initialize and create API endpoints for device object provided."""
     dev_list = config["device"]
@@ -68,8 +66,8 @@ async def create_server_for_devices(
 
     # mDNS server (Zeroconfig)
     mdns = ZeroconfServer(port=port)
-    logger.debug(f"Zeroconf server up, broadcasting on IPs: {mdns.mdns_addresses}")
-    api_base_url = r"http://" + f"{host}:{port}"
+    logger.info(f"Zeroconf server up, broadcasting on IPs: {mdns.mdns_addresses}")
+    api_base_url = r"http://" + f"{mdns.mdns_addresses[0]}:{port}"
 
     for seconds_delay, task_to_repeat in repeated_tasks:
 
@@ -92,7 +90,14 @@ async def create_server_for_devices(
         logger.debug(f"Got {len(components)} components from {device.name}")
 
         # Advertise devices (not components!)
-        await mdns.add_device(name=device.name, url=api_base_url)
+        try:
+            await mdns.add_device(name=device.name, url=api_base_url)
+        except NonUniqueNameException as nu:
+            raise RuntimeError(
+                f"Cannot initialize zeroconf service for {device.name}."
+                f"The same name is already in use: you cannot run flowchem twice!"
+            ) from nu
+
         # Base device endpoint
         device_root = APIRouter(prefix=f"/{device.name}", tags=[device.name])
         device_root.add_api_route(
@@ -108,6 +113,8 @@ async def create_server_for_devices(
             app.include_router(component.router, tags=component.router.tags)
             logger.debug(f"Router <{component.router.prefix}> added to app!")
 
+    logger.info("Server component(s) loaded successfully!")
+
     return {"api_server": app, "mdns_server": mdns, "port": port}
 
 
@@ -119,7 +126,7 @@ if __name__ == "__main__":
         flowchem_instance = await create_server_from_file(
             config_file=io.BytesIO(
                 b"""[device.test-device]\n
-        type = "FakeDevice"\n"""
+    type = "FakeDevice"\n"""
             )
         )
         config = uvicorn.Config(

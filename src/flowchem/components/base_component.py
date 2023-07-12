@@ -18,12 +18,14 @@ class FlowchemComponent:
         self.name = name
         self.hw_device = hw_device
         self.component_info = ComponentInfo(
-            parent_device=self.hw_device.name, name=name
+            name=name,
+            parent_device=self.hw_device.name,
         )
 
         # Initialize router
         self._router = APIRouter(
-            prefix=f"/{hw_device.name}/{name}", tags=[hw_device.name]
+            prefix=f"/{self.component_info.parent_device}/{name}",
+            tags=[self.component_info.parent_device],
         )
         self.add_api_route(
             "/",

@@ -12,6 +12,7 @@ class BasePump(FlowchemComponent):
         self.add_api_route("/is-pumping", self.is_pumping, methods=["GET"])
         if self.is_withdrawing_capable():
             self.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
+        self.component_info.type = "Pump"
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:  # type: ignore
         """Start infusion."""

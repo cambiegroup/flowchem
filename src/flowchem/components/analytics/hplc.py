@@ -17,9 +17,10 @@ class HPLCControl(FlowchemComponent):
         self.add_api_route("/send-method", self.send_method, methods=["PUT"])
 
         # Ontology: high performance liquid chromatography instrument
-        self.component_info.owl_subclass_of = (
+        self.component_info.owl_subclass_of.append(
             "http://purl.obolibrary.org/obo/OBI_0001057"
         )
+        self.component_info.type = "HPLC Control"
 
     async def send_method(self, method_name):
         """Submits a method to the HPLC.

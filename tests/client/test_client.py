@@ -14,12 +14,11 @@ async def test_get_flowchem_device_by_name():
             bytes(
                 dedent(
                     """[device.test-device]\n
-        type = "FakeDevice"\n"""
+    type = "FakeDevice"\n"""
                 ),
                 "utf-8",
             )
-        ),
-        "0.0.0.0",
+        )
     )
 
     assert flowchem_instance["mdns_server"].server.loop.is_running()
@@ -33,12 +32,11 @@ async def test_get_all_flowchem_devices():
             bytes(
                 dedent(
                     """[device.test-device2]\n
-        type = "FakeDevice"\n"""
+    type = "FakeDevice"\n"""
                 ),
                 "utf-8",
             )
-        ),
-        "0.0.0.0",
+        )
     )
 
     assert flowchem_instance["mdns_server"].server.loop.is_running()

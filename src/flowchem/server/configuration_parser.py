@@ -66,7 +66,7 @@ def instantiate_device(config: dict) -> dict:
         parse_device(dev_settings, device_mapper)
         for dev_settings in config["device"].items()
     ]
-    logger.info("Configuration parsed!")
+    logger.info("Configuration parsed")
 
     return config
 

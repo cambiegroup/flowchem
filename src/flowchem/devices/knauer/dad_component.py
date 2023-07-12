@@ -67,7 +67,7 @@ class DADChannelControl(PhotoSensor):
         self.add_api_route("/set-bandwidth", self.set_bandwidth, methods=["PUT"])
 
         # Ontology: diode array detector
-        self.component_info.owl_subclass_of = (
+        self.component_info.owl_subclass_of.append(
             "http://purl.obolibrary.org/obo/CHMO_0002503"
         )
 

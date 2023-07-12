@@ -12,7 +12,7 @@ class PressureSensor(Sensor):
         self.add_api_route("/read-pressure", self.read_pressure, methods=["GET"])
 
         # Ontology: Pressure Sensor Device
-        self.component_info.owl_subclass_of = (
+        self.component_info.owl_subclass_of.append(
             "http://purl.obolibrary.org/obo/NCIT_C50167"
         )
 
