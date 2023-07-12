@@ -8,7 +8,7 @@ from anyio.from_thread import start_blocking_portal
 
 from loguru import logger
 
-from flowchem.utils.getmac import get_mac_address
+from flowchem.vendor.getmac import get_mac_address
 
 __all__ = ["autodiscover_knauer", "knauer_finder"]
 
