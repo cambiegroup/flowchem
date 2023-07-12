@@ -28,7 +28,7 @@ class ClarityComponent(HPLCControl):
         method_name: str = Query(
             default=...,
             description="Name of the method file",
-            example="MyMethod.MET",
+            examples=["MyMethod.MET"],
             alias="method-name",
         ),
     ) -> bool:
@@ -44,13 +44,13 @@ class ClarityComponent(HPLCControl):
         sample_name: str = Query(
             default=...,
             description="Sample name",
-            example="JB-123-crude-2h",
+            examples=["JB-123-crude-2h"],
             alias="sample-name",
         ),
         method_name: str = Query(
             default=...,
             description="Name of the method file",
-            example="MyMethod.MET",
+            examples=["MyMethod.MET"],
             alias="method-name",
         ),
     ) -> bool:
