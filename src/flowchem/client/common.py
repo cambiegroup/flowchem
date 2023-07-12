@@ -30,14 +30,14 @@ def flowchem_devices_from_url_dict(
 
 def device_url_from_service_info(
     service_info: ServiceInfo, device_name: str
-) -> AnyHttpUrl:
+) -> AnyHttpUrl | None:
     if service_info.addresses:
         # Needed to convert IP from bytes to str
         device_ip = ipaddress.ip_address(service_info.addresses[0])
         return AnyHttpUrl(f"http://{device_ip}:{service_info.port}/{device_name}")
     else:
         logger.warning(f"No address found for {device_name}!")
-        return AnyHttpUrl()
+        return None
 
 
 class FlowchemCommonDeviceListener(ServiceListener):

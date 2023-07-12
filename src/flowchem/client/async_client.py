@@ -22,9 +22,8 @@ class FlowchemAsyncDeviceListener(FlowchemCommonDeviceListener):
         await service_info.async_request(zc, 3000)
         if service_info:
             device_name = zeroconf_name_to_device_name(name)
-            self.flowchem_devices[device_name] = device_url_from_service_info(
-                service_info, device_name
-            )
+            if url := device_url_from_service_info(service_info, device_name):
+                self.flowchem_devices[device_name] = url
         else:
             logger.warning(f"No info for service {name}!")
 
@@ -52,9 +51,9 @@ async def async_get_flowchem_device_by_name(
         timeout=timeout,
     )
     if service_info:
-        return FlowchemDeviceClient(
-            device_url_from_service_info(service_info, device_name)
-        )
+        if url := device_url_from_service_info(service_info, device_name):
+            return FlowchemDeviceClient(url)
+    return None
 
 
 async def async_get_all_flowchem_devices(

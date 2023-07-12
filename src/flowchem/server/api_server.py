@@ -50,7 +50,6 @@ async def create_server_for_devices(
     repeated_tasks: Iterable[RepeatedTaskInfo] = (),
 ) -> FlowchemInstance:
     """Initialize and create API endpoints for device object provided."""
-    dev_list = config["device"]
     port = config.get("port", 8000)
 
     # HTTP server (FastAPI)
@@ -83,7 +82,7 @@ async def create_server_for_devices(
         return RedirectResponse(url="/docs")
 
     # For each device get the relevant APIRouter(s) and add them to the app
-    for device in dev_list:
+    for device in config["device"]:
         # Get components (some compounded devices can return multiple components)
         components = device.components()
         device.get_device_info()

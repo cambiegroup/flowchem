@@ -18,9 +18,8 @@ class FlowchemDeviceListener(FlowchemCommonDeviceListener):
     def _save_device_info(self, zc: Zeroconf, type_: str, name: str) -> None:
         if service_info := zc.get_service_info(type_, name):
             device_name = zeroconf_name_to_device_name(name)
-            self.flowchem_devices[device_name] = device_url_from_service_info(
-                service_info, device_name
-            )
+            if url := device_url_from_service_info(service_info, device_name):
+                self.flowchem_devices[device_name] = url
         else:
             logger.warning(f"No info for service {name}!")
 
@@ -45,9 +44,9 @@ def get_flowchem_device_by_name(
         timeout=timeout,
     )
     if service_info:
-        return FlowchemDeviceClient(
-            device_url_from_service_info(service_info, device_name)
-        )
+        if url := device_url_from_service_info(service_info, device_name):
+            return FlowchemDeviceClient(url)
+    return None
 
 
 def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, FlowchemDeviceClient]:

@@ -8,7 +8,7 @@ from flowchem.components.device_info import DeviceInfo
 
 class FlowchemDeviceClient:
     def __init__(self, url: AnyHttpUrl):
-        self.url = url
+        self.url = str(url)
 
         # Log every request and always raise for status
         self._session = requests.Session()
