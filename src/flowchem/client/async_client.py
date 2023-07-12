@@ -1,6 +1,7 @@
 import asyncio
 
 from loguru import logger
+from pydantic import AnyHttpUrl
 from zeroconf import Zeroconf
 from zeroconf.asyncio import AsyncZeroconf, AsyncServiceBrowser, AsyncServiceInfo
 
@@ -33,7 +34,7 @@ class FlowchemAsyncDeviceListener(FlowchemCommonDeviceListener):
 
 async def _async_get_flowchem_device_url_by_name(
     device_name, timeout: int = 3000
-) -> FlowchemDeviceClient | None:
+) -> AnyHttpUrl | None:
     """
     Internal function for async_get_flowchem_device_by_name()
     """
@@ -67,7 +68,7 @@ async def async_get_flowchem_device_by_name(
 
 async def _async_get_all_flowchem_devices_url(
     timeout: float = 3000,
-) -> dict[str, FlowchemDeviceClient]:
+) -> dict[str, AnyHttpUrl]:
     """
     Internal function for async_get_all_flowchem_devices()
     """
