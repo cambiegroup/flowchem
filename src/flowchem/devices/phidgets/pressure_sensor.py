@@ -21,7 +21,7 @@ except ImportError:
 
 
 from flowchem import ureg
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 class PhidgetPressureSensor(FlowchemDevice):
@@ -38,7 +38,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         """Initialize PressureSensor with the given pressure range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Phidget unusable: library or package not installed."
             )
 
@@ -67,7 +67,7 @@ class PhidgetPressureSensor(FlowchemDevice):
             self.phidget.openWaitForAttachment(1000)
             logger.debug("Pressure sensor connected!")
         except PhidgetException as pe:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
             ) from pe
 

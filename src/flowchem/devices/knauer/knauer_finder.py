@@ -36,7 +36,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
 
 
 async def get_device_type(ip_address: str) -> str:
-    """Detects the device type based on the reply to a test command or IP heuristic."""
+    """Detect device type based on the reply to a test command or IP heuristic."""
     fut = asyncio.open_connection(host=ip_address, port=10001)
     try:
         reader, writer = await asyncio.wait_for(fut, timeout=3)

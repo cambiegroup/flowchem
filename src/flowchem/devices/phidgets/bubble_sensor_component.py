@@ -15,7 +15,6 @@ class PhidgetBubbleSensorComponent(Sensor):
     hw_device: PhidgetBubbleSensor  # just for typing
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """A generic Syringe pump."""
         super().__init__(name, hw_device)
         self.add_api_route("/set-data-Interval", self.power_on, methods=["PUT"])
         self.add_api_route("/read-voltage", self.read_voltage, methods=["GET"])

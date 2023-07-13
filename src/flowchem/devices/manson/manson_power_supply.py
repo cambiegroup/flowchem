@@ -11,7 +11,7 @@ from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.manson.manson_component import MansonPowerControl
-from flowchem.utils.exceptions import DeviceError, InvalidConfiguration
+from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -39,7 +39,7 @@ class MansonPowerSupply(FlowchemDevice):
         try:
             serial_object = aioserial.AioSerial(port, **serial_kwargs)
         except aioserial.SerialException as error:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the MansonPowerSupply on the port <{port}>"
             ) from error
 
@@ -51,9 +51,11 @@ class MansonPowerSupply(FlowchemDevice):
         if not self.device_info.model:
             raise DeviceError("Communication with device failed!")
         if self.device_info.model not in self.MODEL_ALT_RANGE:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Device is not supported! [Supported models: {self.MODEL_ALT_RANGE}]"
             )
+        # Set TemperatureControl component
+        self.components.append(MansonPowerControl("power-control", self))
 
     @staticmethod
     def _format_voltage(voltage_value: str) -> str:
@@ -278,10 +280,6 @@ class MansonPowerSupply(FlowchemDevice):
         """Set both voltage and current."""
         await self.set_voltage(voltage)
         await self.set_current(current)
-
-    def get_components(self):
-        """Return an TemperatureControl component."""
-        return (MansonPowerControl("power-control", self),)
 
     # def get_router(self, prefix: str | None = None):
     #     """Create an APIRouter for this MansonPowerSupply instance."""

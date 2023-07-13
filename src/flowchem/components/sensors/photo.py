@@ -8,7 +8,6 @@ class PhotoSensor(Sensor):
     """A photo sensor."""
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """A generic Syringe pump."""
         super().__init__(name, hw_device)
         self.add_api_route("/acquire-signal", self.acquire_signal, methods=["GET"])
         self.add_api_route("/calibration", self.calibrate_zero, methods=["PUT"])

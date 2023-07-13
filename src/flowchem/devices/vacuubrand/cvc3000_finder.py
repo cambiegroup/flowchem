@@ -5,7 +5,7 @@ from textwrap import dedent
 from loguru import logger
 
 from flowchem.devices.vacuubrand.cvc3000 import CVC3000
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 # noinspection PyProtectedMember
@@ -15,12 +15,12 @@ def cvc3000_finder(serial_port) -> list[str]:
 
     try:
         cvc = CVC3000.from_config(port=serial_port)
-    except InvalidConfiguration:
+    except InvalidConfigurationError:
         return []
 
     try:
         asyncio.run(cvc.initialize())
-    except InvalidConfiguration:
+    except InvalidConfigurationError:
         cvc._serial.close()
         return []
 

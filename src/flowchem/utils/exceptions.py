@@ -5,5 +5,5 @@ class DeviceError(BaseException):
     """Generic DeviceError."""
 
 
-class InvalidConfiguration(DeviceError):
+class InvalidConfigurationError(DeviceError):
     """The configuration provided is not valid, e.g. no connection w/ device obtained."""

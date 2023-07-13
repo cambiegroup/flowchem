@@ -1,22 +1,11 @@
 """Test FlowIR, needs actual connection to the device :(."""
 import asyncio
 import datetime
-import sys
 
 import pytest
 
 from flowchem.components.analytics.ir import IRSpectrum
 from flowchem.devices.mettlertoledo.icir import IcIR
-
-
-def check_pytest_asyncio_installed():
-    """Utility function for pytest plugin."""
-    import os
-    from importlib import util
-
-    if not util.find_spec("pytest_asyncio"):
-        print("You need to install pytest-asyncio first!", file=sys.stderr)
-        sys.exit(os.EX_SOFTWARE)
 
 
 @pytest.fixture()

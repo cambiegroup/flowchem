@@ -83,7 +83,7 @@ def wait_stable_temperature():
 
 
 def get_ir_once_stable():
-    """Keeps acquiring IR spectra until changes are small, then returns the spectrum."""
+    """Keep acquiring IR spectra until changes are small, then returns the spectrum."""
     logger.info("Waiting for the IR spectrum to be stable")
     with command_session() as sess:
         # Wait for first spectrum to be available
@@ -155,7 +155,7 @@ def run_experiment(
     temperature: float,
     residence_time: float,
 ) -> float:
-    """Runs one experiment with the provided conditions.
+    """Run one experiment with the provided conditions.
 
     Args:
     ----

@@ -6,7 +6,6 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 class HPLCPump(BasePump):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """A generic Syringe pump."""
         super().__init__(name, hw_device)
 
         # Ontology: HPLC isocratic pump

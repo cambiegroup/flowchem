@@ -5,7 +5,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 def get_my_docs_path() -> Path:
@@ -53,7 +53,7 @@ def create_folder_mapper(
             logger.exception(
                 f"Cannot translate remote path {path_to_be_translated} to a local path!",
             )
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot translate remote path {path_to_be_translated} to a local path!"
                 f"{path_to_be_translated} is not relative to {remote_root}"
             )

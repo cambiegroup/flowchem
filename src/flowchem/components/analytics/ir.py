@@ -34,5 +34,5 @@ class IRControl(FlowchemComponent):
         ...
 
     async def stop(self):
-        """Stops acquisition and exit gracefully."""
+        """Stop acquisition and exit gracefully."""
         ...

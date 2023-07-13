@@ -11,11 +11,11 @@ from flowchem.devices.knauer.dad_component import (
     DADChannelControl,
     KnauerDADLampControl,
 )
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 if TYPE_CHECKING:
-    from flowchem.components.base_component import FlowchemComponent
+    pass
 
 try:
     from flowchem_knauer import KnauerDADCommands
@@ -46,7 +46,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         self._control = display_control  # True for Local
 
         if not HAS_DAD_COMMANDS:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "You tried to use a Knauer DAD device but the relevant commands are missing!\n"
                 "Unfortunately, we cannot publish those as they were provided under NDA.\n"
                 "Contact Knauer for further assistance."
@@ -78,6 +78,12 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         await self.set_wavelength(1, 254)
         await self.bandwidth(8)
         logger.info("set channel 1 : WL = 514 nm, BW = 20nm ")
+
+        # Set components
+        self.components.append(KnauerDADLampControl("d2", self))
+        self.components.append(KnauerDADLampControl("hal", self))
+        channels = [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)]
+        self.components.extend(channels)
 
     async def d2(self, state: bool = True) -> str:
         """Turn off or on the deuterium lamp."""
@@ -116,7 +122,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         # if response.isnumeric() else _reverse_lampstatus_mapping[response[response.find(":") + 1:]]
 
     async def serial_num(self) -> str:
-        """Serial number."""
+        """Get serial number."""
         return await self._send_and_receive(self.cmd.SERIAL)
 
     async def identify(self) -> str:
@@ -227,16 +233,6 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
             await self.status()
 
         return 30, keepalive
-
-    def components(self) -> list["FlowchemComponent"]:
-        list_of_components: list[FlowchemComponent] = [
-            KnauerDADLampControl("d2", self),
-            KnauerDADLampControl("hal", self),
-        ]
-        list_of_components.extend(
-            [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)],
-        )
-        return list_of_components
 
 
 if __name__ == "__main__":

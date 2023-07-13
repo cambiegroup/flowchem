@@ -25,7 +25,9 @@ try:
 except ImportError:
     HAS_PHIDGET = False
 
-from flowchem.utils.exceptions import InvalidConfiguration  # configuration is not valid
+from flowchem.utils.exceptions import (
+    InvalidConfigurationError,
+)  # configuration is not valid
 
 
 class PhidgetPowerSource5V(FlowchemDevice):
@@ -42,7 +44,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Phidget unusable: library or package not installed."
             )
 
@@ -70,7 +72,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
             self.phidget.openWaitForAttachment(1000)
             logger.debug("power of tube sensor is connected!")
         except PhidgetException as pe:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
             ) from pe
 
@@ -84,6 +86,9 @@ class PhidgetPowerSource5V(FlowchemDevice):
             model="VINT",
             serial_number=vint_serial_number,
         )
+
+    async def initialize(self):
+        self.components.append(PhidgetBubbleSensorPowerComponent("5V", self))
 
     def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
@@ -106,10 +111,6 @@ class PhidgetPowerSource5V(FlowchemDevice):
         """Wheteher the power is on."""
         return bool(self.phidget.getState())
 
-    def components(self):
-        """Return a component."""
-        return (PhidgetBubbleSensorPowerComponent("5V", self),)
-
 
 class PhidgetBubbleSensor(FlowchemDevice):
     """Use a Phidget voltage input to translate a Tube Liquid Sensor OPB350 5 Valtage signal
@@ -128,7 +129,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Phidget unusable: library or package not installed."
             )
 
@@ -160,7 +161,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
             self.phidget.openWaitForAttachment(1000)
             logger.debug("tube sensor is connected!")
         except PhidgetException as pe:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
             ) from pe
 
@@ -175,6 +176,9 @@ class PhidgetBubbleSensor(FlowchemDevice):
             model="VINT",
             serial_number=vint_serial_number,
         )
+
+    async def initialize(self):
+        self.components.append(PhidgetBubbleSensorComponent("bubble-sensor", self))
 
     def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
@@ -226,10 +230,6 @@ class PhidgetBubbleSensor(FlowchemDevice):
 
     # def getMaxVoltage(self):
     # https: // www.phidgets.com /?view = api
-
-    def components(self):
-        """Return a component."""
-        return (PhidgetBubbleSensorComponent("bubble-sensor", self),)
 
 
 if __name__ == "__main__":

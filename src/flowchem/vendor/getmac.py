@@ -370,7 +370,7 @@ def _read_file(filepath):
 
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     # type: (Optional[str], int, bool) -> Optional[str]
-    """Tries a variety of methods to get a MAC address.
+    """Try a variety of methods to get a MAC address.
     Format of method lists:
     Tuple:  (regex, regex index, command, command args)
             Command args is a list of strings to attempt to use as arguments
@@ -509,7 +509,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
 def _try_methods(methods, to_find=None):
     # type: (list, Optional[str]) -> Optional[str]
-    """Runs the methods specified by _hunt_for_mac().
+    """Run the methods specified by _hunt_for_mac().
 
     We try every method and see if it returned a MAC address. If it returns
     None or raises an exception, we continue and try the next method.
@@ -588,7 +588,7 @@ def _get_default_iface_freebsd():
 
 def _fetch_ip_using_dns():
     # type: () -> str
-    """Determines the IP address of the default network interface.
+    """Determine the IP address of the default network interface.
     Sends a UDP packet to Cloudflare's DNS (1.1.1.1), which should go through
     the default interface. This populates the source address of the socket,
     which we then inspect and return.

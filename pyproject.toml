@@ -107,8 +107,8 @@ python_version = "3.10"
 testpaths = "tests"
 asyncio_mode = "auto"
 # No cov needed for pycharm debugger
-addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump'"
-#addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=30"
+#addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump'"
+addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=30"
 
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",

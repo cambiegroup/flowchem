@@ -17,7 +17,9 @@ else:
 from loguru import logger
 
 from flowchem.devices.known_plugins import plugin_devices
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
+
+DEVICE_NAME_MAX_LENGTH = 42
 
 
 def parse_toml(stream: typing.BinaryIO) -> dict:
@@ -29,9 +31,8 @@ def parse_toml(stream: typing.BinaryIO) -> dict:
         return tomllib.load(stream)
     except tomllib.TOMLDecodeError as parser_error:
         logger.exception(parser_error)
-        raise InvalidConfiguration(
-            "The configuration provided does not contain valid TOML!"
-        ) from parser_error
+        msg = "Invalid syntax in configuration!"
+        raise InvalidConfigurationError(msg) from parser_error
 
 
 def parse_config(file_path: BytesIO | Path) -> dict:
@@ -41,9 +42,8 @@ def parse_config(file_path: BytesIO | Path) -> dict:
         config = parse_toml(file_path)
         config["filename"] = "BytesIO"
     else:
-        assert (
-            file_path.exists() and file_path.is_file()
-        ), f"{file_path} is a valid file"
+        assert file_path.exists(), f"{file_path} exists"
+        assert file_path.is_file(), f"{file_path} is a file"
 
         with file_path.open("rb") as stream:
             config = parse_toml(stream)
@@ -76,15 +76,15 @@ def ensure_device_name_is_valid(device_name: str) -> None:
 
     Uniqueness of names is ensured by their toml dict key nature,
     """
-    if len(device_name) > 42:
+    if len(device_name) > DEVICE_NAME_MAX_LENGTH:
         # This is because f"{name}._labthing._tcp.local." has to be shorter than 64 in zerconfig
-        raise InvalidConfiguration(
-            f"Invalid name for device '{device_name}': too long ({len(device_name)} characters, max is 42)"
+        raise InvalidConfigurationError(
+            f"Device name '{device_name}' is too long ({len(device_name)} characters, max is {DEVICE_NAME_MAX_LENGTH})"
         )
     if "." in device_name:
         # This is not strictly needed but avoids potential zeroconf problems
-        raise InvalidConfiguration(
-            f"Invalid name for device '{device_name}': '.' character not allowed"
+        raise InvalidConfigurationError(
+            f"Invalid character '.' in device name '{device_name}'"
         )
 
 
@@ -109,13 +109,14 @@ def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
                 f"Install {needed_plugin} to add support for it!"
                 f"e.g. `python -m pip install {needed_plugin}`",
             )
-            raise InvalidConfiguration(f"{needed_plugin} not installed.") from error
+            msg = f"{needed_plugin} not installed."
+            raise InvalidConfigurationError(msg) from error
 
         logger.exception(
             f"Device type `{device_config['type']}` unknown in 'device.{device_name}'!"
             f"[Known types: {device_object_mapper.keys()}]",
         )
-        raise InvalidConfiguration(
+        raise InvalidConfigurationError(
             f"Unknown device type `{device_config['type']}`."
         ) from error
 

@@ -15,7 +15,7 @@ class DeviceInfo(BaseModel):
     model: str = ""
     version: str = ""
     serial_number: str | int = "unknown"
-    components: list[AnyHttpUrl] = []
+    components: dict[str, AnyHttpUrl] = {}
     backend: str = f"flowchem v. {__version__}"
     authors: list[Person] = []
     additional_info: dict = {}

@@ -1,4 +1,4 @@
-"""This module is used to autodiscover any supported devices connected to the PC."""
+"""Autodiscover any supported devices connected to the PC."""
 from pathlib import Path
 
 import aioserial
@@ -53,7 +53,7 @@ def inspect_serial_ports() -> set[str]:
     return dev_found_config
 
 
-def inspect_eth(source_ip) -> set[str]:
+def inspect_eth(source_ip: str) -> set[str]:
     """Search for known devices on ethernet and generate config stubs."""
     logger.info("Starting ethernet detection")
     dev_found_config: set[str] = set()

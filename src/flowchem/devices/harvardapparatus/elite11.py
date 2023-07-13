@@ -20,7 +20,7 @@ from flowchem.devices.harvardapparatus.elite11_pump import (
     Elite11PumpOnly,
     Elite11PumpWithdraw,
 )
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -105,12 +105,12 @@ class Elite11(FlowchemDevice):
         if syringe_diameter:
             self._diameter = syringe_diameter
         else:
-            raise InvalidConfiguration("Please provide the syringe diameter!")
+            raise InvalidConfigurationError("Please provide the syringe diameter!")
 
         if syringe_volume:
             self._syringe_volume = syringe_volume
         else:
-            raise InvalidConfiguration("Please provide the syringe volume!")
+            raise InvalidConfigurationError("Please provide the syringe volume!")
 
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
@@ -174,7 +174,7 @@ class Elite11(FlowchemDevice):
         try:
             await self.stop()
         except IndexError as index_e:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Check pump address! Currently {self.address=}"
             ) from index_e
 
@@ -192,6 +192,12 @@ class Elite11(FlowchemDevice):
 
         # Clear target volume eventually set to prevent pump from stopping prematurely
         await self.set_target_volume("0 ml")
+
+        # Add components
+        if self._infuse_only:
+            self.components.append(Elite11PumpOnly("pump", self))
+        else:
+            self.components.append(Elite11PumpWithdraw("pump", self))
 
     @staticmethod
     def _parse_version(version_text: str) -> tuple[int, int, int]:
@@ -392,13 +398,6 @@ class Elite11(FlowchemDevice):
             multiline=True,
         )
         return PumpInfo.parse_pump_string(parsed_multiline_response)
-
-    def components(self):
-        """Return pump component."""
-        if self._infuse_only:
-            return (Elite11PumpOnly("pump", self),)
-        else:
-            return (Elite11PumpWithdraw("pump", self),)
 
 
 if __name__ == "__main__":

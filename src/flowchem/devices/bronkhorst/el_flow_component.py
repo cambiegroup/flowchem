@@ -18,8 +18,8 @@ class EPCComponent(PressureSensor):
         """A generic power supply."""
         super().__init__(name, hw_device)
         self.add_api_route("/get-pressure", self.get_pressure, methods=["GET"])
-        self.add_api_route("/stop", self.stop, methods=["PUT"])
         self.add_api_route("/set-pressure", self.set_pressure_setpoint, methods=["PUT"])
+        self.add_api_route("/stop", self.stop, methods=["PUT"])
 
     async def read_pressure(self, units: str = "bar"):
         """Read from sensor, result to be expressed in units."""
@@ -45,11 +45,10 @@ class MFCComponent(FlowchemComponent):
     hw_device: MFC  # just for typing
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """A generic power supply."""
         super().__init__(name, hw_device)
         self.add_api_route("/get-flow-rate", self.get_flow_setpoint, methods=["GET"])
-        self.add_api_route("/stop", self.stop, methods=["PUT"])
         self.add_api_route("/set-flow-rate", self.set_flow_setpoint, methods=["PUT"])
+        self.add_api_route("/stop", self.stop, methods=["PUT"])
 
     async def set_flow_setpoint(self, flowrate: str) -> bool:
         """Set flow rate to the instrument; default unit: ml/min."""

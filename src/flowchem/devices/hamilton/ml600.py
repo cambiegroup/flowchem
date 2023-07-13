@@ -14,7 +14,7 @@ from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
 from flowchem.devices.hamilton.ml600_valve import ML600Valve
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 if TYPE_CHECKING:
@@ -80,7 +80,7 @@ class HamiltonPumpIO:
         try:
             serial_object = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as serial_exception:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the pump on the port <{configuration.get('port')}>"
             ) from serial_exception
 
@@ -101,11 +101,11 @@ class HamiltonPumpIO:
         try:
             await self._write_async(b"1a\r")
         except aioserial.SerialException as e:
-            raise InvalidConfiguration from e
+            raise InvalidConfigurationError from e
 
         reply = await self._read_reply_async()
         if not reply or reply[:1] != "1":
-            raise InvalidConfiguration(f"No pump found on {self._serial.port}")
+            raise InvalidConfigurationError(f"No pump found on {self._serial.port}")
         # reply[1:2] should be the address of the last pump. However, this does not work reliably.
         # So here we enumerate the pumps explicitly instead
         last_pump = 0
@@ -155,7 +155,7 @@ class HamiltonPumpIO:
         response = await self._read_reply_async()
 
         if not response:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"No response received from pump! "
                 f"Maybe wrong pump address? (Set to {command.target_pump_num})"
             )
@@ -236,13 +236,13 @@ class ML600(FlowchemDevice):
             self.syringe_volume = ureg.Quantity(syringe_volume)
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Invalid syringe volume provided."
                 "The syringe volume is a string with units! e.g. '5 ml'"
             ) from attribute_error
 
         if self.syringe_volume.m_as("ml") not in ML600.VALID_SYRINGE_VOLUME:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"The specified syringe volume ({syringe_volume}) is invalid!\n"
                 f"The volume (in ml) has to be one of {ML600.VALID_SYRINGE_VOLUME}"
             )
@@ -256,7 +256,7 @@ class ML600(FlowchemDevice):
 
     @classmethod
     def from_config(cls, **config):
-        """This class method is used to create instances via config file by the server for HTTP interface."""
+        """Create instances via config file."""
         # Many pump can be present on the same serial port with different addresses.
         # This shared list of HamiltonPumpIO objects allow shared state in a borg-inspired way, avoiding singletons
         # This is only relevant to programmatic instantiation, i.e. when from_config() is called per each pump from a
@@ -286,7 +286,7 @@ class ML600(FlowchemDevice):
         )
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
-        """Must be called after init before anything else."""
+        """Initialize pump and its components."""
         await self.pump_io.initialize()
         # Test connectivity by querying the pump's firmware version
         fw_cmd = Protocol1Command(command="U", target_pump_num=self.address)
@@ -297,6 +297,8 @@ class ML600(FlowchemDevice):
 
         if hw_init:
             await self.initialize_pump(speed=ureg.Quantity(init_speed))
+        # Add device components
+        self.components.extend([ML600Pump("pump", self), ML600Valve("valve", self)])
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
@@ -377,7 +379,7 @@ class ML600(FlowchemDevice):
         return (1 / flowrate_in_steps_sec).to("second/stroke")
 
     def _seconds_per_stroke_to_flowrate(self, second_per_stroke) -> float:
-        """Converts seconds per stroke to flow rate. Only internal use."""
+        """Convert seconds per stroke to flow rate."""
         flowrate = 1 / (second_per_stroke * self._steps_per_ml)
         return flowrate.to("ml/min")
 
@@ -484,10 +486,6 @@ class ML600(FlowchemDevice):
     #     """Return steps' setter. Applied to the end of a downward syringe movement to removes mechanical slack."""
     #     target_steps = str(int(target_steps))
     #     return await self.send_command_and_read_reply(Protocol1Command(command="YSN", command_value=target_steps))
-
-    def components(self):
-        """Return a Syringe and a Valve component."""
-        return ML600Pump("pump", self), ML600Valve("valve", self)
 
 
 if __name__ == "__main__":

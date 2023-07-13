@@ -8,7 +8,7 @@ from loguru import logger
 
 from flowchem.devices.huber import HuberChiller
 from flowchem.devices.huber.pb_command import PBCommand
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 @pytest.fixture
@@ -56,7 +56,7 @@ def test_pbcommand_parse_bool():
 
 
 def test_invalid_serial_port():
-    with pytest.raises(InvalidConfiguration) as execinfo:
+    with pytest.raises(InvalidConfigurationError) as execinfo:
         HuberChiller.from_config(port="COM99")
     assert (
         str(execinfo.value) == "Cannot connect to the HuberChiller on the port <COM99>"

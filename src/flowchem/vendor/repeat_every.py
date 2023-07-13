@@ -25,7 +25,7 @@ def repeat_every(
     raise_exceptions: bool = False,
     max_repetitions: int | None = None,
 ) -> NoArgsNoReturnDecorator:
-    """Returns a decorator that modifies a function so it is periodically re-executed after its first call.
+    """Return a decorator that modifies a function so it is periodically re-executed after its first call.
 
     The function it decorates should accept no arguments and return nothing. If necessary, this can be accomplished
     by using `functools.partial` or otherwise wrapping the target function prior to decoration.
@@ -51,7 +51,7 @@ def repeat_every(
     def decorator(
         func: NoArgsNoReturnAsyncFuncT | NoArgsNoReturnFuncT,
     ) -> NoArgsNoReturnAsyncFuncT:
-        """Converts the decorated function into a repeated, periodically-called version of itself."""
+        """Convert the decorated function into a repeated, periodically-called version of itself."""
         is_coroutine = asyncio.iscoroutinefunction(func)
 
         @wraps(func)

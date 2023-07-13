@@ -28,7 +28,7 @@ class ML600Valve(TwoPortDistribution):
         )
 
     async def get_position(self) -> str:
-        """Current pump position."""
+        """Get current pump position."""
         pos = await self.hw_device.get_valve_position()
         reverse_position_mapping = {
             v: k for k, v in ML600Valve.position_mapping.items()

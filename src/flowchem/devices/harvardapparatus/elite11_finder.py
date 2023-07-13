@@ -5,7 +5,7 @@ from textwrap import dedent
 from loguru import logger
 
 from flowchem.devices.harvardapparatus.elite11 import Elite11, HarvardApparatusPumpIO
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 # noinspection PyProtectedMember
@@ -18,7 +18,7 @@ def elite11_finder(serial_port) -> list[str]:
 
     try:
         link = HarvardApparatusPumpIO(port=serial_port)
-    except InvalidConfiguration:
+    except InvalidConfigurationError:
         # This is necessary only on failure to release the port for the other inspector
         return []
 
@@ -41,7 +41,7 @@ def elite11_finder(serial_port) -> list[str]:
             address=address,
         )
         asyncio.run(test_pump.pump_info())
-    except InvalidConfiguration:
+    except InvalidConfigurationError:
         # This is necessary only on failure to release the port for the other inspector
         link._serial.close()
         return []

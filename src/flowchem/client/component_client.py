@@ -18,13 +18,13 @@ class FlowchemComponentClient:
         self.component_info = ComponentInfo.model_validate_json(self.get(url).text)
 
     def get(self, url, **kwargs):
-        """Sends a GET request. Returns :class:`Response` object."""
+        """Send a GET request. Returns :class:`Response` object."""
         return self._session.get(url, **kwargs)
 
     def post(self, url, data=None, json=None, **kwargs):
-        """Sends a POST request. Returns :class:`Response` object."""
+        """Send a POST request. Returns :class:`Response` object."""
         return self._session.post(url, data=data, json=json, **kwargs)
 
     def put(self, url, data=None, **kwargs):
-        """Sends a PUT request. Returns :class:`Response` object."""
+        """Send a PUT request. Returns :class:`Response` object."""
         return self._session.put(url, data=data, **kwargs)

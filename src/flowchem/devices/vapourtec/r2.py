@@ -25,7 +25,7 @@ from flowchem.devices.vapourtec.r2_components_control import (
     R4Reactor,
     UV150PhotoReactor,
 )
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 try:
@@ -92,7 +92,7 @@ class R2(FlowchemDevice):
         self._max_t = max_temp
 
         if not HAS_VAPOURTEC_COMMANDS:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "You tried to use a Vapourtec device but the relevant commands are missing!\n"
                 "Unfortunately, we cannot publish those as they were provided under NDA.\n"
                 "Contact Vapourtec for further assistance."
@@ -105,7 +105,7 @@ class R2(FlowchemDevice):
         try:
             self._serial = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as ex:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the R2 on the port <{config.get('port')}>"
             ) from ex
 
@@ -143,20 +143,52 @@ class R2(FlowchemDevice):
         await self.trigger_key_press("8")
         await self.power_on()
 
+        list_of_components = [
+            R2MainSwitch("Power", self),
+            R2GeneralPressureSensor("PressureSensor", self),
+            R2GeneralSensor("GSensor2", self),
+            UV150PhotoReactor("PhotoReactor", self),
+            R2HPLCPump("Pump_A", self, "A"),
+            R2HPLCPump("Pump_B", self, "B"),
+            R2TwoPortValve("ReagentValve_A", self, 0),
+            R2TwoPortValve("ReagentValve_B", self, 1),
+            R2TwoPortValve("CollectionValve", self, 4),
+            R2InjectionValve("InjectionValve_A", self, 2),
+            R2InjectionValve("InjectionValve_B", self, 3),
+            R2PumpPressureSensor("PumpSensor_A", self, 0),
+            R2PumpPressureSensor("PumpSensor_B", self, 1),
+        ]
+        self.components.extend(list_of_components)
+
+        # TODO if photoreactor -> REACTOR CHANNEL 1,3 AND 4 + UV150PhotoReactor
+        #  if no photoreactor -> REACTOR CHANNEL 1-4 no UV150PhotoReactor
+
+        # Create components for reactor bays
+        reactor_temp_limits = {
+            ch_num: TempRange(min=ureg.Quantity(t[0]), max=ureg.Quantity(t[1]))
+            for ch_num, t in enumerate(zip(self._min_t, self._max_t, strict=True))
+        }
+
+        reactors = [
+            R4Reactor(f"reactor-{n + 1}", self, n, reactor_temp_limits[n])
+            for n in range(4)
+        ]
+        self.components.extend(reactors)
+
     async def _write(self, command: str):
-        """Writes a command to the pump."""
+        """Write a command to the pump."""
         cmd = command + "\r\n"
         await self._serial.write_async(cmd.encode("ascii"))
         logger.debug(f"Sent command: {command!r}")
 
     async def _read_reply(self) -> str:
-        """Reads the pump reply from serial communication."""
+        """Read the pump reply from serial communication."""
         reply_string = await self._serial.readline_async()
         logger.debug(f"Reply received: {reply_string.decode('ascii').rstrip()}")
         return reply_string.decode("ascii")
 
     async def write_and_read_reply(self, command: str) -> str:
-        """Sends a command to the pump, read the replies and returns it, optionally parsed."""
+        """Send a command to the pump, read the replies and return it, optionally parsed."""
         self._serial.reset_input_buffer()  # Clear input buffer, discarding all that is in the buffer.
         async with self._serial_lock:
             await self._write(command)
@@ -174,7 +206,7 @@ class R2(FlowchemDevice):
                     await self._write(command)
                     # Allows 4 failures...
                     if failure > 3:
-                        raise InvalidConfiguration(
+                        raise InvalidConfigurationError(
                             "No response received from R2 module!"
                         )
                 else:
@@ -368,40 +400,6 @@ class R2(FlowchemDevice):
             ) = await self.get_pressure_history()
             AllState["Temp"] = await self.get_current_temperature()
             return AllState
-
-    def components(self):
-        list_of_components = [
-            R2MainSwitch("Power", self),
-            R2GeneralPressureSensor("PressureSensor", self),
-            R2GeneralSensor("GSensor2", self),
-            UV150PhotoReactor("PhotoReactor", self),
-            R2HPLCPump("Pump_A", self, "A"),
-            R2HPLCPump("Pump_B", self, "B"),
-            R2TwoPortValve("ReagentValve_A", self, 0),
-            R2TwoPortValve("ReagentValve_B", self, 1),
-            R2TwoPortValve("CollectionValve", self, 4),
-            R2InjectionValve("InjectionValve_A", self, 2),
-            R2InjectionValve("InjectionValve_B", self, 3),
-            R2PumpPressureSensor("PumpSensor_A", self, 0),
-            R2PumpPressureSensor("PumpSensor_B", self, 1),
-        ]
-
-        # TODO if photoreactor -> REACTOR CHANNEL 1,3 AND 4 + UV150PhotoReactor
-        #  if no photoreactor -> REACTOR CHANNEL 1-4 no UV150PhotoReactor
-
-        # Create components for reactor bays
-        reactor_temp_limits = {
-            ch_num: TempRange(min=ureg.Quantity(t[0]), max=ureg.Quantity(t[1]))
-            for ch_num, t in enumerate(zip(self._min_t, self._max_t, strict=True))
-        }
-
-        reactors = [
-            R4Reactor(f"reactor-{n + 1}", self, n, reactor_temp_limits[n])
-            for n in range(4)
-        ]
-        list_of_components.extend(reactors)
-
-        return list_of_components
 
 
 if __name__ == "__main__":

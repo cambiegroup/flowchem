@@ -3,7 +3,7 @@ import asyncio
 
 from loguru import logger
 
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 from .knauer_finder import autodiscover_knauer
 
@@ -51,7 +51,7 @@ class KnauerEthernetDevice:
         # IP if found, None otherwise
         ip_address = available_devices.get(mac_address)
         if ip_address is None:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"{self.__class__.__name__}:{self.name}\n"  # type: ignore
                 f"Device with MAC address={mac_address} not found!\n"
                 f"[Available: {available_devices}]"
@@ -66,12 +66,12 @@ class KnauerEthernetDevice:
             self._reader, self._writer = await asyncio.wait_for(future, timeout=3)
         except OSError as connection_error:
             logger.exception(connection_error)
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot open connection with device {self.__class__.__name__} at IP={self.ip_address}"
             ) from connection_error
         except asyncio.TimeoutError as timeout_error:
             logger.exception(timeout_error)
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"No reply from device {self.__class__.__name__} at IP={self.ip_address}"
             ) from timeout_error
 

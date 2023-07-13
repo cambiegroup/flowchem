@@ -5,7 +5,7 @@ import pytest
 from flowchem_test.fakedevice import FakeDevice
 
 from flowchem.server.configuration_parser import parse_config
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 def test_minimal_valid_config():
@@ -25,6 +25,6 @@ def test_minimal_valid_config():
 
 def test_name_too_long():
     cfg_txt = BytesIO(b"""[device.this_name_is_too_long_and_should_be_shorter]""")
-    with pytest.raises(InvalidConfiguration) as excinfo:
+    with pytest.raises(InvalidConfigurationError) as excinfo:
         parse_config(cfg_txt)
     assert "too long" in str(excinfo.value)
