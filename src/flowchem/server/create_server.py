@@ -43,7 +43,7 @@ async def create_server_for_devices(
     logger.info(f"Zeroconf server up, broadcasting on IPs: {mdns.mdns_addresses}")
 
     # HTTP server (FastAPI)
-    http = FastAPIServer(config.get("filename"))
+    http = FastAPIServer(config.get("filename", ""))
     logger.debug("HTTP ASGI server app created")
 
     for device in config["device"]:
