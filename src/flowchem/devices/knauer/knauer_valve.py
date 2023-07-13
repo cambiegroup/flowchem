@@ -4,6 +4,7 @@ from enum import Enum
 
 from loguru import logger
 
+from flowchem.components.base_component import FlowchemComponent
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
@@ -55,6 +56,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()
 
         # Set components
+        valve_component: FlowchemComponent
         match self.device_info.additional_info["valve-type"]:
             case KnauerValveHeads.SIX_PORT_TWO_POSITION:
                 valve_component = KnauerInjectionValve("injection-valve", self)

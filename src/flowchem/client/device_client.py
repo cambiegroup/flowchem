@@ -30,7 +30,7 @@ class FlowchemDeviceClient:
             ) from ce
         self.components = [
             FlowchemComponentClient(cmp_url, parent=self)
-            for cmp_url in self.device_info.components
+            for cmp_url in self.device_info.components.values()
         ]
 
     @staticmethod

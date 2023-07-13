@@ -97,7 +97,7 @@ class R4Heater(FlowchemDevice):
             R4HeaterChannelControl(f"reactor{n+1}", self, n, temp_limits[n])
             for n in range(4)
         ]
-        self.components.append(reactor_positions)
+        self.components.extend(reactor_positions)
 
     async def _write(self, command: str):
         """Write a command to the pump."""

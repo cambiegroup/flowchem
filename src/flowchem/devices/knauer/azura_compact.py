@@ -426,9 +426,9 @@ if __name__ == "__main__":
     async def main(pump: AzuraCompact):
         """Test function."""
         await pump.initialize()
-        c = pump.components()
+        c = pump.components
         print(c)
-        pc: AzuraCompactPump = c[0]
+        pc: AzuraCompactPump = c[0]  # type:ignore
         print(pc)
         print(await pc.infuse(rate="0.1 ml/min"))
         await pump.set_flow_rate(ureg.Quantity("0.1 ml/min"))
