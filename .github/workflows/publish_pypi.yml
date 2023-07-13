@@ -35,7 +35,7 @@ jobs:
         if: startsWith(github.ref_name, 'v')
         uses: pypa/gh-action-pypi-publish@release/v1
 
-  build-release-gh:
+  build-release-github:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
