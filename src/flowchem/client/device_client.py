@@ -42,7 +42,7 @@ class FlowchemDeviceClient:
             ]
         elif isinstance(item, str):
             try:
-                FlowchemComponentClient(self.device_info.components[item])
+                FlowchemComponentClient(self.device_info.components[item], self)
             except IndexError:
                 raise KeyError(f"No component named '{item}' in {repr(self)}.")
 
