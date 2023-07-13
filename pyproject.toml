@@ -53,6 +53,7 @@ test = [
     "pytest-asyncio",
     "pytest-cov",
     "pytest-mock",
+    "pytest-xprocess",
     "httpx",
     "requests",
 ]
