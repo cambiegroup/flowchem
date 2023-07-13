@@ -11,15 +11,9 @@ from flowchem.client.client import get_all_flowchem_devices
 # Flowchem devices
 flowchem_devices = get_all_flowchem_devices()
 
-# SOCl2 pump
 socl2 = flowchem_devices["socl2"]["pump"]
-# socl2 = flowchem_devices["socl2"][BasePump]  # To be tested
-
-# Hexyldecanoic pump
 hexyldecanoic = flowchem_devices["hexyldecanoic"]["pump"]
-# R4 reactor heater
 reactor = flowchem_devices["r4-heater"]["reactor1"]
-# FlowIR
 flowir = flowchem_devices["flowir"]["ir-control"]
 
 
@@ -54,11 +48,9 @@ def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
 
 
 def set_parameters(rates: dict, temperature: float):
-    # Set pumps
+    """Set flow rates and temperature to the reaction setup."""
     socl2.put("flow-rate", {"rate": f"{rates['socl2']} ml/min"})
     hexyldecanoic.put("flow-rate", {"rate": f"{rates['hexyldecanoic']} ml/min"})
-
-    # Sets heater
     reactor.put("temperature", {"temperature": f"{temperature:.2f} °C"})
 
 
@@ -73,9 +65,20 @@ def wait_stable_temperature():
             time.sleep(5)
 
 
+def _get_new_ir_spectrum(last_sample_id):
+    while True:
+        current_sample_id = int(flowir.get("sample-count").text)
+        if current_sample_id > last_sample_id:
+            break
+        else:
+            time.sleep(2)
+    return current_sample_id
+
+
 def get_ir_once_stable():
     """Keep acquiring IR spectra until changes are small, then returns the spectrum."""
     logger.info("Waiting for the IR spectrum to be stable")
+
     # Wait for first spectrum to be available
     while flowir.get("sample-count").text == 0:
         time.sleep(1)
@@ -83,17 +86,10 @@ def get_ir_once_stable():
     # Get spectrum
     previous_spectrum = pd.read_json(flowir.get("sample/spectrum-treated").text)
     previous_spectrum = previous_spectrum.set_index("wavenumber")
-    # In case the id has changed between requests (highly unlikely)
-    last_sample_id = int(flowir.get("sample-count").text)
 
+    last_sample_id = int(flowir.get("sample-count").text)
     while True:
-        # Wait for a new spectrum
-        while True:
-            current_sample_id = int(flowir.get("sample-count").text)
-            if current_sample_id > last_sample_id:
-                break
-            else:
-                time.sleep(2)
+        current_sample_id = _get_new_ir_spectrum(last_sample_id)
 
         current_spectrum = pd.read_json(flowir.get("sample/spectrum-treated").text)
         current_spectrum = current_spectrum.set_index("wavenumber")
@@ -120,7 +116,7 @@ def integrate_peaks(ir_spectrum):
 
     peaks = {}
     for name, start, end in peak_list:
-        # This is a common mistake since wavenumber are plot in reverse order
+        # This is a common mistake since wavenumbers are plot in reverse order
         if start > end:
             start, end = end, start
 
@@ -131,7 +127,6 @@ def integrate_peaks(ir_spectrum):
         logger.debug(f"Integral of {name} between {start} and {end} is {peaks[name]}")
 
     # Normalize integrals
-
     return {k: v / sum(peaks.values()) for k, v in peaks.items()}
 
 
