@@ -11,7 +11,7 @@ from flowchem.components.technical.temperature import TempRange
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.huber.huber_temperature_control import HuberTemperatureControl
 from flowchem.devices.huber.pb_command import PBCommand
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -56,7 +56,7 @@ class HuberChiller(FlowchemDevice):
         try:
             serial_object = aioserial.AioSerial(port, **configuration)
         except (OSError, aioserial.SerialException) as serial_exception:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the HuberChiller on the port <{port}>"
             ) from serial_exception
 
@@ -66,7 +66,7 @@ class HuberChiller(FlowchemDevice):
         """Ensure the connection w/ device is working."""
         self.device_info.serial_number = str(await self.serial_number())
         if self.device_info.serial_number == "0":
-            raise InvalidConfiguration("No reply received from Huber Chiller!")
+            raise InvalidConfigurationError("No reply received from Huber Chiller!")
         logger.debug(
             f"Connected with Huber Chiller S/N {self.device_info.serial_number}",
         )

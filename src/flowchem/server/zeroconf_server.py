@@ -27,10 +27,10 @@ class ZeroconfServer:
             and not ip.startswith("169.254")  # Remove invalid IPs
         ]
 
-    async def add_device(self, name: str):
-        """Adds device to the server."""
+    async def add_device(self, name: str) -> None:
+        """Add device to the server."""
         properties = {
-            "path": r"http://" + f"{self.mdns_addresses[0]}:{self.port}/{name}/",
+            "path": rf"http://{self.mdns_addresses[0]}:{self.port}/{name}/",
             "id": f"{name}:{uuid.uuid4()}".replace(" ", ""),
         }
 
@@ -45,11 +45,12 @@ class ZeroconfServer:
 
         try:
             await self.server.async_register_service(service_info)
-        except NonUniqueNameException as nu:
-            raise RuntimeError(
+        except NonUniqueNameException as name_error:
+            msg = (
                 f"Cannot initialize zeroconf service for '{name}'"
                 f"The same name is already in use: you cannot run flowchem twice for the same device!"
-            ) from nu
+            )
+            raise RuntimeError(msg) from name_error
         logger.debug(f"Device {name} registered as Zeroconf service!")
 
 

@@ -19,11 +19,11 @@ class Elite11PumpOnly(SyringePump):
         return False
 
     async def is_pumping(self) -> bool:
-        """True if pump is moving."""
+        """Check if pump is moving."""
         return await self.hw_device.is_moving()
 
     async def stop(self):
-        """Stops pump."""
+        """Stop pump."""
         await self.hw_device.stop()
 
     async def infuse(self, rate: str = "", volume: str = "0 ml") -> bool:

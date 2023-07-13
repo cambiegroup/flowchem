@@ -8,7 +8,6 @@ class PressureSensor(Sensor):
     """A pressure sensor."""
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """A generic Syringe pump."""
         super().__init__(name, hw_device)
         self.add_api_route("/read-pressure", self.read_pressure, methods=["GET"])
 

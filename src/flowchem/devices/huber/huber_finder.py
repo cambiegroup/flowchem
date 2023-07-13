@@ -5,7 +5,7 @@ from textwrap import dedent
 from loguru import logger
 
 from flowchem.devices.huber.chiller import HuberChiller
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 # noinspection PyProtectedMember
@@ -15,12 +15,12 @@ def chiller_finder(serial_port) -> list[str]:
 
     try:
         chill = HuberChiller.from_config(port=serial_port)
-    except InvalidConfiguration:
+    except InvalidConfigurationError:
         return []
 
     try:
         asyncio.run(chill.initialize())
-    except InvalidConfiguration:
+    except InvalidConfigurationError:
         chill._serial.close()
         return []
 

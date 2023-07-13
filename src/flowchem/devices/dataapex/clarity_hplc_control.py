@@ -32,7 +32,7 @@ class ClarityComponent(HPLCControl):
             alias="method-name",
         ),
     ) -> bool:
-        """Sets the HPLC method (i.e. a file with .MET extension) to the instrument.
+        """Set HPLC method (i.e. a file with .MET extension).
 
         Make sure to select 'Send Method to Instrument' option in Method Sending Options dialog in System Configuration.
         """

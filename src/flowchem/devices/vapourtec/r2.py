@@ -25,7 +25,7 @@ from flowchem.devices.vapourtec.r2_components_control import (
     R4Reactor,
     UV150PhotoReactor,
 )
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 try:
@@ -92,7 +92,7 @@ class R2(FlowchemDevice):
         self._max_t = max_temp
 
         if not HAS_VAPOURTEC_COMMANDS:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "You tried to use a Vapourtec device but the relevant commands are missing!\n"
                 "Unfortunately, we cannot publish those as they were provided under NDA.\n"
                 "Contact Vapourtec for further assistance."
@@ -105,7 +105,7 @@ class R2(FlowchemDevice):
         try:
             self._serial = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as ex:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the R2 on the port <{config.get('port')}>"
             ) from ex
 
@@ -144,19 +144,19 @@ class R2(FlowchemDevice):
         await self.power_on()
 
     async def _write(self, command: str):
-        """Writes a command to the pump."""
+        """Write a command to the pump."""
         cmd = command + "\r\n"
         await self._serial.write_async(cmd.encode("ascii"))
         logger.debug(f"Sent command: {command!r}")
 
     async def _read_reply(self) -> str:
-        """Reads the pump reply from serial communication."""
+        """Read the pump reply from serial communication."""
         reply_string = await self._serial.readline_async()
         logger.debug(f"Reply received: {reply_string.decode('ascii').rstrip()}")
         return reply_string.decode("ascii")
 
     async def write_and_read_reply(self, command: str) -> str:
-        """Sends a command to the pump, read the replies and returns it, optionally parsed."""
+        """Send a command to the pump, read the replies and return it, optionally parsed."""
         self._serial.reset_input_buffer()  # Clear input buffer, discarding all that is in the buffer.
         async with self._serial_lock:
             await self._write(command)
@@ -174,7 +174,7 @@ class R2(FlowchemDevice):
                     await self._write(command)
                     # Allows 4 failures...
                     if failure > 3:
-                        raise InvalidConfiguration(
+                        raise InvalidConfigurationError(
                             "No response received from R2 module!"
                         )
                 else:

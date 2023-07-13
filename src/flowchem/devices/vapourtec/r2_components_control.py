@@ -31,7 +31,6 @@ class R2GeneralSensor(Sensor):
     hw_device: R2  # for typing's sake
 
     def __init__(self, name: str, hw_device: R2) -> None:
-        """A generic Syringe pump."""
         super().__init__(name, hw_device)
         self.add_api_route("/monitor-system", self.monitor_sys, methods=["GET"])
         self.add_api_route("/get-run-state", self.get_run_state, methods=["GET"])

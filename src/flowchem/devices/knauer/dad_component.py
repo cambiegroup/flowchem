@@ -14,7 +14,6 @@ class KnauerDADLampControl(PowerSwitch):
     hw_device: KnauerDAD
 
     def __init__(self, name: str, hw_device: KnauerDAD) -> None:
-        """A generic Syringe pump."""
         super().__init__(name, hw_device)
         self.lamp = name
         self.add_api_route("/lamp_status", self.get_lamp, methods=["GET"])

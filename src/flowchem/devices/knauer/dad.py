@@ -11,7 +11,7 @@ from flowchem.devices.knauer.dad_component import (
     DADChannelControl,
     KnauerDADLampControl,
 )
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 if TYPE_CHECKING:
@@ -46,7 +46,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         self._control = display_control  # True for Local
 
         if not HAS_DAD_COMMANDS:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "You tried to use a Knauer DAD device but the relevant commands are missing!\n"
                 "Unfortunately, we cannot publish those as they were provided under NDA.\n"
                 "Contact Knauer for further assistance."
@@ -116,7 +116,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         # if response.isnumeric() else _reverse_lampstatus_mapping[response[response.find(":") + 1:]]
 
     async def serial_num(self) -> str:
-        """Serial number."""
+        """Get serial number."""
         return await self._send_and_receive(self.cmd.SERIAL)
 
     async def identify(self) -> str:

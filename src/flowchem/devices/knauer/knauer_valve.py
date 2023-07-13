@@ -146,7 +146,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         return await self._transmit_and_parse_reply("P")
 
     async def set_raw_position(self, position: str) -> bool:
-        """Sets the valve position, following valve nomenclature."""
+        """Set valve position, following valve nomenclature."""
         return await self._transmit_and_parse_reply(position) != ""
 
     def components(self):

@@ -5,7 +5,7 @@ from enum import Enum
 import aioserial
 from loguru import logger
 
-from flowchem.utils.exceptions import DeviceError, InvalidConfiguration
+from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
 
 
 class PumpStatus(Enum):
@@ -42,7 +42,7 @@ class HarvardApparatusPumpIO:
             self._serial = aioserial.AioSerial(port, **configuration)
         except aioserial.SerialException as serial_exception:
             logger.error(f"Cannot connect to the Pump on the port <{port}>")
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the Pump on the port <{port}>"
             ) from serial_exception
 
@@ -53,7 +53,7 @@ class HarvardApparatusPumpIO:
         try:
             await self._serial.write_async(command_msg.encode("ascii"))
         except aioserial.SerialException as serial_exception:
-            raise InvalidConfiguration from serial_exception
+            raise InvalidConfigurationError from serial_exception
         logger.debug(f"Sent {command_msg!r}!")
 
     async def _read_reply(self) -> list[str]:
@@ -120,7 +120,9 @@ class HarvardApparatusPumpIO:
 
         if not response:
             logger.error("No reply received from pump!")
-            raise InvalidConfiguration("No response received. Is the address right?")
+            raise InvalidConfigurationError(
+                "No response received. Is the address right?"
+            )
 
         pump_address, status, parsed_response = self.parse_response(response)
 

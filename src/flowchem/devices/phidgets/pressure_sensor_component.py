@@ -13,7 +13,6 @@ class PhidgetPressureSensorComponent(PressureSensor):
     hw_device: PhidgetPressureSensor  # just for typing
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """A generic Syringe pump."""
         super().__init__(name, hw_device)
 
     async def read_pressure(self, units: str = "bar"):

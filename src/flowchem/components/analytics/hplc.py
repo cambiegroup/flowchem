@@ -23,12 +23,12 @@ class HPLCControl(FlowchemComponent):
         self.component_info.type = "HPLC Control"
 
     async def send_method(self, method_name):
-        """Submits a method to the HPLC.
+        """Submit method to HPLC.
 
         This is e.g. useful when the injection is automatically triggerd when switching a valve.
         """
         ...
 
     async def run_sample(self, sample_name: str, method_name: str):
-        """Runs a sample at the HPLC with the provided sample name and method."""
+        """Run HPLC sample with the provided sample name and method."""
         ...

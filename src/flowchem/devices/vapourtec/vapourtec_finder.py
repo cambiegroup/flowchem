@@ -5,7 +5,7 @@ from textwrap import dedent
 from loguru import logger
 
 from flowchem.devices import R4Heater
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 # noinspection PyProtectedMember
@@ -18,14 +18,14 @@ def r4_finder(serial_port) -> list[str]:
 
     try:
         r4 = R4Heater(port=serial_port)
-    except InvalidConfiguration as ic:
+    except InvalidConfigurationError as ic:
         logger.error("config")
         raise ic
         return []
 
     try:
         asyncio.run(r4.initialize())
-    except InvalidConfiguration:
+    except InvalidConfigurationError:
         r4._serial.close()
         return []
 

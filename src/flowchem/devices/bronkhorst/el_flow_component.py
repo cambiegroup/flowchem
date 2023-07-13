@@ -45,7 +45,6 @@ class MFCComponent(FlowchemComponent):
     hw_device: MFC  # just for typing
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """A generic power supply."""
         super().__init__(name, hw_device)
         self.add_api_route("/get-flow-rate", self.get_flow_setpoint, methods=["GET"])
         self.add_api_route("/stop", self.stop, methods=["PUT"])

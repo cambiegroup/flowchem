@@ -10,7 +10,7 @@ from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vicivalco.vici_valve_component import ViciInjectionValve
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -62,7 +62,7 @@ class ViciValcoValveIO:
         try:
             serial_object = aioserial.AioSerial(port, **configuration)
         except aioserial.SerialException as serial_exception:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Could not open serial port {port} with configuration {configuration}"
             ) from serial_exception
 
@@ -78,7 +78,7 @@ class ViciValcoValveIO:
         if reply_string:
             logger.debug(f"Reply received: {reply_string}")
         else:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "No response received from valve! Check valve address?"
             )
 

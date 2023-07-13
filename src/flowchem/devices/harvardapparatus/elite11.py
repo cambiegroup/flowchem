@@ -20,7 +20,7 @@ from flowchem.devices.harvardapparatus.elite11_pump import (
     Elite11PumpOnly,
     Elite11PumpWithdraw,
 )
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -105,12 +105,12 @@ class Elite11(FlowchemDevice):
         if syringe_diameter:
             self._diameter = syringe_diameter
         else:
-            raise InvalidConfiguration("Please provide the syringe diameter!")
+            raise InvalidConfigurationError("Please provide the syringe diameter!")
 
         if syringe_volume:
             self._syringe_volume = syringe_volume
         else:
-            raise InvalidConfiguration("Please provide the syringe volume!")
+            raise InvalidConfigurationError("Please provide the syringe volume!")
 
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
@@ -174,7 +174,7 @@ class Elite11(FlowchemDevice):
         try:
             await self.stop()
         except IndexError as index_e:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Check pump address! Currently {self.address=}"
             ) from index_e
 

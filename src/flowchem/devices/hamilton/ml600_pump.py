@@ -21,11 +21,11 @@ class ML600Pump(SyringePump):
         return True
 
     async def is_pumping(self) -> bool:
-        """True if pump is moving."""
+        """Check if pump is moving."""
         return await self.hw_device.is_idle() is False
 
     async def stop(self):
-        """Stops pump."""
+        """Stop pump."""
         await self.hw_device.stop()
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:

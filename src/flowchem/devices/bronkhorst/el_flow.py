@@ -84,7 +84,7 @@ class EPC(FlowchemDevice):
         self.el_press.wink()
 
     async def get_id(self):
-        """Reads the Serial Number (SN) of the instrument."""
+        """Get instrument serial number."""
         return self.el_press.id
 
     def components(self):
@@ -160,12 +160,12 @@ class MFC(FlowchemDevice):
         return m_num / 320
 
     async def wink(self):
-        """Wink the LEDs on the instrument."""
+        """Wink the LEDs."""
         # default wink 9 time
         self.el_flow.wink()
 
     async def get_id(self):
-        """Reads the ID parameter of the instrument."""
+        """Read ID parameter."""
         return self.el_flow.id
 
     def components(self):

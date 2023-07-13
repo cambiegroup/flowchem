@@ -24,7 +24,7 @@ async def is_iCIR_running_locally() -> bool:
 
 
 async def generate_icir_config() -> str:
-    """Generates config string if iCIR is available."""
+    """Generate config string if iCIR is available."""
     if await is_iCIR_running_locally():
         logger.debug("Local iCIR found!")
         return dedent(

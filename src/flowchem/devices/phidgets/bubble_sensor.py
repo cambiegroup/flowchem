@@ -25,7 +25,9 @@ try:
 except ImportError:
     HAS_PHIDGET = False
 
-from flowchem.utils.exceptions import InvalidConfiguration  # configuration is not valid
+from flowchem.utils.exceptions import (
+    InvalidConfigurationError,
+)  # configuration is not valid
 
 
 class PhidgetPowerSource5V(FlowchemDevice):
@@ -42,7 +44,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Phidget unusable: library or package not installed."
             )
 
@@ -70,7 +72,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
             self.phidget.openWaitForAttachment(1000)
             logger.debug("power of tube sensor is connected!")
         except PhidgetException as pe:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
             ) from pe
 
@@ -128,7 +130,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Phidget unusable: library or package not installed."
             )
 
@@ -160,7 +162,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
             self.phidget.openWaitForAttachment(1000)
             logger.debug("tube sensor is connected!")
         except PhidgetException as pe:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
             ) from pe
 
