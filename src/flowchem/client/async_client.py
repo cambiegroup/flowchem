@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from loguru import logger
 from zeroconf import Zeroconf
@@ -15,7 +16,7 @@ from flowchem.client.device_client import FlowchemDeviceClient
 
 
 class FlowchemAsyncDeviceListener(FlowchemCommonDeviceListener):
-    bg_tasks = set()
+    bg_tasks: set[Any] = set()
 
     async def _resolve_service(self, zc: Zeroconf, type_: str, name: str):
         service_info = AsyncServiceInfo(type_, name)

@@ -263,7 +263,7 @@ class Spinsolve(FlowchemDevice):
     async def run_protocol(
         self,
         name,
-        background_tasks: BackgroundTasks = None,
+        background_tasks: BackgroundTasks,
         options=None,
     ) -> int:
         """Run a protocol.
