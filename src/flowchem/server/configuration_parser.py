@@ -77,18 +77,16 @@ def ensure_device_name_is_valid(device_name: str) -> None:
     Uniqueness of names is ensured by their toml dict key nature,
     """
     if len(device_name) > DEVICE_NAME_MAX_LENGTH:
-        # This is because f"{name}._labthing._tcp.local." has to be shorter than 64 in zerconfig
-        raise InvalidConfigurationError(
-            f"Device name '{device_name}' is too long ({len(device_name)} characters, max is {DEVICE_NAME_MAX_LENGTH})"
-        )
+        # f"{name}._labthing._tcp.local." has to be shorter than 64 characters to be valid for mDNS
+        msg = f"Device name '{device_name}' is too long: {len(device_name)} characters, max is {DEVICE_NAME_MAX_LENGTH}"
+        raise InvalidConfigurationError(msg)
     if "." in device_name:
         # This is not strictly needed but avoids potential zeroconf problems
-        raise InvalidConfigurationError(
-            f"Invalid character '.' in device name '{device_name}'"
-        )
+        msg = f"Invalid character '.' in device name '{device_name}'"
+        raise InvalidConfigurationError(msg)
 
 
-def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
+def parse_device(dev_settings: dict, device_object_mapper: dict) -> FlowchemDevice:
     """Parse device config and return a device object.
 
     Exception handling to provide more specific and diagnostic messages upon errors in the configuration file.
@@ -116,9 +114,8 @@ def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
             f"Device type `{device_config['type']}` unknown in 'device.{device_name}'!"
             f"[Known types: {device_object_mapper.keys()}]",
         )
-        raise InvalidConfigurationError(
-            f"Unknown device type `{device_config['type']}`."
-        ) from error
+        msg = f"Unknown device type `{device_config['type']}`."
+        raise InvalidConfigurationError(msg) from error
 
     # If the object has a 'from_config' method, use that for instantiation, otherwise try straight with the constructor.
     try:

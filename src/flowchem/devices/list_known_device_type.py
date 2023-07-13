@@ -46,7 +46,7 @@ def autodiscover_third_party() -> dict[str, Any]:
     }
 
 
-def autodiscover_device_classes():
+def autodiscover_device_classes() -> dict[str, Any]:
     """Get all the device-controlling classes, either from `flowchem.devices` or third party packages."""
     first = autodiscover_first_party()
     # logger.info(f"Found {len(first)} 1st-party device type! {list(first.keys())}")
