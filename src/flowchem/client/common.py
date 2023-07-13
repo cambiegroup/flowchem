@@ -15,10 +15,6 @@ def zeroconf_name_to_device_name(zeroconf_name: str) -> str:
     return zeroconf_name[: -len(FLOWCHEM_SUFFIX)]
 
 
-def device_name_to_zeroconf_name(device_name: str) -> str:
-    return f"{device_name}{FLOWCHEM_SUFFIX}"
-
-
 def flowchem_devices_from_url_dict(
     url_dict: dict[str, AnyHttpUrl]
 ) -> dict[str, FlowchemDeviceClient]:
@@ -45,11 +41,11 @@ class FlowchemCommonDeviceListener(ServiceListener):
         self.flowchem_devices: dict[str, AnyHttpUrl] = {}
 
     def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-        logger.debug(f"Service {name} removed")
+        logger.debug(f"Service {zeroconf_name_to_device_name(name)} removed")
         self.flowchem_devices.pop(name, None)
 
     def update_service(self, zc: Zeroconf, type_: str, name: str) -> None:
-        logger.debug(f"Service {name} updated")
+        logger.debug(f"Service {zeroconf_name_to_device_name(name)} updated")
         self.flowchem_devices.pop(name, None)
         self._save_device_info(zc, type_, name)
 
