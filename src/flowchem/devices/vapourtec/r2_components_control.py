@@ -150,10 +150,10 @@ class R2InjectionValve(SixPortTwoPosition):
         return True
 
 
-class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
-    """R2 reactor injection loop valve control class."""
+class R2TwoPortValve(TwoPortDistribution):  # total 3 positions (A, B, Collection)
+    """R2 reactor injection loop valve control."""
 
-    hw_device: R2  # for typing's sake
+    hw_device: R2
 
     # TODO: the mapping name is not applicable
     position_mapping = {"Solvent": "0", "Reagent": "1"}
@@ -226,7 +226,8 @@ class R2PumpPressureSensor(PressureSensor):
 
     async def read_pressure(self, units: str = "mbar") -> int | None:  # mbar
         """Get current pump pressure in mbar."""
-        return await self.hw_device.get_current_pressure(self.pump_code)
+        pressure = await self.hw_device.get_current_pressure(self.pump_code)
+        return pressure.m_as(units)
 
 
 class R2GeneralPressureSensor(PressureSensor):
@@ -238,8 +239,8 @@ class R2GeneralPressureSensor(PressureSensor):
 
     async def read_pressure(self, units: str = "mbar") -> int:
         """Get system pressure."""
-        # TODO: now the output are always mbar, change it to fit the base component
-        return await self.hw_device.get_current_pressure()
+        pressure = await self.hw_device.get_current_pressure()
+        return pressure.m_as(units)
 
 
 class R2MainSwitch(PowerSwitch):

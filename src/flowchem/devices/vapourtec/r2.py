@@ -367,11 +367,11 @@ class R2(FlowchemDevice):
         p_in_mbar = [int(x) * 10 for x in pressures]
         return p_in_mbar[1], p_in_mbar[2], p_in_mbar[0]  # pumpA, pumpB, system
 
-    async def get_current_pressure(self, pump_code: int = 2) -> int:
+    async def get_current_pressure(self, pump_code: int = 2) -> pint.Quantity:
         """Get current pressure (in mbar)."""
         press_state_list = await self.get_pressure_history()
         # 0: pump A, 1: pump_B, 2: system pressure
-        return press_state_list[pump_code]
+        return press_state_list[pump_code] * ureg.mbar
 
     async def get_current_flow(self, pump_code: str) -> float:
         """Get current flow rate (in ul/min)."""

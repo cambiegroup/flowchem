@@ -60,7 +60,7 @@ class FastAPIServer:
         device_root = APIRouter(prefix=f"/{device.name}", tags=[device.name])
         device_root.add_api_route(
             "/",
-            device.get_device_info,  # TODO: add components in the device info response!
+            device.get_device_info,
             methods=["GET"],
             response_model=DeviceInfo,
         )
