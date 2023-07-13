@@ -96,6 +96,9 @@ class IcIR(FlowchemDevice):
         probe = await self.probe_info()
         self.device_info.additional_info = probe.dict()
 
+        # Set IRSpectrometer component
+        self.components.append(IcIRControl("ir-control", self))
+
     def is_local(self):
         """Return true if the server is on the same machine running the python code."""
         return any(
@@ -296,10 +299,6 @@ class IcIR(FlowchemDevice):
         """Wait until no experiment is running."""
         while await self.probe_status() == "Running":
             await asyncio.sleep(0.2)
-
-    def components(self):
-        """Return an IRSpectrometer component."""
-        return (IcIRControl("ir-control", self),)
 
 
 if __name__ == "__main__":

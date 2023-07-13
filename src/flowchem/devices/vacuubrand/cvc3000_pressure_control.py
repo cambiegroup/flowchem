@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from flowchem.components.technical.pressure import PressureControl
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.vacuubrand.utils import ProcessStatus, PumpState
+from flowchem.devices.vacuubrand.constants import ProcessStatus, PumpState
 
 if TYPE_CHECKING:
     from flowchem.devices.vacuubrand.cvc3000 import CVC3000

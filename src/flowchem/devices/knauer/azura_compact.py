@@ -95,6 +95,11 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         if self._pressure_min:
             await self.set_minimum_pressure(self._pressure_min)
 
+        # Set Pump and Sensor components.
+        self.components.extend(
+            [AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)]
+        )
+
     @staticmethod
     def error_present(reply: str) -> bool:
         """Return True if there are errors, False otherwise. Warns for errors."""
@@ -407,10 +412,6 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         """
         await self.create_and_send_command(EXTCONTR, setpoint=int(value))
         logger.debug(f"External control set to {value}")
-
-    def components(self):
-        """Create a Pump and a Sensor components."""
-        return AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)
 
 
 if __name__ == "__main__":

@@ -26,6 +26,8 @@ class ZeroconfServer:
             if ip not in ("127.0.0.1", "0.0.0.0")
             and not ip.startswith("169.254")  # Remove invalid IPs
         ]
+        if not self.mdns_addresses:
+            self.mdns_addresses.append("127.0.0.1")
 
     async def add_device(self, name: str) -> None:
         """Add device to the server."""

@@ -87,6 +87,9 @@ class PhidgetPowerSource5V(FlowchemDevice):
             serial_number=vint_serial_number,
         )
 
+    async def initialize(self):
+        self.components.append(PhidgetBubbleSensorPowerComponent("5V", self))
+
     def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
         self.phidget.close()
@@ -107,10 +110,6 @@ class PhidgetPowerSource5V(FlowchemDevice):
     def is_poweron(self) -> bool:
         """Wheteher the power is on."""
         return bool(self.phidget.getState())
-
-    def components(self):
-        """Return a component."""
-        return (PhidgetBubbleSensorPowerComponent("5V", self),)
 
 
 class PhidgetBubbleSensor(FlowchemDevice):
@@ -178,6 +177,9 @@ class PhidgetBubbleSensor(FlowchemDevice):
             serial_number=vint_serial_number,
         )
 
+    async def initialize(self):
+        self.components.append(PhidgetBubbleSensorComponent("bubble-sensor", self))
+
     def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
         self.phidget.close()
@@ -228,10 +230,6 @@ class PhidgetBubbleSensor(FlowchemDevice):
 
     # def getMaxVoltage(self):
     # https: // www.phidgets.com /?view = api
-
-    def components(self):
-        """Return a component."""
-        return (PhidgetBubbleSensorComponent("bubble-sensor", self),)
 
 
 if __name__ == "__main__":

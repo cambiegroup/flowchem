@@ -297,6 +297,8 @@ class ML600(FlowchemDevice):
 
         if hw_init:
             await self.initialize_pump(speed=ureg.Quantity(init_speed))
+        # Add device components
+        self.components.extend([ML600Pump("pump", self), ML600Valve("valve", self)])
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
@@ -484,10 +486,6 @@ class ML600(FlowchemDevice):
     #     """Return steps' setter. Applied to the end of a downward syringe movement to removes mechanical slack."""
     #     target_steps = str(int(target_steps))
     #     return await self.send_command_and_read_reply(Protocol1Command(command="YSN", command_value=target_steps))
-
-    def components(self):
-        """Return a Syringe and a Valve component."""
-        return ML600Pump("pump", self), ML600Valve("valve", self)
 
 
 if __name__ == "__main__":

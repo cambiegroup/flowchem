@@ -54,6 +54,20 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         # Detect valve type
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()
 
+        # Set components
+        match self.device_info.additional_info["valve-type"]:
+            case KnauerValveHeads.SIX_PORT_TWO_POSITION:
+                valve_component = KnauerInjectionValve("injection-valve", self)
+            case KnauerValveHeads.SIX_PORT_SIX_POSITION:
+                valve_component = Knauer6PortDistribution("distribution-valve", self)
+            case KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION:
+                valve_component = Knauer12PortDistribution("distribution-valve", self)
+            case KnauerValveHeads.SIXTEEN_PORT_SIXTEEN_POSITION:
+                valve_component = Knauer16PortDistribution("distribution-valve", self)
+            case _:
+                raise RuntimeError("Unknown valve type")
+        self.components.append(valve_component)
+
     @staticmethod
     def handle_errors(reply: str):
         """Return True if there are errors, False otherwise. Warns for errors."""
@@ -148,18 +162,6 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
     async def set_raw_position(self, position: str) -> bool:
         """Set valve position, following valve nomenclature."""
         return await self._transmit_and_parse_reply(position) != ""
-
-    def components(self):
-        """Create the right type of Valve components based on head type."""
-        match self.device_info.additional_info["valve-type"]:
-            case KnauerValveHeads.SIX_PORT_TWO_POSITION:
-                return (KnauerInjectionValve("injection-valve", self),)
-            case KnauerValveHeads.SIX_PORT_SIX_POSITION:
-                return (Knauer6PortDistribution("distribution-valve", self),)
-            case KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION:
-                return (Knauer12PortDistribution("distribution-valve", self),)
-            case KnauerValveHeads.SIXTEEN_PORT_SIXTEEN_POSITION:
-                return (Knauer16PortDistribution("distribution-valve", self),)
 
 
 if __name__ == "__main__":

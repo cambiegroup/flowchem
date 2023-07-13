@@ -193,6 +193,12 @@ class Elite11(FlowchemDevice):
         # Clear target volume eventually set to prevent pump from stopping prematurely
         await self.set_target_volume("0 ml")
 
+        # Add components
+        if self._infuse_only:
+            self.components.append(Elite11PumpOnly("pump", self))
+        else:
+            self.components.append(Elite11PumpWithdraw("pump", self))
+
     @staticmethod
     def _parse_version(version_text: str) -> tuple[int, int, int]:
         """Extract semver from Elite11 version string, e.g. '11 ELITE I/W Single 3.0.4'."""
@@ -392,13 +398,6 @@ class Elite11(FlowchemDevice):
             multiline=True,
         )
         return PumpInfo.parse_pump_string(parsed_multiline_response)
-
-    def components(self):
-        """Return pump component."""
-        if self._infuse_only:
-            return (Elite11PumpOnly("pump", self),)
-        else:
-            return (Elite11PumpWithdraw("pump", self),)
 
 
 if __name__ == "__main__":

@@ -1,14 +1,13 @@
 """Controls a local ClarityChrom instance via the CLI interface."""
-# See https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm?Highlight=command%20line
+# See https://www.dataapex.com/documentation/Content/Help/110-technical-specifications/110.020-command-line-parameters/110.020-command-line-parameters.htm
 import asyncio
 from pathlib import Path
 from shutil import which
 
 from loguru import logger
 
-from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.people import jakob, wei_hsin
 
 from .clarity_hplc_control import ClarityComponent
 
@@ -27,11 +26,10 @@ class Clarity(FlowchemDevice):
         cfg_file: str = "",
     ) -> None:
         super().__init__(name=name)
-        self.device_info = DeviceInfo(
-            authors=[dario, jakob, wei_hsin],
-            manufacturer="DataApex",
-            model="Clarity Chromatography",
-        )
+        # Metadata
+        self.device_info.authors = [jakob, wei_hsin]
+        self.device_info.manufacturer = "DataApex"
+        self.device_info.model = "Clarity Chromatography"
 
         # Validate executable
         if which(executable):
@@ -58,6 +56,7 @@ class Clarity(FlowchemDevice):
         await self.execute_command(self._init_command)
         logger.info(f"Clarity startup: waiting {self.startup_time} seconds")
         await asyncio.sleep(self.startup_time)
+        self.components.append(ClarityComponent(name="clarity", hw_device=self))
 
     async def execute_command(self, command: str, without_instrument_num: bool = False):
         """Execute claritychrom.exe command."""
@@ -74,7 +73,3 @@ class Clarity(FlowchemDevice):
         except TimeoutError:
             logger.error(f"Subprocess timeout expired (timeout = {self.cmd_timeout} s)")
             return False
-
-    def get_components(self):
-        """Return an HPLC_Control component."""
-        return (ClarityComponent(name="clarity", hw_device=self),)

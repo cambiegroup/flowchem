@@ -1,7 +1,6 @@
 """Base object for all hardware-control device classes."""
 from abc import ABC
 from collections import namedtuple
-from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from flowchem.components.device_info import DeviceInfo
@@ -23,6 +22,7 @@ class FlowchemDevice(ABC):
         """All device have a name, which is the key in the config dict thus unique."""
         self.name = name
         self.device_info = DeviceInfo()
+        self.components: list["FlowchemComponent"] = []
 
     async def initialize(self):
         """Use for setting up async connection to the device, populate components and update device_info with them."""
@@ -34,6 +34,3 @@ class FlowchemDevice(ABC):
 
     def get_device_info(self) -> DeviceInfo:
         return self.device_info
-
-    def components(self) -> Iterable["FlowchemComponent"]:
-        return ()

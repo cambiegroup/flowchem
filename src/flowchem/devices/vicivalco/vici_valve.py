@@ -178,6 +178,9 @@ class ViciValve(FlowchemDevice):
         self.device_info.version = await self.version()
         logger.info(f"Connected to {self.name} - FW ver.: {self.device_info.version}!")
 
+        # Add component
+        self.components.append(ViciInjectionValve("injection-valve", self))
+
     async def learn_positions(self) -> None:
         """Initialize valve only, there is no reply -> reply_lines = 0."""
         learn = ViciCommand(valve_id=self.address, command="LRN")
@@ -223,10 +226,6 @@ class ViciValve(FlowchemDevice):
 
         time_toggle = ViciCommand(valve_id=self.address, command="TT")
         await self.valve_io.write_and_read_reply(time_toggle)
-
-    def get_components(self):
-        """Return a Valve component."""
-        return (ViciInjectionValve("injection-valve", self),)
 
 
 if __name__ == "__main__":
