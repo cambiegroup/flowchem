@@ -1,4 +1,4 @@
-# Vendored from fastapi_utils due to pydantic v2 incompatibilities with the pacakge
+"""Vendored from fastapi_utils due to the package incompatibility with pydantic v2"""
 import asyncio
 import logging
 from asyncio import ensure_future
@@ -74,7 +74,7 @@ def repeat_every(
                             formatted_exception = "".join(
                                 format_exception(type(exc), exc, exc.__traceback__),
                             )
-                            logger.error(formatted_exception)
+                            logger.exception(formatted_exception)
                         if raise_exceptions:
                             raise exc
                     await asyncio.sleep(seconds)

@@ -32,9 +32,7 @@ def device_url_from_service_info(
         # Needed to convert IP from bytes to str
         device_ip = ipaddress.ip_address(service_info.addresses[0])
         return AnyHttpUrl(f"http://{device_ip}:{service_info.port}/{device_name}")
-    else:
-        logger.warning(f"No address found for {device_name}!")
-        return None
+    logger.warning(f"No address found for {device_name}!")
 
 
 class FlowchemCommonDeviceListener(ServiceListener):

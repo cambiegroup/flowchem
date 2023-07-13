@@ -128,19 +128,19 @@ def parse_device(dev_settings: dict, device_object_mapper: dict) -> FlowchemDevi
     except TypeError as error:
         logger.error(f"Wrong settings for device '{device_name}'!")
         get_helpful_error_message(device_config, inspect.getfullargspec(called))
-        raise ConnectionError(
+        msg = (
             f"Wrong configuration provided for device '{device_name}' of type {obj_type.__name__}!\n"
             f"Configuration: {device_config}\n"
             f"Accepted parameters: {inspect.getfullargspec(called).args}"
-        ) from error
+        )
 
-    logger.debug(
-        f"Created device '{device.name}' instance: {device.__class__.__name__}",
-    )
+        raise ConnectionError(msg) from error
+
+    logger.debug(f"Created '{device.name}' instance: {device.__class__.__name__}")
     return device
 
 
-def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
+def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec) -> None:
     """Give helpful debugging text on configuration errors."""
     # First check if we have provided an argument that is not supported.
     # Clearly no **kwargs should be defined in the signature otherwise all kwargs are ok

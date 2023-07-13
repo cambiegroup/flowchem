@@ -30,7 +30,7 @@ class FastAPIServer:
 
         self._add_root_redirect()
 
-    def _add_root_redirect(self):
+    def _add_root_redirect(self) -> None:
         @self.app.route("/")
         def home_redirect_to_docs(request):
             """Redirect root to `/docs` to enable interaction w/ API."""

@@ -15,6 +15,8 @@ from flowchem.client.device_client import FlowchemDeviceClient
 
 
 class FlowchemAsyncDeviceListener(FlowchemCommonDeviceListener):
+    bg_tasks = set()
+
     async def _resolve_service(self, zc: Zeroconf, type_: str, name: str):
         service_info = AsyncServiceInfo(type_, name)
         await service_info.async_request(zc, 3000)
@@ -26,7 +28,9 @@ class FlowchemAsyncDeviceListener(FlowchemCommonDeviceListener):
             logger.warning(f"No info for service {name}!")
 
     def _save_device_info(self, zc: Zeroconf, type_: str, name: str) -> None:
-        asyncio.ensure_future(self._resolve_service(zc, type_, name))
+        task = asyncio.ensure_future(self._resolve_service(zc, type_, name))
+        self.bg_tasks.add(task)
+        task.add_done_callback(self.bg_tasks.discard)
 
 
 async def async_get_all_flowchem_devices(

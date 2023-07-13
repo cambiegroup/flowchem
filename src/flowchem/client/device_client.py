@@ -23,35 +23,40 @@ class FlowchemDeviceClient:
                 self._session.get(self.url).text,
             )
         except ConnectionError as ce:
-            raise RuntimeError(
+            msg = (
                 f"Cannot connect to device at {url}!"
                 f"This is likely caused by the server listening only on local the interface,"
                 f"start flowchem with the --host 0.0.0.0 option to check if that's the problem!"
-            ) from ce
+            )
+            raise RuntimeError(msg) from ce
         self.components = [
             FlowchemComponentClient(cmp_url, parent=self)
             for cmp_url in self.device_info.components.values()
         ]
 
     def __getitem__(self, item):
+        """Get a device component by name or type."""
         if isinstance(item, type):
             return [
                 component
                 for component in self.components
                 if isinstance(component, item)
             ]
-        elif isinstance(item, str):
+        if isinstance(item, str):
             try:
                 FlowchemComponentClient(self.device_info.components[item], self)
-            except IndexError:
-                raise KeyError(f"No component named '{item}' in {repr(self)}.")
+            except IndexError as ie:
+                msg = f"No component named '{item}' in {repr(self)}."
+                raise KeyError(msg) from ie
+        return None
 
     # noinspection PyUnusedLocal
     @staticmethod
-    def raise_for_status(resp, *args, **kwargs):
+    def raise_for_status(resp, *args, **kwargs):  # noqa
+        """Raise errors for status codes != 200 in session requests."""
         resp.raise_for_status()
 
-    # noinspection PyUnusedLocal
     @staticmethod
-    def log_responses(resp, *args, **kwargs):
+    def log_responses(resp, *args, **kwargs):  # noqa
+        """Log all the requests sent."""
         logger.debug(f"Reply: {resp.text} on {resp.url}")
