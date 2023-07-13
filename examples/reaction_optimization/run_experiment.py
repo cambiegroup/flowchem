@@ -2,28 +2,25 @@ import time
 
 import numpy as np
 import pandas as pd
-from examples.reaction_optimization._hw_control import command_session
+
 from loguru import logger
 from scipy import integrate
 
 from flowchem.client.client import get_all_flowchem_devices
 
-HOST = "127.0.0.1"
-PORT = 8000
-api_base = f"http://{HOST}:{PORT}"
-
 # Flowchem devices
 flowchem_devices = get_all_flowchem_devices()
 
 # SOCl2 pump
-socl2_url = flowchem_devices["socl2"]
+socl2 = flowchem_devices["socl2"]["pump"]
+# socl2 = flowchem_devices["socl2"][BasePump]  # To be tested
+
 # Hexyldecanoic pump
-hexyldecanoic_url = flowchem_devices["hexyldecanoic"]
+hexyldecanoic = flowchem_devices["hexyldecanoic"]["pump"]
 # R4 reactor heater
-reactor_url = flowchem_devices["r4-heater"]
-reactor_bay = 0
+reactor = flowchem_devices["r4-heater"]["reactor1"]
 # FlowIR
-flowir_url = flowchem_devices["flowir"]
+flowir = flowchem_devices["flowir"]["ir-control"]
 
 
 def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
@@ -57,61 +54,49 @@ def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
 
 
 def set_parameters(rates: dict, temperature: float):
-    with command_session() as sess:
-        sess.put(socl2_url + "/flow-rate", params={"rate": f"{rates['socl2']} ml/min"})
-        sess.put(
-            hexyldecanoic_url + "/flow-rate",
-            params={"rate": f"{rates['hexyldecanoic']} ml/min"},
-        )
+    # Set pumps
+    socl2.put("flow-rate", {"rate": f"{rates['socl2']} ml/min"})
+    hexyldecanoic.put("flow-rate", {"rate": f"{rates['hexyldecanoic']} ml/min"})
 
-        # Sets heater
-        heater_data = {"temperature": f"{temperature:.2f} °C"}
-        sess.put(reactor_url + "/temperature", params=heater_data)
+    # Sets heater
+    reactor.put("temperature", {"temperature": f"{temperature:.2f} °C"})
 
 
 def wait_stable_temperature():
     """Wait until a stable temperature has been reached."""
     logger.info("Waiting for the reactor temperature to stabilize")
     while True:
-        with command_session() as sess:
-            r = sess.get(reactor_url + "/target-reached")
-            if r.text == "true":
-                logger.info("Stable temperature reached!")
-                break
-            else:
-                time.sleep(5)
+        if reactor.get("target-reached").text == "true":
+            logger.info("Stable temperature reached!")
+            break
+        else:
+            time.sleep(5)
 
 
 def get_ir_once_stable():
     """Keep acquiring IR spectra until changes are small, then returns the spectrum."""
     logger.info("Waiting for the IR spectrum to be stable")
-    with command_session() as sess:
-        # Wait for first spectrum to be available
-        while int(sess.get(flowir_url + "/sample-count").text) == 0:
-            time.sleep(1)
-        # Get spectrum
-        previous_spectrum = pd.read_json(
-            sess.get(flowir_url + "/sample/spectrum-treated").text,
-        )
-        previous_spectrum = previous_spectrum.set_index("wavenumber")
-        # In case the id has changed between requests (highly unlikely)
-        last_sample_id = int(sess.get(flowir_url + "/sample-count").text)
+    # Wait for first spectrum to be available
+    while flowir.get("sample-count").text == 0:
+        time.sleep(1)
+
+    # Get spectrum
+    previous_spectrum = pd.read_json(flowir.get("sample/spectrum-treated").text)
+    previous_spectrum = previous_spectrum.set_index("wavenumber")
+    # In case the id has changed between requests (highly unlikely)
+    last_sample_id = int(flowir.get("sample-count").text)
 
     while True:
         # Wait for a new spectrum
         while True:
-            with command_session() as sess:
-                current_sample_id = int(sess.get(flowir_url + "/sample-count").text)
+            current_sample_id = int(flowir.get("sample-count").text)
             if current_sample_id > last_sample_id:
                 break
             else:
                 time.sleep(2)
 
-        with command_session() as sess:
-            current_spectrum = pd.read_json(
-                sess.get(flowir_url + "/sample/spectrum-treated").text,
-            )
-            current_spectrum = current_spectrum.set_index("wavenumber")
+        current_spectrum = pd.read_json(flowir.get("sample/spectrum-treated").text)
+        current_spectrum = current_spectrum.set_index("wavenumber")
 
         previous_peaks = integrate_peaks(previous_spectrum)
         current_peaks = integrate_peaks(current_spectrum)

@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from loguru import logger
 from pydantic import AnyHttpUrl
 
 if TYPE_CHECKING:
@@ -10,21 +9,21 @@ from flowchem.components.component_info import ComponentInfo
 
 class FlowchemComponentClient:
     def __init__(self, url: AnyHttpUrl, parent: "FlowchemDeviceClient") -> None:
-        self.url = url
-        # Get ComponentInfo from
-        logger.warning(f"CREATE COMPONENT FOR URL {url}")
+        self.base_url = str(url)
         self._parent = parent
         self._session = self._parent._session
-        self.component_info = ComponentInfo.model_validate_json(self.get(url).text)
+        self.component_info = ComponentInfo.model_validate_json(self.get("").text)
 
     def get(self, url, **kwargs):
         """Send a GET request. Returns :class:`Response` object."""
-        return self._session.get(url, **kwargs)
+        return self._session.get(self.base_url + "/" + url, **kwargs)
 
     def post(self, url, data=None, json=None, **kwargs):
         """Send a POST request. Returns :class:`Response` object."""
-        return self._session.post(url, data=data, json=json, **kwargs)
+        return self._session.post(
+            self.base_url + "/" + url, data=data, json=json, **kwargs
+        )
 
     def put(self, url, data=None, **kwargs):
         """Send a PUT request. Returns :class:`Response` object."""
-        return self._session.put(url, data=data, **kwargs)
+        return self._session.put(self.base_url + "/" + url, data=data, **kwargs)

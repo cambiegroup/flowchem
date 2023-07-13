@@ -1,15 +1,8 @@
 import time
 
-from examples.reaction_optimization._hw_control import (
-    command_session,
-    flowir_endpoint,
-    hexyldecanoic_endpoint,
-    r4_endpoint,
-    socl2_endpoint,
-)
 from gryffin import Gryffin
 from loguru import logger
-from run_experiment import run_experiment
+from run_experiment import run_experiment, reactor, flowir, hexyldecanoic, socl2
 
 logger.add("./xp.log", level="INFO")
 
@@ -31,31 +24,31 @@ observations = []
 
 
 # Initialize hardware
-with command_session() as sess:
-    # Heater to r.t.
-    sess.put(r4_endpoint + "/temperature", params={"temperature": "21"})
-    sess.put(r4_endpoint + "/power-on")
+# Heater to r.t.
+reactor.put("temperature", {"temperature": "21"})
+reactor.put("power-on")
 
-    # Start pumps with low flow rate
-    sess.put(socl2_endpoint + "/flow-rate", params={"rate": "5 ul/min"})
-    sess.put(socl2_endpoint + "/infuse")
+# Start pumps with low flow rate
+socl2.put("flow-rate", {"rate": "5 ul/min"})
+socl2.put("infuse")
 
-    sess.put(hexyldecanoic_endpoint + "/flow-rate", params={"rate": "50 ul/min"})
-    sess.put(hexyldecanoic_endpoint + "/infuse")
+hexyldecanoic.put("flow-rate", {"rate": "50 ul/min"})
+hexyldecanoic.put("infuse")
 
-    # Ensure iCIR is running
-    assert (
-        sess.get(flowir_endpoint + "/is-connected").text == "true"
-    ), "iCIR app must be open on the control PC"
-    # If IR is running I just reuse previous experiment. Because cleaning the probe for the BG is slow
-    status = sess.get(flowir_endpoint + "/probe-status")
-    if status == " Not running":
-        # Start acquisition
-        xp = {
-            "template": "30sec_2days.iCIRTemplate",
-            "name": "hexyldecanoic acid chlorination - automated",
-        }
-        sess.put(flowir_endpoint + "/experiment/start", params=xp)
+# Ensure iCIR is running
+assert (
+    flowir.get("is-connected").text == "true"
+), "iCIR app must be open on the control PC"
+# If IR is running I just reuse previous experiment. Because cleaning the probe for the BG is slow
+
+status = flowir.get("probe-status").text
+if status == " Not running":
+    # Start acquisition
+    xp = {
+        "template": "30sec_2days.iCIRTemplate",
+        "name": "hexyldecanoic acid chlorination - automated",
+    }
+    flowir.put("experiment/start", xp)
 
 
 # Run optimization for MAX_TIME

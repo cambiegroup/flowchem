@@ -33,6 +33,19 @@ class FlowchemDeviceClient:
             for cmp_url in self.device_info.components.values()
         ]
 
+    def __getitem__(self, item):
+        if isinstance(item, type):
+            return [
+                component
+                for component in self.components
+                if isinstance(component, item)
+            ]
+        elif isinstance(item, str):
+            try:
+                FlowchemComponentClient(self.device_info.components[item])
+            except IndexError:
+                raise KeyError(f"No component named '{item}' in {repr(self)}.")
+
     @staticmethod
     def raise_for_status(resp, *args, **kwargs):
         resp.raise_for_status()
