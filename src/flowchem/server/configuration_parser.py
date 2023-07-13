@@ -110,7 +110,7 @@ def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
                 f"Install {needed_plugin} to add support for it!"
                 f"e.g. `python -m pip install {needed_plugin}`"
             )
-            raise InvalidConfiguration(f"{needed_plugin} not installed.")
+            raise InvalidConfiguration(f"{needed_plugin} not installed.") from error
 
         logger.exception(
             f"Device type `{device_config['type']}` unknown in 'device.{device_name}'!"

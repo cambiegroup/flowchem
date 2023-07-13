@@ -163,7 +163,7 @@ class R4Heater(FlowchemDevice):
             ch_num: TempRange(
                 min=ureg.Quantity(f"{t[0]} °C"), max=ureg.Quantity(f"{t[1]} °C")
             )
-            for ch_num, t in enumerate(zip(self._min_t, self._max_t))
+            for ch_num, t in enumerate(zip(self._min_t, self._max_t, strict=True))
         }
         return [
             R4HeaterChannelControl(f"reactor{n+1}", self, n, temp_limits[n])

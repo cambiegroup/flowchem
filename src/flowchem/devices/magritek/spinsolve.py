@@ -86,10 +86,10 @@ class Spinsolve(FlowchemDevice):
             )
             try:
                 self.schema = etree.XMLSchema(file=str(default_schema))
-            except etree.XMLSchemaParseError:  # i.e. not found
+            except etree.XMLSchemaParseError as et:  # i.e. not found
                 raise ConnectionError(
                     f"Cannot find RemoteControl.xsd in {default_schema}!"
-                )
+                ) from et
         else:
             self.schema = xml_schema
 

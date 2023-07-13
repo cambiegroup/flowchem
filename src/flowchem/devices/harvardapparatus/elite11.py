@@ -375,7 +375,8 @@ class Elite11(FlowchemDevice):
             if "Argument error" in set_vol:
                 warnings.warn(
                     f"Cannot set target volume of {target_volume} with a "
-                    f"{self.get_syringe_volume()} syringe!"
+                    f"{self.get_syringe_volume()} syringe!",
+                    stacklevel=2,
                 )
 
     async def pump_info(self) -> PumpInfo:

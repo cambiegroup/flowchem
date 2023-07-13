@@ -142,7 +142,9 @@ class HamiltonPumpIO:
         assert status in (self.ACKNOWLEDGE, self.NEGATIVE_ACKNOWLEDGE)
         if status == self.NEGATIVE_ACKNOWLEDGE:
             logger.warning("Negative acknowledge received")
-            warnings.warn("Negative acknowledge reply: check command syntax!")
+            warnings.warn(
+                "Negative acknowledge reply: check command syntax!", stacklevel=2
+            )
 
         return reply.rstrip()  # removes trailing <cr>
 
@@ -318,7 +320,8 @@ class ML600(FlowchemDevice):
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"
-                f"Wrong units? A bigger syringe is needed?"
+                f"Wrong units? A bigger syringe is needed?",
+                stacklevel=2,
             )
 
         # Target flow rate too low
@@ -327,7 +330,8 @@ class ML600(FlowchemDevice):
             warnings.warn(
                 f"Desired speed ({speed}) is unachievable!"
                 f"Set to {self._seconds_per_stroke_to_flowrate(speed)}"
-                f"Wrong units? A smaller syringe is needed?"
+                f"Wrong units? A smaller syringe is needed?",
+                stacklevel=2,
             )
 
         return str(round(speed.m_as("sec / stroke")))

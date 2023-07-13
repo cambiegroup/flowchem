@@ -69,10 +69,10 @@ class PhidgetPowerSource5V(FlowchemDevice):
         try:
             self.phidget.openWaitForAttachment(1000)
             logger.debug("power of tube sensor is connected!")
-        except PhidgetException:
+        except PhidgetException as pe:
             raise InvalidConfiguration(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
-            )
+            ) from pe
 
         # Set power supply to 5V to provide power
         self.phidget.setDutyCycle(1.0)
@@ -160,10 +160,10 @@ class PhidgetBubbleSensor(FlowchemDevice):
         try:
             self.phidget.openWaitForAttachment(1000)
             logger.debug("tube sensor is connected!")
-        except PhidgetException:
+        except PhidgetException as pe:
             raise InvalidConfiguration(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
-            )
+            ) from pe
 
         # Set power supply to 12V to start measurement
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_12V)

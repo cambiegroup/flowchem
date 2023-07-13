@@ -103,11 +103,12 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
             return False
 
         if "ERROR:1" in reply:
-            warnings.warn("Invalid message sent to device.\n")
+            warnings.warn("Invalid message sent to device.\n", stacklevel=2)
 
         elif "ERROR:2" in reply:
             warnings.warn(
-                "Setpoint refused by device.\n" "Refer to manual for allowed values.\n"
+                "Setpoint refused by device.\n" "Refer to manual for allowed values.\n",
+                stacklevel=2,
             )
         else:
             warnings.warn("Unspecified error detected!")

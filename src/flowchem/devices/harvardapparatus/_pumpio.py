@@ -86,7 +86,7 @@ class HarvardApparatusPumpIO:
     ) -> tuple[list[int], list[PumpStatus], list[str]]:
         """Aggregate address prompt and reply body from all the reply lines and return them."""
         parsed_lines = list(map(HarvardApparatusPumpIO.parse_response_line, response))
-        return zip(*parsed_lines)  # type: ignore
+        return zip(*parsed_lines, strict=True)  # type: ignore
 
     @staticmethod
     def check_for_errors(response_line, command_sent):
