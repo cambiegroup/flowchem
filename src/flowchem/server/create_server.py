@@ -39,7 +39,7 @@ async def create_server_for_devices(
 ) -> FlowchemInstance:
     """Initialize and create API endpoints for device object provided."""
     # mDNS server (Zeroconf)
-    mdns = ZeroconfServer(config.get("port"))
+    mdns = ZeroconfServer(config.get("port", 8000))
     logger.info(f"Zeroconf server up, broadcasting on IPs: {mdns.mdns_addresses}")
 
     # HTTP server (FastAPI)
@@ -52,7 +52,6 @@ async def create_server_for_devices(
         # Add device API to HTTP server
         http.add_device(device)
     logger.info("Server component(s) loaded successfully!")
-
     return {"api_server": http, "mdns_server": mdns, "port": mdns.port}
 
 

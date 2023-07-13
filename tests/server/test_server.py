@@ -24,7 +24,7 @@ def app():
         yield server["api_server"].app
 
 
-def test_read_main(app):
+def test_read_main(flowchem_test_instance):
     client = TestClient(app)
     response = client.get("/")
     assert response.status_code == 200

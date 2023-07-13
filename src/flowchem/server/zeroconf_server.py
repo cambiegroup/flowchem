@@ -11,7 +11,7 @@ from zeroconf import Zeroconf
 class ZeroconfServer:
     """Server to advertise Flowchem devices via zero configuration networking."""
 
-    def __init__(self, port: int = 8000):
+    def __init__(self, port: int):
         # Server properties
         self.port = port
         self.server = Zeroconf(ip_version=IPVersion.V4Only)

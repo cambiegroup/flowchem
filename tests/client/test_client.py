@@ -1,38 +1,25 @@
-from io import BytesIO
-
 from flowchem.client.async_client import (
-    _async_get_all_flowchem_devices_url,
-    _async_get_flowchem_device_url_by_name,
+    async_get_all_flowchem_devices,
+    async_get_flowchem_device_by_name,
 )
-from flowchem.server.create_server import create_server_from_file
+from flowchem.client.client import get_flowchem_device_by_name, get_all_flowchem_devices
 
 
-async def test_get_flowchem_device_url_by_name():
-    flowchem_instance = await create_server_from_file(
-        BytesIO(
-            bytes(
-                """[device.test-device]\ntype = "FakeDevice"\n""",
-                "utf-8",
-            )
-        )
-    )
-
-    assert flowchem_instance["mdns_server"].server.loop.is_running()
-    url = await _async_get_flowchem_device_url_by_name("test-device")
-    assert "test-device" in str(url)
+def test_get_flowchem_device_url_by_name(flowchem_test_instance):
+    dev = get_flowchem_device_by_name("test-device")
+    assert "test-device" in str(dev.url)
 
 
-async def test_get_all_flowchem_devices_url():
-    flowchem_instance = await create_server_from_file(
-        BytesIO(
-            bytes(
-                """[device.test-device2]\ntype = "FakeDevice"\n""",
-                "utf-8",
-            )
-        )
-    )
+def test_get_all_flowchem_devices(flowchem_test_instance):
+    dev_dict = get_all_flowchem_devices()
+    assert "test-device" in dev_dict.keys()
 
-    assert flowchem_instance["mdns_server"].server.loop.is_running()
-    devs = await _async_get_all_flowchem_devices_url()
-    print(devs)
-    assert "test-device2" in devs.keys()
+
+async def test_async_get_flowchem_device_by_name(flowchem_test_instance):
+    dev = await async_get_flowchem_device_by_name("test-device")
+    assert "test-device" in str(dev.url)
+
+
+async def test_async_get_all_flowchem_devices(flowchem_test_instance):
+    dev_dict = await async_get_all_flowchem_devices()
+    assert "test-device" in dev_dict.keys()
