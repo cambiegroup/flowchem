@@ -7,6 +7,7 @@ from flowchem.__main__ import main
 
 
 class FakeServer:
+    # noinspection PyUnusedLocal
     def __init__(self, config) -> None:
         pass
 
@@ -30,9 +31,11 @@ def test_cli(mocker):
                 ),
             )
 
+        # noinspection PyTypeChecker
         result = runner.invoke(main, ["test_configuration.toml"])
         assert result.exit_code == 0
 
+        # noinspection PyTypeChecker
         result = runner.invoke(
             main,
             ["test_configuration.toml", "--log", "logfile.log"],

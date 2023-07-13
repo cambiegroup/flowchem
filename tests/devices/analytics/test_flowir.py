@@ -8,8 +8,13 @@ from flowchem.components.analytics.ir import IRSpectrum
 from flowchem.devices.mettlertoledo.icir import IcIR
 
 
+@pytest.fixture
+def spectrometer() -> IcIR:
+    """Workaround for https://youtrack.jetbrains.com/issue/PY-30279/"""
+
+
 @pytest.fixture()
-async def spectrometer():
+async def spectrometer() -> IcIR:  # noqa
     """Return local FlowIR object."""
     s = IcIR(
         template="template",

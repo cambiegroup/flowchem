@@ -4,6 +4,7 @@ import datetime
 from pathlib import Path
 
 from asyncua import Client, ua
+from asyncua.ua.uaerrors import BadOutOfService, Bad
 from loguru import logger
 from pydantic import BaseModel
 
@@ -94,7 +95,7 @@ class IcIR(FlowchemDevice):
         # Start acquisition! Ensures the device is ready when a spectrum is needed
         await self.start_experiment(name="Flowchem", template=self._template)
         probe = await self.probe_info()
-        self.device_info.additional_info = probe.dict()
+        self.device_info.additional_info = probe.model_dump()
 
         # Set IRSpectrometer component
         self.components.append(IcIRControl("ir-control", self))
@@ -210,7 +211,7 @@ class IcIR(FlowchemDevice):
                         1
                     ].strip()
 
-        return ProbeInfo.parse_obj(probe_info)
+        return ProbeInfo.model_validate(probe_info)
 
     @staticmethod
     async def _wavenumber_from_spectrum_node(node) -> list[float]:
@@ -227,7 +228,7 @@ class IcIR(FlowchemDevice):
             wavenumber = await IcIR._wavenumber_from_spectrum_node(node)
             return IRSpectrum(wavenumber=wavenumber, intensity=intensity)
 
-        except ua.uaerrors.BadOutOfService:
+        except BadOutOfService:
             return IRSpectrum(wavenumber=[], intensity=[])
 
     async def last_spectrum_treated(self) -> IRSpectrum:
@@ -278,7 +279,7 @@ class IcIR(FlowchemDevice):
             # Collect_bg does not seem to work in automation, set to false and do not expose in start_experiment()!
             collect_bg = False
             await method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
-        except ua.uaerrors.Bad as error:
+        except Bad as error:
             raise DeviceError(
                 "The experiment could not be started!\n"
                 "Check iCIR status and close any open experiment."

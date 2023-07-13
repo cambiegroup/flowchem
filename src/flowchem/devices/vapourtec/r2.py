@@ -29,6 +29,7 @@ from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 try:
+    # noinspection PyUnresolvedReferences
     from flowchem_vapourtec import VapourtecR2Commands
 
     HAS_VAPOURTEC_COMMANDS = True
@@ -260,7 +261,7 @@ class R2(FlowchemDevice):
         return "Off" if state.chan3_temp == "-1000" else state.chan3_temp
 
     async def get_valve_Position(self, valve_code: int) -> str:
-        "Get specific valves position."
+        """Get specific valves position."""
         state = await self.get_status()
         # Current state of all valves as bitmap
         bitmap = int(state.LEDs_bitmap)
@@ -403,7 +404,7 @@ class R2(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    Vapourtec_R2 = R2(port="COM4")
+    R2_device = R2(port="COM4")
 
     async def main(Vapourtec_R2):
         """Test function."""
@@ -442,4 +443,4 @@ if __name__ == "__main__":
             # print(f"Injection valve A {await ivA.get_position()}")
         await r2swich.power_off()
 
-    asyncio.run(main(Vapourtec_R2))
+    asyncio.run(main(R2_device))

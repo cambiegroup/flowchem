@@ -37,4 +37,4 @@ class ProcessStatus(BaseModel):
             "control": PumpControlMode(int(reply[4])),
             "state": PumpState(int(reply[5])),
         }
-        return cls.parse_obj(reply_dict)
+        return cls.model_validate(reply_dict)

@@ -411,7 +411,6 @@ if __name__ == "__main__":
     async def main():
         """Test function."""
         await pump.initialize()
-        # assert await pump.get_infused_volume() == 0
         # await pump.set_syringe_diameter("30 mm")
         # await pump.set_syringe_diameter("30 mm")
         await pump.set_flow_rate("0.001 ml/min")

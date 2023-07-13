@@ -142,7 +142,7 @@ def test_protocol(nmr: Spinsolve):
     time.sleep(0.1)
 
     # Run fast proton
-    path = asyncio.run(nmr.run_protocol("1D PROTON", {"Scan": "QuickScan"}))
+    path = asyncio.run(nmr.run_protocol("1D PROTON", options={"Scan": "QuickScan"}))
     assert isinstance(path, Path)
 
 
@@ -154,5 +154,7 @@ def test_invalid_protocol(nmr: Spinsolve):
 
     # Fail on plutonium
     with pytest.warns(UserWarning, match="not available"):
-        path = asyncio.run(nmr.run_protocol("1D PLUTONIUM", {"Scan": "QuickScan"}))
+        path = asyncio.run(
+            nmr.run_protocol("1D PLUTONIUM", options={"Scan": "QuickScan"})
+        )
     assert path is None

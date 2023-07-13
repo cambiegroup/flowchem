@@ -46,10 +46,12 @@ class FlowchemDeviceClient:
             except IndexError:
                 raise KeyError(f"No component named '{item}' in {repr(self)}.")
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def raise_for_status(resp, *args, **kwargs):
         resp.raise_for_status()
 
+    # noinspection PyUnusedLocal
     @staticmethod
     def log_responses(resp, *args, **kwargs):
         logger.debug(f"Reply: {resp.text} on {resp.url}")

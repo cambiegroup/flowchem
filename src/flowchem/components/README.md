@@ -6,6 +6,7 @@ Ideally, for components of the same type (e.g. SyringePumps) it should be possib
 another one by simply updating the configuration file, while the public API remains unchanged.
 
 It is, however, still possible for individual devices to support additional commands, beyond the minimum set defined by
-this specs.  The use of such commands is discouraged as it limits the portability of any derived code.
+this specification.
+The use of such commands is discouraged as it limits the portability of any derived code.
 
 For a list of all components consult the documentation.

@@ -16,6 +16,7 @@ def test_autodiscover_cli():
     runner = CliRunner()
 
     with runner.isolated_filesystem():
+        # noinspection PyTypeChecker
         result = runner.invoke(
             main,
             ["--assume-yes", "--safe"],

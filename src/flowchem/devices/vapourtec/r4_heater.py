@@ -17,6 +17,7 @@ from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 try:
+    # noinspection PyUnresolvedReferences
     from flowchem_vapourtec import VapourtecR4Commands
 
     HAS_VAPOURTEC_COMMANDS = True
@@ -180,7 +181,7 @@ class R4Heater(FlowchemDevice):
 if __name__ == "__main__":
     import asyncio
 
-    heat = R4Heater(port="COM1")
+    r4_device = R4Heater(port="COM1")
 
     async def main(heat):
         """Test function."""
@@ -191,4 +192,4 @@ if __name__ == "__main__":
         await r1.set_temperature("30 °C")
         print(f"Temperature is {await r1.get_temperature()}")
 
-    asyncio.run(main(heat))
+    asyncio.run(main(r4_device))

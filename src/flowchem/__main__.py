@@ -38,7 +38,7 @@ from flowchem.server.create_server import create_server_from_file
 def main(device_config_file, logfile, host, debug):
     """Flowchem main program.
 
-    Parse device_config_file and starts a server exposing the devices via RESTful API.
+    Parse device_config_file and starts a server exposing the devices via REST-ful API.
 
     Args:
     ----

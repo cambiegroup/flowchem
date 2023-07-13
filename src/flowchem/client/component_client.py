@@ -11,7 +11,7 @@ class FlowchemComponentClient:
     def __init__(self, url: AnyHttpUrl, parent: "FlowchemDeviceClient") -> None:
         self.base_url = str(url)
         self._parent = parent
-        self._session = self._parent._session
+        self._session = parent._session
         self.component_info = ComponentInfo.model_validate_json(self.get("").text)
 
     def get(self, url, **kwargs):

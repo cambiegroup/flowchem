@@ -9,28 +9,27 @@ from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 # noinspection PyProtectedMember
-def cvc3000_finder(serial_port) -> list[str]:
+def cvc3000_finder(serial_port) -> set[str]:
     """Try to initialize a CVC3000 on every available COM port."""
     logger.debug(f"Looking for CVC3000 on {serial_port}...")
 
     try:
         cvc = CVC3000.from_config(port=serial_port)
     except InvalidConfigurationError:
-        return []
+        return set()
 
     try:
         asyncio.run(cvc.initialize())
     except InvalidConfigurationError:
         cvc._serial.close()
-        return []
+        return set()
 
     logger.info(f"CVC3000 {cvc.component_info.version} found on <{serial_port}>")
-
-    return [
-        dedent(
-            f"""
+    dev_config = dedent(
+        f"""
             [device.cvc-{cvc._device_sn}]
             type = "CVC3000"
-            port = "{serial_port}"\n\n""",
-        ),
-    ]
+            port = "{serial_port}"\n\n"""
+    )
+
+    return set(dev_config)

@@ -9,7 +9,7 @@ from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 # noinspection PyProtectedMember
-def r4_finder(serial_port) -> list[str]:
+def r4_finder(serial_port) -> set[str]:
     """Try to initialize an R4Heater on every available COM port."""
     logger.debug(f"Looking for R4Heaters on {serial_port}...")
     # Static counter for device type across different serial ports
@@ -21,13 +21,12 @@ def r4_finder(serial_port) -> list[str]:
     except InvalidConfigurationError as ic:
         logger.error("config")
         raise ic
-        return []
 
     try:
         asyncio.run(r4.initialize())
     except InvalidConfigurationError:
         r4._serial.close()
-        return []
+        return set()
 
     if r4.device_info.version:
         logger.info(f"R4 version {r4.device_info.version} found on <{serial_port}>")
@@ -42,4 +41,4 @@ def r4_finder(serial_port) -> list[str]:
     else:
         cfg = ""
 
-    return [cfg]
+    return set(cfg)

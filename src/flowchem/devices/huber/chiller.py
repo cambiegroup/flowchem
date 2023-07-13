@@ -347,10 +347,10 @@ class HuberChiller(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    chiller = HuberChiller(aioserial.AioSerial(port="COM8"))
+    device = HuberChiller(aioserial.AioSerial(port="COM8"))
 
     async def main(chiller):
         await chiller.initialize()
         print(f"S/N is {chiller.serial_number()}")
 
-    asyncio.run(main(chiller))
+    asyncio.run(main(device))

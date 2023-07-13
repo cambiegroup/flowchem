@@ -8,6 +8,7 @@ import sys
 import pint
 import pytest
 
+from flowchem import ureg
 from flowchem.devices.knauer.azura_compact import AzuraCompact, AzuraPumpHeads
 
 if sys.platform == "win32":
@@ -53,11 +54,11 @@ async def test_headtype(pump: AzuraCompact):
 @pytest.mark.KPump
 @pytest.mark.asyncio
 async def test_flow_rate(pump: AzuraCompact):
-    await pump.set_flow_rate("1.25 ml/min")
+    await pump.set_flow_rate(ureg.Quantity("1.25 ml/min"))
     await pump.infuse()
     # FIXME
     assert pint.Quantity(await pump.get_flow_rate()).magnitude == 1.25
-    await pump.set_flow_rate(f"{math.pi} ml/min")
+    await pump.set_flow_rate(ureg.Quantity(f"{math.pi} ml/min"))
     assert math.isclose(
         pint.Quantity(await pump.get_flow_rate()).magnitude,
         math.pi,
@@ -78,7 +79,7 @@ async def test_analog_control(pump: AzuraCompact):
 @pytest.mark.KPump
 @pytest.mark.asyncio
 async def test_is_running(pump: AzuraCompact):
-    await pump.set_flow_rate("1 ml/min")
+    await pump.set_flow_rate(ureg.Quantity("1 ml/min"))
     await pump.infuse()
     assert pump.is_running() is True
     await pump.stop()

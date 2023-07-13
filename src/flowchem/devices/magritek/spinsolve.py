@@ -125,7 +125,7 @@ class Spinsolve(FlowchemDevice):
         # This request is used to check if the instrument is connected
         hw_info = await self.hw_request()
         if hw_info.find(".//ConnectedToHardware").text != "true":
-            raise ConnectionError("Spectrometer not connected to Spinsolve's PC!")
+            raise ConnectionError("Spectrometer not connected to Spinsolve PC!")
 
         # If connected parse and log instrument info
         self.device_info.version = hw_info.find(".//SpinsolveSoftware").text
@@ -263,7 +263,7 @@ class Spinsolve(FlowchemDevice):
     async def run_protocol(
         self,
         name,
-        background_tasks: BackgroundTasks,
+        background_tasks: BackgroundTasks = None,
         options=None,
     ) -> int:
         """Run a protocol.

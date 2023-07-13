@@ -108,12 +108,12 @@ class PhidgetPowerSource5V(FlowchemDevice):
         return bool(self.phidget.getAttached())
 
     def is_poweron(self) -> bool:
-        """Wheteher the power is on."""
+        """Whether the power is on."""
         return bool(self.phidget.getState())
 
 
 class PhidgetBubbleSensor(FlowchemDevice):
-    """Use a Phidget voltage input to translate a Tube Liquid Sensor OPB350 5 Valtage signal
+    """Use a Phidget voltage input to translate a Tube Liquid Sensor OPB350 5 Voltage signal
     to the corresponding light penetration value.
     """
 

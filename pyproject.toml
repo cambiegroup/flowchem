@@ -42,19 +42,20 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "mypy",
-    "ruff>=0.0.252",
     "black",
-    "pre-commit"
+    "lxml-stubs",
+    "mypy",
+    "pre-commit",
+    "ruff>=0.0.252",
 ]
 test = [
     "flowchem-test>=0.1a3",
+    "httpx",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
     "pytest-mock",
     "pytest-xprocess",
-    "httpx",
     "requests",
 ]
 phidget = [
@@ -106,8 +107,8 @@ python_version = "3.10"
 [tool.pytest.ini_options]
 testpaths = "tests"
 asyncio_mode = "auto"
-# No cov needed for pycharm debugger
-#addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump'"
+# pytest cov is not compatible with the pycharm debugger in tests
+# addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump'"
 addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=30"
 
 markers = [

@@ -25,7 +25,7 @@ def repeat_every(
     raise_exceptions: bool = False,
     max_repetitions: int | None = None,
 ) -> NoArgsNoReturnDecorator:
-    """Return a decorator that modifies a function so it is periodically re-executed after its first call.
+    """Return a decorator that modifies a function, so it is periodically re-executed after its first call.
 
     The function it decorates should accept no arguments and return nothing. If necessary, this can be accomplished
     by using `functools.partial` or otherwise wrapping the target function prior to decoration.

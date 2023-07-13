@@ -37,7 +37,7 @@ class PBCommand:
         return self.command[4:8]
 
     def parse_temperature(self) -> float:
-        """Parse a device temp from hex string to celsius float."""
+        """Parse a device temp from hex string to Celsius float."""
         # self.data is the two's complement 16-bit signed hex, see manual
         temp = (
             (int(self.data, 16) - 65536) / 100

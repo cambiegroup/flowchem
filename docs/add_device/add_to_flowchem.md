@@ -38,7 +38,7 @@ either directly or with an intermediate `/flowchem/devices/weasley/__init__.py` 
 ### Device configuration
 Additional parameters needed for the device setup can be specified in the `__init__` method, if a default is provided
 the parameter will also be optional in the device section in the configuration file.
-In our case, the ExtentableEar has an optional length parameter, with a default value of "10 cm".
+In our case, the ExtendableEar has an optional length parameter, with a default value of "10 cm".
 To prevent ambiguities, all amounts with units should be provided as strings and parsed by the pint UnitRegistry
 `flowchem.ureg`.
 ```python
@@ -180,7 +180,7 @@ def components(self):
 Now if we run `flowchem ear.toml` again the server will start successfully and show the metadata info together with the
 `start` and `stop` methods.
 
-![](../add_device/extendable_ear1.png)
+![](extendable_ear1.png)
 
 However, executing start and stop will not execute any code.
 For that we need to add some code in out `ExtendableEarMicrophone` to transform these calls into action.
@@ -203,7 +203,7 @@ class ExtendableEarMicrophone(Microphone):
 If we run `flowchem ear.toml` once again we can now see the code in `ExtendableEar` being executed when the API
 is called.
 
-![](../add_device/extendable_ear2.png)
+![](extendable_ear2.png)
 
 
 Finally, if we want to support some additional feature off our device that go beyond those of the standard component,

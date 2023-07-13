@@ -258,6 +258,7 @@ def _windows_ctypes_host(host):
         if inetaddr in (0, -1):
             raise Exception
     except Exception:
+        # noinspection PyTypeChecker
         hostip = socket.gethostbyname(host)
         inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
 

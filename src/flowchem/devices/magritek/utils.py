@@ -16,8 +16,10 @@ def get_my_docs_path() -> Path:
     """
     # From https://stackoverflow.com/questions/6227590
 
-    csidl_personal = 5  # My Documents
-    shgfp_type_current = 0  # Get current, not default value
+    csidl_personal = 5  # My Documents (csidl = constant special item ID list)
+    shgfp_type_current = (
+        0  # Get current, not default value (shgfp = shell get folder path)
+    )
     buf = ctypes.create_unicode_buffer(2000)
     ctypes.windll.shell32.SHGetFolderPathW(  # type: ignore
         None,
