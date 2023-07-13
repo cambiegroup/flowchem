@@ -7,7 +7,7 @@ import pint
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.components.base_component import FlowchemComponent
+from flowchem.components.flowchem_component import FlowchemComponent
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice

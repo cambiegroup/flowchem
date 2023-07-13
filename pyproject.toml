@@ -109,7 +109,7 @@ testpaths = "tests"
 asyncio_mode = "auto"
 # pytest cov is not compatible with the pycharm debugger in tests
 # addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump'"
-addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=30"
+addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=40"
 
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",

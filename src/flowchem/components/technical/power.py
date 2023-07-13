@@ -1,7 +1,7 @@
 """Power control, sets both voltage and current. (Could be split in two, unnecessarty for now)."""
 from __future__ import annotations
 
-from flowchem.components.base_component import FlowchemComponent
+from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 

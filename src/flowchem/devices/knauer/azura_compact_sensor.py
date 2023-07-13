@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .azura_compact import AzuraCompact
 
-from flowchem.components.sensors.pressure import PressureSensor
+from flowchem.components.sensors.pressure_sensor import PressureSensor
 
 
 class AzuraCompactSensor(PressureSensor):

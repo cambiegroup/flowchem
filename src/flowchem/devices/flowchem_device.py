@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from flowchem.components.device_info import DeviceInfo
 
 if TYPE_CHECKING:
-    from flowchem.components.base_component import FlowchemComponent
+    from flowchem.components.flowchem_component import FlowchemComponent
 
 RepeatedTaskInfo = namedtuple("RepeatedTaskInfo", ["seconds_every", "task"])
 

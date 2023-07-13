@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from flowchem.components.valves.distribution_valves import TwoPortDistribution
+from flowchem.components.valves.distribution_valves import TwoPortDistributionValve
 
 if TYPE_CHECKING:
     from .ml600 import ML600
 
 
-class ML600Valve(TwoPortDistribution):
+class ML600Valve(TwoPortDistributionValve):
     hw_device: ML600  # for typing's sake
 
     position_mapping = {

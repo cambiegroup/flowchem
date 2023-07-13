@@ -29,10 +29,10 @@ class FlowchemDeviceClient:
                 f"start flowchem with the --host 0.0.0.0 option to check if that's the problem!"
             )
             raise RuntimeError(msg) from ce
-        self.components = [
-            FlowchemComponentClient(cmp_url, parent=self)
-            for cmp_url in self.device_info.components.values()
-        ]
+        self.components = {
+            k: FlowchemComponentClient(v, parent=self)
+            for k, v in self.device_info.components.items()
+        }
 
     def __getitem__(self, item):
         """Get a device component by name or type."""
@@ -43,11 +43,7 @@ class FlowchemDeviceClient:
                 if isinstance(component, item)
             ]
         if isinstance(item, str):
-            try:
-                FlowchemComponentClient(self.device_info.components[item], self)
-            except IndexError as ie:
-                msg = f"No component named '{item}' in {repr(self)}."
-                raise KeyError(msg) from ie
+            return self.components.get(item, None)
         return None
 
     # noinspection PyUnusedLocal

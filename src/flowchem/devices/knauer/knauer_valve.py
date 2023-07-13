@@ -4,14 +4,14 @@ from enum import Enum
 
 from loguru import logger
 
-from flowchem.components.base_component import FlowchemComponent
+from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.knauer.knauer_valve_component import (
-    Knauer6PortDistribution,
-    Knauer12PortDistribution,
-    Knauer16PortDistribution,
+    Knauer6PortDistributionValve,
+    Knauer12PortDistributionValve,
+    Knauer16PortDistributionValve,
     KnauerInjectionValve,
 )
 from flowchem.utils.exceptions import DeviceError
@@ -61,11 +61,17 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
             case KnauerValveHeads.SIX_PORT_TWO_POSITION:
                 valve_component = KnauerInjectionValve("injection-valve", self)
             case KnauerValveHeads.SIX_PORT_SIX_POSITION:
-                valve_component = Knauer6PortDistribution("distribution-valve", self)
+                valve_component = Knauer6PortDistributionValve(
+                    "distribution-valve", self
+                )
             case KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION:
-                valve_component = Knauer12PortDistribution("distribution-valve", self)
+                valve_component = Knauer12PortDistributionValve(
+                    "distribution-valve", self
+                )
             case KnauerValveHeads.SIXTEEN_PORT_SIXTEEN_POSITION:
-                valve_component = Knauer16PortDistribution("distribution-valve", self)
+                valve_component = Knauer16PortDistributionValve(
+                    "distribution-valve", self
+                )
             case _:
                 raise RuntimeError("Unknown valve type")
         self.components.append(valve_component)

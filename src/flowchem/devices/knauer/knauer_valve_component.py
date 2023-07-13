@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .knauer_valve import KnauerValve
 from flowchem.components.valves.distribution_valves import (
-    SixPortDistribution,
-    SixteenPortDistribution,
-    TwelvePortDistribution,
+    SixPortDistributionValve,
+    SixteenPortDistributionValve,
+    TwelvePortDistributionValve,
 )
-from flowchem.components.valves.injection_valves import SixPortTwoPosition
+from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 
 
-class KnauerInjectionValve(SixPortTwoPosition):
+class KnauerInjectionValve(SixPortTwoPositionValve):
     hw_device: KnauerValve  # for typing's sake
     position_mapping = {"load": "L", "inject": "I"}
     _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
@@ -31,7 +31,7 @@ class KnauerInjectionValve(SixPortTwoPosition):
         return await self.hw_device.set_raw_position(target_pos)
 
 
-class Knauer6PortDistribution(SixPortDistribution):
+class Knauer6PortDistributionValve(SixPortDistributionValve):
     """KnauerValve of type SIX_PORT_SIX_POSITION."""
 
     hw_device: KnauerValve  # for typing's sake
@@ -46,7 +46,7 @@ class Knauer6PortDistribution(SixPortDistribution):
         return await self.hw_device.set_raw_position(position)
 
 
-class Knauer12PortDistribution(TwelvePortDistribution):
+class Knauer12PortDistributionValve(TwelvePortDistributionValve):
     """KnauerValve of type SIX_PORT_SIX_POSITION."""
 
     hw_device: KnauerValve  # for typing's sake
@@ -61,7 +61,7 @@ class Knauer12PortDistribution(TwelvePortDistribution):
         return await self.hw_device.set_raw_position(position)
 
 
-class Knauer16PortDistribution(SixteenPortDistribution):
+class Knauer16PortDistributionValve(SixteenPortDistributionValve):
     """KnauerValve of type SIX_PORT_SIX_POSITION."""
 
     hw_device: KnauerValve  # for typing's sake

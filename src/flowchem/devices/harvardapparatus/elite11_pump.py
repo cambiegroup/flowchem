@@ -7,7 +7,7 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from .elite11 import Elite11
-from flowchem.components.pumps.syringe import SyringePump
+from flowchem.components.pumps.syringe_pump import SyringePump
 
 
 class Elite11PumpOnly(SyringePump):

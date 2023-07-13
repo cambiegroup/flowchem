@@ -1,7 +1,7 @@
 """Pressure sensor."""
 from flowchem.devices.flowchem_device import FlowchemDevice
 
-from .base_sensor import Sensor
+from .sensor import Sensor
 
 
 class PhotoSensor(Sensor):

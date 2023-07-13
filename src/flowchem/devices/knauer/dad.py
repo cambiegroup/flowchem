@@ -135,7 +135,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
     async def info(self) -> str:
         """Get the instrument information
         NUMBER OF PIXEL (256, 512, 1024), SPECTRAL RANGE(“UV”, “VIS”, “UV-VIS”),
-        HARDVARE VERSION, YEAR OF PRODUCTION,WEEK OF PRODUCTION,,CALIBR. A,CALIBR. B,, CALIBR. C.
+        HARDWARE VERSION, YEAR OF PRODUCTION,WEEK OF PRODUCTION,,CALIBR. A,CALIBR. B,, CALIBR. C.
         """
         return await self._send_and_receive(self.cmd.INFO)
 

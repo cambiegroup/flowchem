@@ -1,9 +1,9 @@
-"""Knauer dad component."""
+"""Knauer DAD component."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.sensors.photo import PhotoSensor
+from flowchem.components.sensors.photo_sensor import PhotoSensor
 
 if TYPE_CHECKING:
     from flowchem.devices.knauer.dad import KnauerDAD

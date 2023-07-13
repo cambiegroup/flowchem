@@ -1,11 +1,7 @@
 from pydantic import AnyHttpUrl, BaseModel
 
 from flowchem import __version__
-
-
-class Person(BaseModel):
-    name: str
-    email: str
+from flowchem.utils.people import Person
 
 
 class DeviceInfo(BaseModel):

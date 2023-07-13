@@ -6,7 +6,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 if TYPE_CHECKING:
     from .pressure_sensor import PhidgetPressureSensor
-from flowchem.components.sensors.pressure import PressureSensor
+from flowchem.components.sensors.pressure_sensor import PressureSensor
 
 
 class PhidgetPressureSensorComponent(PressureSensor):

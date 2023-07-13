@@ -5,14 +5,14 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from flowchem.components.pumps.hplc import HPLCPump
-from flowchem.components.sensors.base_sensor import Sensor
-from flowchem.components.sensors.pressure import PressureSensor
+from flowchem.components.pumps.hplc_pump import HPLCPump
+from flowchem.components.sensors.sensor import Sensor
+from flowchem.components.sensors.pressure_sensor import PressureSensor
 from flowchem.components.technical.photo import Photoreactor
 from flowchem.components.technical.power import PowerSwitch
 from flowchem.components.technical.temperature import TemperatureControl, TempRange
-from flowchem.components.valves.distribution_valves import TwoPortDistribution
-from flowchem.components.valves.injection_valves import SixPortTwoPosition
+from flowchem.components.valves.distribution_valves import TwoPortDistributionValve
+from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 
 if TYPE_CHECKING:
     from .r2 import R2
@@ -122,7 +122,7 @@ class UV150PhotoReactor(Photoreactor):
         await self.hw_device.set_UV150(0)
 
 
-class R2InjectionValve(SixPortTwoPosition):
+class R2InjectionValve(SixPortTwoPositionValve):
     """R2 reactor injection loop valve control class."""
 
     hw_device: R2  # for typing's sake
@@ -150,7 +150,7 @@ class R2InjectionValve(SixPortTwoPosition):
         return True
 
 
-class R2TwoPortValve(TwoPortDistribution):  # total 3 positions (A, B, Collection)
+class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Collection)
     """R2 reactor injection loop valve control."""
 
     hw_device: R2

@@ -8,7 +8,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 if TYPE_CHECKING:
     from .bubble_sensor import PhidgetBubbleSensor, PhidgetPowerSource5V
 
-from flowchem.components.sensors.base_sensor import Sensor
+from flowchem.components.sensors.sensor import Sensor
 
 
 class PhidgetBubbleSensorComponent(Sensor):

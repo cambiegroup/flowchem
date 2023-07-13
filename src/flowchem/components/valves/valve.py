@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from flowchem.components.base_component import FlowchemComponent
+from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
@@ -12,7 +12,7 @@ class ValveInfo(BaseModel):
     positions: dict[str, list[tuple[str, str]]]
 
 
-class BaseValve(FlowchemComponent):
+class Valve(FlowchemComponent):
     """An abstract class for devices of type valve.
 
     .. warning::

@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from flowchem import ureg
-from flowchem.components.base_component import FlowchemComponent
-from flowchem.components.sensors.pressure import PressureSensor
+from flowchem.components.flowchem_component import FlowchemComponent
+from flowchem.components.sensors.pressure_sensor import PressureSensor
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 if TYPE_CHECKING:

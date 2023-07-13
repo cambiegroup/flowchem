@@ -9,7 +9,7 @@ from flowchem import ureg
 
 if TYPE_CHECKING:
     from .azura_compact import AzuraCompact
-from flowchem.components.pumps.hplc import HPLCPump
+from flowchem.components.pumps.hplc_pump import HPLCPump
 
 
 def isfloat(rate: str) -> bool:

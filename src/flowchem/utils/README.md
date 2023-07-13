@@ -1,4 +1,8 @@
-# flowchem/vendor
+# flowchem/utils
 
-* **GetMac** The pypi package [getmac](https://pypi.org/project/getmac/) is included in the source as there are a couple of changes
-compared to upstream, mainly deprecation of Py2 support to avoid false-positive in mypy.
+Some miscellaneous utilities.
+
+* **device_finder** a utility drafting flowchem configuration files by auto-detecting all the supported devices
+ connected to the PC.
+* **exceptions** Flowchem-specific exceptions, namely DeviceError and InvalidConfigurationError.
+* **people** a list of people that worked on flowchem, for use in the author fields of DeviceInfo.

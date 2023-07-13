@@ -1,9 +1,9 @@
 """Distribution valves, generally connected to syringe pumps, direct the flow from a fixed port to one of the others."""
-from flowchem.components.valves.base_valve import BaseValve
+from flowchem.components.valves.valve import Valve
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class TwoPortDistribution(BaseValve):
+class TwoPortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
@@ -12,7 +12,7 @@ class TwoPortDistribution(BaseValve):
         super().__init__(name, hw_device, positions, ports=["pump", "1", "2"])
 
 
-class SixPortDistribution(BaseValve):
+class SixPortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
@@ -30,7 +30,7 @@ class SixPortDistribution(BaseValve):
         )
 
 
-class TwelvePortDistribution(BaseValve):
+class TwelvePortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
@@ -68,7 +68,7 @@ class TwelvePortDistribution(BaseValve):
         )
 
 
-class SixteenPortDistribution(BaseValve):
+class SixteenPortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],

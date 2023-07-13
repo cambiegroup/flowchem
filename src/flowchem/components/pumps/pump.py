@@ -1,9 +1,9 @@
 """Base pump component."""
-from flowchem.components.base_component import FlowchemComponent
+from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class BasePump(FlowchemComponent):
+class Pump(FlowchemComponent):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """A generic pump."""
         super().__init__(name, hw_device)

@@ -34,5 +34,5 @@ def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, FlowchemDeviceC
 
 
 if __name__ == "__main__":
-    dev_info = get_all_flowchem_devices()
-    print(dev_info)
+    flowchem_devices: dict[str, FlowchemDeviceClient] = get_all_flowchem_devices()
+    print(flowchem_devices)

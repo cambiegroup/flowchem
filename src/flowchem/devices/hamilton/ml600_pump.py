@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.components.pumps.syringe import SyringePump
+from flowchem.components.pumps.syringe_pump import SyringePump
 
 if TYPE_CHECKING:
     from .ml600 import ML600

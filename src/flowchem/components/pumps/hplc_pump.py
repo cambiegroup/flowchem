@@ -1,10 +1,10 @@
 """Syringe pump component, two flavours, infuse only, infuse-withdraw."""
 
-from flowchem.components.pumps.base_pump import BasePump
+from flowchem.components.pumps.pump import Pump
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class HPLCPump(BasePump):
+class HPLCPump(Pump):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
 
