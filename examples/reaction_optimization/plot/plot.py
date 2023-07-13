@@ -18,7 +18,7 @@ df = pd.DataFrame.from_dict(
         "10": [6, 1, 2, 4, 8],
         "12.5": [8, 20, 50, 70, 90],
         "15": [20, 50, 70, 90, 100],
-    }
+    },
 )
 df.index.name = "time"
 df.columns.name = "temp"

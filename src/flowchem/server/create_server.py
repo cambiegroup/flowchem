@@ -7,8 +7,8 @@ from typing import TypedDict
 from loguru import logger
 
 from flowchem.server.configuration_parser import parse_config
-from flowchem.server.zeroconf_server import ZeroconfServer
 from flowchem.server.fastapi_server import FastAPIServer
+from flowchem.server.zeroconf_server import ZeroconfServer
 
 
 class FlowchemInstance(TypedDict):
@@ -18,8 +18,7 @@ class FlowchemInstance(TypedDict):
 
 
 async def create_server_from_file(config_file: BytesIO | Path) -> FlowchemInstance:
-    """
-    Based on the toml device config provided, initialize connection to devices and create API endpoints.
+    """Based on the toml device config provided, initialize connection to devices and create API endpoints.
 
     config: Path to the toml file with the device config or dict.
     """
@@ -60,7 +59,7 @@ if __name__ == "__main__":
 
     async def main():
         flowchem_instance = await create_server_from_file(
-            config_file=BytesIO(b"""[device.test-device]\ntype = "FakeDevice"\n""")
+            config_file=BytesIO(b"""[device.test-device]\ntype = "FakeDevice"\n"""),
         )
         config = uvicorn.Config(
             flowchem_instance["api_server"].app,

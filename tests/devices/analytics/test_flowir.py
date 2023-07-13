@@ -1,4 +1,4 @@
-""" Test FlowIR, needs actual connection to the device :( """
+"""Test FlowIR, needs actual connection to the device :(."""
 import asyncio
 import datetime
 import sys
@@ -10,7 +10,7 @@ from flowchem.devices.mettlertoledo.icir import IcIR
 
 
 def check_pytest_asyncio_installed():
-    """Utility function for pytest plugin"""
+    """Utility function for pytest plugin."""
     import os
     from importlib import util
 
@@ -21,18 +21,19 @@ def check_pytest_asyncio_installed():
 
 @pytest.fixture()
 async def spectrometer():
-    """Return local FlowIR object"""
+    """Return local FlowIR object."""
     s = IcIR(
         template="template",
         url=IcIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace(
-            "localhost", "BSMC-YMEF002121"
+            "localhost",
+            "BSMC-YMEF002121",
         ),
     )
     await s.initialize()
     return s
 
 
-@pytest.mark.FlowIR
+@pytest.mark.FlowIR()
 async def test_connected(spectrometer):
     assert await spectrometer.is_iCIR_connected()
 

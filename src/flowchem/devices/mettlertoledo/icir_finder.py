@@ -13,7 +13,7 @@ Address = tuple[str, int]
 
 
 async def is_iCIR_running_locally() -> bool:
-    """Is iCIR available on the local machine (default URL)?"""
+    """Is iCIR available on the local machine (default URL)?."""
     ir = IcIR()
     try:
         await ir.opcua.connect()
@@ -32,7 +32,7 @@ async def generate_icir_config() -> str:
                [device.icir-local]
                type = "IcIR"
                template = ""  # Add template name with acquisition settings!
-               \n\n"""
+               \n\n""",
         )
     return ""
 

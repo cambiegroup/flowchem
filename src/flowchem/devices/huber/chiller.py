@@ -6,8 +6,8 @@ import pint
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.components.technical.temperature import TempRange
 from flowchem.components.device_info import DeviceInfo
+from flowchem.components.technical.temperature import TempRange
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.huber.huber_temperature_control import HuberTemperatureControl
 from flowchem.devices.huber.pb_command import PBCommand
@@ -32,7 +32,7 @@ class HuberChiller(FlowchemDevice):
         name="",
         min_temp: float = -150,
         max_temp: float = 250,
-    ):
+    ) -> None:
         super().__init__(name)
         self._serial = aio
         self._min_t: float = min_temp
@@ -46,8 +46,7 @@ class HuberChiller(FlowchemDevice):
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
-        """
-        Create instance from config dict. Used by server to initialize obj from config.
+        """Create instance from config dict. Used by server to initialize obj from config.
 
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
@@ -69,7 +68,7 @@ class HuberChiller(FlowchemDevice):
         if self.device_info.serial_number == "0":
             raise InvalidConfiguration("No reply received from Huber Chiller!")
         logger.debug(
-            f"Connected with Huber Chiller S/N {self.device_info.serial_number}"
+            f"Connected with Huber Chiller S/N {self.device_info.serial_number}",
         )
 
         # Validate temperature limits
@@ -77,14 +76,14 @@ class HuberChiller(FlowchemDevice):
         if self._min_t < device_limits[0]:
             logger.warning(
                 f"The device minimum temperature is higher than the specified minimum temperature!"
-                f"The lowest possible temperature will be {device_limits[0]} °C"
+                f"The lowest possible temperature will be {device_limits[0]} °C",
             )
             self._min_t = device_limits[0]
 
         if self._max_t > device_limits[1]:
             logger.warning(
                 f"The device maximum temperature is lower than the specified maximum temperature!"
-                f"The maximum possible temperature will be {device_limits[1]} °C"
+                f"The maximum possible temperature will be {device_limits[1]} °C",
             )
             self._max_t = device_limits[1]
 
@@ -92,9 +91,11 @@ class HuberChiller(FlowchemDevice):
         """Send a command to the chiller and read the reply.
 
         Args:
+        ----
             command (str): string to be transmitted
 
         Returns:
+        -------
             str: reply received
         """
         # Send command. Using PBCommand ensure command validation, see PBCommand.to_chiller()
@@ -180,7 +181,8 @@ class HuberChiller(FlowchemDevice):
     def components(self):
         """Return a TemperatureControl component."""
         temperature_limits = TempRange(
-            min=ureg.Quantity(self._min_t), max=ureg.Quantity(self._max_t)
+            min=ureg.Quantity(self._min_t),
+            max=ureg.Quantity(self._max_t),
         )
         return (
             HuberTemperatureControl("temperature-control", self, temperature_limits),

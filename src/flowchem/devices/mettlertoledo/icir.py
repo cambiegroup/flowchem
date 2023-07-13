@@ -3,8 +3,7 @@ import asyncio
 import datetime
 from pathlib import Path
 
-from asyncua import Client
-from asyncua import ua
+from asyncua import Client, ua
 from loguru import logger
 from pydantic import BaseModel
 
@@ -52,7 +51,7 @@ class IcIR(FlowchemDevice):
 
     counter = 0
 
-    def __init__(self, template="", url="", name=""):
+    def __init__(self, template="", url="", name="") -> None:
         """Initiate connection with OPC UA server."""
         super().__init__(name)
         self.device_info = DeviceInfo(
@@ -66,7 +65,8 @@ class IcIR(FlowchemDevice):
         if not url:
             url = self.iC_OPCUA_DEFAULT_SERVER_ADDRESS
         self.opcua = Client(
-            url, timeout=5
+            url,
+            timeout=5,
         )  # Call to START_EXPERIMENT can take few seconds!
 
         self._template = template
@@ -82,7 +82,7 @@ class IcIR(FlowchemDevice):
 
         # Ensure iCIR version is supported
         self.device_info.version = await self.opcua.get_node(
-            self.SOFTWARE_VERSION
+            self.SOFTWARE_VERSION,
         ).get_value()  # e.g. "7.1.91.0"
 
         self.ensure_version_is_supported()
@@ -108,7 +108,7 @@ class IcIR(FlowchemDevice):
             if self.device_info.version not in self._supported_versions:
                 logger.warning(
                     f"The current version of iCIR [self.version] has not been tested!"
-                    f"Pleas use one of the supported versions: {self._supported_versions}"
+                    f"Pleas use one of the supported versions: {self._supported_versions}",
                 )
         except ua.UaStatusCodeError as error:  # iCIR app closed
             raise DeviceError(
@@ -148,8 +148,7 @@ class IcIR(FlowchemDevice):
 
     @staticmethod
     def is_template_name_valid(template_name: str) -> bool:
-        r"""
-        Check template name validity. For the template folder location read below.
+        r"""Check template name validity. For the template folder location read below.
 
         From Mettler Toledo docs:
         You can use the Start method to create and run a new experiment in one of the iC analytical applications
@@ -159,7 +158,7 @@ class IcIR(FlowchemDevice):
         This is usually C:\\ProgramData\\METTLER TOLEDO\\iC OPC UA Server\\1.2\\Templates.
         """
         template_dir = Path(
-            r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
+            r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates",
         )
         if not template_dir.exists() or not template_dir.is_dir():
             logger.warning("iCIR template folder not found on the local PC!")
@@ -239,15 +238,18 @@ class IcIR(FlowchemDevice):
     async def last_spectrum_background(self) -> IRSpectrum:
         """RAW result latest scan."""
         return await IcIR.spectrum_from_node(
-            self.opcua.get_node(self.SPECTRA_BACKGROUND)
+            self.opcua.get_node(self.SPECTRA_BACKGROUND),
         )
 
     async def start_experiment(
-        self, template: str, name: str = "Unnamed flowchem exp."
+        self,
+        template: str,
+        name: str = "Unnamed flowchem exp.",
     ):
         r"""Start an experiment on iCIR.
 
         Args:
+        ----
             template: name of the experiment template, should be in the Templtates folder on the PC running iCIR.
                       That usually is C:\\ProgramData\\METTLER TOLEDO\\iC OPC UA Server\1.2\\Templates
             name: experiment name.
@@ -261,7 +263,7 @@ class IcIR(FlowchemDevice):
         if await self.probe_status() == "Running":
             logger.warning(
                 "I was asked to start an experiment while a current experiment is already running!"
-                "I will have to stop that first! Sorry for that :)"
+                "I will have to stop that first! Sorry for that :)",
             )
             # Stop running experiment and wait for the spectrometer to be ready
             await self.stop_experiment()
@@ -282,8 +284,7 @@ class IcIR(FlowchemDevice):
         return True
 
     async def stop_experiment(self):
-        """
-        Stop the experiment currently running.
+        """Stop the experiment currently running.
 
         Note: the call does not make the instrument idle: you need to wait for the current scan to end!
         """

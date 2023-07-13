@@ -5,9 +5,11 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .knauer_valve import KnauerValve
-from flowchem.components.valves.distribution_valves import SixPortDistribution
-from flowchem.components.valves.distribution_valves import SixteenPortDistribution
-from flowchem.components.valves.distribution_valves import TwelvePortDistribution
+from flowchem.components.valves.distribution_valves import (
+    SixPortDistribution,
+    SixteenPortDistribution,
+    TwelvePortDistribution,
+)
 from flowchem.components.valves.injection_valves import SixPortTwoPosition
 
 

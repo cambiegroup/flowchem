@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-
 from flowchem.components.base_component import FlowchemComponent
 
 if TYPE_CHECKING:
@@ -13,7 +12,7 @@ if TYPE_CHECKING:
 class Photoreactor(FlowchemComponent):
     """A generic photoreactor."""
 
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
 
         self.add_api_route("/intensity", self.set_intensity, methods=["PUT"])

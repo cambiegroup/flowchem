@@ -7,7 +7,7 @@ from flowchem.__main__ import main
 
 
 class FakeServer:
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         pass
 
     @staticmethod
@@ -26,15 +26,16 @@ def test_cli(mocker):
                 dedent(
                     """
                     [device.test-device]\n
-                    type = "FakeDevice"\n"""
-                )
+                    type = "FakeDevice"\n""",
+                ),
             )
 
         result = runner.invoke(main, ["test_configuration.toml"])
         assert result.exit_code == 0
 
         result = runner.invoke(
-            main, ["test_configuration.toml", "--log", "logfile.log"]
+            main,
+            ["test_configuration.toml", "--log", "logfile.log"],
         )
         assert result.exit_code == 0
         assert Path("logfile.log").exists()

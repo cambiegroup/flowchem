@@ -1,9 +1,9 @@
-import pytest
 import os
+
+import pytest
 from click.testing import CliRunner
 
 from flowchem.utils.device_finder import main
-
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 

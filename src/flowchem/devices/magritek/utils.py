@@ -20,13 +20,18 @@ def get_my_docs_path() -> Path:
     shgfp_type_current = 0  # Get current, not default value
     buf = ctypes.create_unicode_buffer(2000)
     ctypes.windll.shell32.SHGetFolderPathW(  # type: ignore
-        None, csidl_personal, None, shgfp_type_current, buf
+        None,
+        csidl_personal,
+        None,
+        shgfp_type_current,
+        buf,
     )
     return Path(buf.value)
 
 
 def create_folder_mapper(
-    remote_root: str | Path, local_root: str | Path
+    remote_root: str | Path,
+    local_root: str | Path,
 ) -> Callable[[Path | str], Path]:
     """Return a function that converts path relative to remote_root to their corresponding on local_root.
 
@@ -46,7 +51,7 @@ def create_folder_mapper(
         # NOTE: Path.is_relative_to() is available from Py 3.9 only. NBD as this is not often used.
         if not path_to_be_translated.is_relative_to(remote_root):
             logger.exception(
-                f"Cannot translate remote path {path_to_be_translated} to a local path!"
+                f"Cannot translate remote path {path_to_be_translated} to a local path!",
             )
             raise InvalidConfiguration(
                 f"Cannot translate remote path {path_to_be_translated} to a local path!"

@@ -27,14 +27,14 @@ flowir_url = flowchem_devices["flowir"]
 
 
 def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
-    """
-    Calculate pump flow rate based on target residence time and SOCl2 equivalents
+    """Calculate pump flow rate based on target residence time and SOCl2 equivalents.
 
     Stream A: hexyldecanoic acid ----|
                                      |----- REACTOR ---- IR ---- waste
     Stream B: thionyl chloride   ----|
 
     Args:
+    ----
         SOCl2_equivalent:
         residence_time:
 
@@ -91,7 +91,7 @@ def get_ir_once_stable():
             time.sleep(1)
         # Get spectrum
         previous_spectrum = pd.read_json(
-            sess.get(flowir_url + "/sample/spectrum-treated").text
+            sess.get(flowir_url + "/sample/spectrum-treated").text,
         )
         previous_spectrum = previous_spectrum.set_index("wavenumber")
         # In case the id has changed between requests (highly unlikely)
@@ -109,7 +109,7 @@ def get_ir_once_stable():
 
         with command_session() as sess:
             current_spectrum = pd.read_json(
-                sess.get(flowir_url + "/sample/spectrum-treated").text
+                sess.get(flowir_url + "/sample/spectrum-treated").text,
             )
             current_spectrum = current_spectrum.set_index("wavenumber")
 
@@ -151,12 +151,14 @@ def integrate_peaks(ir_spectrum):
 
 
 def run_experiment(
-    SOCl2_equivalent: float, temperature: float, residence_time: float
+    SOCl2_equiv: float,
+    temperature: float,
+    residence_time: float,
 ) -> float:
-    """
-    Runs one experiment with the provided conditions
+    """Runs one experiment with the provided conditions.
 
     Args:
+    ----
         SOCl2_equivalent: SOCl2 to substrate ratio
         temperature: in Celsius
         residence_time: in minutes
@@ -165,13 +167,13 @@ def run_experiment(
 
     """
     logger.info(
-        f"Starting experiment with {SOCl2_equivalent:.2f} eq SOCl2, {temperature:.1f} degC and {residence_time:.2f} min"
+        f"Starting experiment with {SOCl2_equiv:.2f} eq SOCl2, {temperature:.1f} degC and {residence_time:.2f} min",
     )
     # Set stand-by flow-rate first
     set_parameters({"hexyldecanoic": "0.1 ml/min", "socl2": "10 ul/min"}, temperature)
     wait_stable_temperature()
     # Set actual flow rate once the set temperature has been reached
-    pump_flow_rates = calculate_flow_rates(SOCl2_equivalent, residence_time)
+    pump_flow_rates = calculate_flow_rates(SOCl2_equiv, residence_time)
     set_parameters(pump_flow_rates, temperature)
     # Wait 1 residence time
     time.sleep(residence_time * 60)

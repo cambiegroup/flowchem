@@ -20,8 +20,8 @@ except ImportError:
     HAS_PHIDGET = False
 
 
-from flowchem.utils.exceptions import InvalidConfiguration
 from flowchem import ureg
+from flowchem.utils.exceptions import InvalidConfiguration
 
 
 class PhidgetPressureSensor(FlowchemDevice):
@@ -34,7 +34,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
         name: str = "",
-    ):
+    ) -> None:
         """Initialize PressureSensor with the given pressure range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
@@ -82,7 +82,7 @@ class PhidgetPressureSensor(FlowchemDevice):
             serial_number=vint_serial_number,
         )
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
         self.phidget.close()
 
@@ -101,8 +101,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         return pressure_reading
 
     def read_pressure(self) -> pint.Quantity:  # type: ignore
-        """
-        Read pressure from the sensor and returns it as pint.Quantity.
+        """Read pressure from the sensor and returns it as pint.Quantity.
 
         This is the main class method, and it never fails, but rather return None. Why?
 

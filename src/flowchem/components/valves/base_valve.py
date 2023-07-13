@@ -32,11 +32,11 @@ class BaseValve(FlowchemComponent):
         hw_device: FlowchemDevice,
         positions: dict[str, list[tuple[str, str]]],
         ports: list[str],
-    ):
-        """
-        Create a valve object.
+    ) -> None:
+        """Create a valve object.
 
         Args:
+        ----
             name: device name, passed to FlowchemComponent.
             hw_device: the object that controls the hardware.
             positions: list of string representing the valve ports. The order in the list reflect the physical world.
@@ -58,12 +58,11 @@ class BaseValve(FlowchemComponent):
 
     async def set_position(self, position: str) -> bool:
         """Set the valve to the specified position."""
-        assert position in self._positions.keys()
+        assert position in self._positions
         return True
 
     def connections(self) -> ValveInfo:
-        """
-        Get the list of all available positions for this valve.
+        """Get the list of all available positions for this valve.
 
         These are the human-friendly port names, and they do not necessarily match the port names used in the
         communication with the device.

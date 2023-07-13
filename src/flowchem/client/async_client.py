@@ -8,15 +8,14 @@ from flowchem.client.client import FlowchemCommonDeviceListener
 from flowchem.client.common import (
     FLOWCHEM_TYPE,
     device_url_from_service_info,
-    zeroconf_name_to_device_name,
     flowchem_devices_from_url_dict,
+    zeroconf_name_to_device_name,
 )
 from flowchem.client.device_client import FlowchemDeviceClient
 
 
 class FlowchemAsyncDeviceListener(FlowchemCommonDeviceListener):
     async def _resolve_service(self, zc: Zeroconf, type_: str, name: str):
-        # logger.debug(f"MDNS resolving device '{name}'")
         service_info = AsyncServiceInfo(type_, name)
         await service_info.async_request(zc, 3000)
         if service_info:
@@ -33,9 +32,7 @@ class FlowchemAsyncDeviceListener(FlowchemCommonDeviceListener):
 async def async_get_all_flowchem_devices(
     timeout: float = 3000,
 ) -> dict[str, FlowchemDeviceClient]:
-    """
-    Search for flowchem devices and returns them in a dict (key=name, value=IPv4Address)
-    """
+    """Search for flowchem devices and returns them in a dict (key=name, value=IPv4Address)."""
     listener = FlowchemAsyncDeviceListener()
     browser = AsyncServiceBrowser(Zeroconf(), FLOWCHEM_TYPE, listener)
     await asyncio.sleep(timeout / 1000)

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class HPLCControl(FlowchemComponent):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
         self.add_api_route("/run-sample", self.run_sample, methods=["PUT"])
@@ -18,7 +18,7 @@ class HPLCControl(FlowchemComponent):
 
         # Ontology: high performance liquid chromatography instrument
         self.component_info.owl_subclass_of.append(
-            "http://purl.obolibrary.org/obo/OBI_0001057"
+            "http://purl.obolibrary.org/obo/OBI_0001057",
         )
         self.component_info.type = "HPLC Control"
 

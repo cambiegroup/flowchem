@@ -28,7 +28,7 @@ class CVC3000(FlowchemDevice):
         self,
         aio: aioserial.AioSerial,
         name="",
-    ):
+    ) -> None:
         super().__init__(name)
         self._serial = aio
         self._device_sn: int = None  # type: ignore
@@ -41,8 +41,7 @@ class CVC3000(FlowchemDevice):
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
-        """
-        Create instance from config dict. Used by server to initialize obj from config.
+        """Create instance from config dict. Used by server to initialize obj from config.
 
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
@@ -78,13 +77,14 @@ class CVC3000(FlowchemDevice):
         logger.debug(f"Connected with CVC3000 version {self.device_info.version}")
 
     async def _send_command_and_read_reply(self, command: str) -> str:
-        """
-        Send command and read the reply.
+        """Send command and read the reply.
 
         Args:
+        ----
             command (str): string to be transmitted
 
         Returns:
+        -------
             str: reply received
         """
         await self._serial.write_async(command.encode("ascii") + b"\r\n")

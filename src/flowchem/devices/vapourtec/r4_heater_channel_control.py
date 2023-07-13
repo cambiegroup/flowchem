@@ -1,10 +1,9 @@
-""" Control module for the Vapourtec R4 heater """
+"""Control module for the Vapourtec R4 heater."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.technical.temperature import TemperatureControl
-from flowchem.components.technical.temperature import TempRange
+from flowchem.components.technical.temperature import TemperatureControl, TempRange
 
 if TYPE_CHECKING:
     from .r4_heater import R4Heater
@@ -16,8 +15,12 @@ class R4HeaterChannelControl(TemperatureControl):
     hw_device: R4Heater  # for typing's sake
 
     def __init__(
-        self, name: str, hw_device: R4Heater, channel: int, temp_limits: TempRange
-    ):
+        self,
+        name: str,
+        hw_device: R4Heater,
+        channel: int,
+        temp_limits: TempRange,
+    ) -> None:
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device, temp_limits)
         self.channel = channel

@@ -4,14 +4,13 @@ from textwrap import dedent
 
 from loguru import logger
 
-from flowchem.devices.harvardapparatus.elite11 import Elite11
-from flowchem.devices.harvardapparatus.elite11 import HarvardApparatusPumpIO
+from flowchem.devices.harvardapparatus.elite11 import Elite11, HarvardApparatusPumpIO
 from flowchem.utils.exceptions import InvalidConfiguration
 
 
 # noinspection PyProtectedMember
 def elite11_finder(serial_port) -> list[str]:
-    """Try to initialize an Elite11 on every available COM port. [Does not support daisy-chained Elite11!]"""
+    """Try to initialize an Elite11 on every available COM port. [Does not support daisy-chained Elite11!]."""
     logger.debug(f"Looking for Elite11 pumps on {serial_port}...")
     # Static counter for device type across different serial ports
     if "counter" not in elite11_finder.__dict__:
@@ -32,10 +31,7 @@ def elite11_finder(serial_port) -> list[str]:
 
     # Parse status prompt
     pump = link._serial.readline().decode("ascii")
-    if pump[0:2].isdigit():
-        address = int(pump[0:2])
-    else:
-        address = 0
+    address = int(pump[0:2]) if pump[0:2].isdigit() else 0
 
     try:
         test_pump = Elite11(
@@ -61,6 +57,6 @@ def elite11_finder(serial_port) -> list[str]:
                port = "{serial_port}"
                address = {address}
                syringe_diameter = "XXX mm" # Specify syringe diameter!
-               syringe_volume = "YYY ml" # Specify syringe volume!\n\n"""
+               syringe_volume = "YYY ml" # Specify syringe volume!\n\n""",
     )
     return [cfg]

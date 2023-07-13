@@ -9,7 +9,7 @@ from flowchem.components.component_info import ComponentInfo
 
 
 class FlowchemComponentClient:
-    def __init__(self, url: AnyHttpUrl, parent: "FlowchemDeviceClient"):
+    def __init__(self, url: AnyHttpUrl, parent: "FlowchemDeviceClient") -> None:
         self.url = url
         # Get ComponentInfo from
         logger.warning(f"CREATE COMPONENT FOR URL {url}")

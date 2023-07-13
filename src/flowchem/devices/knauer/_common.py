@@ -3,8 +3,9 @@ import asyncio
 
 from loguru import logger
 
-from .knauer_finder import autodiscover_knauer
 from flowchem.utils.exceptions import InvalidConfiguration
+
+from .knauer_finder import autodiscover_knauer
 
 
 class KnauerEthernetDevice:
@@ -14,9 +15,8 @@ class KnauerEthernetDevice:
     BUFFER_SIZE = 1024
     _id_counter = 0
 
-    def __init__(self, ip_address, mac_address, **kwargs):
-        """
-        Knauer Ethernet Device - either pump or valve.
+    def __init__(self, ip_address, mac_address, **kwargs) -> None:
+        """Knauer Ethernet Device - either pump or valve.
 
         If a MAC address is given, it is used to autodiscover the IP address.
         Otherwise, the IP address must be given.
@@ -24,6 +24,7 @@ class KnauerEthernetDevice:
         Note that for configuration files, the MAC address is preferred as it is static.
 
         Args:
+        ----
             ip_address: device IP address (only 1 of either IP or MAC address is needed)
             mac_address: device MAC address (only 1 of either IP or MAC address is needed)
             name: name of device (optional)

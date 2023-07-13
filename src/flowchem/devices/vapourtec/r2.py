@@ -1,30 +1,30 @@
-""" Control module for the Vapourtec R2 """
+"""Control module for the Vapourtec R2."""
 from __future__ import annotations
 
+import asyncio
 from asyncio import Lock
 from collections import namedtuple
 from collections.abc import Iterable
 
 import aioserial
 import pint
-import asyncio
 from loguru import logger
 
 from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
+from flowchem.components.technical.temperature import TempRange
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vapourtec.r2_components_control import (
+    R2GeneralPressureSensor,
     R2GeneralSensor,
-    UV150PhotoReactor,
     R2HPLCPump,
     R2InjectionValve,
-    R2TwoPortValve,
-    R2PumpPressureSensor,
-    R2GeneralPressureSensor,
     R2MainSwitch,
+    R2PumpPressureSensor,
+    R2TwoPortValve,
     R4Reactor,
+    UV150PhotoReactor,
 )
-from flowchem.components.technical.temperature import TempRange
 from flowchem.utils.exceptions import InvalidConfiguration
 from flowchem.utils.people import dario, jakob, wei_hsin
 
@@ -77,7 +77,7 @@ class R2(FlowchemDevice):
         min_pressure: float = 1000,
         max_pressure: float = 50000,
         **config,
-    ):
+    ) -> None:
         super().__init__(name)
 
         # Set max pressure for R2 pump
@@ -144,10 +144,10 @@ class R2(FlowchemDevice):
         await self.power_on()
 
     async def _write(self, command: str):
-        """Writes a command to the pump"""
+        """Writes a command to the pump."""
         cmd = command + "\r\n"
         await self._serial.write_async(cmd.encode("ascii"))
-        logger.debug(f"Sent command: {repr(command)}")
+        logger.debug(f"Sent command: {command!r}")
 
     async def _read_reply(self) -> str:
         """Reads the pump reply from serial communication."""
@@ -190,7 +190,7 @@ class R2(FlowchemDevice):
         return await self.write_and_read_reply(self.cmd.VERSION)
 
     async def system_type(self):
-        """Get system type: system type, pressure mode"""
+        """Get system type: system type, pressure mode."""
         return await self.write_and_read_reply(self.cmd.GET_SYSTEM_TYPE)
 
     async def get_status(self) -> AllComponentStatus:
@@ -218,7 +218,7 @@ class R2(FlowchemDevice):
         return State_dic[state.run_state]
 
     async def get_setting_Pressure_Limit(self) -> str:
-        """Get system pressure limit"""
+        """Get system pressure limit."""
         state = await self.get_status()
         return state.presslimit
 
@@ -228,13 +228,12 @@ class R2(FlowchemDevice):
         return "Off" if state.chan3_temp == "-1000" else state.chan3_temp
 
     async def get_valve_Position(self, valve_code: int) -> str:
-        "Get specific valves position"
+        "Get specific valves position."
         state = await self.get_status()
         # Current state of all valves as bitmap
         bitmap = int(state.LEDs_bitmap)
 
         return list(reversed(f"{bitmap:05b}"))[valve_code]
-        # return f"{bitmap:05b}"[-(valve_code+1)]  # return 0 or 1
 
     # Set parameters
     async def set_flowrate(self, pump: str, flowrate: str):
@@ -242,7 +241,7 @@ class R2(FlowchemDevice):
         if flowrate.isnumeric():
             flowrate = flowrate + "ul/min"
             logger.warning(
-                "No units provided to set_temperature, assuming microliter/minutes."
+                "No units provided to set_temperature, assuming microliter/minutes.",
             )
         parsed_f = ureg.Quantity(flowrate)
 
@@ -252,15 +251,19 @@ class R2(FlowchemDevice):
             pump_num = 1
         else:
             logger.warning(f"Invalid pump name: {pump}")
-            return None
+            return
 
         cmd = self.cmd.SET_FLOWRATE.format(
-            pump=pump_num, rate_in_ul_min=round(parsed_f.m_as("ul/min"))
+            pump=pump_num,
+            rate_in_ul_min=round(parsed_f.m_as("ul/min")),
         )
         await self.write_and_read_reply(cmd)
 
     async def set_temperature(
-        self, channel: int, temp: pint.Quantity, ramp_rate: str | None = None
+        self,
+        channel: int,
+        temp: pint.Quantity,
+        ramp_rate: str | None = None,
     ):
         """Set temperature to R4 channel. If a UV150 is present then channel 3 range is limited to -40 to 80 °C."""
         cmd = self.cmd.SET_TEMPERATURE.format(
@@ -271,19 +274,19 @@ class R2(FlowchemDevice):
         await self.write_and_read_reply(cmd)
 
     async def set_pressure_limit(self, pressure: str):
-        """set maximum system pressure: range 1,000 to 50,000 mbar"""
+        """Set maximum system pressure: range 1,000 to 50,000 mbar."""
         if pressure.isnumeric():
             pressure = pressure + "mbar"
             logger.warning("No units provided to set_temperature, assuming mbar.")
         set_p = ureg.Quantity(pressure)
 
         cmd = self.cmd.SET_MAX_PRESSURE.format(
-            max_p_in_mbar=round(set_p.m_as("mbar") / 500) * 500
+            max_p_in_mbar=round(set_p.m_as("mbar") / 500) * 500,
         )
         await self.write_and_read_reply(cmd)
 
     async def set_UV150(self, power: int, heated: bool = False):
-        """set intensity of the UV light: 0 or 50 to 100"""
+        """Set intensity of the UV light: 0 or 50 to 100."""
         # Fixme: ideally the state (heated or not) of the reactor is kept as instance variable so that the light
         #  intensity can be changed without affecting the heating state (i.e. with new default heated=None that keeps
         #  the previous state unchanged
@@ -317,7 +320,7 @@ class R2(FlowchemDevice):
     async def get_pressure_history(
         self,
     ) -> tuple[int, int, int]:
-        """Get pressure history and returns it as (in mbar)"""
+        """Get pressure history and returns it as (in mbar)."""
         # Get a `&` separated list of pressures for all sensors every second
         pressure_history = await self.write_and_read_reply(self.cmd.HISTORY_PRESSURE)
         if pressure_history == "OK":
@@ -326,20 +329,20 @@ class R2(FlowchemDevice):
             return await self.get_pressure_history()
         # Each pressure data point consists of four values: time and three pressures
         _, *pressures = pressure_history.split("&")[0].split(
-            ","
+            ",",
         )  # e.g. 45853,94,193,142
         # Converts to mbar
         p_in_mbar = [int(x) * 10 for x in pressures]
         return p_in_mbar[1], p_in_mbar[2], p_in_mbar[0]  # pumpA, pumpB, system
 
     async def get_current_pressure(self, pump_code: int = 2) -> int:
-        """Get current pressure (in mbar)"""
+        """Get current pressure (in mbar)."""
         press_state_list = await self.get_pressure_history()
         # 0: pump A, 1: pump_B, 2: system pressure
         return press_state_list[pump_code]
 
     async def get_current_flow(self, pump_code: str) -> float:
-        """Get current flow rate (in ul/min)"""
+        """Get current flow rate (in ul/min)."""
         state = await self.write_and_read_reply(self.cmd.HISTORY_FLOW)
         if state == "OK":
             logger.warning("ValueError:the reply of get flow command is OK....")
@@ -352,33 +355,18 @@ class R2(FlowchemDevice):
         return float(pump_flow[pump_code])
 
     async def pooling(self) -> dict:
-        """extract all reaction parameters"""
-        AllState = dict()
+        """Extract all reaction parameters."""
+        AllState = {}
         while True:
             state = await self.get_status()
             AllState["RunState_code"] = state.run_state
-            # AllState["ValveState_code"] = state.LEDs_bitmap
-            AllState["allValve"] = "{0:05b}".format(int(state.LEDs_bitmap))
-            # AllState["2PortValveA"] = await self.get_valve_Position(0)
-            # AllState["2PortValveB"] = await self.get_valve_Position(1)
-            # AllState["InjValveA"] = await self.get_valve_Position(2)
-            # AllState["InjValveA"] = await self.get_valve_Position(3)
-            # AllState["2PortValveC"] = await self.get_valve_Position(4)
-            # AllState["sysState"] = await self.get_Run_State()
+            AllState["allValve"] = f"{int(state.LEDs_bitmap):05b}"
             (
                 AllState["pumpA_P"],
                 AllState["pumpB_P"],
                 AllState["sysP (mbar)"],
             ) = await self.get_pressure_history()
-            # AllState["sysP (mbar)"] = await self.get_current_pressure()
-            # AllState["pumpA_P"] = await self.get_current_pressure(pump_code = 0)
-            # AllState["pumpB_P"] = await self.get_current_pressure(pump_code = 1)
-            # AllState["pumpA_flow"] =await self.get_current_flow(pump_code=0)
-            # AllState["pumpB_flow"] =await self.get_current_flow(pump_code=1)
             AllState["Temp"] = await self.get_current_temperature()
-            # AllState["UVpower"] = await self.get_current_power()
-            # self.last_state = parse(self._serial.write_async("sdjskal"))
-            # time.sleep(1)
             return AllState
 
     def components(self):
@@ -420,7 +408,7 @@ if __name__ == "__main__":
     Vapourtec_R2 = R2(port="COM4")
 
     async def main(Vapourtec_R2):
-        """test function"""
+        """Test function."""
         await Vapourtec_R2.initialize()
         # Get valve and pump
         (

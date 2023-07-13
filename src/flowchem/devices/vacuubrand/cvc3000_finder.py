@@ -31,6 +31,6 @@ def cvc3000_finder(serial_port) -> list[str]:
             f"""
             [device.cvc-{cvc._device_sn}]
             type = "CVC3000"
-            port = "{serial_port}"\n\n"""
-        )
+            port = "{serial_port}"\n\n""",
+        ),
     ]

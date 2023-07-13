@@ -1,20 +1,18 @@
 """Control module for the Knauer DAD."""
 import asyncio
+from typing import TYPE_CHECKING
 
 from loguru import logger
-from typing import Union
 
 from flowchem.components.device_info import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.knauer.dad_component import (
     DADChannelControl,
     KnauerDADLampControl,
 )
-from flowchem.utils.people import dario, wei_hsin, jakob
-
-from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.utils.exceptions import InvalidConfiguration
-from typing import TYPE_CHECKING
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 if TYPE_CHECKING:
     from flowchem.components.base_component import FlowchemComponent
@@ -38,7 +36,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         turn_on_d2: bool = True,
         turn_on_halogen: bool = True,
         display_control: bool = True,
-    ):
+    ) -> None:
         super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"
         self._d2 = turn_on_d2
@@ -67,11 +65,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
 
         # to avoid the frequent switch the lamp on and off,
         # if self._d2:
-        #     await self.lamp("d2", True)
-        #     await asyncio.sleep(1)
         # if self._hal:
-        #     await self.lamp("hal", True)
-        #     await asyncio.sleep(15)
 
         if self._control:
             await self.display_control(True)
@@ -83,7 +77,6 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
 
         await self.set_wavelength(1, 254)
         await self.bandwidth(8)
-        # await self.integration_time("75")
         logger.info("set channel 1 : WL = 514 nm, BW = 20nm ")
 
     async def d2(self, state: bool = True) -> str:
@@ -98,8 +91,8 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         self._state_hal = state
         return await self._send_and_receive(cmd)
 
-    async def lamp(self, lamp: str, state: Union[bool, str] = "REQUEST") -> str:
-        """Turn on or off the lamp, or request lamp state"""
+    async def lamp(self, lamp: str, state: bool | str = "REQUEST") -> str:
+        """Turn on or off the lamp, or request lamp state."""
         if type(state) == bool:
             state = "ON" if state else "OFF"
 
@@ -115,28 +108,28 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         _reverse_lampstatus_mapping = {v: k for k, v in lampstatus_mapping.items()}
 
         cmd = self.cmd.LAMP.format(
-            lamp=lamp_mapping[lamp], state=lampstatus_mapping[state]
+            lamp=lamp_mapping[lamp],
+            state=lampstatus_mapping[state],
         )
         response = await self._send_and_receive(cmd)  # 'LAMP_D2:0'
         return response
         # if response.isnumeric() else _reverse_lampstatus_mapping[response[response.find(":") + 1:]]
-        # return response if not response.isnumeric() else _reverse_lampstatus_mapping[response]
 
     async def serial_num(self) -> str:
-        """Serial number"""
+        """Serial number."""
         return await self._send_and_receive(self.cmd.SERIAL)
 
     async def identify(self) -> str:
         """Get the instrument information
         CATEGORY (=3), MANUFACTURER,  MODEL_NR, SERNUM, VERSION,  MODIFICATION
-        Example: 3,KNAUER,PDA-1,CSA094400001,2,01
+        Example: 3,KNAUER,PDA-1,CSA094400001,2,01.
         """
         return await self._send_and_receive(self.cmd.IDENTIFY)
 
     async def info(self) -> str:
         """Get the instrument information
         NUMBER OF PIXEL (256, 512, 1024), SPECTRAL RANGE(“UV”, “VIS”, “UV-VIS”),
-        HARDVARE VERSION, YEAR OF PRODUCTION,WEEK OF PRODUCTION,,CALIBR. A,CALIBR. B,, CALIBR. C
+        HARDVARE VERSION, YEAR OF PRODUCTION,WEEK OF PRODUCTION,,CALIBR. A,CALIBR. B,, CALIBR. C.
         """
         return await self._send_and_receive(self.cmd.INFO)
 
@@ -146,7 +139,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         D2 Lamp (OFF = 0, ON = 1, HEAT= 2, ERROR = 3), HAL Lamp (OFF = 0, ON = 1, ERROR = 3),
         Shutter(OFF = 0, ON=1, FILTER=2),
         External Error IN, External Start IN, External Autozero IN,
-        Event1 OUT, Event2 OUT, Event3 OUT, Valve OUT, Error Code
+        Event1 OUT, Event2 OUT, Event3 OUT, Valve OUT, Error Code.
         """
         return await self._send_and_receive(self.cmd.STATUS)
 
@@ -170,7 +163,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
     async def signal_type(self, s_type: str = "microAU") -> str:
         """Set and get the type of signal shown on the display
         0 = signal is Absorption Units
-        1 = signal is intensity
+        1 = signal is intensity.
         """
         type_mapping = {"REQUEST": "?", "microAU": "0", "intensity": "1"}
         _reverse_type_mapping = {v: k for k, v in type_mapping.items()}
@@ -188,33 +181,28 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         return int(await self._send_and_receive(cmd))
 
     async def set_wavelength(self, channel: int, wavelength: int) -> str:
-        """set and read wavelength"""
+        """Set and read wavelength."""
         cmd = self.cmd.WAVELENGTH.format(channel=channel, wavelength=wavelength)
         return await self._send_and_receive(cmd)
 
     async def set_signal(self, channel: int, signal: int = 0):
-        """set signal to specific number"""
+        """Set signal to specific number."""
         cmd = self.cmd.SIGNAL.format(channel=channel, signal=signal)
         return await self._send_and_receive(cmd)
 
     async def read_signal(self, channel: int) -> float:
         """Read signal
-        -9999999 to +9999999 (μAU, SIG_SRC = 0); 0 to 1000000 (INT, SIG_SRC = 1)
+        -9999999 to +9999999 (μAU, SIG_SRC = 0); 0 to 1000000 (INT, SIG_SRC = 1).
         """
         cmd = self.cmd.SIGNAL.format(channel=channel, signal="?")
         response = await self._send_and_receive(cmd)
         return float(response[5:]) / 1000
 
         # in order of running keep alive in the background, response might get 'STATUS:0,1,0,1,0,0,0,0,0,0,0,0'
-        # try:
-        #     return float(response[5:]) / 1000  # mAu
         #     # -10000000 if the lamp is not ready
-        # except ValueError:
-        #     logger.warning("ValueError:the reply is not a float..")
-        #     return None
 
-    async def integration_time(self, integ_time: Union[int | str] = "?") -> str | int:
-        """set and read the integration time in 10 - 2000 ms"""
+    async def integration_time(self, integ_time: int | str = "?") -> str | int:
+        """Set and read the integration time in 10 - 2000 ms."""
         cmd = self.cmd.INTEGRATION_TIME.format(time=integ_time)
         response = await self._send_and_receive(cmd)
         try:
@@ -222,9 +210,10 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         except ValueError:
             return response
 
-    async def bandwidth(self, bw: Union[str | int]) -> str | int:
-        """set bandwidth in the range of 4 to 25 nm
-        read the setting of bandwidth"""
+    async def bandwidth(self, bw: str | int) -> str | int:
+        """Set bandwidth in the range of 4 to 25 nm
+        read the setting of bandwidth.
+        """
         if type(bw) == int:
             cmd = self.cmd.BANDWIDTH.format(bandwidth=bw)
             return await self._send_and_receive(cmd)
@@ -245,19 +234,21 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
             KnauerDADLampControl("hal", self),
         ]
         list_of_components.extend(
-            [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)]
+            [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)],
         )
         return list_of_components
 
 
 if __name__ == "__main__":
     k_dad = KnauerDAD(
-        ip_address="192.168.1.123", turn_on_d2=False, turn_on_halogen=True
+        ip_address="192.168.1.123",
+        turn_on_d2=False,
+        turn_on_halogen=True,
     )
 
 
 async def main(dad):
-    """test function"""
+    """Test function."""
     await dad.initialize()
     lamp_d2, lamp_hal, ch1, ch2, ch3, ch4 = dad.components()
     bg1 = dad.bg_keep_connect()

@@ -45,7 +45,7 @@ class ML600Pump(SyringePump):
             if target_vol < 0:
                 logger.error(
                     f"Cannot infuse target volume {volume}! "
-                    f"Only {current_volume} in the syringe!"
+                    f"Only {current_volume} in the syringe!",
                 )
                 return False
 
@@ -70,7 +70,7 @@ class ML600Pump(SyringePump):
             if target_vol > self.hw_device.syringe_volume:
                 logger.error(
                     f"Cannot withdraw target volume {volume}! "
-                    f"Max volume left is {self.hw_device.syringe_volume - current_volume}!"
+                    f"Max volume left is {self.hw_device.syringe_volume - current_volume}!",
                 )
                 return False
 

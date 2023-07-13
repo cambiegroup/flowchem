@@ -6,10 +6,11 @@ from shutil import which
 
 from loguru import logger
 
-from .clarity_hplc_control import ClarityComponent
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.people import dario, jakob, wei_hsin
+
+from .clarity_hplc_control import ClarityComponent
 
 
 class Clarity(FlowchemDevice):
@@ -24,7 +25,7 @@ class Clarity(FlowchemDevice):
         user: str = "admin",
         password: str = "",
         cfg_file: str = "",
-    ):
+    ) -> None:
         super().__init__(name=name)
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],

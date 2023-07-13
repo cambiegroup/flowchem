@@ -1,7 +1,6 @@
 """Power control, sets both voltage and current. (Could be split in two, unnecessarty for now)."""
 from __future__ import annotations
 
-
 from flowchem.components.base_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
@@ -13,7 +12,7 @@ class PowerSwitch(FlowchemComponent):
         self,
         name: str,
         hw_device: FlowchemDevice,
-    ):
+    ) -> None:
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device)
 
@@ -36,7 +35,7 @@ class PowerControl(PowerSwitch):
         self,
         name: str,
         hw_device: FlowchemDevice,
-    ):
+    ) -> None:
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device)
 

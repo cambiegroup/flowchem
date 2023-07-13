@@ -6,9 +6,9 @@ from flowchem.client.client import get_all_flowchem_devices
 
 def test_get_all_flowchem_devices(flowchem_test_instance):
     dev_dict = get_all_flowchem_devices()
-    assert "test-device" in dev_dict.keys()
+    assert "test-device" in dev_dict
 
 
 async def test_async_get_all_flowchem_devices(flowchem_test_instance):
     dev_dict = await async_get_all_flowchem_devices()
-    assert "test-device" in dev_dict.keys()
+    assert "test-device" in dev_dict

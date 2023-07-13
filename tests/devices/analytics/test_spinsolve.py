@@ -1,4 +1,4 @@
-""" Test Spinsolve, needs actual connection with the device """
+"""Test Spinsolve, needs actual connection with the device."""
 import asyncio
 import time
 from pathlib import Path
@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from flowchem.devices import Spinsolve
-
 
 # Change to match your environment ;)
 host = "BSMC-YMEF002121"
@@ -42,15 +41,15 @@ def test_sample_property(nmr: Spinsolve):
 @pytest.mark.Spinsolve
 def test_user_data(nmr: Spinsolve):
     # Assignment is actually addition
-    nmr.user_data = dict(key1="value1")
+    nmr.user_data = {"key1": "value1"}
     time.sleep(0.2)  # Ensures property is set.
     assert "key1" in nmr.user_data
-    nmr.user_data = dict(key2="value2")
+    nmr.user_data = {"key2": "value2"}
     time.sleep(0.2)  # Ensures property is set.
     assert "key1" in nmr.user_data
     assert "key2" in nmr.user_data
     # Removal obtained by providing empty strings
-    nmr.user_data = dict(key1="", key2="")
+    nmr.user_data = {"key1": "", "key2": ""}
     time.sleep(0.2)  # Ensures property is set.
     assert "key1" not in nmr.user_data
     assert "key2" not in nmr.user_data
@@ -72,45 +71,52 @@ async def test_request_available_protocols(nmr: Spinsolve):
 @pytest.mark.Spinsolve
 def test_request_validation(nmr: Spinsolve):
     # VALID
-    valid_protocol = dict(
-        Number="8", AcquisitionTime="3.2", RepetitionTime="2", PulseAngle="45"
-    )
+    valid_protocol = {
+        "Number": "8",
+        "AcquisitionTime": "3.2",
+        "RepetitionTime": "2",
+        "PulseAngle": "45",
+    }
     check_protocol = nmr._validate_protocol_request("1D EXTENDED+", valid_protocol)
     assert check_protocol == valid_protocol
 
     # INVALID NAME
     check_protocol = nmr._validate_protocol_request(
-        "NON EXISTING PROTOCOL", valid_protocol
+        "NON EXISTING PROTOCOL",
+        valid_protocol,
     )
     assert not check_protocol
 
     # PARTLY VALID OPTIONS
-    partly_valid = dict(
-        Number="7", AcquisitionTime="3.2", RepetitionTime="2", PulseAngle="145"
-    )
+    partly_valid = {
+        "Number": "7",
+        "AcquisitionTime": "3.2",
+        "RepetitionTime": "2",
+        "PulseAngle": "145",
+    }
     with pytest.warns(UserWarning, match="Invalid value"):
         check_protocol = nmr._validate_protocol_request("1D EXTENDED+", partly_valid)
-    assert check_protocol == dict(AcquisitionTime="3.2", RepetitionTime="2")
+    assert check_protocol == {"AcquisitionTime": "3.2", "RepetitionTime": "2"}
 
     # INVALID OPTIONS 1
-    partly_valid = dict(
-        Number="7",
-        AcquisitionTime="43.2",
-        RepetitionTime="2123092183",
-        PulseAngle="145",
-    )
+    partly_valid = {
+        "Number": "7",
+        "AcquisitionTime": "43.2",
+        "RepetitionTime": "2123092183",
+        "PulseAngle": "145",
+    }
     with pytest.warns(UserWarning, match="Invalid value"):
         check_protocol = nmr._validate_protocol_request("1D EXTENDED+", partly_valid)
     assert not check_protocol
 
     # INVALID OPTIONS 21
-    partly_valid = dict(
-        Number="8",
-        AcquisitionTime="3.2",
-        RepetitionTime="2",
-        PulseAngle="45",
-        blabla="no",
-    )
+    partly_valid = {
+        "Number": "8",
+        "AcquisitionTime": "3.2",
+        "RepetitionTime": "2",
+        "PulseAngle": "45",
+        "blabla": "no",
+    }
     with pytest.warns(UserWarning, match="Invalid option"):
         check_protocol = nmr._validate_protocol_request("1D EXTENDED+", partly_valid)
     assert "blabla" not in check_protocol
@@ -136,7 +142,7 @@ def test_protocol(nmr: Spinsolve):
     time.sleep(0.1)
 
     # Run fast proton
-    path = asyncio.run(nmr.run_protocol("1D PROTON", dict(Scan="QuickScan")))
+    path = asyncio.run(nmr.run_protocol("1D PROTON", {"Scan": "QuickScan"}))
     assert isinstance(path, Path)
 
 
@@ -148,5 +154,5 @@ def test_invalid_protocol(nmr: Spinsolve):
 
     # Fail on plutonium
     with pytest.warns(UserWarning, match="not available"):
-        path = asyncio.run(nmr.run_protocol("1D PLUTONIUM", dict(Scan="QuickScan")))
+        path = asyncio.run(nmr.run_protocol("1D PLUTONIUM", {"Scan": "QuickScan"}))
     assert path is None

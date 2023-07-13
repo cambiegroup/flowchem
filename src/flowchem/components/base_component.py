@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class FlowchemComponent:
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """Initialize component."""
         self.name = name
         self.hw_device = hw_device

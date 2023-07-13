@@ -3,14 +3,14 @@ import time
 from loguru import logger
 from zeroconf import ServiceBrowser, Zeroconf
 
-from flowchem.client.device_client import FlowchemDeviceClient
 from flowchem.client.common import (
     FLOWCHEM_TYPE,
-    zeroconf_name_to_device_name,
-    device_url_from_service_info,
     FlowchemCommonDeviceListener,
+    device_url_from_service_info,
     flowchem_devices_from_url_dict,
+    zeroconf_name_to_device_name,
 )
+from flowchem.client.device_client import FlowchemDeviceClient
 
 
 class FlowchemDeviceListener(FlowchemCommonDeviceListener):
@@ -24,9 +24,7 @@ class FlowchemDeviceListener(FlowchemCommonDeviceListener):
 
 
 def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, FlowchemDeviceClient]:
-    """
-    Search for flowchem devices and returns them in a dict (key=name, value=IPv4Address)
-    """
+    """Search for flowchem devices and returns them in a dict (key=name, value=IPv4Address)."""
     listener = FlowchemDeviceListener()
     browser = ServiceBrowser(Zeroconf(), FLOWCHEM_TYPE, listener)
     time.sleep(timeout / 1000)

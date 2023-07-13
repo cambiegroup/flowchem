@@ -11,16 +11,19 @@ from packaging import version
 
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.magritek._msg_maker import create_message
-from flowchem.devices.magritek._msg_maker import create_protocol_message
-from flowchem.devices.magritek._msg_maker import get_request
-from flowchem.devices.magritek._msg_maker import set_attribute
-from flowchem.devices.magritek._msg_maker import set_data_folder
-from flowchem.devices.magritek._parser import parse_status_notification
-from flowchem.devices.magritek._parser import StatusNotification
+from flowchem.devices.magritek._msg_maker import (
+    create_message,
+    create_protocol_message,
+    get_request,
+    set_attribute,
+    set_data_folder,
+)
+from flowchem.devices.magritek._parser import (
+    StatusNotification,
+    parse_status_notification,
+)
 from flowchem.devices.magritek.spinsolve_control import SpinsolveControl
-from flowchem.devices.magritek.utils import create_folder_mapper
-from flowchem.devices.magritek.utils import get_my_docs_path
+from flowchem.devices.magritek.utils import create_folder_mapper, get_my_docs_path
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 __all__ = ["Spinsolve"]
@@ -39,7 +42,7 @@ class Spinsolve(FlowchemDevice):
         solvent: str | None = "Chloroform-d1",
         sample_name: str | None = "Unnamed automated experiment",
         remote_to_local_mapping: list[str] | None = None,
-    ):
+    ) -> None:
         """Control a Spinsolve instance via HTTP XML API."""
         super().__init__(name)
 
@@ -104,7 +107,8 @@ class Spinsolve(FlowchemDevice):
         """Initiate connection with a running Spinsolve instance."""
         try:
             self._io_reader, self._io_writer = await asyncio.open_connection(
-                self.host, self.port
+                self.host,
+                self.port,
             )
             logger.debug(f"Connected to {self.host}:{self.port}")
         except OSError as e:
@@ -114,7 +118,8 @@ class Spinsolve(FlowchemDevice):
 
         # Start reader thread
         self.reader = asyncio.create_task(
-            self.connection_listener(), name="Connection listener"
+            self.connection_listener(),
+            name="Connection listener",
         )
 
         # This request is used to check if the instrument is connected
@@ -127,7 +132,7 @@ class Spinsolve(FlowchemDevice):
         hardware_type = hw_info.find(".//SpinsolveType").text
         self.device_info.additional_info["hardware_type"] = hardware_type
         logger.debug(
-            f"Connected to model {hardware_type}, SW: {self.device_info.version}"
+            f"Connected to model {hardware_type}, SW: {self.device_info.version}",
         )
 
         # Load available protocols
@@ -137,7 +142,7 @@ class Spinsolve(FlowchemDevice):
         if version.parse(self.device_info.version) < version.parse("1.18.1.3062"):
             warnings.warn(
                 f"Spinsolve v. {self.device_info.version} is not supported!"
-                f"Upgrade to a more recent version! (at least 1.18.1.3062)"
+                f"Upgrade to a more recent version! (at least 1.18.1.3062)",
             )
 
         await self.set_data_folder(self._data_folder)
@@ -163,7 +168,7 @@ class Spinsolve(FlowchemDevice):
                     self.schema.validate(parsed_tree)
                 except etree.XMLSyntaxError as syntax_error:
                     warnings.warn(
-                        f"Invalid XML received! [Validation error: {syntax_error}]"
+                        f"Invalid XML received! [Validation error: {syntax_error}]",
                     )
 
             # Add to reply queue of the given tag-type
@@ -217,7 +222,8 @@ class Spinsolve(FlowchemDevice):
         """Send the message to the spectrometer."""
         # This assertion is here for mypy ;)
         assert isinstance(
-            self._io_writer, asyncio.StreamWriter
+            self._io_writer,
+            asyncio.StreamWriter,
         ), "The connection was not initialized!"
         self._io_writer.write(message)
         await self._io_writer.drain()
@@ -253,10 +259,12 @@ class Spinsolve(FlowchemDevice):
             }
 
     async def run_protocol(
-        self, name, background_tasks: BackgroundTasks, options=None
+        self,
+        name,
+        background_tasks: BackgroundTasks,
+        options=None,
     ) -> int:
-        """
-        Run a protocol.
+        """Run a protocol.
 
         Return the ID of the protocol (needed to get results via `get_result_folder`). -1 for errors.
         """
@@ -265,7 +273,7 @@ class Spinsolve(FlowchemDevice):
         if name not in self.protocols:
             warnings.warn(
                 f"The protocol requested '{name}' is not available on the spectrometer!\n"
-                f"Valid options are: {pp.pformat(sorted(self.protocols.keys()))}"
+                f"Valid options are: {pp.pformat(sorted(self.protocols.keys()))}",
             )
             return -1
 
@@ -354,7 +362,7 @@ class Spinsolve(FlowchemDevice):
             if option_name not in valid_options:
                 protocol_options.pop(option_name)
                 warnings.warn(
-                    f"Invalid option {option_name} for protocol {protocol_name} -- DROPPED!"
+                    f"Invalid option {option_name} for protocol {protocol_name} -- DROPPED!",
                 )
                 continue
 
@@ -369,7 +377,7 @@ class Spinsolve(FlowchemDevice):
                 protocol_options.pop(option_name)
                 warnings.warn(
                     f"Invalid value {option_value} for option {option_name} in protocol {protocol_name}"
-                    f" -- DROPPED!"
+                    f" -- DROPPED!",
                 )
 
         # Returns the dict with only valid options/value pairs
@@ -380,7 +388,7 @@ class Spinsolve(FlowchemDevice):
         raise NotImplementedError("Use run protocol with a shimming protocol instead!")
 
     def components(self):
-        """Return SpinsolveControl"""
+        """Return SpinsolveControl."""
         return (SpinsolveControl("nmr-control", self),)
 
 

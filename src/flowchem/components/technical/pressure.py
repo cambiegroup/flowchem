@@ -1,4 +1,4 @@
-"""Pressure control"""
+"""Pressure control."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class PressureControl(FlowchemComponent):
     """A generic pressure controller."""
 
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device)
 

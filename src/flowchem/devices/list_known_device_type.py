@@ -12,7 +12,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 def is_device_class(test_object):
     """Return true if the object is a subclass of FlowchemDevice."""
     if getattr(test_object, "__module__", None) is None:
-        return
+        return None
     return (
         inspect.isclass(test_object)
         and issubclass(test_object, FlowchemDevice)
@@ -34,8 +34,7 @@ def autodiscover_first_party() -> dict[str, Any]:
 
 
 def autodiscover_third_party() -> dict[str, Any]:
-    """
-    Get classes from packages with a `flowchem.devices` entrypoint.
+    """Get classes from packages with a `flowchem.devices` entrypoint.
 
     A plugin structure can be used to add devices from an external package via setuptools entry points.
     See https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/#using-package-metadata
@@ -59,5 +58,5 @@ def autodiscover_device_classes():
 
 if __name__ == "__main__":
     logger.debug(
-        f"The following device types were found: {list(autodiscover_device_classes().keys())}"
+        f"The following device types were found: {list(autodiscover_device_classes().keys())}",
     )

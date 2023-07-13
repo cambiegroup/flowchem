@@ -10,5 +10,5 @@ class ComponentInfo(BaseModel):
     parent_device: str = ""
     type: str = ""
     owl_subclass_of: list[str] = [
-        "http://purl.obolibrary.org/obo/OBI_0000968"
+        "http://purl.obolibrary.org/obo/OBI_0000968",
     ]  # 'device'

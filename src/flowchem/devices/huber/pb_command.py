@@ -86,7 +86,7 @@ class PBCommand:
         }
 
     def parse_status2(self) -> dict[str, bool]:
-        """Parse response to status2 command and returns dict. See manufacturer docs for more info"""
+        """Parse response to status2 command and returns dict. See manufacturer docs for more info."""
         bits = self.parse_bits()
         return {
             "controller_is_external": bits[0],

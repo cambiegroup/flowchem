@@ -13,14 +13,13 @@ RepeatedTaskInfo = namedtuple("RepeatedTaskInfo", ["seconds_every", "task"])
 
 
 class FlowchemDevice(ABC):
-    """
-    Base flowchem device.
+    """Base flowchem device.
 
     All hardware-control classes must subclass this to signal they are flowchem-device and be enabled for initializaiton
     during config parsing.
     """
 
-    def __init__(self, name):
+    def __init__(self, name) -> None:
         """All device have a name, which is the key in the config dict thus unique."""
         self.name = name
         self.device_info = DeviceInfo()
@@ -28,7 +27,6 @@ class FlowchemDevice(ABC):
     @abstractmethod
     async def initialize(self):
         """Use for setting up async connection to the device, populate components and update device_info with them."""
-        pass
 
     def repeated_task(self) -> RepeatedTaskInfo | None:
         """Use for repeated background task, e.g. session keepalive."""

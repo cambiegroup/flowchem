@@ -4,8 +4,7 @@ from textwrap import dedent
 
 from loguru import logger
 
-from flowchem.devices.hamilton.ml600 import HamiltonPumpIO
-from flowchem.devices.hamilton.ml600 import InvalidConfiguration
+from flowchem.devices.hamilton.ml600 import HamiltonPumpIO, InvalidConfiguration
 
 
 def ml600_finder(serial_port) -> set[str]:
@@ -38,8 +37,8 @@ def ml600_finder(serial_port) -> set[str]:
                 f"""type = "ML600"
                 port = "{serial_port}"
                 address = {count + 1}
-                syringe_volume = "XXX ml" # Specify syringe volume here!\n"""
-            )
+                syringe_volume = "XXX ml" # Specify syringe volume here!\n""",
+            ),
         )
 
     return dev_config

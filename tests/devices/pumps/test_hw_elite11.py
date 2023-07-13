@@ -1,5 +1,4 @@
-"""
-HA Elite11 tests
+"""HA Elite11 tests.
 
 1. Update pump serial port and address belo
 2. Run with `python -m pytest ./tests -m HApump` from the root folder
@@ -10,15 +9,16 @@ import math
 import pytest
 
 from flowchem import ureg
-from flowchem.devices.harvardapparatus.elite11 import Elite11
-from flowchem.devices.harvardapparatus.elite11 import PumpStatus
+from flowchem.devices.harvardapparatus.elite11 import Elite11, PumpStatus
 
 
 @pytest.fixture(scope="session")
 async def pump():
-    """Change to match your hardware ;)"""
+    """Change to match your hardware ;)."""
     pump = Elite11.from_config(
-        port="COM4", syringe_volume="5 ml", syringe_diameter="20 mm"
+        port="COM4",
+        syringe_volume="5 ml",
+        syringe_diameter="20 mm",
     )
     await pump.initialize()
     return pump

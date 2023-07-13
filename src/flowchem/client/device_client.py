@@ -7,7 +7,7 @@ from flowchem.components.device_info import DeviceInfo
 
 
 class FlowchemDeviceClient:
-    def __init__(self, url: AnyHttpUrl):
+    def __init__(self, url: AnyHttpUrl) -> None:
         self.url = str(url)
 
         # Log every request and always raise for status
@@ -20,7 +20,7 @@ class FlowchemDeviceClient:
         # Connect, get device info and populate components
         try:
             self.device_info = DeviceInfo.model_validate_json(
-                self._session.get(self.url).text
+                self._session.get(self.url).text,
             )
         except ConnectionError as ce:
             raise RuntimeError(

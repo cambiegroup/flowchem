@@ -1,6 +1,5 @@
-"""
-Knauer pump
-Run with python -m pytest ./tests -m KPump and updates pump address below
+"""Knauer pump
+Run with python -m pytest ./tests -m KPump and updates pump address below.
 """
 import asyncio
 import math
@@ -9,8 +8,7 @@ import sys
 import pint
 import pytest
 
-from flowchem.devices.knauer.azura_compact import AzuraCompact
-from flowchem.devices.knauer.azura_compact import AzuraPumpHeads
+from flowchem.devices.knauer.azura_compact import AzuraCompact, AzuraPumpHeads
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -19,9 +17,8 @@ if sys.platform == "win32":
 # noinspection PyUnusedLocal
 @pytest.fixture(scope="session")
 def event_loop(request):
-    """
-
-    Args:
+    """Args:
+    ----
         request:
     """
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -31,7 +28,7 @@ def event_loop(request):
 
 @pytest.fixture(scope="session")
 async def pump():
-    """Change to match your hardware ;)"""
+    """Change to match your hardware ;)."""
     pump = AzuraCompact(ip_address="192.168.1.126")
     await pump.initialize()
     return pump
@@ -62,7 +59,9 @@ async def test_flow_rate(pump: AzuraCompact):
     assert pint.Quantity(await pump.get_flow_rate()).magnitude == 1.25
     await pump.set_flow_rate(f"{math.pi} ml/min")
     assert math.isclose(
-        pint.Quantity(await pump.get_flow_rate()).magnitude, math.pi, abs_tol=1e-3
+        pint.Quantity(await pump.get_flow_rate()).magnitude,
+        math.pi,
+        abs_tol=1e-3,
     )
     await pump.stop()
 

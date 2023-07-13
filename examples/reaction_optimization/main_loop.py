@@ -1,16 +1,15 @@
 import time
 
+from examples.reaction_optimization._hw_control import (
+    command_session,
+    flowir_endpoint,
+    hexyldecanoic_endpoint,
+    r4_endpoint,
+    socl2_endpoint,
+)
 from gryffin import Gryffin
 from loguru import logger
 from run_experiment import run_experiment
-
-from examples.reaction_optimization._hw_control import (
-    command_session,
-    socl2_endpoint,
-    r4_endpoint,
-    hexyldecanoic_endpoint,
-    flowir_endpoint,
-)
 
 logger.add("./xp.log", level="INFO")
 
@@ -66,7 +65,9 @@ start_time = time.monotonic()
 while time.monotonic() < (start_time + MAX_TIME):
     # query gryffin for new conditions_to_test, 1 exploration 1 exploitation (i.e. lambda 1 and -1)
     conditions_to_test = gryffin.recommend(
-        observations=observations, num_batches=1, sampling_strategies=[-1, 1]
+        observations=observations,
+        num_batches=1,
+        sampling_strategies=[-1, 1],
     )
 
     # evaluate the proposed parameters!

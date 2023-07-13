@@ -14,12 +14,12 @@ def test_minimal_valid_config():
             """
             [device.test-device]
             type = "FakeDevice"
-            """
-        ).encode("utf-8")
+            """,
+        ).encode("utf-8"),
     )
     cfg = parse_config(cfg_txt)
-    assert "filename" in cfg.keys()
-    assert "device" in cfg.keys()
+    assert "filename" in cfg
+    assert "device" in cfg
     assert isinstance(cfg["device"].pop(), FakeDevice)
 
 

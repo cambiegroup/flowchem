@@ -11,8 +11,7 @@ from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.manson.manson_component import MansonPowerControl
-from flowchem.utils.exceptions import DeviceError
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import DeviceError, InvalidConfiguration
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -21,7 +20,7 @@ class MansonPowerSupply(FlowchemDevice):
 
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
-    def __init__(self, aio: aioserial.AioSerial, name=""):
+    def __init__(self, aio: aioserial.AioSerial, name="") -> None:
         """Control class for Manson Power Supply."""
         super().__init__(name)
         self._serial = aio
@@ -33,8 +32,7 @@ class MansonPowerSupply(FlowchemDevice):
 
     @classmethod
     def from_config(cls, port, name="", **serial_kwargs):
-        """
-        Create instance from config dict. Used by server to initialize obj from config.
+        """Create instance from config dict. Used by server to initialize obj from config.
 
         Only required parameter is 'port'.
         """
@@ -85,7 +83,7 @@ class MansonPowerSupply(FlowchemDevice):
         reply_string = []
         for line in await self._serial.readlines_async():
             reply_string.append(line.decode("ascii").strip())
-            logger.debug(f"Received {repr(line)}!")
+            logger.debug(f"Received {line!r}!")
 
         return "\n".join(reply_string)
 

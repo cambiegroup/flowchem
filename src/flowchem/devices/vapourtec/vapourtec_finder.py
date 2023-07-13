@@ -37,7 +37,7 @@ def r4_finder(serial_port) -> list[str]:
         cfg += dedent(
             f"""
         type = "R4Heater"
-        port = "{serial_port}"\n\n"""
+        port = "{serial_port}"\n\n""",
         )
     else:
         cfg = ""

@@ -1,6 +1,5 @@
 # Single-sourcing version, Option 5 in https://packaging.python.org/en/latest/guides/single-sourcing-package-version/
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version(__name__)

@@ -14,14 +14,14 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
+from loguru import logger
+
 from flowchem.devices.known_plugins import plugin_devices
 from flowchem.utils.exceptions import InvalidConfiguration
-from loguru import logger
 
 
 def parse_toml(stream: typing.BinaryIO) -> dict:
-    """
-    Read the TOML configuration file and returns it as a dict.
+    """Read the TOML configuration file and returns it as a dict.
 
     Extensive exception handling due to the error-prone human editing needed in the configuration file.
     """
@@ -72,10 +72,10 @@ def instantiate_device(config: dict) -> dict:
 
 
 def ensure_device_name_is_valid(device_name: str) -> None:
-    """
-    Device name validator
+    """Device name validator.
 
-    Uniqueness of names is ensured by their toml dict key nature,"""
+    Uniqueness of names is ensured by their toml dict key nature,
+    """
     if len(device_name) > 42:
         # This is because f"{name}._labthing._tcp.local." has to be shorter than 64 in zerconfig
         raise InvalidConfiguration(
@@ -89,8 +89,7 @@ def ensure_device_name_is_valid(device_name: str) -> None:
 
 
 def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
-    """
-    Parse device config and return a device object.
+    """Parse device config and return a device object.
 
     Exception handling to provide more specific and diagnostic messages upon errors in the configuration file.
     """
@@ -108,13 +107,13 @@ def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
             logger.exception(
                 f"The device `{device_name}` of type `{device_config['type']}` needs a additional plugin"
                 f"Install {needed_plugin} to add support for it!"
-                f"e.g. `python -m pip install {needed_plugin}`"
+                f"e.g. `python -m pip install {needed_plugin}`",
             )
             raise InvalidConfiguration(f"{needed_plugin} not installed.") from error
 
         logger.exception(
             f"Device type `{device_config['type']}` unknown in 'device.{device_name}'!"
-            f"[Known types: {device_object_mapper.keys()}]"
+            f"[Known types: {device_object_mapper.keys()}]",
         )
         raise InvalidConfiguration(
             f"Unknown device type `{device_config['type']}`."
@@ -138,7 +137,7 @@ def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
         ) from error
 
     logger.debug(
-        f"Created device '{device.name}' instance: {device.__class__.__name__}"
+        f"Created device '{device.name}' instance: {device.__class__.__name__}",
     )
     return device
 
@@ -151,7 +150,7 @@ def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
         invalid_parameters = list(set(called_with.keys()).difference(arg_spec.args))
         if invalid_parameters:
             logger.error(
-                f"The following parameters were not recognized: {invalid_parameters}"
+                f"The following parameters were not recognized: {invalid_parameters}",
             )
 
     # Then check if a mandatory arguments was not satisfied. [1 to skip cls/self, -n to remove args w/ default]
@@ -160,5 +159,5 @@ def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
     missing_parameters = list(set(mandatory_args).difference(called_with.keys()))
     if missing_parameters:
         logger.error(
-            f"The following mandatory parameters were missing in the configuration: {missing_parameters}"
+            f"The following mandatory parameters were missing in the configuration: {missing_parameters}",
         )

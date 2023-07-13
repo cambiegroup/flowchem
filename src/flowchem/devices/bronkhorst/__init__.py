@@ -1,3 +1,3 @@
-from .el_flow import MFC, EPC
+from .el_flow import EPC, MFC
 
 __all__ = ["MFC", "EPC"]

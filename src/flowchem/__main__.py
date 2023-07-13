@@ -1,8 +1,7 @@
-"""
-Entry-point module for the command line prefixer, called in case you use `python -m flowchem`.
+"""Entry-point module for the command line prefixer, called in case you use `python -m flowchem`.
 Why does this file exist, and why `__main__`? For more info, read:
 - https://www.python.org/dev/peps/pep-0338/
-- https://docs.python.org/3/using/cmdline.html#cmdoption-m
+- https://docs.python.org/3/using/cmdline.html#cmdoption-m.
 """
 import asyncio
 import sys
@@ -18,7 +17,12 @@ from flowchem.server.create_server import create_server_from_file
 
 @click.argument("device_config_file", type=click.Path(), required=True)
 @click.option(
-    "-l", "--log", "logfile", type=click.Path(), default=None, help="Save logs to file."
+    "-l",
+    "--log",
+    "logfile",
+    type=click.Path(),
+    default=None,
+    help="Save logs to file.",
 )
 @click.option(
     "-h",
@@ -32,18 +36,17 @@ from flowchem.server.create_server import create_server_from_file
 @click.version_option()
 @click.command()
 def main(device_config_file, logfile, host, debug):
-    """
-    Flowchem main program.
+    """Flowchem main program.
 
     Parse device_config_file and starts a server exposing the devices via RESTful API.
 
     Args:
+    ----
         device_config_file: Flowchem configuration file specifying device connection settings (TOML)
         logfile: Output file for logs.
         host: IP on which the server will be listening. Loopback IP as default, use LAN IP to enable remote access.
         debug: Print debug info
     """
-
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 

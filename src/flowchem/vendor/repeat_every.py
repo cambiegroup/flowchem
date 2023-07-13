@@ -2,16 +2,18 @@
 import asyncio
 import logging
 from asyncio import ensure_future
+from collections.abc import Callable, Coroutine
 from functools import wraps
 from traceback import format_exception
-from typing import Any, Callable, Coroutine, Optional, Union
+from typing import Any
 
 from starlette.concurrency import run_in_threadpool
 
 NoArgsNoReturnFuncT = Callable[[], None]
 NoArgsNoReturnAsyncFuncT = Callable[[], Coroutine[Any, Any, None]]
 NoArgsNoReturnDecorator = Callable[
-    [Union[NoArgsNoReturnFuncT, NoArgsNoReturnAsyncFuncT]], NoArgsNoReturnAsyncFuncT
+    [NoArgsNoReturnFuncT | NoArgsNoReturnAsyncFuncT],
+    NoArgsNoReturnAsyncFuncT,
 ]
 
 
@@ -19,12 +21,11 @@ def repeat_every(
     *,
     seconds: float,
     wait_first: bool = False,
-    logger: Optional[logging.Logger] = None,
+    logger: logging.Logger | None = None,
     raise_exceptions: bool = False,
-    max_repetitions: Optional[int] = None,
+    max_repetitions: int | None = None,
 ) -> NoArgsNoReturnDecorator:
-    """
-    This function returns a decorator that modifies a function so it is periodically re-executed after its first call.
+    """Returns a decorator that modifies a function so it is periodically re-executed after its first call.
 
     The function it decorates should accept no arguments and return nothing. If necessary, this can be accomplished
     by using `functools.partial` or otherwise wrapping the target function prior to decoration.
@@ -48,11 +49,9 @@ def repeat_every(
     """
 
     def decorator(
-        func: Union[NoArgsNoReturnAsyncFuncT, NoArgsNoReturnFuncT]
+        func: NoArgsNoReturnAsyncFuncT | NoArgsNoReturnFuncT,
     ) -> NoArgsNoReturnAsyncFuncT:
-        """
-        Converts the decorated function into a repeated, periodically-called version of itself.
-        """
+        """Converts the decorated function into a repeated, periodically-called version of itself."""
         is_coroutine = asyncio.iscoroutinefunction(func)
 
         @wraps(func)
@@ -73,7 +72,7 @@ def repeat_every(
                     except Exception as exc:
                         if logger is not None:
                             formatted_exception = "".join(
-                                format_exception(type(exc), exc, exc.__traceback__)
+                                format_exception(type(exc), exc, exc.__traceback__),
                             )
                             logger.error(formatted_exception)
                         if raise_exceptions:

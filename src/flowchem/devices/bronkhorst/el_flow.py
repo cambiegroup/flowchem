@@ -1,16 +1,16 @@
+"""el-flow MFC control by python package bronkhorst-propar
+https://bronkhorst-propar.readthedocs.io/en/latest/introduction.html.
 """
-el-flow MFC control by python package bronkhorst-propar
-https://bronkhorst-propar.readthedocs.io/en/latest/introduction.html
-"""
-import propar
 import asyncio
+
+import propar
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
-from flowchem.utils.people import jakob, dario, wei_hsin
-from flowchem.devices.bronkhorst.el_flow_component import MFCComponent, EPCComponent
+from flowchem.devices.bronkhorst.el_flow_component import EPCComponent, MFCComponent
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 
 class EPC(FlowchemDevice):
@@ -23,7 +23,7 @@ class EPC(FlowchemDevice):
         channel: int = 1,
         address: int = 0x80,
         max_pressure: float = 10,  # bar = 100 % = 32000
-    ):
+    ) -> None:
         self.port = port
         self.channel = channel
         self.address = address
@@ -38,7 +38,9 @@ class EPC(FlowchemDevice):
 
         try:
             self.el_press = propar.instrument(
-                self.port, address=self.address, channel=self.channel
+                self.port,
+                address=self.address,
+                channel=self.channel,
             )
             self.id = self.el_press.id()
             logger.debug(f"Connected {self.id} to {self.port}")
@@ -60,19 +62,19 @@ class EPC(FlowchemDevice):
         if set_n > 32000:
             self.el_press.setpoint = 32000
             logger.debug(
-                "setting higher than maximum flow rate! set the flow rate to 100%"
+                "setting higher than maximum flow rate! set the flow rate to 100%",
             )
         else:
             self.el_press.setpoint = set_n
             logger.debug(f"set the pressure to {set_n / 320}%")
 
     async def get_pressure(self) -> float:
-        """Get current flow rate in ml/min"""
+        """Get current flow rate in ml/min."""
         m_num = float(self.el_press.measure)
         return m_num / 32000 * self.max_pressure
 
     async def get_pressure_percentage(self) -> float:
-        """Get current flow rate in percentage"""
+        """Get current flow rate in percentage."""
         m_num = float(self.el_press.measure)
         return m_num / 320
 
@@ -100,7 +102,7 @@ class MFC(FlowchemDevice):
         channel: int = 1,
         address: int = 0x80,
         max_flow: float = 9,  # ml / min = 100 % = 32000
-    ):
+    ) -> None:
         self.port = port
         self.channel = channel
         self.address = address
@@ -115,7 +117,9 @@ class MFC(FlowchemDevice):
 
         try:
             self.el_flow = propar.instrument(
-                self.port, address=self.address, channel=self.channel
+                self.port,
+                address=self.address,
+                channel=self.channel,
             )
             self.id = self.el_flow.id()
             logger.debug(f"Connected {self.id} to {self.port}")
@@ -132,26 +136,26 @@ class MFC(FlowchemDevice):
         if flowrate.isnumeric():
             flowrate = flowrate + "ml/min"
             logger.warning(
-                "No units provided to set_temperature, assuming milliliter/minutes."
+                "No units provided to set_temperature, assuming milliliter/minutes.",
             )
         set_f = ureg.Quantity(flowrate)
         set_n = round(set_f.m_as("ml/min") * 32000 / self.max_flow)
         if set_n > 32000:
             self.el_flow.setpoint = 32000
             logger.debug(
-                "setting higher than maximum flow rate! set the flow rate to 100%"
+                "setting higher than maximum flow rate! set the flow rate to 100%",
             )
         else:
             self.el_flow.setpoint = set_n
             logger.debug(f"set the flow rate to {set_n / 320}%")
 
     async def get_flow_setpoint(self) -> float:
-        """Get current flow rate in ml/min"""
+        """Get current flow rate in ml/min."""
         m_num = float(self.el_flow.measure)
         return m_num / 32000 * self.max_flow
 
     async def get_flow_percentage(self) -> float:
-        """Get current flow rate in percentage"""
+        """Get current flow rate in percentage."""
         m_num = float(self.el_flow.measure)
         return m_num / 320
 
@@ -195,8 +199,7 @@ async def mutiple_connect():
 
 
 def find_devices_info(port: str):
-    """
-    It is also possible to only create a master.
+    """It is also possible to only create a master.
     This removes some abstraction offered by the instrument class,
     such as the setpoint and measure properties,
     the readParameter and writeParameter functions,

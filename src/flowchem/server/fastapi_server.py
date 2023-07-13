@@ -1,22 +1,18 @@
 """FastAPI server for devices control."""
-from typing import Iterable
-
-from fastapi import FastAPI, APIRouter
+from collections.abc import Iterable
 from importlib.metadata import metadata, version
 
+from fastapi import APIRouter, FastAPI
 from loguru import logger
 from starlette.responses import RedirectResponse
 
 from flowchem.components.device_info import DeviceInfo
-
-# from fastapi_utils.tasks import repeat_every
-
-from flowchem.vendor.repeat_every import repeat_every
 from flowchem.devices.flowchem_device import RepeatedTaskInfo
+from flowchem.vendor.repeat_every import repeat_every
 
 
 class FastAPIServer:
-    def __init__(self, filename: str = ""):
+    def __init__(self, filename: str = "") -> None:
         # Create FastAPI app
         self.app = FastAPI(
             title=f"Flowchem - {filename}",
@@ -47,7 +43,7 @@ class FastAPIServer:
                 await task()
 
     def add_device(self, device):
-        """Add device to server"""
+        """Add device to server."""
         # Get components (some compounded devices can return multiple components)
         components = device.components()
         logger.debug(f"Got {len(components)} components from {device.name}")

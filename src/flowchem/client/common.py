@@ -2,7 +2,7 @@ import ipaddress
 
 from loguru import logger
 from pydantic import AnyHttpUrl
-from zeroconf import ServiceListener, Zeroconf, ServiceInfo
+from zeroconf import ServiceInfo, ServiceListener, Zeroconf
 
 from flowchem.client.device_client import FlowchemDeviceClient
 
@@ -16,7 +16,7 @@ def zeroconf_name_to_device_name(zeroconf_name: str) -> str:
 
 
 def flowchem_devices_from_url_dict(
-    url_dict: dict[str, AnyHttpUrl]
+    url_dict: dict[str, AnyHttpUrl],
 ) -> dict[str, FlowchemDeviceClient]:
     dev_dict = {}
     for name, url in url_dict.items():
@@ -25,7 +25,8 @@ def flowchem_devices_from_url_dict(
 
 
 def device_url_from_service_info(
-    service_info: ServiceInfo, device_name: str
+    service_info: ServiceInfo,
+    device_name: str,
 ) -> AnyHttpUrl | None:
     if service_info.addresses:
         # Needed to convert IP from bytes to str
@@ -37,7 +38,7 @@ def device_url_from_service_info(
 
 
 class FlowchemCommonDeviceListener(ServiceListener):
-    def __init__(self):
+    def __init__(self) -> None:
         self.flowchem_devices: dict[str, AnyHttpUrl] = {}
 
     def remove_service(self, zc: Zeroconf, type_: str, name: str) -> None:
@@ -54,4 +55,4 @@ class FlowchemCommonDeviceListener(ServiceListener):
         self._save_device_info(zc, type_, name)
 
     def _save_device_info(self, zc: Zeroconf, type_: str, name: str) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError

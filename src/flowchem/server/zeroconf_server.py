@@ -2,16 +2,19 @@
 import uuid
 
 from loguru import logger
-from zeroconf import get_all_addresses, NonUniqueNameException
-from zeroconf import IPVersion
-from zeroconf import ServiceInfo
-from zeroconf import Zeroconf
+from zeroconf import (
+    IPVersion,
+    NonUniqueNameException,
+    ServiceInfo,
+    Zeroconf,
+    get_all_addresses,
+)
 
 
 class ZeroconfServer:
     """Server to advertise Flowchem devices via zero configuration networking."""
 
-    def __init__(self, port: int = 8000):
+    def __init__(self, port: int = 8000) -> None:
         # Server properties
         self.port = port
         self.server = Zeroconf(ip_version=IPVersion.V4Only)

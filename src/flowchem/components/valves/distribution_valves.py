@@ -4,7 +4,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class TwoPortDistribution(BaseValve):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
             "2": [("pump", "2")],
@@ -13,7 +13,7 @@ class TwoPortDistribution(BaseValve):
 
 
 class SixPortDistribution(BaseValve):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
             "2": [("pump", "2")],
@@ -23,12 +23,15 @@ class SixPortDistribution(BaseValve):
             "6": [("pump", "6")],
         }
         super().__init__(
-            name, hw_device, positions, ports=["pump", "1", "2", "3", "4", "5", "6"]
+            name,
+            hw_device,
+            positions,
+            ports=["pump", "1", "2", "3", "4", "5", "6"],
         )
 
 
 class TwelvePortDistribution(BaseValve):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
             "2": [("pump", "2")],
@@ -66,7 +69,7 @@ class TwelvePortDistribution(BaseValve):
 
 
 class SixteenPortDistribution(BaseValve):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
             "2": [("pump", "2")],

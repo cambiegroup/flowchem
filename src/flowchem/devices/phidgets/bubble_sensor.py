@@ -14,11 +14,11 @@ from flowchem.devices.phidgets.bubble_sensor_component import (
     PhidgetBubbleSensorComponent,
     PhidgetBubbleSensorPowerComponent,
 )
-from flowchem.utils.people import wei_hsin, dario, jakob
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 try:
     from Phidget22.Devices.DigitalOutput import DigitalOutput  # power source
-    from Phidget22.Devices.VoltageInput import VoltageInput, PowerSupply  # Sensor
+    from Phidget22.Devices.VoltageInput import PowerSupply, VoltageInput  # Sensor
     from Phidget22.PhidgetException import PhidgetException
 
     HAS_PHIDGET = True
@@ -29,7 +29,7 @@ from flowchem.utils.exceptions import InvalidConfiguration  # configuration is n
 
 
 class PhidgetPowerSource5V(FlowchemDevice):
-    """Use a Phidget power source to apply power to the sensor"""
+    """Use a Phidget power source to apply power to the sensor."""
 
     def __init__(
         self,
@@ -38,7 +38,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
         name: str = "",
-    ):
+    ) -> None:
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
@@ -77,7 +77,6 @@ class PhidgetPowerSource5V(FlowchemDevice):
         # Set power supply to 5V to provide power
         self.phidget.setDutyCycle(1.0)
         logger.debug("power of tube sensor is turn on!")
-        # self.phidget.setState(True)  #setting DutyCycle to 1.0
 
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
@@ -86,12 +85,12 @@ class PhidgetPowerSource5V(FlowchemDevice):
             serial_number=vint_serial_number,
         )
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
         self.phidget.close()
 
     def power_on(self):
-        """Control the power of the device"""
+        """Control the power of the device."""
         self.phidget.setDutyCycle(1.0)  # self.phidget.setState(True)
         logger.debug("tube sensor power is turn on!")
 
@@ -104,7 +103,7 @@ class PhidgetPowerSource5V(FlowchemDevice):
         return bool(self.phidget.getAttached())
 
     def is_poweron(self) -> bool:
-        """Wheteher the power is on"""
+        """Wheteher the power is on."""
         return bool(self.phidget.getState())
 
     def components(self):
@@ -114,18 +113,18 @@ class PhidgetPowerSource5V(FlowchemDevice):
 
 class PhidgetBubbleSensor(FlowchemDevice):
     """Use a Phidget voltage input to translate a Tube Liquid Sensor OPB350 5 Valtage signal
-    to the corresponding light penetration value."""
+    to the corresponding light penetration value.
+    """
 
     def __init__(
         self,
-        # intensity_range: tuple[float, float] = (0, 100),
         vint_serial_number: int = -1,
         vint_hub_port: int = -1,
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
         data_interval: int = 250,  # ms
         name: str = "",
-    ):
+    ) -> None:
         """Initialize BubbleSensor with the given voltage range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
@@ -177,17 +176,17 @@ class PhidgetBubbleSensor(FlowchemDevice):
             serial_number=vint_serial_number,
         )
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
         self.phidget.close()
 
     def power_on(self):
-        """turn on the measurement of the bubble sensor"""
+        """Turn on the measurement of the bubble sensor."""
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_12V)
         logger.debug("measurement of tube sensor is turn on!")
 
     def power_off(self):
-        """turn off the supply to stop measurement"""
+        """Turn off the supply to stop measurement."""
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_OFF)
         logger.debug("measurement of tube sensor is turn off!")
 
@@ -196,11 +195,11 @@ class PhidgetBubbleSensor(FlowchemDevice):
         return bool(self.phidget.getAttached())
 
     def get_dataInterval(self) -> int:
-        """Get Data Interval form the initial setting"""
+        """Get Data Interval form the initial setting."""
         return self.phidget.getDataInterval()
 
     def set_dataInterval(self, datainterval: int) -> None:
-        """Set Data Interval: 20-6000 ms"""
+        """Set Data Interval: 20-6000 ms."""
         self.phidget.setDataInterval(datainterval)
         logger.debug(f"change data interval to {datainterval}!")
 
@@ -221,7 +220,7 @@ class PhidgetBubbleSensor(FlowchemDevice):
             return 0
 
     def read_intensity(self) -> float:  # type: ignore
-        """Read intensity from voltage"""
+        """Read intensity from voltage."""
         voltage = self.read_voltage()
         return self._voltage_to_intensity(voltage)
 

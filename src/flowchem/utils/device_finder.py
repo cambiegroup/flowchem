@@ -3,8 +3,8 @@ from pathlib import Path
 
 import aioserial
 import rich_click as click
-import serial.tools.list_ports as list_ports
 from loguru import logger
+from serial.tools import list_ports
 
 from flowchem.devices.hamilton.ml600_finder import ml600_finder
 from flowchem.devices.harvardapparatus.elite11_finder import elite11_finder
@@ -27,7 +27,7 @@ def inspect_serial_ports() -> set[str]:
     """Search for known devices on local serial ports and generate config stubs."""
     port_available = [comport.device for comport in list_ports.comports()]
     logger.info(
-        f"Found the following serial port(s) on the current device: {port_available}"
+        f"Found the following serial port(s) on the current device: {port_available}",
     )
 
     dev_found_config: set[str] = set()
@@ -102,7 +102,7 @@ def main(output, overwrite, safe, assume_yes, source_ip):
     # Validate output location
     if Path(output).exists() and not overwrite:
         logger.error(
-            f"Output file `{output}` already existing! Use `--overwrite` to replace it."
+            f"Output file `{output}` already existing! Use `--overwrite` to replace it.",
         )
         return
 
@@ -110,19 +110,18 @@ def main(output, overwrite, safe, assume_yes, source_ip):
     confirm = False
     if not safe and not assume_yes:
         logger.warning(
-            "The autodiscover include modules that involve communication over serial ports."
+            "The autodiscover include modules that involve communication over serial ports.",
         )
         logger.warning("These modules are *not* guaranteed to be safe!")
         logger.warning(
-            "Unsupported devices could be placed in an unsafe state as result of the discovery process!"
+            "Unsupported devices could be placed in an unsafe state as result of the discovery process!",
         )
         confirm = click.confirm("Do you want to include the search for serial devices?")
 
     # Search serial devices
-    if not safe and (assume_yes or confirm):
-        serial_config = inspect_serial_ports()
-    else:
-        serial_config = set()
+    serial_config = (
+        inspect_serial_ports() if not safe and (assume_yes or confirm) else set()
+    )
 
     # Search ethernet devices
     eth_config = inspect_eth(source_ip)
@@ -136,7 +135,7 @@ def main(output, overwrite, safe, assume_yes, source_ip):
     # Print configuration
     configuration = "".join(serial_config) + "".join(eth_config)
     logger.info(
-        f"The following configuration will be written to `{output}:\n{configuration}"
+        f"The following configuration will be written to `{output}:\n{configuration}",
     )
 
     # Write to file

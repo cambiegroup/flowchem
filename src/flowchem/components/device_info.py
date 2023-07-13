@@ -1,4 +1,4 @@
-from pydantic import BaseModel, AnyHttpUrl
+from pydantic import AnyHttpUrl, BaseModel
 
 from flowchem import __version__
 

@@ -8,21 +8,24 @@ import pint
 from loguru import logger
 from pydantic import BaseModel
 
-from flowchem.devices.harvardapparatus._pumpio import HarvardApparatusPumpIO
-from flowchem.devices.harvardapparatus._pumpio import Protocol11Command
-from flowchem.devices.harvardapparatus._pumpio import PumpStatus
 from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.harvardapparatus.elite11_pump import Elite11PumpOnly
-from flowchem.devices.harvardapparatus.elite11_pump import Elite11PumpWithdraw
+from flowchem.devices.harvardapparatus._pumpio import (
+    HarvardApparatusPumpIO,
+    Protocol11Command,
+    PumpStatus,
+)
+from flowchem.devices.harvardapparatus.elite11_pump import (
+    Elite11PumpOnly,
+    Elite11PumpWithdraw,
+)
 from flowchem.utils.exceptions import InvalidConfiguration
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
 class PumpInfo(BaseModel):
-    """
-    Detailed pump info. e.g.:
+    """Detailed pump info. e.g.:
 
     ('Pump type          Pump 11',
     'Pump type string   11 ELITE I/W Single',
@@ -69,8 +72,7 @@ class PumpInfo(BaseModel):
 
 
 class Elite11(FlowchemDevice):
-    """
-    Controls Harvard Apparatus Elite11 syringe pumps.
+    """Controls Harvard Apparatus Elite11 syringe pumps.
 
     The same protocol (Protocol11) can be used on other HA pumps, but is untested.
     Several pumps can be daisy-chained on the same serial connection, if so address 0 must be the first one.
@@ -88,7 +90,7 @@ class Elite11(FlowchemDevice):
         address: int = 0,
         name: str = "",
         force: int = 30,
-    ):
+    ) -> None:
         super().__init__(name)
 
         # Create communication
@@ -127,8 +129,7 @@ class Elite11(FlowchemDevice):
         force: int = 30,
         **serial_kwargs,
     ):
-        """
-        Programmatic instantiation from configuration.
+        """Programmatic instantiation from configuration.
 
         Many pump can be present on the same serial port with different addresses.
         This shared list of PumpIO objects allow shared state in a borg-inspired way, avoiding singletons
@@ -156,8 +157,7 @@ class Elite11(FlowchemDevice):
         )
 
     async def initialize(self):
-        """
-        Initialize Elite11.
+        """Initialize Elite11.
 
         Query model and version number of firmware to check if pump is connected.
         Responds with a load of stuff, but the last three characters
@@ -184,7 +184,7 @@ class Elite11(FlowchemDevice):
         await self.set_force(self._force)
 
         logger.info(
-            f"Connected to '{self.name}'! [{self.pump_io._serial.name}:{self.address}]"
+            f"Connected to '{self.name}'! [{self.pump_io._serial.name}:{self.address}]",
         )
         version = await self.version()
         self.device_info.version = version.split(" ")[-1]
@@ -201,7 +201,11 @@ class Elite11(FlowchemDevice):
         return int(digits[0]), int(digits[1]), int(digits[2])
 
     async def _send_command_and_read_reply(
-        self, command: str, parameter="", parse=True, multiline=False
+        self,
+        command: str,
+        parameter="",
+        parse=True,
+        multiline=False,
     ):
         """Send a command based on its template and return the corresponding reply as str."""
         cmd = Protocol11Command(
@@ -223,13 +227,15 @@ class Elite11(FlowchemDevice):
         """Set syringe diameter. This can be set in the interval 1 mm to 33 mm."""
         if not 1 * ureg.mm <= diameter <= 33 * ureg.mm:
             logger.warning(
-                f"Invalid diameter provided: {diameter}! [Valid range: 1-33 mm]"
+                f"Invalid diameter provided: {diameter}! [Valid range: 1-33 mm]",
             )
             return False
 
         await self._send_command_and_read_reply(
-            "diameter", parameter=f"{diameter.to('mm').magnitude:.4f} mm"
+            "diameter",
+            parameter=f"{diameter.to('mm').magnitude:.4f} mm",
         )
+        return None
 
     async def get_syringe_volume(self) -> str:
         """Return the syringe volume as str w/ units."""
@@ -238,12 +244,12 @@ class Elite11(FlowchemDevice):
     async def set_syringe_volume(self, volume: pint.Quantity):
         """Set the syringe volume in ml."""
         await self._send_command_and_read_reply(
-            "svolume", parameter=f"{volume.m_as('ml'):.15f} m"
+            "svolume",
+            parameter=f"{volume.m_as('ml'):.15f} m",
         )
 
     async def get_force(self):
-        """
-        Pump force, in percentage.
+        """Pump force, in percentage.
 
         Manufacturer suggested values are:
             stainless steel:    100%
@@ -257,12 +263,12 @@ class Elite11(FlowchemDevice):
     async def set_force(self, force_percent: int):
         """Set the pump force, see `Elite11.get_force()` for suggested values."""
         await self._send_command_and_read_reply(
-            "FORCE", parameter=str(int(force_percent))
+            "FORCE",
+            parameter=str(int(force_percent)),
         )
 
     async def _bound_rate_to_pump_limits(self, rate: str) -> float:
-        """
-        Bound the rate provided to pump's limit.
+        """Bound the rate provided to pump's limit.
 
         These are function of the syringe diameter.
         NOTE: Infusion and withdraw limits are equal!
@@ -286,14 +292,14 @@ class Elite11(FlowchemDevice):
         if set_rate < lower_limit:
             logger.warning(
                 f"The requested rate {rate} is lower than the minimum possible ({lower_limit})!"
-                f"Setting rate to {lower_limit} instead!"
+                f"Setting rate to {lower_limit} instead!",
             )
             set_rate = lower_limit
 
         if set_rate > upper_limit:
             logger.warning(
                 f"The requested rate {rate} is higher than the maximum possible ({upper_limit})!"
-                f"Setting rate to {upper_limit} instead!"
+                f"Setting rate to {upper_limit} instead!",
             )
             set_rate = upper_limit
 
@@ -302,7 +308,7 @@ class Elite11(FlowchemDevice):
     async def version(self) -> str:
         """Return the current firmware version reported by the pump."""
         return await self._send_command_and_read_reply(
-            "VER"
+            "VER",
         )  # '11 ELITE I/W Single 3.0.4
 
     async def is_moving(self) -> bool:
@@ -344,7 +350,8 @@ class Elite11(FlowchemDevice):
         """Set the infusion rate."""
         set_rate = await self._bound_rate_to_pump_limits(rate=rate)
         await self._send_command_and_read_reply(
-            "irate", parameter=f"{set_rate:.10f} m/m"
+            "irate",
+            parameter=f"{set_rate:.10f} m/m",
         )
 
     async def get_withdrawing_flow_rate(self) -> float:
@@ -361,16 +368,15 @@ class Elite11(FlowchemDevice):
 
     async def set_target_volume(self, volume: str):
         """Set target volume in ml. If the volume is set to 0, the target is cleared."""
-        # logger.info("Clear current infused volume!")
         await self._send_command_and_read_reply("civolume")
 
         target_volume = ureg.Quantity(volume)
         if target_volume.magnitude == 0:
-            # logger.info(f"send comment to clear the target volume")
             await self._send_command_and_read_reply("ctvolume")
         else:
             set_vol = await self._send_command_and_read_reply(
-                "tvolume", parameter=f"{target_volume.m_as('ml')} m"
+                "tvolume",
+                parameter=f"{target_volume.m_as('ml')} m",
             )
             if "Argument error" in set_vol:
                 warnings.warn(
@@ -382,7 +388,8 @@ class Elite11(FlowchemDevice):
     async def pump_info(self) -> PumpInfo:
         """Return pump info."""
         parsed_multiline_response = await self._send_command_and_read_reply(
-            "metrics", multiline=True
+            "metrics",
+            multiline=True,
         )
         return PumpInfo.parse_pump_string(parsed_multiline_response)
 
@@ -396,7 +403,10 @@ class Elite11(FlowchemDevice):
 
 if __name__ == "__main__":
     pump = Elite11.from_config(
-        port="COM5", syringe_volume="10 ml", syringe_diameter="14.567 mm", address=3
+        port="COM5",
+        syringe_volume="10 ml",
+        syringe_diameter="14.567 mm",
+        address=3,
     )
 
     async def main():

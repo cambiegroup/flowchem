@@ -31,6 +31,6 @@ def chiller_finder(serial_port) -> list[str]:
             f"""
             [device.huber-{chill._device_sn}]
             type = "HuberChiller"
-            port = "{serial_port}"\n"""
-        )
+            port = "{serial_port}"\n""",
+        ),
     ]

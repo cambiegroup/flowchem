@@ -7,10 +7,12 @@ from loguru import logger
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
-from flowchem.devices.knauer.knauer_valve_component import Knauer12PortDistribution
-from flowchem.devices.knauer.knauer_valve_component import Knauer16PortDistribution
-from flowchem.devices.knauer.knauer_valve_component import Knauer6PortDistribution
-from flowchem.devices.knauer.knauer_valve_component import KnauerInjectionValve
+from flowchem.devices.knauer.knauer_valve_component import (
+    Knauer6PortDistribution,
+    Knauer12PortDistribution,
+    Knauer16PortDistribution,
+    KnauerInjectionValve,
+)
 from flowchem.utils.exceptions import DeviceError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
@@ -25,8 +27,7 @@ class KnauerValveHeads(Enum):
 
 
 class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
-    """
-    Control Knauer multi position valves.
+    """Control Knauer multi position valves.
 
     Valve type can be 6, 12, 16, or it can be 6 ports, two positions, which will be simply 2 (two states)
     in this case, the response for T is LI. Load and inject can be switched by sending L or I
@@ -36,7 +37,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
     DIP switch for valve selection
     """
 
-    def __init__(self, ip_address=None, mac_address=None, **kwargs):
+    def __init__(self, ip_address=None, mac_address=None, **kwargs) -> None:
         super().__init__(ip_address, mac_address, **kwargs)
         self.eol = b"\r\n"
         self.device_info = DeviceInfo(
@@ -62,31 +63,31 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         if "E0" in reply:
             DeviceError(
                 "The valve refused to switch.\n"
-                "Replace the rotor seals of the valve or replace the motor drive unit."
+                "Replace the rotor seals of the valve or replace the motor drive unit.",
             )
         elif "E1" in reply:
             DeviceError(
                 "Skipped switch: motor current too high!\n"
-                "Replace the rotor seals of the valve."
+                "Replace the rotor seals of the valve.",
             )
         elif "E2" in reply:
             DeviceError(
                 "Change from one valve position to the next takes too long.\n"
-                "Replace the rotor seals of the valve."
+                "Replace the rotor seals of the valve.",
             )
         elif "E3" in reply:
             DeviceError(
                 "Switch position of DIP 3 and 4 are not correct.\n"
-                "Correct DIP switch 3 and 4."
+                "Correct DIP switch 3 and 4.",
             )
         elif "E4" in reply:
             DeviceError(
-                "Valve homing position not recognized.\n" "Readjust sensor board."
+                "Valve homing position not recognized.\n" "Readjust sensor board.",
             )
         elif "E5" in reply:
             DeviceError(
                 "Switch position of DIP 1 and 2 are not correct.\n"
-                "Correct DIP switch 1 and 2."
+                "Correct DIP switch 1 and 2.",
             )
         elif "E6" in reply:
             DeviceError("Memory error.\n" "Power-cycle valve!")
@@ -94,13 +95,14 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
             DeviceError("Unspecified error detected!")
 
     async def _transmit_and_parse_reply(self, message: str) -> str:
-        """
-        Send command, receive reply and parse it.
+        """Send command, receive reply and parse it.
 
         Args:
+        ----
             message (str): command to be sent
 
         Returns:
+        -------
             str: reply
         """
         reply = await self._send_and_receive(message)
@@ -117,8 +119,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         return reply
 
     async def get_valve_type(self):
-        """
-        Get valve type, if returned value is not supported throws an error.
+        """Get valve type, if returned value is not supported throws an error.
 
         Note that this method is called during initialize(), therefore it is in line
         with the general philosophy of the module to 'fail early' upon init and avoiding
@@ -150,7 +151,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
 
     def components(self):
         """Create the right type of Valve components based on head type."""
-        match self.device_info.additional_info["valve-type"]:  # noqa
+        match self.device_info.additional_info["valve-type"]:
             case KnauerValveHeads.SIX_PORT_TWO_POSITION:
                 return (KnauerInjectionValve("injection-valve", self),)
             case KnauerValveHeads.SIX_PORT_SIX_POSITION:

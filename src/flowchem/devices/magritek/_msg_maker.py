@@ -15,8 +15,7 @@ def create_message(sub_element_name, attributes=None):
 
 
 def set_attribute(name, value="") -> etree._Element:
-    """
-    Create a Set <Message>.
+    """Create a Set <Message>.
 
     Used for name = {Solvent | Sample} + indirectly by UserData and DataFolder.
     """
@@ -27,8 +26,7 @@ def set_attribute(name, value="") -> etree._Element:
 
 
 def get_request(name) -> etree._Element:
-    """
-    Create a Get <Message> element.
+    """Create a Get <Message> element.
 
     Used for name = {Solvent | Sample | UserData} + indirectly by UserData and DataFolder.
     """
