@@ -13,7 +13,7 @@ import uvicorn
 from loguru import logger
 
 from flowchem import __version__
-from flowchem.server.api_server import create_server_from_file
+from flowchem.server.create_server import create_server_from_file
 
 
 @click.argument("device_config_file", type=click.Path(), required=True)

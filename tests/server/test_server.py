@@ -6,7 +6,7 @@ import pytest
 from click.testing import CliRunner
 from fastapi.testclient import TestClient
 
-from flowchem.server.api_server import create_server_from_file
+from flowchem.server.create_server import create_server_from_file
 
 
 @pytest.fixture(scope="function")

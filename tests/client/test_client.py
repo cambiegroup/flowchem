@@ -4,7 +4,7 @@ from flowchem.client.async_client import (
     _async_get_all_flowchem_devices_url,
     _async_get_flowchem_device_url_by_name,
 )
-from flowchem.server.api_server import create_server_from_file
+from flowchem.server.create_server import create_server_from_file
 
 
 async def test_get_flowchem_device_url_by_name():
