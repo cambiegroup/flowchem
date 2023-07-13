@@ -147,6 +147,8 @@ class Spinsolve(FlowchemDevice):
 
         await self.set_data_folder(self._data_folder)
 
+        self.components.append(SpinsolveControl("nmr-control", self))
+
     async def connection_listener(self):
         """Listen for replies and puts them in the queue."""
         logger.debug("Spinsolve connection listener started!")
@@ -386,10 +388,6 @@ class Spinsolve(FlowchemDevice):
     def shim(self):
         """Shim on sample."""
         raise NotImplementedError("Use run protocol with a shimming protocol instead!")
-
-    def components(self):
-        """Return SpinsolveControl."""
-        return (SpinsolveControl("nmr-control", self),)
 
 
 if __name__ == "__main__":

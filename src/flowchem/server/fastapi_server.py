@@ -12,7 +12,9 @@ from flowchem.vendor.repeat_every import repeat_every
 
 
 class FastAPIServer:
-    def __init__(self, filename: str = "") -> None:
+    def __init__(
+        self, filename: str = "", host: str = "127.0.0.1", port: int = 8000
+    ) -> None:
         # Create FastAPI app
         self.app = FastAPI(
             title=f"Flowchem - {filename}",
@@ -23,6 +25,8 @@ class FastAPIServer:
                 "url": "https://opensource.org/licenses/MIT",
             },
         )
+        self.host = host
+        self.port = port
 
         self._add_root_redirect()
 
@@ -44,9 +48,13 @@ class FastAPIServer:
 
     def add_device(self, device):
         """Add device to server."""
-        # Get components (some compounded devices can return multiple components)
-        components = device.components()
-        logger.debug(f"Got {len(components)} components from {device.name}")
+        # Add components URL to device_info
+        base_url = rf"http://{self.host}:{self.port}/{device.name}"
+        components_w_url = {
+            component.name: f"{base_url}/{component.name}"
+            for component in device.components
+        }
+        device.device_info.components = components_w_url
 
         # Base device endpoint
         device_root = APIRouter(prefix=f"/{device.name}", tags=[device.name])
@@ -63,6 +71,7 @@ class FastAPIServer:
             self.add_background_tasks(tasks)
 
         # add device components
-        for component in components:
+        logger.debug(f"Device '{device.name}' has {len(device.components)} components")
+        for component in device.components:
             self.app.include_router(component.router, tags=component.router.tags)
             logger.debug(f"Router <{component.router.prefix}> added to app!")

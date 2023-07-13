@@ -143,6 +143,38 @@ class R2(FlowchemDevice):
         await self.trigger_key_press("8")
         await self.power_on()
 
+        list_of_components = [
+            R2MainSwitch("Power", self),
+            R2GeneralPressureSensor("PressureSensor", self),
+            R2GeneralSensor("GSensor2", self),
+            UV150PhotoReactor("PhotoReactor", self),
+            R2HPLCPump("Pump_A", self, "A"),
+            R2HPLCPump("Pump_B", self, "B"),
+            R2TwoPortValve("ReagentValve_A", self, 0),
+            R2TwoPortValve("ReagentValve_B", self, 1),
+            R2TwoPortValve("CollectionValve", self, 4),
+            R2InjectionValve("InjectionValve_A", self, 2),
+            R2InjectionValve("InjectionValve_B", self, 3),
+            R2PumpPressureSensor("PumpSensor_A", self, 0),
+            R2PumpPressureSensor("PumpSensor_B", self, 1),
+        ]
+        self.components.extend(list_of_components)
+
+        # TODO if photoreactor -> REACTOR CHANNEL 1,3 AND 4 + UV150PhotoReactor
+        #  if no photoreactor -> REACTOR CHANNEL 1-4 no UV150PhotoReactor
+
+        # Create components for reactor bays
+        reactor_temp_limits = {
+            ch_num: TempRange(min=ureg.Quantity(t[0]), max=ureg.Quantity(t[1]))
+            for ch_num, t in enumerate(zip(self._min_t, self._max_t, strict=True))
+        }
+
+        reactors = [
+            R4Reactor(f"reactor-{n + 1}", self, n, reactor_temp_limits[n])
+            for n in range(4)
+        ]
+        self.components.extend(reactors)
+
     async def _write(self, command: str):
         """Write a command to the pump."""
         cmd = command + "\r\n"
@@ -368,40 +400,6 @@ class R2(FlowchemDevice):
             ) = await self.get_pressure_history()
             AllState["Temp"] = await self.get_current_temperature()
             return AllState
-
-    def components(self):
-        list_of_components = [
-            R2MainSwitch("Power", self),
-            R2GeneralPressureSensor("PressureSensor", self),
-            R2GeneralSensor("GSensor2", self),
-            UV150PhotoReactor("PhotoReactor", self),
-            R2HPLCPump("Pump_A", self, "A"),
-            R2HPLCPump("Pump_B", self, "B"),
-            R2TwoPortValve("ReagentValve_A", self, 0),
-            R2TwoPortValve("ReagentValve_B", self, 1),
-            R2TwoPortValve("CollectionValve", self, 4),
-            R2InjectionValve("InjectionValve_A", self, 2),
-            R2InjectionValve("InjectionValve_B", self, 3),
-            R2PumpPressureSensor("PumpSensor_A", self, 0),
-            R2PumpPressureSensor("PumpSensor_B", self, 1),
-        ]
-
-        # TODO if photoreactor -> REACTOR CHANNEL 1,3 AND 4 + UV150PhotoReactor
-        #  if no photoreactor -> REACTOR CHANNEL 1-4 no UV150PhotoReactor
-
-        # Create components for reactor bays
-        reactor_temp_limits = {
-            ch_num: TempRange(min=ureg.Quantity(t[0]), max=ureg.Quantity(t[1]))
-            for ch_num, t in enumerate(zip(self._min_t, self._max_t, strict=True))
-        }
-
-        reactors = [
-            R4Reactor(f"reactor-{n + 1}", self, n, reactor_temp_limits[n])
-            for n in range(4)
-        ]
-        list_of_components.extend(reactors)
-
-        return list_of_components
 
 
 if __name__ == "__main__":

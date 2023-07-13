@@ -8,7 +8,7 @@ from loguru import logger
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vacuubrand.cvc3000_pressure_control import CVC3000PressureControl
-from flowchem.devices.vacuubrand.utils import ProcessStatus
+from flowchem.devices.vacuubrand.constants import ProcessStatus
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
@@ -76,6 +76,8 @@ class CVC3000(FlowchemDevice):
 
         logger.debug(f"Connected with CVC3000 version {self.device_info.version}")
 
+        self.components.append(CVC3000PressureControl("pressure-control", self))
+
     async def _send_command_and_read_reply(self, command: str) -> str:
         """Send command and read the reply.
 
@@ -131,7 +133,3 @@ class CVC3000(FlowchemDevice):
         if not raw_status:
             raw_status = await self._send_command_and_read_reply("IN_STAT")
         return ProcessStatus.from_reply(raw_status)
-
-    def components(self):
-        """Return a TemperatureControl component."""
-        return (CVC3000PressureControl("pressure-control", self),)

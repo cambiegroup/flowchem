@@ -86,6 +86,18 @@ class R4Heater(FlowchemDevice):
         """Ensure connection."""
         self.device_info.version = await self.version()
         logger.info(f"Connected with R4Heater version {self.device_info.version}")
+        temp_limits = {
+            ch_num: TempRange(
+                min=ureg.Quantity(f"{t[0]} °C"),
+                max=ureg.Quantity(f"{t[1]} °C"),
+            )
+            for ch_num, t in enumerate(zip(self._min_t, self._max_t, strict=True))
+        }
+        reactor_positions = [
+            R4HeaterChannelControl(f"reactor{n+1}", self, n, temp_limits[n])
+            for n in range(4)
+        ]
+        self.components.append(reactor_positions)
 
     async def _write(self, command: str):
         """Write a command to the pump."""
@@ -163,19 +175,6 @@ class R4Heater(FlowchemDevice):
     async def power_off(self, channel):
         """Turn off channel."""
         await self.write_and_read_reply(self.cmd.POWER_OFF.format(channel=channel))
-
-    def components(self):
-        temp_limits = {
-            ch_num: TempRange(
-                min=ureg.Quantity(f"{t[0]} °C"),
-                max=ureg.Quantity(f"{t[1]} °C"),
-            )
-            for ch_num, t in enumerate(zip(self._min_t, self._max_t, strict=True))
-        }
-        return [
-            R4HeaterChannelControl(f"reactor{n+1}", self, n, temp_limits[n])
-            for n in range(4)
-        ]
 
 
 if __name__ == "__main__":
