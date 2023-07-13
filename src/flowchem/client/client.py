@@ -62,8 +62,8 @@ def get_all_flowchem_devices(timeout: float = 3000) -> dict[str, FlowchemDeviceC
 
 
 if __name__ == "__main__":
-    url = get_flowchem_device_by_name("test-device")
-    print(url)
+    dev = get_flowchem_device_by_name("test-device")
+    print(dev)
 
     dev_info = get_all_flowchem_devices()
     print(dev_info)

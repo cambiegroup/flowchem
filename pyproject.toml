@@ -49,6 +49,7 @@ dev = [
 ]
 test = [
     "flowchem-test>=0.1a3",
+    "flaky",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
