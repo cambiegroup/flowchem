@@ -2,19 +2,18 @@
 import uuid
 
 from loguru import logger
-from zeroconf import get_all_addresses
+from zeroconf import get_all_addresses, NonUniqueNameException
 from zeroconf import IPVersion
 from zeroconf import ServiceInfo
 from zeroconf import Zeroconf
 
 
 class ZeroconfServer:
-    """ZeroconfServer to advertise FlowchemComponents."""
+    """Server to advertise Flowchem devices via zero configuration networking."""
 
-    def __init__(self, port=8000):
+    def __init__(self, port: int = 8000):
         # Server properties
         self.port = port
-
         self.server = Zeroconf(ip_version=IPVersion.V4Only)
 
         # Get list of host addresses
@@ -25,10 +24,10 @@ class ZeroconfServer:
             and not ip.startswith("169.254")  # Remove invalid IPs
         ]
 
-    async def add_device(self, name: str, url: str):
+    async def add_device(self, name: str):
         """Adds device to the server."""
         properties = {
-            "path": url + f"/{name}/",
+            "path": r"http://" + f"{self.mdns_addresses[0]}:{self.port}/{name}/",
             "id": f"{name}:{uuid.uuid4()}".replace(" ", ""),
         }
 
@@ -41,7 +40,13 @@ class ZeroconfServer:
             parsed_addresses=self.mdns_addresses,
         )
 
-        await self.server.async_register_service(service_info)
+        try:
+            await self.server.async_register_service(service_info)
+        except NonUniqueNameException as nu:
+            raise RuntimeError(
+                f"Cannot initialize zeroconf service for '{name}'"
+                f"The same name is already in use: you cannot run flowchem twice for the same device!"
+            ) from nu
         logger.debug(f"Device {name} registered as Zeroconf service!")
 
 

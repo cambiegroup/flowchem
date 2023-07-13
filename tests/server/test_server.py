@@ -21,7 +21,7 @@ def app():
                 )
             )
         server = asyncio.run(create_server_from_file(Path("test_configuration.toml")))
-        yield server["api_server"]
+        yield server["api_server"].app
 
 
 def test_read_main(app):

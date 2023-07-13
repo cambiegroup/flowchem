@@ -61,7 +61,7 @@ def main(device_config_file, logfile, host, debug):
         """The loop must be shared between uvicorn and flowchem."""
         flowchem_instance = await create_server_from_file(Path(device_config_file))
         config = uvicorn.Config(
-            flowchem_instance["api_server"],
+            flowchem_instance["api_server"].app,
             host=host,
             port=flowchem_instance["port"],
             log_level="info",

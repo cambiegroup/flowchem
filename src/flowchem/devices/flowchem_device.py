@@ -26,7 +26,7 @@ class FlowchemDevice(ABC):
         self.device_info = DeviceInfo()
 
     async def initialize(self):
-        """Use for setting up async connection to the device."""
+        """Use for setting up async connection to the device, populate components and update device_info with them."""
         pass
 
     def repeated_task(self) -> RepeatedTaskInfo | None:
