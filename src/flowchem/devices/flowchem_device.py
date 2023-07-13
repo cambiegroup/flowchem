@@ -1,5 +1,5 @@
 """Base object for all hardware-control device classes."""
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import namedtuple
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
@@ -24,9 +24,9 @@ class FlowchemDevice(ABC):
         self.name = name
         self.device_info = DeviceInfo()
 
-    @abstractmethod
     async def initialize(self):
         """Use for setting up async connection to the device, populate components and update device_info with them."""
+        pass
 
     def repeated_task(self) -> RepeatedTaskInfo | None:
         """Use for repeated background task, e.g. session keepalive."""
