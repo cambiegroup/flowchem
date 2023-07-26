@@ -54,7 +54,7 @@ def parse_config(file_path: BytesIO | Path) -> dict:
     return config
 
 
-def instantiate_device(config: dict) -> dict:
+def instantiate_device_from_config(config: dict) -> list[FlowchemDevice]:
     """Instantiate all devices defined in the provided config dict."""
     assert "device" in config, "The configuration file must include a device section"
 
@@ -63,13 +63,10 @@ def instantiate_device(config: dict) -> dict:
     device_mapper = autodiscover_device_classes()
 
     # Iterate on all devices, parse device-specific settings and instantiate the relevant objects
-    config["device"] = [
+    return [
         parse_device(dev_settings, device_mapper)
         for dev_settings in config["device"].items()
     ]
-    logger.info("Configuration parsed")
-
-    return config
 
 
 def ensure_device_name_is_valid(device_name: str) -> None:
