@@ -154,15 +154,17 @@ class PeltierIO:
         return reply_string
 
     @staticmethod
-    def parse_response_line(line: str) -> Tuple[int, str, float]:
+    def parse_response_line(line: str) -> Tuple[int, str, float or str]:
         """ Split a received line in its components: address, prompt and reply body """
         assert len(line) > 0
 
         peltier_address = int(line.split(" ")[0])
         status= str(line.split(" ")[1].split("=")[0])
         reply = str(line.split(" ")[1].split("=")[1])
-
-        return peltier_address, status, float(reply)
+        try:
+            return peltier_address, status, float(reply)
+        except ValueError:
+            return peltier_address, status, str(reply)
 
     @staticmethod
     def check_for_errors(last_response_line, command_sent):
@@ -280,21 +282,24 @@ class PeltierCommands:
 
 
 class PeltierDefaults:
-    HEATING_PID = [0.64,0.53,0.13]
-    COOLING_PID = [2.83,2.36,0.59]
-    STATE_DEPENDANT_CURRENT_LIMITS = np.array([[-55,50],[14,14],[10,10]]).transpose()
-    T_MAX=50
-    T_MIN=-55
+    HEATING_PID = [0.64, 0.53, 0.13]
+    COOLING_PID = [2.83, 2.36, 0.59]
+    BASE_TEMP = -7.6
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array([[-55, 50], [14, 14], [10, 10]]).transpose()
+    T_MAX = 50
+    T_MIN = -55
 
 
 class PeltierLowCoolingDefaults(PeltierDefaults):
-    HEATING_PID = [2,0.03,0]
+    HEATING_PID = [2, 0.03, 0]
     COOLING_PID = HEATING_PID
-    STATE_DEPENDANT_CURRENT_LIMITS = np.array([[-65,-60, -55,-50,-40,-30,-20,-10,0,10,20],[7.5,6.5,5,4,3,3,1,0,0,0,0],[0,0,0,0,0,1,1,1,2,3,3.5]]).transpose()
-    T_MAX=30
-    T_MIN=-66
-    
-    
+    BASE_TEMP = -24.7
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array(
+        [[-65, -60, -55, -50, -40, -30, -20, -10, 0, 10, 20], [7.5, 6.5, 5, 4, 3, 3, 1, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0.5, 1, 1, 2.5, 3, 3.5, 3.5]]).transpose()
+    T_MAX = 30
+    T_MIN = -66
+
 
 class PeltierCooler:
 
@@ -439,13 +444,12 @@ class PeltierCooler:
         assert reply == t_min
 
     def _set_state_dependant_parameters(self, new_T_setpoint):
-        current_T = self.get_temperature()
-        if self.get_sink_temperature() < new_T_setpoint:
-            #set_heating_parameters
+        if self.peltier_defaults.BASE_TEMP < new_T_setpoint:
+            # set_heating_parameters
             self.set_pid_parameters(*self.peltier_defaults.HEATING_PID)
         else:
             self.set_pid_parameters(*self.peltier_defaults.COOLING_PID)
-        if new_T_setpoint > current_T:
+        if new_T_setpoint > self.peltier_defaults.BASE_TEMP:
             # set current limit for heating
             settings=self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[
                       np.where((self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[::, 0] >= new_T_setpoint))[0][0]]
