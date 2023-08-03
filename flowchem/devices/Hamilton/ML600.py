@@ -611,7 +611,9 @@ class ML600:
     def _fill_left_empty_right(self, delivery_speed):
         """ refills left syringe and deliuvers required flowrate from right"""
         # todo ensure it is double syringe
-        assert self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE) == 'Y' "Sorry, only works for dual syringes"
+        self.wait_until_idle()
+        single = self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE)
+        assert single == 'N', f"Sorry, only works for dual syringes. answer is {single}"
         return self.send_multiple_commands([self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
                                             *self._orchestrated_pickup(self.syringe_volume, 2 * delivery_speed),
                                             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
@@ -619,8 +621,9 @@ class ML600:
 
     def _empty_left_fill_right(self, delivery_speed):
         """ pump from left syringe at double speed and refill right syringe"""
-        assert self.send_command_and_read_reply(
-            ML600Commands.IS_SINGLE_SYRINGE) == 'Y' "Sorry, only works for dual syringes"
+        self.wait_until_idle()
+        single = self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE)
+        assert single == 'N', f"Sorry, only works for dual syringes. answer is {single}"
         return self.send_multiple_commands([self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
                                             *self._orchestrated_deliver(0, 2 * delivery_speed),
                                             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
@@ -628,7 +631,9 @@ class ML600:
 
     def continuous_delivery(self, delivery_speed, volume_to_deliver):
         """ delivers continuoulsy at requested speed, be aware that there are short breaks due to valve switching"""
-        assert self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE) == 'Y' "Sorry, only works for dual syringes"
+        self.wait_until_idle()
+        single = self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE)
+        assert single == 'N', f"Sorry, only works for dual syringes. answer is {single}"
         # make sure valves are set correctly for continuous dispense
         self.send_command_and_read_reply(ML600Commands.SET_VALVE_CONTINUOUS_DISPENSE)
         self.wait_until_idle()
