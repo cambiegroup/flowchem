@@ -638,7 +638,7 @@ class ML600:
         self.send_command_and_read_reply(ML600Commands.SET_VALVE_CONTINUOUS_DISPENSE)
         self.wait_until_idle()
         # set valve speed to as high as possible - thereby phases without pumping become short
-        self.send_command_and_read_reply(ML600Commands.VALVE_SPEED, command_value=720)
+        # self.send_command_and_read_reply(ML600Commands.VALVE_SPEED, command_value="720")
         self.wait_until_idle()
         # initialise counter
         volume_delivered = 0
