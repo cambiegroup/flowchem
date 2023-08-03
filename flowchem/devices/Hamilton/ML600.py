@@ -565,12 +565,26 @@ class ML600:
         )
         return current_steps / self.steps_per_ml
 
-    def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
-        self.valve_position = from_valve
-        pass
+    def _absolute_syringe_move(self, volume, flow_rate):
+        """ Absolute move to volume, so no matter what volume is now, it will move to this volume.
+        This is bad for dosing, but good for general pumping"""
+        speed = self.flowrate_to_seconds_per_stroke(flow_rate)
+        position = self._volume_to_step(volume)
+        return self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed))
 
-    def deliver(self, volume, from_valve, speed_out, wait):
-        pass
+    def _relative_syringe_pickup(self, volume, flow_rate):
+        """ relative volume pickup, Syringe will aspire a certain volume.
+        This is good for dosing."""
+        speed = self.flowrate_to_seconds_per_stroke(flow_rate)
+        position = self._volume_to_step(volume)
+        return self.create_single_command(ML600Commands.PICKUP, str(position), str(speed))
+
+    def _relative_syringe_dispense(self, volume, flow_rate):
+        """ relative volume dispense, Syringe will deliver a certain volume.
+                This is good for dosing."""
+        speed = self.flowrate_to_seconds_per_stroke(flow_rate)
+        position = self._volume_to_step(volume)
+        return self.create_single_command(ML600Commands.DELIVER, str(position), str(speed))
 
     def transfer(self, volume, from_valve, to_valve, speed_in, speed_out, wait):
         pass
