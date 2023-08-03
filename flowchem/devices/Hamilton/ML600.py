@@ -410,6 +410,22 @@ class ML600:
             command_template.to_pump(self.address, command_value, argument_value)
         )
 
+    def create_single_command(
+            self,
+            command_template: Protocol1CommandTemplate,
+            command_value="",
+            argument_value="",
+    ) -> Protocol1Command:
+        # if this holds a list of dictionaries, that specify
+        """ This creates a single command of which a list (so multiple commands) can be sent to device. Just hand a
+        list of multiple so created commands to """
+
+        x = command_template.to_pump(self.address, command_value, argument_value)
+        return x
+
+    def send_multiple_commands(self, list_of_commands: [Protocol1Command]) -> str:
+        return self.pump_io.write_and_read_reply(list_of_commands)
+
     def initialize_pump(self, speed: int = None):
         """
         Initialize both syringe and valve
