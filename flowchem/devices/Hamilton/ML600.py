@@ -586,8 +586,82 @@ class ML600:
         position = self._volume_to_step(volume)
         return self.create_single_command(ML600Commands.DELIVER, str(position), str(speed))
 
-    def transfer(self, volume, from_valve, to_valve, speed_in, speed_out, wait):
-        pass
+    def _orchestrated_pickup(self, volume, flowrate):
+        """ pickup by moving valves and moving syringe to absolute volume"""
+        fill_syringe = [self.create_single_command(ML600Commands.VALVE_TO_INLET),
+                        self._absolute_syringe_move(volume, flowrate),
+                        self.create_single_command(ML600Commands.VALVE_TO_OUTLET), ]
+        return fill_syringe
+
+    def pickup(self, volume, speed):
+        """actually dispatch command. Use for moving valves and pick up solution"""
+        self.send_multiple_commands(self._orchestrated_pickup(volume, speed))
+
+    def _orchestrated_deliver(self, volume, speed_out):
+        """deliver by moving valves and deliver solution"""
+        deliver_from_syringe = [self.create_single_command(ML600Commands.VALVE_TO_OUTLET),
+                                self._absolute_syringe_move(volume, speed_out),
+                                self.create_single_command(ML600Commands.VALVE_TO_INLET), ]
+        return deliver_from_syringe
+
+    def deliver(self, volume, speed):
+        """actually dispatch command. Use for moving valves and deliver up solution"""
+        self.send_multiple_commands(self._orchestrated_deliver(volume, speed))
+
+    def _fill_left_empty_right(self, delivery_speed):
+        """ refills left syringe and deliuvers required flowrate from right"""
+        # todo ensure it is double syringe
+        assert self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE) == 'Y' "Sorry, only works for dual syringes"
+        return self.send_multiple_commands([self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
+                                            *self._orchestrated_pickup(self.syringe_volume, 2 * delivery_speed),
+                                            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
+                                            *self._orchestrated_deliver(0, delivery_speed)])
+
+    def _empty_left_fill_right(self, delivery_speed):
+        """ pump from left syringe at double speed and refill right syringe"""
+        assert self.send_command_and_read_reply(
+            ML600Commands.IS_SINGLE_SYRINGE) == 'Y' "Sorry, only works for dual syringes"
+        return self.send_multiple_commands([self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
+                                            *self._orchestrated_deliver(0, 2 * delivery_speed),
+                                            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
+                                            *self._orchestrated_pickup(0.5 * self.syringe_volume, delivery_speed)])
+
+    def continuous_delivery(self, delivery_speed, volume_to_deliver):
+        """ delivers continuoulsy at requested speed, be aware that there are short breaks due to valve switching"""
+        assert self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE) == 'Y' "Sorry, only works for dual syringes"
+        # make sure valves are set correctly for continuous dispense
+        self.send_command_and_read_reply(ML600Commands.SET_VALVE_CONTINUOUS_DISPENSE)
+        self.wait_until_idle()
+        # set valve speed to as high as possible - thereby phases without pumping become short
+        self.send_command_and_read_reply(ML600Commands.VALVE_SPEED, command_value=720)
+        self.wait_until_idle()
+        # initialise counter
+        volume_delivered = 0
+
+        # check if the requested flowrate is actually doable at a reasonable accuracy and continuity
+        single = self.flowrate_to_seconds_per_stroke(delivery_speed)
+        double = self.flowrate_to_seconds_per_stroke(2 * delivery_speed)
+        offset = (double - single) / single - 0.5
+        if offset > 0.01:
+            self.log.warning(f"The offset between your two syringes is {offset}, this should be 0 or very small."
+                             f"consider using different syringe size for that flowrate and be aware that your flow will"
+                             f"not be steady.")
+        actual_flowrate = 60 * self.syringe_volume / single
+        self.log.info(f"Your actual flow is {actual_flowrate}. Offset is due to rounding.")
+
+        self._fill_left_empty_right(1)
+        # idea is - along with HPLC pump:
+        # 1) fill left, right syringe is empty ad does not move
+        # while True:
+        # 2) fill right syringe half-way, empty left completely, at double speed
+        # 3) fill left at double speed, empty right at normAL, timing will be accurate since double volume mkoves at double speed
+        self._fill_left_empty_right(1)
+        while volume_delivered < volume_to_deliver:
+            self.wait_until_idle()
+            self._empty_left_fill_right(delivery_speed)
+            self.wait_until_idle()
+            self._fill_left_empty_right(delivery_speed)
+            volume_delivered += self.syringe_volume
 
     # convenience function
     def refill_syringe(self, volume: float = None, flow_rate: float = 0, invert_input_output = False):
