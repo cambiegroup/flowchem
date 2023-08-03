@@ -509,7 +509,7 @@ class ML600:
         """ Returns when no more commands are present in the pump buffer. """
         self.log.debug(f"Pump {self.name} wait until idle")
         while self.is_busy:
-            time.sleep(0.1)
+            time.sleep(0.001)
 
     @property
     def version(self) -> str:
