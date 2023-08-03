@@ -485,7 +485,8 @@ class ML600:
         )
 
     def to_volume(self, volume_in_ml: float, speed: int = ""):
-        """ Absolute move to volume """
+        """ Absolute move to volume, so no matter what volume is now, it will move to this volume.
+        This is bad for dosing, but good for general pumping"""
         self._to_step_position(self._volume_to_step(volume_in_ml), speed)
         self.log.debug(
             f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}"
