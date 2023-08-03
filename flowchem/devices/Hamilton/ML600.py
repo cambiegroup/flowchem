@@ -75,26 +75,37 @@ class Protocol1Command(Protocol1CommandTemplate):
     command_value: Optional[str] = None
     argument_value: Optional[str] = None
 
-    def compile(self) -> str:
+    def compile(self, command_string: Optional = None) -> str:
         """
         Create actual command byte by prepending pump address to command and appending executing command.
         """
         assert self.target_pump_num in range(1, 17)
+        if not command_string:
+            command_string = self._compile()
+
+        command_string = f"{self.PUMP_ADDRESS[self.target_pump_num]}" \
+                         f"{command_string}"
+
+        if self.execute_command is True:
+            command_string += "R"
+
+        return command_string + "\r"
+
+    def _compile(self) -> str:
+        """
+        Create command string for individual pump. from that, up to two commands can be compiled, by appending pump address and adding run value
+        """
         if not self.command_value:
             self.command_value = ""
 
         compiled_command = (
-            f"{self.PUMP_ADDRESS[self.target_pump_num]}"
             f"{self.command}{self.command_value}"
         )
-
         if self.argument_value:
             compiled_command += f"{self.optional_parameter}{self.argument_value}"
         # Add execution flag at the end
-        if self.execute_command is True:
-            compiled_command += "R"
 
-        return compiled_command + "\r"
+        return compiled_command
 
 
 class HamiltonPumpIO:
@@ -213,18 +224,24 @@ class HamiltonPumpIO:
         except serial.PortNotOpenError as e:
             raise InvalidConfiguration from e
 
-    def write_and_read_reply(self, command: Protocol1Command) -> str:
+    def write_and_read_reply(self, command: list[Protocol1Command] or Protocol1Command) -> str:
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
+        command_compiled = ""
         with self.lock:
             self.reset_buffer()
-            self._write(command.compile())
+            if type(command) != list:
+                command = [command]
+            for com in command:
+                command_compiled += com._compile()
+            com_comp = com.compile(command_compiled)
+            self._write(com.compile(command_compiled))
             response = self._read_reply()
 
         if not response:
             raise InvalidConfiguration(
                 f"No response received from pump, check pump address! "
-                f"(Currently set to {command.target_pump_num})"
+                f"(Currently set to {command[0].target_pump_num})"
             )
 
         # Parse reply
