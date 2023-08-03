@@ -271,6 +271,12 @@ class ML600Commands:
     INIT_VALVE_ONLY = Protocol1CommandTemplate(command="LX")
     INIT_SYRINGE_ONLY = Protocol1CommandTemplate(command="X1", optional_parameter="S")
 
+    # only works for pumps with two syringe drivers
+    SET_VALVE_CONTINUOUS_DISPENSE = Protocol1CommandTemplate(command="LST19")
+    # if there are two drivers, both sides can be selected
+    SELECT_LEFT_SYRINGE = Protocol1CommandTemplate(command="B")
+    SELECT_RIGHT_SYRINGE = Protocol1CommandTemplate(command="C")
+
     # SYRINGE POSITION
     PICKUP = Protocol1CommandTemplate(command="P", optional_parameter="S")
     DELIVER = Protocol1CommandTemplate(command="D", optional_parameter="S")
