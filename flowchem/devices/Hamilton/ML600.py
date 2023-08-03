@@ -75,26 +75,37 @@ class Protocol1Command(Protocol1CommandTemplate):
     command_value: Optional[str] = None
     argument_value: Optional[str] = None
 
-    def compile(self) -> str:
+    def compile(self, command_string: Optional = None) -> str:
         """
         Create actual command byte by prepending pump address to command and appending executing command.
         """
         assert self.target_pump_num in range(1, 17)
+        if not command_string:
+            command_string = self._compile()
+
+        command_string = f"{self.PUMP_ADDRESS[self.target_pump_num]}" \
+                         f"{command_string}"
+
+        if self.execute_command is True:
+            command_string += "R"
+
+        return command_string + "\r"
+
+    def _compile(self) -> str:
+        """
+        Create command string for individual pump. from that, up to two commands can be compiled, by appending pump address and adding run value
+        """
         if not self.command_value:
             self.command_value = ""
 
         compiled_command = (
-            f"{self.PUMP_ADDRESS[self.target_pump_num]}"
             f"{self.command}{self.command_value}"
         )
-
         if self.argument_value:
             compiled_command += f"{self.optional_parameter}{self.argument_value}"
         # Add execution flag at the end
-        if self.execute_command is True:
-            compiled_command += "R"
 
-        return compiled_command + "\r"
+        return compiled_command
 
 
 class HamiltonPumpIO:
@@ -213,18 +224,24 @@ class HamiltonPumpIO:
         except serial.PortNotOpenError as e:
             raise InvalidConfiguration from e
 
-    def write_and_read_reply(self, command: Protocol1Command) -> str:
+    def write_and_read_reply(self, command: list[Protocol1Command] or Protocol1Command) -> str:
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
+        command_compiled = ""
         with self.lock:
             self.reset_buffer()
-            self._write(command.compile())
+            if type(command) != list:
+                command = [command]
+            for com in command:
+                command_compiled += com._compile()
+            com_comp = com.compile(command_compiled)
+            self._write(com.compile(command_compiled))
             response = self._read_reply()
 
         if not response:
             raise InvalidConfiguration(
                 f"No response received from pump, check pump address! "
-                f"(Currently set to {command.target_pump_num})"
+                f"(Currently set to {command[0].target_pump_num})"
             )
 
         # Parse reply
@@ -253,6 +270,12 @@ class ML600Commands:
     INIT_ALL = Protocol1CommandTemplate(command="X", optional_parameter="S")
     INIT_VALVE_ONLY = Protocol1CommandTemplate(command="LX")
     INIT_SYRINGE_ONLY = Protocol1CommandTemplate(command="X1", optional_parameter="S")
+
+    # only works for pumps with two syringe drivers
+    SET_VALVE_CONTINUOUS_DISPENSE = Protocol1CommandTemplate(command="LST19")
+    # if there are two drivers, both sides can be selected
+    SELECT_LEFT_SYRINGE = Protocol1CommandTemplate(command="B")
+    SELECT_RIGHT_SYRINGE = Protocol1CommandTemplate(command="C")
 
     # SYRINGE POSITION
     PICKUP = Protocol1CommandTemplate(command="P", optional_parameter="S")
@@ -367,7 +390,7 @@ class ML600:
             )
         self.syringe_volume = syringe_volume
         self.steps_per_ml = 48000 / self.syringe_volume
-        self.offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
+        self.offset_steps = 0  # 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
@@ -386,6 +409,22 @@ class ML600:
         return self.pump_io.write_and_read_reply(
             command_template.to_pump(self.address, command_value, argument_value)
         )
+
+    def create_single_command(
+            self,
+            command_template: Protocol1CommandTemplate,
+            command_value="",
+            argument_value="",
+    ) -> Protocol1Command:
+        # if this holds a list of dictionaries, that specify
+        """ This creates a single command of which a list (so multiple commands) can be sent to device. Just hand a
+        list of multiple so created commands to """
+
+        x = command_template.to_pump(self.address, command_value, argument_value)
+        return x
+
+    def send_multiple_commands(self, list_of_commands: [Protocol1Command]) -> str:
+        return self.pump_io.write_and_read_reply(list_of_commands)
 
     def initialize_pump(self, speed: int = None):
         """
@@ -446,7 +485,8 @@ class ML600:
         )
 
     def to_volume(self, volume_in_ml: float, speed: int = ""):
-        """ Absolute move to volume """
+        """ Absolute move to volume, so no matter what volume is now, it will move to this volume.
+        This is bad for dosing, but good for general pumping"""
         self._to_step_position(self._volume_to_step(volume_in_ml), speed)
         self.log.debug(
             f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}"
@@ -469,7 +509,7 @@ class ML600:
         """ Returns when no more commands are present in the pump buffer. """
         self.log.debug(f"Pump {self.name} wait until idle")
         while self.is_busy:
-            time.sleep(0.1)
+            time.sleep(0.001)
 
     @property
     def version(self) -> str:
@@ -525,15 +565,108 @@ class ML600:
         )
         return current_steps / self.steps_per_ml
 
-    def pickup(self, volume, from_valve: ValvePositionName, flowrate, wait):
-        self.valve_position = from_valve
-        pass
+    def _absolute_syringe_move(self, volume, flow_rate):
+        """ Absolute move to volume, so no matter what volume is now, it will move to this volume.
+        This is bad for dosing, but good for general pumping"""
+        speed = self.flowrate_to_seconds_per_stroke(flow_rate)
+        position = self._volume_to_step(volume)
+        return self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed))
 
-    def deliver(self, volume, from_valve, speed_out, wait):
-        pass
+    def _relative_syringe_pickup(self, volume, flow_rate):
+        """ relative volume pickup, Syringe will aspire a certain volume.
+        This is good for dosing."""
+        speed = self.flowrate_to_seconds_per_stroke(flow_rate)
+        position = self._volume_to_step(volume)
+        return self.create_single_command(ML600Commands.PICKUP, str(position), str(speed))
 
-    def transfer(self, volume, from_valve, to_valve, speed_in, speed_out, wait):
-        pass
+    def _relative_syringe_dispense(self, volume, flow_rate):
+        """ relative volume dispense, Syringe will deliver a certain volume.
+                This is good for dosing."""
+        speed = self.flowrate_to_seconds_per_stroke(flow_rate)
+        position = self._volume_to_step(volume)
+        return self.create_single_command(ML600Commands.DELIVER, str(position), str(speed))
+
+    def _orchestrated_pickup(self, volume, flowrate):
+        """ pickup by moving valves and moving syringe to absolute volume"""
+        fill_syringe = [self.create_single_command(ML600Commands.VALVE_TO_INLET),
+                        self._absolute_syringe_move(volume, flowrate),
+                        self.create_single_command(ML600Commands.VALVE_TO_OUTLET), ]
+        return fill_syringe
+
+    def pickup(self, volume, speed):
+        """actually dispatch command. Use for moving valves and pick up solution"""
+        self.send_multiple_commands(self._orchestrated_pickup(volume, speed))
+
+    def _orchestrated_deliver(self, volume, speed_out):
+        """deliver by moving valves and deliver solution"""
+        deliver_from_syringe = [self.create_single_command(ML600Commands.VALVE_TO_OUTLET),
+                                self._absolute_syringe_move(volume, speed_out),
+                                self.create_single_command(ML600Commands.VALVE_TO_INLET), ]
+        return deliver_from_syringe
+
+    def deliver(self, volume, speed):
+        """actually dispatch command. Use for moving valves and deliver up solution"""
+        self.send_multiple_commands(self._orchestrated_deliver(volume, speed))
+
+    def _fill_left_empty_right(self, delivery_speed):
+        """ refills left syringe and deliuvers required flowrate from right"""
+        # todo ensure it is double syringe
+        self.wait_until_idle()
+        single = self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE)
+        assert single == 'N', f"Sorry, only works for dual syringes. answer is {single}"
+        return self.send_multiple_commands([self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
+                                            *self._orchestrated_pickup(self.syringe_volume, 2 * delivery_speed),
+                                            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
+                                            *self._orchestrated_deliver(0, delivery_speed)])
+
+    def _empty_left_fill_right(self, delivery_speed):
+        """ pump from left syringe at double speed and refill right syringe"""
+        self.wait_until_idle()
+        single = self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE)
+        assert single == 'N', f"Sorry, only works for dual syringes. answer is {single}"
+        return self.send_multiple_commands([self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
+                                            *self._orchestrated_deliver(0, 2 * delivery_speed),
+                                            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
+                                            *self._orchestrated_pickup(0.5 * self.syringe_volume, delivery_speed)])
+
+    def continuous_delivery(self, delivery_speed, volume_to_deliver):
+        """ delivers continuoulsy at requested speed, be aware that there are short breaks due to valve switching"""
+        self.wait_until_idle()
+        single = self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE)
+        assert single == 'N', f"Sorry, only works for dual syringes. answer is {single}"
+        # make sure valves are set correctly for continuous dispense
+        self.send_command_and_read_reply(ML600Commands.SET_VALVE_CONTINUOUS_DISPENSE)
+        self.wait_until_idle()
+        # set valve speed to as high as possible - thereby phases without pumping become short
+        # self.send_command_and_read_reply(ML600Commands.VALVE_SPEED, command_value="720")
+        self.wait_until_idle()
+        # initialise counter
+        volume_delivered = 0
+
+        # check if the requested flowrate is actually doable at a reasonable accuracy and continuity
+        single = self.flowrate_to_seconds_per_stroke(delivery_speed)
+        double = self.flowrate_to_seconds_per_stroke(2 * delivery_speed)
+        offset = (double - single) / single - 0.5
+        if offset > 0.01:
+            self.log.warning(f"The offset between your two syringes is {offset}, this should be 0 or very small."
+                             f"consider using different syringe size for that flowrate and be aware that your flow will"
+                             f"not be steady.")
+        actual_flowrate = 60 * self.syringe_volume / single
+        self.log.info(f"Your actual flow is {actual_flowrate}. Offset is due to rounding.")
+
+        self._fill_left_empty_right(1)
+        # idea is - along with HPLC pump:
+        # 1) fill left, right syringe is empty ad does not move
+        # while True:
+        # 2) fill right syringe half-way, empty left completely, at double speed
+        # 3) fill left at double speed, empty right at normAL, timing will be accurate since double volume mkoves at double speed
+        self._fill_left_empty_right(1)
+        while volume_delivered < volume_to_deliver:
+            self.wait_until_idle()
+            self._empty_left_fill_right(delivery_speed)
+            self.wait_until_idle()
+            self._fill_left_empty_right(delivery_speed)
+            volume_delivered += self.syringe_volume
 
     # convenience function
     def refill_syringe(self, volume: float = None, flow_rate: float = 0, invert_input_output = False):
