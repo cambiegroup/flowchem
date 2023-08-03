@@ -390,7 +390,7 @@ class ML600:
             )
         self.syringe_volume = syringe_volume
         self.steps_per_ml = 48000 / self.syringe_volume
-        self.offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
+        self.offset_steps = 0  # 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
