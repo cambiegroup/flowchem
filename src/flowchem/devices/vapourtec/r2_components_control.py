@@ -65,10 +65,10 @@ class R4Reactor(TemperatureControl):
         super().__init__(name, hw_device, temp_limits)
         self.channel = channel
 
-    async def set_temperature(self, temp: str):
+    async def set_temperature(self, temp: str, heating: bool| None = None):
         """Set the target temperature to the given string in natural language."""
         set_t = await super().set_temperature(temp)
-        return await self.hw_device.set_temperature(self.channel, set_t)
+        return await self.hw_device.set_temperature(self.channel, set_t, heating)
 
     async def get_temperature(self) -> float:  # type: ignore
         """Return temperature in Celsius."""
@@ -115,7 +115,7 @@ class UV150PhotoReactor(Photoreactor):
 
     async def power_on(self):
         """Turn on the whole system, no way to power UV150 independently."""
-        if self._intensity:
+        if self.hw_device.intensity:
             await self.hw_device.power_on()
             return
         logger.error("UV150 power on requested without setting intensity first!")

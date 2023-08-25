@@ -74,6 +74,7 @@ class R2(FlowchemDevice):
     def __init__(
         self,
         name: str = "",
+        rt_temp: float = 27,  # todo: find a way to
         min_temp: float | list[float] = -40,
         max_temp: float | list[float] = 80,
         min_pressure: float = 1000,
@@ -91,6 +92,7 @@ class R2(FlowchemDevice):
             max_temp = [max_temp] * 4
         assert len(min_temp) == len(max_temp) == 4
 
+        self.rt_t = rt_temp * ureg.degreeC
         self._min_t = min_temp * ureg.degreeC
         self._max_t = max_temp * ureg.degreeC
 
@@ -133,15 +135,17 @@ class R2(FlowchemDevice):
         await self.set_flowrate("A", "0 ul/min")
         await self.set_flowrate("B", "0 ul/min")
         # Sets all temp to room temp.
-        rt = ureg("25 °C")
-        await self.set_temperature(0, rt)
-        await self.set_temperature(1, rt)
-        await self.set_temperature(2, rt)
-        await self.set_temperature(3, rt)
+        # rt = ureg("25 °C")
+        self.rt_t = await self.get_current_temperature(2)* ureg.degreeC
+        await self.set_temperature(0, self.rt_t, self._heated)
+        await self.set_temperature(1, self.rt_t, self._heated)
+        await self.set_temperature(2, self.rt_t, self._heated)
+        await self.set_temperature(3, self.rt_t, self._heated)
+
         # set UV to 0%
         await self.set_UV150(power=self._UV_power)
         # set max pressure to  10 bar
-        await self.set_pressure_limit("10 bar")
+        await self.set_pressure_limit("20 bar")
         # Set valve to default position
         await self.trigger_key_press("0")
         await self.trigger_key_press("2")
@@ -267,14 +271,19 @@ class R2(FlowchemDevice):
         await self.write_and_read_reply(cmd)
 
     async def set_temperature(
-        self, channel: int, temp: pint.Quantity, ramp_rate: str = "80"
+        self, channel: int, temp: pint.Quantity, heating: bool | None = None, ramp_rate: str = "80"
     ):
         """Set temperature to R4 channel. If a UV150 is present then channel 3 range is limited to -40 to 80 °C.
            The heating setting range from 20 to 80 °C; cooling range from -40 to 80 °C.
         """
-        # TODO: better threshold for control cooling/heating. For 520 nm green light the temp wo cooling is 31 °C
+        # TODO: better threshold for control cooling/heating. For 520 nm green light the temp difference to rt is 9 degree
         set_t = round(temp.m_as("°C"))
-        if set_t > 31:
+
+        threhold_t = self.rt_t.m_as("degree_Celsius") + 6  # for green light heating in 8 °C
+        if heating is None:
+            logger.debug("heat decide by temp.")
+            self._heated = True if set_t > threhold_t else False
+        elif heating == True:
             self._heated = True
         else:
             self._heated = False
