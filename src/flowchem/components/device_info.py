@@ -1,7 +1,6 @@
-from pydantic import AnyHttpUrl, BaseModel
+from pydantic import AnyHttpUrl, BaseModel, NameEmail
 
 from flowchem import __version__
-from flowchem.utils.people import Person
 
 
 class DeviceInfo(BaseModel):
@@ -13,5 +12,5 @@ class DeviceInfo(BaseModel):
     serial_number: str | int = "unknown"
     components: dict[str, AnyHttpUrl] = {}
     backend: str = f"flowchem v. {__version__}"
-    authors: list[Person] = []
+    authors: list[NameEmail] = []
     additional_info: dict = {}

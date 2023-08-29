@@ -12,7 +12,7 @@ import uvicorn
 from loguru import logger
 
 from flowchem import __version__
-from flowchem.server.create_server import create_server_from_file
+from flowchem.server.core import Flowchem
 
 
 @click.argument("device_config_file", type=click.Path(), required=True)
@@ -62,11 +62,13 @@ def main(device_config_file, logfile, host, debug):
 
     async def main_loop():
         """Main application loop, the event loop is shared between uvicorn and flowchem."""
-        flowchem_instance = await create_server_from_file(Path(device_config_file))
+        flowchem = Flowchem(Path(device_config_file))
+        await flowchem.setup()
+
         config = uvicorn.Config(
-            flowchem_instance["api_server"].app,
+            flowchem.http.app,
             host=host,
-            port=flowchem_instance["port"],
+            port=flowchem.port,
             log_level="info",
             timeout_keep_alive=3600,
         )
