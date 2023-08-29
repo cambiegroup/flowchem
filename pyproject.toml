@@ -32,7 +32,7 @@ dependencies = [
     "lxml>=4.9.2",
     "packaging>=23.1",
     "pint>=0.16.1,!=0.21", # See hgrecco/pint#1642
-    "pydantic>=2.0.2",
+    "pydantic[email]>=2.0.2",
     "pyserial>=3",
     "rich_click>=1.6.1",
     'tomli; python_version<"3.11"',
