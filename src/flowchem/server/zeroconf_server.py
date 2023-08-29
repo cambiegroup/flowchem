@@ -29,6 +29,8 @@ class ZeroconfServer:
         if not self.mdns_addresses:
             self.mdns_addresses.append("127.0.0.1")
 
+        logger.info(f"Zeroconf server up, broadcasting on IPs: {self.mdns_addresses}")
+
     async def add_device(self, name: str) -> None:
         """Add device to the server."""
         properties = {
@@ -58,4 +60,5 @@ class ZeroconfServer:
 
 if __name__ == "__main__":
     test = ZeroconfServer()
+    print("Press Enter to exit.")
     input()

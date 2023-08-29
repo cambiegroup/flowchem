@@ -25,10 +25,11 @@ class FastAPIServer:
                 "url": "https://opensource.org/licenses/MIT",
             },
         )
-        self.host = host
-        self.port = port
+        self.base_url = rf"http://{host}:{port}"
 
         self._add_root_redirect()
+
+        logger.debug("HTTP ASGI server app created")
 
     def _add_root_redirect(self) -> None:
         @self.app.route("/")
@@ -49,9 +50,8 @@ class FastAPIServer:
     def add_device(self, device):
         """Add device to server."""
         # Add components URL to device_info
-        base_url = rf"http://{self.host}:{self.port}/{device.name}"
         components_w_url = {
-            component.name: f"{base_url}/{component.name}"
+            component.name: f"{self.base_url}/{component.name}"
             for component in device.components
         }
         device.device_info.components = components_w_url
