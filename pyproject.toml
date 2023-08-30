@@ -34,6 +34,7 @@ dependencies = [
     "pint>=0.16.1,!=0.21", # See hgrecco/pint#1642
     "pydantic[email]>=2.0.2",
     "pyserial>=3",
+    "requests",
     "rich_click>=1.6.1",
     'tomli; python_version<"3.11"',
     "uvicorn>=0.19.0",
@@ -41,12 +42,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+all = ["flowchem[dev,test,phidget,docs]"]
+ci = ["flowchem[dev,test,docs]"]
 dev = [
     "black",
+    "data-science-types",
     "lxml-stubs",
     "mypy",
     "pre-commit",
     "ruff>=0.0.252",
+    "types-lxml",
+    "types-PyYAML",
+    "types-requests",
 ]
 test = [
     "flowchem-test>=0.1a3",
@@ -56,13 +63,9 @@ test = [
     "pytest-cov",
     "pytest-mock",
     "pytest-xprocess",
-    "requests",
 ]
 phidget = [
     "phidget22>=1.7.20211005",
-]
-plot = [
-    "matplotlib>=3.5.0",
 ]
 docs = [
     "furo",
@@ -73,13 +76,6 @@ docs = [
     "sphinx-autodoc-typehints",
     "sphinx-rtd-theme",
     "sphinxcontrib-openapi",
-]
-types = [
-    "data-science-types",
-    "types-lxml",
-    "types-PyYAML",
-    "types-requests",
-
 ]
 
 [project.urls]
@@ -93,24 +89,18 @@ flowchem-autodiscover = "flowchem.utils.device_finder:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-flowchem = ["py.typed"]
+packages.find.where = ["src"]
+package-data.flowchem = ["py.typed"]
 
 [tool.mypy]
 ignore_missing_imports = true
-python_version = "3.10"
+python_version = "3.11"
 
 [tool.pytest.ini_options]
 testpaths = "tests"
 asyncio_mode = "auto"
-# pytest cov is not compatible with the pycharm debugger in tests
-# addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump'"
+# Note: pytest cov is not compatible with the pycharm debugger in tests
 addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=40"
-
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",
@@ -121,5 +111,4 @@ markers = [
 line-length = 120
 # Allow imports relative to the "src" and "test" directories.
 src = ["src", "test"]
-[tool.ruff.per-file-ignores]
-"__init__.py" = ["F403"]
+per-file-ignores."__init__.py" = ["F403"]

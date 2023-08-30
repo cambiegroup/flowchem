@@ -35,7 +35,7 @@ jobs:
 
       - name: Install flowchem
         run: |
-            python -m pip install .[dev,types,test]
+            python -m pip install .[ci]
             pip freeze
 
       - name: Run mypy
