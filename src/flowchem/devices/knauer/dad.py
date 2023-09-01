@@ -99,7 +99,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
 
     async def lamp(self, lamp: str, state: bool | str = "REQUEST") -> str:
         """Turn on or off the lamp, or request lamp state."""
-        if type(state) == bool:
+        if isinstance(state, bool):
             state = "ON" if state else "OFF"
 
         lamp_mapping = {"d2": "_D2", "hal": "_HAL"}
@@ -220,7 +220,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         """Set bandwidth in the range of 4 to 25 nm
         read the setting of bandwidth.
         """
-        if type(bw) == int:
+        if isinstance(bw, int):
             cmd = self.cmd.BANDWIDTH.format(bandwidth=bw)
             return await self._send_and_receive(cmd)
         else:

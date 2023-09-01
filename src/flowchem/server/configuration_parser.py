@@ -35,7 +35,7 @@ def parse_toml(stream: typing.BinaryIO) -> dict:
         raise InvalidConfigurationError(msg) from parser_error
 
 
-def parse_config(file_path: BytesIO | Path) -> dict:
+def parse_config(file_path: Path | BytesIO) -> dict:
     """Parse a config file and add a `filename` key to the resulting dict w/ its location."""
     # BytesIO used for testing without creating actual files
     if isinstance(file_path, BytesIO):
