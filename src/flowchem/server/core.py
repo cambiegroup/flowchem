@@ -8,6 +8,7 @@ from typing import Any
 
 from loguru import logger
 
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.server.configuration_parser import (
     instantiate_device_from_config,
     parse_config,
@@ -52,7 +53,7 @@ class Flowchem:
         self.loop = asyncio.get_running_loop()
         self._tasks: set[asyncio.Future[Any]] = set()
         self.config: dict[str, Any] = {}
-        self.devices: dict[str, Any] = {}
+        self.devices: list[FlowchemDevice] = []
         self.state: CoreState = CoreState.not_running
         self.exit_code: int = 0
         # If not None, use to signal end-of-loop

@@ -62,8 +62,8 @@ def main(device_config_file, logfile, host, debug):
 
     async def main_loop():
         """Main application loop, the event loop is shared between uvicorn and flowchem."""
-        flowchem = Flowchem(Path(device_config_file))
-        await flowchem.setup()
+        flowchem = Flowchem()
+        await flowchem.setup(Path(device_config_file))
 
         config = uvicorn.Config(
             flowchem.http.app,
