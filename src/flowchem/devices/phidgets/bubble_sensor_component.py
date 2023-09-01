@@ -17,7 +17,7 @@ class PhidgetBubbleSensorComponent(Sensor):
     def __init__(self, name: str, hw_device: FlowchemDevice):
         """A generic Syringe pump."""
         super().__init__(name, hw_device)
-        self.add_api_route("/set-data-Interval", self.power_on, methods=["PUT"])
+        # self.add_api_route("/set-data-Interval", self.set_dataInterval, methods=["PUT"])
         self.add_api_route("/read-voltage", self.read_voltage, methods=["GET"])
         self.add_api_route("/acquire-signal", self.acquire_signal, methods=["GET"])
 
@@ -38,7 +38,7 @@ class PhidgetBubbleSensorComponent(Sensor):
         return self.hw_device.read_intensity()
 
     async def set_dataInterval(self, datainterval: int) -> bool:
-        """set data interval at the range 20-60000 ms"""
+        """set data interval at the range 20-60000 ms (default unit: ms)"""
         self.hw_device.set_dataInterval(datainterval)
         return True
 
