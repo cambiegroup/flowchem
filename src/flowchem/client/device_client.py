@@ -13,8 +13,8 @@ class FlowchemDeviceClient:
         # Log every request and always raise for status
         self._session = requests.Session()
         self._session.hooks["response"] = [
-            FlowchemDeviceClient.log_responses,
             FlowchemDeviceClient.raise_for_status,
+            FlowchemDeviceClient.log_responses,
         ]
 
         # Connect, get device info and populate components
@@ -55,4 +55,4 @@ class FlowchemDeviceClient:
     @staticmethod
     def log_responses(resp, *args, **kwargs):  # noqa
         """Log all the requests sent."""
-        logger.debug(f"Reply: {resp.text} on {resp.url}")
+        logger.debug(f"Reply: '{resp.text}' on {resp.url}")

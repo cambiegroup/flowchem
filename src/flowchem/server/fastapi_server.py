@@ -51,7 +51,7 @@ class FastAPIServer:
         """Add device to server."""
         # Add components URL to device_info
         components_w_url = {
-            component.name: f"{self.base_url}/{component.name}"
+            component.name: f"{self.base_url}/{device.name}/{component.name}"
             for component in device.components
         }
         device.device_info.components = components_w_url
