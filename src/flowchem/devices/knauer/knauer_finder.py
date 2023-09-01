@@ -4,6 +4,8 @@ import queue
 import socket
 import sys
 from textwrap import dedent
+
+import ifaddr
 from anyio.from_thread import start_blocking_portal
 
 from loguru import logger
@@ -68,44 +70,6 @@ async def get_device_type(ip_address: str) -> str:
     return "Unknown"
 
 
-def _get_all_local_ips() -> list[str]:
-    return [_[4][0] for _ in socket.getaddrinfo(socket.gethostname(), None)]
-
-def _get_local_ip() -> str:
-    """Guess the most suitable local IP for autodiscovery."""
-    # These are all the local IPs (different interfaces)
-    machine_ips = _get_all_local_ips()
-
-    # 192.168 subnet 1st priority
-    if local_ip := next((ip for ip in machine_ips if ip.startswith("192.168.")), False):
-        return local_ip  # type: ignore
-
-    # 10.0 subnet 2nd priority
-    if local_ip := next((ip for ip in machine_ips if ip.startswith("10.")), False):
-        return local_ip  # type: ignore
-
-    # 100.x subnet 3rd priority (Tailscale)
-    if local_ip := next((ip for ip in machine_ips if ip.startswith("100.")), False):
-        return local_ip  # type: ignore
-
-    # 141.x subnet 3rd priority (Tailscale)
-    if local_ip := next((ip for ip in machine_ips if ip.startswith("141.")), False):
-        return local_ip  # type: ignore
-
-    logger.warning("Could not reliably determine local IP!")
-    hostname = socket.gethostname()
-
-    # Only accept local IP
-    if (
-        hostname.startswith("192.168")
-        or hostname.startswith("192.168")
-        or hostname.startswith("100.")
-    ):
-        return socket.gethostbyname(hostname)
-    else:
-        return ""
-
-
 async def send_broadcast_and_receive_replies(source_ip: str):
     try:
         loop = asyncio.get_running_loop()
@@ -133,33 +97,77 @@ async def send_broadcast_and_receive_replies(source_ip: str):
     return device_list
 
 
-def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
+def broadcast_ip_heuristic(ip: str) -> int:
+    """Heuristic to determine the preferred IP to be used in broadcasting to find local devices."""
+    if ip.startswith("192.168"):
+        return 0
+    if ip.startswith("10."):
+        return 1
+    if ip.startswith("100."):
+        return 2
+    if ip.startswith("141."):
+        return 3
+    if ip.startswith("127.0"):
+        return 100
+    return 10
+
+
+def determine_broadcasting_ip(source="") -> str:
+    """Determine the broadcasting IP to be used based on NIC name or IP range (e.g. 'eth0' or '192.168.*.*')."""
+    # Get network interfaces data
+    nics = {}
+    for adapter in ifaddr.get_adapters():
+        for ip in adapter.ips:
+            # Skip IPv6
+            if isinstance(ip.ip, tuple):
+                continue
+            # We have an IPv4 as string
+            nics[ip.nice_name] = ip.ip
+
+    # If a valid IPv4 was provided use that
+    if source in nics.values():
+        logger.debug(f"Broadcasting IP: {source} [passed from settings].")
+        logger.info(
+            f"Consider specifying the source IP as one of these: {list(nics.keys())}"
+        )
+        return source
+
+    # If a NIC is named as source return the corresponding interface IP
+    try:
+        logger.debug(f"Broadcasting IP: {nics[source]} [based on NIC: {source}]")
+        return nics[source]
+    except KeyError:
+        pass
+        # logger.debug(f"No network interface '{source}' found. Available are: {list(nics.keys())}")
+
+    # If the source IP is not fully defined try to fin d a match among all the local IPs available
+    if "*" in source:
+        fixed_part, *_ = source.split("*")
+
+        for nic_ip in nics.values():
+            if nic_ip.startswith(fixed_part):
+                logger.debug(f"Broadcasting IP: {nic_ip} [based on IP range: {source}]")
+                return nic_ip
+
+    # Find IP
+    if source:
+        logger.warning(f"IP source for broadcasting invalid! ['{source}' provided]")
+
+    # Get one of the local IPs and hope for the best.
+    return sorted(nics.values(), key=broadcast_ip_heuristic)[0]
+
+
+def autodiscover_knauer(network: str = "") -> dict[str, str]:
     """
     Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
     Note that the MAC is the key here as it is the parameter used in configuration files.
     Knauer devices only support DHCP so static IPs are not an option.
     Args:
-        source_ip: source IP for autodiscover (only relevant if multiple network interfaces are available!)
+        network: source for autodiscover (either IP, NIC or IP range e.g. '192.168.*.*')
     Returns:
         List of tuples (IP, MAC, device_type), one per device replying to autodiscover
     """
-
-    # If the source IP is not fully defined try to fin d a match among all the local IPs available
-    if "*" in source_ip:
-        fixed_part, *_ = source_ip.split("*")
-
-        if local_ip := next((ip for ip in _get_all_local_ips() if ip.startswith(fixed_part)), False):
-            source_ip = local_ip
-        else:
-            raise RuntimeError(f"The provided IP query {source_ip} does not match any available local IP."
-                               f"[Available are {_get_all_local_ips()}]")
-
-    # Define source IP resolving local hostname.
-    if not source_ip:
-        source_ip = _get_local_ip()
-    if not source_ip:
-        logger.warning("Please provide a valid source IP for broadcasting.")
-        return dict()
+    source_ip = determine_broadcasting_ip(network)
     logger.info(f"Starting detection from IP {source_ip}")
 
     with start_blocking_portal() as portal:
