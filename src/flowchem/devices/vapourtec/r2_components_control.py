@@ -102,16 +102,16 @@ class UV150PhotoReactor(Photoreactor):
 
     def __init__(self, name: str, hw_device: R2):
         super().__init__(name, hw_device)
-        self._intensity = 0  # 0 set upon device init
+        # self._intensity = 0  # 0 set upon device init
 
     async def set_intensity(self, percent: int = 100):
         """Set UV light intensity at the range 50-100%"""
-        self._intensity = percent
+        self.hw_device._intensity = percent
         await self.hw_device.set_UV150(percent)
 
     async def get_intensity(self) -> int:
         """Return last set intensity."""
-        return self._intensity
+        return self.hw_device._intensity
 
     async def power_on(self):
         """Turn on the whole system, no way to power UV150 independently."""
@@ -122,7 +122,7 @@ class UV150PhotoReactor(Photoreactor):
 
     async def power_off(self):
         """Turn off light."""
-        self._intensity = 0
+        self.hw_device._intensity = 0
         await self.hw_device.set_UV150(0)
 
 

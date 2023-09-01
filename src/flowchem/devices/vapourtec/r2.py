@@ -97,7 +97,7 @@ class R2(FlowchemDevice):
         self._max_t = max_temp * ureg.degreeC
 
         self._heated = True  #to saving the dry ice
-        self._UV_power = 0
+        self._intensity = 0
 
         if not HAS_VAPOURTEC_COMMANDS:
             raise InvalidConfiguration(
@@ -143,7 +143,7 @@ class R2(FlowchemDevice):
         await self.set_temperature(3, self.rt_t, self._heated)
 
         # set UV to 0%
-        await self.set_UV150(power=self._UV_power)
+        await self.set_UV150(power=self._intensity)
         # set max pressure to  10 bar
         await self.set_pressure_limit("20 bar")
         # Set valve to default position
@@ -276,20 +276,23 @@ class R2(FlowchemDevice):
         """Set temperature to R4 channel. If a UV150 is present then channel 3 range is limited to -40 to 80 °C.
            The heating setting range from 20 to 80 °C; cooling range from -40 to 80 °C.
         """
-        # TODO: better threshold for control cooling/heating. For 520 nm green light the temp difference to rt is 9 degree
         set_t = round(temp.m_as("°C"))
 
-        threhold_t = self.rt_t.m_as("degree_Celsius") + 6  # for green light heating in 8 °C
         if heating is None:
             logger.debug("heat decide by temp.")
+            # todo: better heat decision
+            # For 525 nm green light (13W) the temp difference to rt is 8 degree; 440 nm blue light (24W) ~15 degree
+            threhold_t = self.rt_t.m_as("degree_Celsius") + 8
             self._heated = True if set_t > threhold_t else False
         elif heating == True:
             self._heated = True
         else:
             self._heated = False
+
         # change the setting of heating
-        cmd = self.cmd.SET_UV150.format(power_percent=self._UV_power, heater_on=int(self._heated))
+        cmd = self.cmd.SET_UV150.format(power_percent=self._intensity, heater_on=int(self._heated))
         await self.write_and_read_reply(cmd)
+
         # set the temperature
         cmd = self.cmd.SET_TEMPERATURE.format(
             channel=channel,
@@ -312,8 +315,8 @@ class R2(FlowchemDevice):
 
     async def set_UV150(self, power: int):
         """set intensity of the UV light: 0 or 50 to 100"""
-        self._UV_power = power
-        cmd = self.cmd.SET_UV150.format(power_percent=self._UV_power, heater_on=int(self._heated))
+        self._intensity = power
+        cmd = self.cmd.SET_UV150.format(power_percent=self._intensity, heater_on=int(self._heated))
         await self.write_and_read_reply(cmd)
 
     async def trigger_key_press(self, keycode: str):
@@ -441,7 +444,6 @@ class R2(FlowchemDevice):
         list_of_components.extend(reactors)
 
         return list_of_components
-
 
 if __name__ == "__main__":
     Vapourtec_R2 = R2(port="COM6")
