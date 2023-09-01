@@ -89,7 +89,7 @@ class Flowchem:
         logger.info("Device(s) connected")
 
         # Create entities for the configured devices.
-        for device in self.config["device"]:
+        for device in self.devices:
             # Advertise devices as services via mDNS
             await self.mdns.add_device(name=device.name)
             # Add device API to HTTP server
