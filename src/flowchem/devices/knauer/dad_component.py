@@ -69,10 +69,6 @@ class DADChannelControl(PhotoSensor):
             "http://purl.obolibrary.org/obo/CHMO_0002503",
         )
 
-    async def calibrate_zero(self):
-        """re-calibrate the sensors to their factory zero points."""
-        await self.hw_device.set_signal(self.channel)
-
     async def acquire_signal(self) -> float:
         """Read from sensor, result to be expressed in % (optional)."""
         return await self.hw_device.read_signal(self.channel)

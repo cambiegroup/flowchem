@@ -15,7 +15,7 @@ class KnauerEthernetDevice:
     BUFFER_SIZE = 1024
     _id_counter = 0
 
-    def __init__(self, ip_address, mac_address, **kwargs) -> None:
+    def __init__(self, ip_address, mac_address, network="", **kwargs):
         """Knauer Ethernet Device - either pump or valve.
 
         If a MAC address is given, it is used to autodiscover the IP address.
@@ -33,7 +33,7 @@ class KnauerEthernetDevice:
 
         # MAC address
         if mac_address:
-            self.ip_address = self._ip_from_mac(mac_address.lower())
+            self.ip_address = self._ip_from_mac(mac_address.lower(), network=network)
         else:
             self.ip_address = ip_address
 
@@ -44,10 +44,13 @@ class KnauerEthernetDevice:
         # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by the subclasses
         self.eol = b""
 
-    def _ip_from_mac(self, mac_address: str) -> str:
+        # Lock communication between write and read reply
+        self._lock = asyncio.Lock()
+
+    def _ip_from_mac(self, mac_address: str, network="") -> str:
         """Get IP from MAC."""
         # Autodiscover IP from MAC address
-        available_devices = autodiscover_knauer()
+        available_devices = autodiscover_knauer(network)
         # IP if found, None otherwise
         ip_address = available_devices.get(mac_address)
         if ip_address is None:
@@ -76,9 +79,10 @@ class KnauerEthernetDevice:
             ) from timeout_error
 
     async def _send_and_receive(self, message: str) -> str:
-        self._writer.write(message.encode("ascii") + self.eol)
-        await self._writer.drain()
-        logger.debug(f"WRITE >>> '{message}' ")
-        reply = await self._reader.readuntil(separator=b"\r")
+        async with self._lock:
+            self._writer.write(message.encode("ascii") + self.eol)
+            await self._writer.drain()
+            logger.debug(f"WRITE >>> '{message}' ")
+            reply = await self._reader.readuntil(separator=b"\r")
         logger.debug(f"READ <<< '{reply.decode().strip()}' ")
         return reply.decode("ascii").strip()

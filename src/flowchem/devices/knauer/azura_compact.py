@@ -58,9 +58,9 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         mac_address=None,
         max_pressure: str = "",
         min_pressure: str = "",
-        name="",
-    ) -> None:
-        super().__init__(ip_address, mac_address, name=name)
+        **kwargs,
+    ):
+        super().__init__(ip_address, mac_address, **kwargs)
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="knauer",

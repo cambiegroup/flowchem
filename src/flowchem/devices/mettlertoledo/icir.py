@@ -304,38 +304,41 @@ class IcIR(FlowchemDevice):
 
 if __name__ == "__main__":
     ...
-    # async def main():
-    #     opcua_client = Client(
-    #         url=FlowIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace("localhost", "BSMC-YMEF002121")
-    #     )
-    #
-    #     async with FlowIR(opcua_client) as ir_spectrometer:
-    #         await ir_spectrometer.check_version()
-    #
-    #         if await ir_spectrometer.is_iCIR_connected():
-    #             print("FlowIR connected!")
-    #         else:
-    #             raise ConnectionError("FlowIR not connected :(")
-    #
-    #         template_name = "15_sec_integration.iCIRTemplate"
-    #         await ir_spectrometer.start_experiment(
-    #             name="reaction_monitoring", template=template_name
-    #         )
-    #
-    #         spectrum = await ir_spectrometer.last_spectrum_treated()
-    #         while len(spectrum.intensity) == 0:
-    #             spectrum = await ir_spectrometer.last_spectrum_treated()
-    #
-    #         for x in range(3):
-    #             spectra_count = await ir_spectrometer.sample_count()
-    #
-    #             while await ir_spectrometer.sample_count() == spectra_count:
-    #                 await asyncio.sleep(1)
-    #
-    #             print("New spectrum!")
-    #             spectrum = await ir_spectrometer.last_spectrum_treated()
-    #             print(spectrum)
-    #
-    #         await ir_spectrometer.stop_experiment()
-    #
-    # asyncio.run(main())
+
+    async def main():
+        opcua_client = Client(
+            url=IcIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace(
+                "localhost", "BSMC-YMEF002121"
+            )
+        )
+
+        async with IcIR(opcua_client) as ir_spectrometer:
+            await ir_spectrometer.check_version()
+
+            if await ir_spectrometer.is_iCIR_connected():
+                print("FlowIR connected!")
+            else:
+                raise ConnectionError("FlowIR not connected :(")
+
+            template_name = "15_sec_integration.iCIRTemplate"
+            await ir_spectrometer.start_experiment(
+                name="reaction_monitoring", template=template_name
+            )
+
+            spectrum = await ir_spectrometer.last_spectrum_treated()
+            while len(spectrum.intensity) == 0:
+                spectrum = await ir_spectrometer.last_spectrum_treated()
+
+            for x in range(3):
+                spectra_count = await ir_spectrometer.sample_count()
+
+                while await ir_spectrometer.sample_count() == spectra_count:
+                    await asyncio.sleep(1)
+
+                print("New spectrum!")
+                spectrum = await ir_spectrometer.last_spectrum_treated()
+                print(spectrum)
+
+            await ir_spectrometer.stop_experiment()
+
+    asyncio.run(main())

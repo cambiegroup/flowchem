@@ -41,7 +41,7 @@ class R2(FlowchemDevice):
     """R2 reactor module class."""
 
     DEFAULT_CONFIG = {
-        "timeout": 0.1,
+        "timeout": 0.25,  # 0.22
         "baudrate": 19200,
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
@@ -73,6 +73,7 @@ class R2(FlowchemDevice):
     def __init__(
         self,
         name: str = "",
+        rt_temp: float = 27,  # todo: find a way to
         min_temp: float | list[float] = -40,
         max_temp: float | list[float] = 80,
         min_pressure: float = 1000,
@@ -89,8 +90,13 @@ class R2(FlowchemDevice):
         if not isinstance(max_temp, Iterable):
             max_temp = [max_temp] * 4
         assert len(min_temp) == len(max_temp) == 4
-        self._min_t = min_temp
-        self._max_t = max_temp
+
+        self.rt_t = rt_temp * ureg.degreeC
+        self._min_t = min_temp * ureg.degreeC
+        self._max_t = max_temp * ureg.degreeC
+
+        self._heated = True  # to saving the dry ice
+        self._intensity = 0
 
         if not HAS_VAPOURTEC_COMMANDS:
             raise InvalidConfigurationError(
@@ -127,15 +133,17 @@ class R2(FlowchemDevice):
         await self.set_flowrate("A", "0 ul/min")
         await self.set_flowrate("B", "0 ul/min")
         # Sets all temp to room temp.
-        rt = ureg("20 °C")
-        await self.set_temperature(0, rt)
-        await self.set_temperature(1, rt)
-        await self.set_temperature(2, rt)
-        await self.set_temperature(3, rt)
+        # rt = ureg("25 °C")
+        self.rt_t = await self.get_current_temperature(2) * ureg.degreeC
+        await self.set_temperature(0, self.rt_t, self._heated)
+        await self.set_temperature(1, self.rt_t, self._heated)
+        await self.set_temperature(2, self.rt_t, self._heated)
+        await self.set_temperature(3, self.rt_t, self._heated)
+
         # set UV to 0%
-        await self.set_UV150(power=0, heated=False)
+        await self.set_UV150(power=self._intensity)
         # set max pressure to  10 bar
-        await self.set_pressure_limit("10 bar")
+        await self.set_pressure_limit("20 bar")
         # Set valve to default position
         await self.trigger_key_press("0")
         await self.trigger_key_press("2")
@@ -255,10 +263,16 @@ class R2(FlowchemDevice):
         state = await self.get_status()
         return state.presslimit
 
-    async def get_setting_Temperature(self) -> str:
+    async def get_target_temperature(self, channel) -> float:
         """Get temperature (in Celsius) from R4."""
         state = await self.get_status()
-        return "Off" if state.chan3_temp == "-1000" else state.chan3_temp
+        temp_list = [
+            state.chan1_temp,
+            state.chan2_temp,
+            state.chan3_temp,
+            state.chan4_temp,
+        ]
+        return float(temp_list[channel])
 
     async def get_valve_Position(self, valve_code: int) -> str:
         """Get specific valves position."""
@@ -296,12 +310,35 @@ class R2(FlowchemDevice):
         self,
         channel: int,
         temp: pint.Quantity,
-        ramp_rate: str | None = None,
+        heating: bool | None = None,
+        ramp_rate: str = "80",
     ):
-        """Set temperature to R4 channel. If a UV150 is present then channel 3 range is limited to -40 to 80 °C."""
+        """Set temperature to R4 channel. If a UV150 is present then channel 3 range is limited to -40 to 80 °C.
+        The heating setting range from 20 to 80 °C; cooling range from -40 to 80 °C.
+        """
+        set_t = round(temp.m_as("°C"))
+
+        if heating is None:
+            logger.debug("heat decide by temp.")
+            # todo: better heat decision
+            # For 525 nm green light (13W) the temp difference to rt is 8 degree; 440 nm blue light (24W) ~15 degree
+            threhold_t = self.rt_t.m_as("degree_Celsius") + 8
+            self._heated = True if set_t > threhold_t else False
+        elif heating is True:
+            self._heated = True
+        else:
+            self._heated = False
+
+        # change the setting of heating
+        cmd = self.cmd.SET_UV150.format(
+            power_percent=self._intensity, heater_on=int(self._heated)
+        )
+        await self.write_and_read_reply(cmd)
+
+        # set the temperature
         cmd = self.cmd.SET_TEMPERATURE.format(
             channel=channel,
-            temperature_in_C=round(temp.m_as("°C")),
+            temperature_in_C=set_t,
             ramp_rate=ramp_rate,
         )
         await self.write_and_read_reply(cmd)
@@ -318,12 +355,12 @@ class R2(FlowchemDevice):
         )
         await self.write_and_read_reply(cmd)
 
-    async def set_UV150(self, power: int, heated: bool = False):
-        """Set intensity of the UV light: 0 or 50 to 100."""
-        # Fixme: ideally the state (heated or not) of the reactor is kept as instance variable so that the light
-        #  intensity can be changed without affecting the heating state (i.e. with new default heated=None that keeps
-        #  the previous state unchanged
-        cmd = self.cmd.SET_UV150.format(power_percent=power, heater_on=int(heated))
+    async def set_UV150(self, power: int):
+        """set intensity of the UV light: 0 or 50 to 100"""
+        self._intensity = power
+        cmd = self.cmd.SET_UV150.format(
+            power_percent=self._intensity, heater_on=int(self._heated)
+        )
         await self.write_and_read_reply(cmd)
 
     async def trigger_key_press(self, keycode: str):
@@ -339,7 +376,7 @@ class R2(FlowchemDevice):
         """Turn off both devices, R2 and R4."""
         await self.write_and_read_reply(self.cmd.POWER_OFF)
 
-    async def get_current_temperature(self, channel=2) -> float | None:
+    async def get_current_temperature(self, channel) -> float | None:
         """Get temperature (in Celsius) from channel3."""
         temp_history = await self.write_and_read_reply(self.cmd.HISTORY_TEMPERATURE)
         if temp_history == "OK":
@@ -347,8 +384,9 @@ class R2(FlowchemDevice):
             return await self.get_current_temperature(channel)
 
         # 0: time, 1..8: cooling, heating, or ...  / temp (alternating per channel)
-        temp_time, *temps = temp_history[0].split(",")
-        return float(temps[channel * 2 - 1]) / 10
+        temp_time, *temps = temp_history.split(",")
+        print(temps)
+        return float(temps[channel * 2 + 1]) / 10
 
     async def get_pressure_history(
         self,
@@ -424,11 +462,16 @@ if __name__ == "__main__":
             ivB,
             sA,
             sB,
+            r1,
+            r2,
+            r3,
+            r4,
         ) = Vapourtec_R2.components()
 
         # print(f"The system state is {await Vapourtec_R2.get_Run_State()}")
-        # await Vapourtec_R2.set_Temperature("30 °C")
-        # print(f"Temperature is {await Vapourtec_R2.get_setting_Temperature()}")
+        await r3.set_temperature("30°C")
+
+        print(f"Temperature is {await Vapourtec_R2.get_target_temperature(2)}")
         # await pA.set_flowrate("100 ul/min")
         while True:
             # await pA.infuse("10 ul/min")

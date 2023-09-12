@@ -67,20 +67,25 @@ class R4Reactor(TemperatureControl):
         super().__init__(name, hw_device, temp_limits)
         self.channel = channel
 
-    async def set_temperature(self, temp: str):
+    async def set_temperature(self, temp: str, heating: bool | None = None):
         """Set the target temperature to the given string in natural language."""
         set_t = await super().set_temperature(temp)
-        return await self.hw_device.set_temperature(self.channel, set_t)
+        return await self.hw_device.set_temperature(self.channel, set_t, heating)
 
     async def get_temperature(self) -> float:  # type: ignore
         """Return temperature in Celsius."""
-        # TODO:
-        raise NotImplementedError
+        return await self.hw_device.get_current_temperature(self.channel)
 
     async def is_target_reached(self) -> bool:  # type: ignore
         """Return True if the set temperature target has been reached."""
-        # TODO:
-        raise NotImplementedError
+        current_temp = await self.hw_device.get_current_temperature(self.channel)
+        target_temp = await self.hw_device.get_target_temperature(self.channel)
+        if target_temp == "-1000":
+            return "Off"
+        elif abs(current_temp - target_temp) <= 2:
+            return True
+        else:
+            return False
 
     async def power_on(self):
         """Turn on temperature control."""
@@ -98,27 +103,27 @@ class UV150PhotoReactor(Photoreactor):
 
     def __init__(self, name: str, hw_device: R2) -> None:
         super().__init__(name, hw_device)
-        self._intensity = 0  # 0 set upon device init
+        # self._intensity = 0  # 0 set upon device init
 
     async def set_intensity(self, percent: int = 100):
         """Set UV light intensity at the range 50-100%."""
-        self._intensity = percent
+        self.hw_device._intensity = percent
         await self.hw_device.set_UV150(percent)
 
     async def get_intensity(self) -> int:
         """Return last set intensity."""
-        return self._intensity
+        return self.hw_device._intensity
 
     async def power_on(self):
         """Turn on the whole system, no way to power UV150 independently."""
-        if self._intensity:
+        if self.hw_device.intensity:
             await self.hw_device.power_on()
             return
         logger.error("UV150 power on requested without setting intensity first!")
 
     async def power_off(self):
         """Turn off light."""
-        self._intensity = 0
+        self.hw_device._intensity = 0
         await self.hw_device.set_UV150(0)
 
 

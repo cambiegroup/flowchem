@@ -77,8 +77,9 @@ class PhidgetPowerSource5V(FlowchemDevice):
             ) from pe
 
         # Set power supply to 5V to provide power
-        self.phidget.setDutyCycle(1.0)
-        logger.debug("power of tube sensor is turn on!")
+        self.phidget.setDutyCycle(0.0)
+        logger.info("power of tube sensor is turn off!")
+        # self.phidget.setState(True)  #setting DutyCycle to 1.0
 
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
@@ -166,8 +167,10 @@ class PhidgetBubbleSensor(FlowchemDevice):
             ) from pe
 
         # Set power supply to 12V to start measurement
-        self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_12V)
-        logger.debug("tube sensor is turn on, default data interval is 200 ms!")
+        self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_OFF)
+        logger.info(
+            f"default tube sensor is turn off, default data interval is {data_interval} ms!"
+        )
         self.phidget.setDataInterval(data_interval)
 
         self.device_info = DeviceInfo(
@@ -249,4 +252,4 @@ if __name__ == "__main__":
 
     while True:
         print(BubbleSensor_1.read_intensity())
-        time.sleep(1)
+        time.sleep(0.1)
