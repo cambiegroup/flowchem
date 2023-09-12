@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.components.pumps.syringe import SyringePump
+from flowchem.components.pumps.syringe_pump import SyringePump
 
 if TYPE_CHECKING:
     from .ml600 import ML600
@@ -21,11 +21,11 @@ class ML600Pump(SyringePump):
         return True
 
     async def is_pumping(self) -> bool:
-        """True if pump is moving."""
+        """Check if pump is moving."""
         return await self.hw_device.is_idle() is False
 
     async def stop(self):
-        """Stops pump."""
+        """Stop pump."""
         await self.hw_device.stop()
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
@@ -45,7 +45,7 @@ class ML600Pump(SyringePump):
             if target_vol < 0:
                 logger.error(
                     f"Cannot infuse target volume {volume}! "
-                    f"Only {current_volume} in the syringe!"
+                    f"Only {current_volume} in the syringe!",
                 )
                 return False
 
@@ -70,7 +70,7 @@ class ML600Pump(SyringePump):
             if target_vol > self.hw_device.syringe_volume:
                 logger.error(
                     f"Cannot withdraw target volume {volume}! "
-                    f"Max volume left is {self.hw_device.syringe_volume - current_volume}!"
+                    f"Max volume left is {self.hw_device.syringe_volume - current_volume}!",
                 )
                 return False
 

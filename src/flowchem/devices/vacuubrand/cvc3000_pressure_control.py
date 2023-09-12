@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING
 
 from flowchem.components.technical.pressure import PressureControl
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.vacuubrand.utils import ProcessStatus
-from flowchem.devices.vacuubrand.utils import PumpState
+from flowchem.devices.vacuubrand.constants import ProcessStatus, PumpState
 
 if TYPE_CHECKING:
     from flowchem.devices.vacuubrand.cvc3000 import CVC3000
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 class CVC3000PressureControl(PressureControl):
     hw_device: CVC3000  # for typing's sake
 
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device)
 

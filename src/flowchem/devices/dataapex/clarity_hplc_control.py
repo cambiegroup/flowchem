@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class ClarityComponent(HPLCControl):
     hw_device: Clarity  # for typing's sake
 
-    def __init__(self, name: str, hw_device: Clarity):
+    def __init__(self, name: str, hw_device: Clarity) -> None:
         """Device-specific initialization."""
         super().__init__(name, hw_device)
         # Clarity-specific command
@@ -28,12 +28,11 @@ class ClarityComponent(HPLCControl):
         method_name: str = Query(
             default=...,
             description="Name of the method file",
-            example="MyMethod.MET",
+            examples=["MyMethod.MET"],
             alias="method-name",
         ),
     ) -> bool:
-        """
-        Sets the HPLC method (i.e. a file with .MET extension) to the instrument.
+        """Set HPLC method (i.e. a file with .MET extension).
 
         Make sure to select 'Send Method to Instrument' option in Method Sending Options dialog in System Configuration.
         """
@@ -44,18 +43,17 @@ class ClarityComponent(HPLCControl):
         sample_name: str = Query(
             default=...,
             description="Sample name",
-            example="JB-123-crude-2h",
+            examples=["JB-123-crude-2h"],
             alias="sample-name",
         ),
         method_name: str = Query(
             default=...,
             description="Name of the method file",
-            example="MyMethod.MET",
+            examples=["MyMethod.MET"],
             alias="method-name",
         ),
     ) -> bool:
-        """
-        Run one analysis on the instrument.
+        """Run one analysis on the instrument.
 
         Note that it takes at least 2 sec until the run actually starts (depending on instrument configuration).
         While the export of the chromatogram in e.g. ASCII format can be achieved programmatically via the CLI, the best
@@ -67,5 +65,6 @@ class ClarityComponent(HPLCControl):
         if not await self.send_method(method_name):
             return False
         return await self.hw_device.execute_command(
-            f"run={self.hw_device.instrument}", without_instrument_num=True
+            f"run={self.hw_device.instrument}",
+            without_instrument_num=True,
         )

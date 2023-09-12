@@ -4,11 +4,11 @@ import queue
 import socket
 import sys
 from textwrap import dedent
-from anyio.from_thread import start_blocking_portal
 
+from anyio.from_thread import start_blocking_portal
 from loguru import logger
 
-from flowchem.utils.getmac import get_mac_address
+from flowchem.vendor.getmac import get_mac_address
 
 __all__ = ["autodiscover_knauer", "knauer_finder"]
 
@@ -18,7 +18,7 @@ Address = tuple[str, int]
 class BroadcastProtocol(asyncio.DatagramProtocol):
     """See `https://gist.github.com/yluthu/4f785d4546057b49b56c`."""
 
-    def __init__(self, target: Address, response_queue: queue.Queue):
+    def __init__(self, target: Address, response_queue: queue.Queue) -> None:
         self.target = target
         self.loop = asyncio.get_event_loop()
         self._queue = response_queue
@@ -36,7 +36,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
 
 
 async def get_device_type(ip_address: str) -> str:
-    """Detects the device type based on the reply to a test command or IP heuristic."""
+    """Detect device type based on the reply to a test command or IP heuristic."""
     fut = asyncio.open_connection(host=ip_address, port=10001)
     try:
         reader, writer = await asyncio.wait_for(fut, timeout=3)
@@ -99,11 +99,7 @@ def _get_local_ip() -> str:
     hostname = socket.gethostname()
 
     # Only accept local IP
-    if (
-        hostname.startswith("192.168")
-        or hostname.startswith("192.168")
-        or hostname.startswith("100.")
-    ):
+    if hostname.startswith(("192.168", "192.168", "100.")):
         return socket.gethostbyname(hostname)
     else:
         return ""
@@ -137,21 +133,24 @@ async def send_broadcast_and_receive_replies(source_ip: str):
 
 
 def autodiscover_knauer(source_ip: str = "") -> dict[str, str]:
-    """
-    Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
+    """Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
     Note that the MAC is the key here as it is the parameter used in configuration files.
     Knauer devices only support DHCP so static IPs are not an option.
+
     Args:
+    ----
         source_ip: source IP for autodiscover (only relevant if multiple network interfaces are available!)
+
     Returns:
-        List of tuples (IP, MAC, device_type), one per device replying to autodiscover
+    -------
+        List of tuples (IP, MAC, device_type), one per device replying to autodiscover.
     """
     # Define source IP resolving local hostname.
     if not source_ip:
         source_ip = _get_local_ip()
     if not source_ip:
         logger.warning("Please provide a valid source IP for broadcasting.")
-        return dict()
+        return {}
     logger.info(f"Starting detection from IP {source_ip}")
 
     with start_blocking_portal() as portal:
@@ -194,8 +193,8 @@ def knauer_finder(source_ip=None):
                         type = "AzuraCompact"
                         ip_address = "{ip}"  # MAC address during discovery: {mac_address}
                         # max_pressure = "XX bar"
-                        # min_pressure = "XX bar"\n\n"""
-                    )
+                        # min_pressure = "XX bar"\n\n""",
+                    ),
                 )
             case "KnauerValve":
                 dev_config.add(
@@ -203,8 +202,8 @@ def knauer_finder(source_ip=None):
                         f"""
                         [device.valve-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
                         type = "KnauerValve"
-                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n\n"""
-                    )
+                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n\n""",
+                    ),
                 )
             case "FlowIR":
                 dev_config.add(
@@ -213,8 +212,8 @@ def knauer_finder(source_ip=None):
                         [device.flowir]
                         type = "IcIR"
                         url = "opc.tcp://localhost:62552/iCOpcUaServer"  # Default, replace with IP of PC with IcIR
-                        template = "some-template.iCIRTemplate"  # Replace with valid template name, see docs.\n\n"""
-                    )
+                        template = "some-template.iCIRTemplate"  # Replace with valid template name, see docs.\n\n""",
+                    ),
                 )
 
     return dev_config

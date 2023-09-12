@@ -3,13 +3,13 @@ import asyncio
 import datetime
 from pathlib import Path
 
-from asyncua import Client
-from asyncua import ua
+from asyncua import Client, ua
+from asyncua.ua.uaerrors import BadOutOfService, Bad
 from loguru import logger
 from pydantic import BaseModel
 
 from flowchem.components.analytics.ir import IRSpectrum
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.mettlertoledo.icir_control import IcIRControl
 from flowchem.utils.exceptions import DeviceError
@@ -35,14 +35,6 @@ class ProbeInfo(BaseModel):
 class IcIR(FlowchemDevice):
     """Object to interact with the iCIR software controlling the FlowIR and ReactIR."""
 
-    metadata = DeviceInfo(
-        authors=[dario, jakob, wei_hsin],
-        maintainers=[dario],
-        manufacturer="Mettler-Toledo",
-        model="iCIR",
-        version="",
-    )
-
     iC_OPCUA_DEFAULT_SERVER_ADDRESS = "opc.tcp://localhost:62552/iCOpcUaServer"
     _supported_versions = {"7.1.91.0"}
     SOFTWARE_VERSION = "ns=2;s=Local.iCIR.SoftwareVersion"
@@ -60,15 +52,22 @@ class IcIR(FlowchemDevice):
 
     counter = 0
 
-    def __init__(self, template="", url="", name=""):
+    def __init__(self, template="", url="", name="") -> None:
         """Initiate connection with OPC UA server."""
         super().__init__(name)
+        self.device_info = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            manufacturer="Mettler-Toledo",
+            model="iCIR",
+            version="",
+        )
 
         # Default (local) url if none provided
         if not url:
             url = self.iC_OPCUA_DEFAULT_SERVER_ADDRESS
         self.opcua = Client(
-            url, timeout=5
+            url,
+            timeout=5,
         )  # Call to START_EXPERIMENT can take few seconds!
 
         self._template = template
@@ -83,8 +82,8 @@ class IcIR(FlowchemDevice):
             ) from timeout_error
 
         # Ensure iCIR version is supported
-        self.metadata.version = await self.opcua.get_node(
-            self.SOFTWARE_VERSION
+        self.device_info.version = await self.opcua.get_node(
+            self.SOFTWARE_VERSION,
         ).get_value()  # e.g. "7.1.91.0"
 
         self.ensure_version_is_supported()
@@ -96,7 +95,10 @@ class IcIR(FlowchemDevice):
         # Start acquisition! Ensures the device is ready when a spectrum is needed
         await self.start_experiment(name="Flowchem", template=self._template)
         probe = await self.probe_info()
-        self.metadata.additional_info = probe.dict()
+        self.device_info.additional_info = probe.model_dump()
+
+        # Set IRSpectrometer component
+        self.components.append(IcIRControl("ir-control", self))
 
     def is_local(self):
         """Return true if the server is on the same machine running the python code."""
@@ -107,10 +109,10 @@ class IcIR(FlowchemDevice):
     def ensure_version_is_supported(self):
         """Check if iCIR is installed and open and if the version is supported."""
         try:
-            if self.metadata.version not in self._supported_versions:
+            if self.device_info.version not in self._supported_versions:
                 logger.warning(
                     f"The current version of iCIR [self.version] has not been tested!"
-                    f"Pleas use one of the supported versions: {self._supported_versions}"
+                    f"Pleas use one of the supported versions: {self._supported_versions}",
                 )
         except ua.UaStatusCodeError as error:  # iCIR app closed
             raise DeviceError(
@@ -150,8 +152,7 @@ class IcIR(FlowchemDevice):
 
     @staticmethod
     def is_template_name_valid(template_name: str) -> bool:
-        r"""
-        Check template name validity. For the template folder location read below.
+        r"""Check template name validity. For the template folder location read below.
 
         From Mettler Toledo docs:
         You can use the Start method to create and run a new experiment in one of the iC analytical applications
@@ -161,7 +162,7 @@ class IcIR(FlowchemDevice):
         This is usually C:\\ProgramData\\METTLER TOLEDO\\iC OPC UA Server\\1.2\\Templates.
         """
         template_dir = Path(
-            r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates"
+            r"C:\ProgramData\METTLER TOLEDO\iC OPC UA Server\1.2\Templates",
         )
         if not template_dir.exists() or not template_dir.is_dir():
             logger.warning("iCIR template folder not found on the local PC!")
@@ -210,7 +211,7 @@ class IcIR(FlowchemDevice):
                         1
                     ].strip()
 
-        return ProbeInfo.parse_obj(probe_info)
+        return ProbeInfo.model_validate(probe_info)
 
     @staticmethod
     async def _wavenumber_from_spectrum_node(node) -> list[float]:
@@ -227,7 +228,7 @@ class IcIR(FlowchemDevice):
             wavenumber = await IcIR._wavenumber_from_spectrum_node(node)
             return IRSpectrum(wavenumber=wavenumber, intensity=intensity)
 
-        except ua.uaerrors.BadOutOfService:
+        except BadOutOfService:
             return IRSpectrum(wavenumber=[], intensity=[])
 
     async def last_spectrum_treated(self) -> IRSpectrum:
@@ -241,15 +242,18 @@ class IcIR(FlowchemDevice):
     async def last_spectrum_background(self) -> IRSpectrum:
         """RAW result latest scan."""
         return await IcIR.spectrum_from_node(
-            self.opcua.get_node(self.SPECTRA_BACKGROUND)
+            self.opcua.get_node(self.SPECTRA_BACKGROUND),
         )
 
     async def start_experiment(
-        self, template: str, name: str = "Unnamed flowchem exp."
+        self,
+        template: str,
+        name: str = "Unnamed flowchem exp.",
     ):
         r"""Start an experiment on iCIR.
 
         Args:
+        ----
             template: name of the experiment template, should be in the Templtates folder on the PC running iCIR.
                       That usually is C:\\ProgramData\\METTLER TOLEDO\\iC OPC UA Server\1.2\\Templates
             name: experiment name.
@@ -263,7 +267,7 @@ class IcIR(FlowchemDevice):
         if await self.probe_status() == "Running":
             logger.warning(
                 "I was asked to start an experiment while a current experiment is already running!"
-                "I will have to stop that first! Sorry for that :)"
+                "I will have to stop that first! Sorry for that :)",
             )
             # Stop running experiment and wait for the spectrometer to be ready
             await self.stop_experiment()
@@ -275,7 +279,7 @@ class IcIR(FlowchemDevice):
             # Collect_bg does not seem to work in automation, set to false and do not expose in start_experiment()!
             collect_bg = False
             await method_parent.call_method(start_xp_nodeid, name, template, collect_bg)
-        except ua.uaerrors.Bad as error:
+        except Bad as error:
             raise DeviceError(
                 "The experiment could not be started!\n"
                 "Check iCIR status and close any open experiment."
@@ -284,8 +288,7 @@ class IcIR(FlowchemDevice):
         return True
 
     async def stop_experiment(self):
-        """
-        Stop the experiment currently running.
+        """Stop the experiment currently running.
 
         Note: the call does not make the instrument idle: you need to wait for the current scan to end!
         """
@@ -297,10 +300,6 @@ class IcIR(FlowchemDevice):
         """Wait until no experiment is running."""
         while await self.probe_status() == "Running":
             await asyncio.sleep(0.2)
-
-    def components(self):
-        """Return an IRSpectrometer component."""
-        return (IcIRControl("ir-control", self),)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ Examples:
     ip_mac = get_mac_address(ip="192.168.0.1")
     ip6_mac = get_mac_address(ip6="::1")
     host_mac = get_mac_address(hostname="localhost")
-    updated_mac = get_mac_address(ip="10.0.0.1", network_request=True)
+    updated_mac = get_mac_address(ip="10.0.0.1", network_request=True).
 """
 import ctypes
 import os
@@ -20,16 +20,10 @@ import re
 import shlex
 import socket
 import struct
-from subprocess import check_output
-from subprocess import DEVNULL
-
-from loguru import logger
-
+from subprocess import DEVNULL, check_output
 from typing import TYPE_CHECKING, Optional  # noqa
 
-if TYPE_CHECKING:
-    pass
-
+from loguru import logger
 
 # Configure logging
 log = logger
@@ -86,7 +80,11 @@ WARNED_UNSUPPORTED_PYTHONS = False
 
 # noinspection PyBroadException
 def get_mac_address(
-    interface=None, ip=None, ip6=None, hostname=None, network_request=True
+    interface=None,
+    ip=None,
+    ip6=None,
+    hostname=None,
+    network_request=True,
 ):
     # type: (Optional[str], Optional[str], Optional[str], Optional[str], bool) -> Optional[str]
     """Get an Unicast IEEE 802 MAC-48 address from a local interface or remote host.
@@ -94,7 +92,9 @@ def get_mac_address(
     are selected, the default network interface for the system will be used.
     Exceptions will be handled silently and returned as a None.
     For the time being, it assumes you are using Ethernet.
-    NOTES:
+
+    Notes
+    -----
     * You MUST provide str-typed arguments, REGARDLESS of Python version.
     * localhost/127.0.0.1 will always return '00:00:00:00:00:00'
     Args:
@@ -105,7 +105,9 @@ def get_mac_address(
         network_request (bool): Send a UDP packet to a remote host to populate
         the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
         be configured using the module variable `getmac.PORT`.
-    Returns:
+
+    Returns
+    -------
         Lowercase colon-separated MAC address, or None if one could not be
         found or there was an error.
     """
@@ -127,7 +129,7 @@ def get_mac_address(
                 s.sendto(b"", (ip, PORT))
             else:
                 s.sendto(b"", (ip6, PORT))
-        except Exception:  # noqa: B902
+        except Exception:
             log.error("Failed to send ARP table population packet")
         finally:
             s.close()
@@ -137,7 +139,7 @@ def get_mac_address(
         if not socket.has_ipv6:
             log.error(
                 "Cannot get the MAC address of a IPv6 host: "
-                "IPv6 is not supported on this system"
+                "IPv6 is not supported on this system",
             )
             return None
         elif ":" not in ip6:
@@ -172,7 +174,6 @@ def get_mac_address(
                     to_find = "en0"
 
     mac = _hunt_for_mac(to_find, typ, network_request)
-    # log.debug("Raw MAC found: %s", mac)
 
     # Check and format the result to be lowercase, colon-separated
     if mac is not None:
@@ -256,7 +257,8 @@ def _windows_ctypes_host(host):
         inetaddr = ctypes.windll.wsock32.inet_addr(host)  # type: ignore
         if inetaddr in (0, -1):
             raise Exception
-    except Exception:  # noqa: BLK100
+    except Exception:
+        # noinspection PyTypeChecker
         hostip = socket.gethostbyname(host)
         inetaddr = ctypes.windll.wsock32.inet_addr(hostip)  # type: ignore
 
@@ -270,10 +272,7 @@ def _windows_ctypes_host(host):
     # Convert binary data into a string.
     macaddr = ""
     for intval in struct.unpack("BBBBBB", buffer):  # type: ignore
-        if intval > 15:
-            replacestr = "0x"
-        else:
-            replacestr = "x"
+        replacestr = "0x" if intval > 15 else "x"
         macaddr = "".join([macaddr, hex(intval).replace(replacestr, "")])
     return macaddr
 
@@ -284,7 +283,6 @@ def _fcntl_iface(iface):
 
     iface = iface.encode()  # type: ignore
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # 0x8927 = SIOCGIFADDR
     info = fcntl.ioctl(s.fileno(), 0x8927, struct.pack("256s", iface[:15]))  # type: ignore
     return ":".join(["%02x" % ord(chr(char)) for char in info[18:24]])
 
@@ -303,7 +301,7 @@ def _uuid_ip(ip):
             mac2 = _uuid_convert(mac2)
             if mac1 == mac2:
                 return mac1
-    except Exception:  # noqa: B902
+    except Exception:
         raise
     finally:
         socket.gethostbyname = backup
@@ -366,18 +364,18 @@ def _read_file(filepath):
     try:
         with open(filepath) as f:
             return f.read()
-    except OSError:  # noqa: B014 - This is IOError on Python 2.7
+    except OSError:  # - This is IOError on Python 2.7
         log.debug("Could not find file: '%s'", filepath)
         return None
 
 
 def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     # type: (Optional[str], int, bool) -> Optional[str]
-    """Tries a variety of methods to get a MAC address.
+    """Try a variety of methods to get a MAC address.
     Format of method lists:
     Tuple:  (regex, regex index, command, command args)
             Command args is a list of strings to attempt to use as arguments
-    lambda: Function to call
+    lambda: Function to call.
     """
     if to_find is None:
         log.warning("_hunt_for_mac() failed: to_find is None")
@@ -422,7 +420,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
     elif (WINDOWS or WSL) and type_of_thing in [IP4, IP6, HOSTNAME]:
         methods = [
             # arp -a - Parsing result with a regex
-            (MAC_RE_DASH, 0, "arp.exe", ["-a %s" % to_find])
+            (MAC_RE_DASH, 0, "arp.exe", ["-a %s" % to_find]),
         ]
 
         # Add methods that make network requests
@@ -443,7 +441,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
                 0,
                 "arp",
                 [to_find],
-            )
+            ),
         ]
     elif OPENBSD and type_of_thing == INTERFACE:
         methods = [(r"lladdr " + MAC_RE_COLON, 0, "ifconfig", [to_find])]
@@ -512,8 +510,7 @@ def _hunt_for_mac(to_find, type_of_thing, net_ok=True):
 
 def _try_methods(methods, to_find=None):
     # type: (list, Optional[str]) -> Optional[str]
-    """
-    Runs the methods specified by _hunt_for_mac().
+    """Run the methods specified by _hunt_for_mac().
 
     We try every method and see if it returned a MAC address. If it returns
     None or raises an exception, we continue and try the next method.
@@ -528,13 +525,10 @@ def _try_methods(methods, to_find=None):
                     if found:  # Skip remaining args AND remaining methods
                         break
             elif callable(m):
-                if to_find is not None:
-                    found = m(to_find)
-                else:
-                    found = m()
+                found = m(to_find) if to_find is not None else m()
             else:
                 log.critical("Invalid type '%s' for method '%s'", type(m), str(m))
-        except Exception as ex:  # noqa: B902
+        except Exception as ex:
             logger.debug(f"Ignore exception {ex}")
         if found:  # Skip remaining methods
             break
@@ -582,7 +576,7 @@ def _get_default_iface_openbsd():
         lambda: _popen("route", "-nq show -inet -gateway -priority 1")
         .partition("127.0.0.1")[0]
         .strip()
-        .rpartition(" ")[2]
+        .rpartition(" ")[2],
     ]
     return _try_methods(methods)
 
@@ -595,7 +589,7 @@ def _get_default_iface_freebsd():
 
 def _fetch_ip_using_dns():
     # type: () -> str
-    """Determines the IP address of the default network interface.
+    """Determine the IP address of the default network interface.
     Sends a UDP packet to Cloudflare's DNS (1.1.1.1), which should go through
     the default interface. This populates the source address of the socket,
     which we then inspect and return.

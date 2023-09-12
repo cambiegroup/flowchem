@@ -48,8 +48,8 @@ Moreover, the source code in the `flowchem` packages is organized in:
 
    * Create a branch for the feature you want to work on. Since the branch name will appear in the merge message, use a
      sensible name.
-     For example, if you intend to add support for a new device type, called ExtendibleEar a good candidate
-     could be ‘add-extendible-ear-support’: `git checkout -b add-extendible-ear-support`
+     For example, if you intend to add support for a new device type, called ExtendableEar a good candidate
+     could be ‘add-extendable-ear-support’: `git checkout -b add-extendible-ear-support`
 
    * Commit locally as you progress (`git add` and `git commit`).
      Use a properly formatted commit message, and ideally write tests that fail before your change and pass afterward.

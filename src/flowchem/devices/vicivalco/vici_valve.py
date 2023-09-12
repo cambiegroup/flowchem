@@ -7,10 +7,10 @@ import aioserial
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vicivalco.vici_valve_component import ViciInjectionValve
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -23,12 +23,12 @@ class ViciCommand:
     value: str = ""
     reply_lines: int = 1
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Provide a string representation of the command used, nice for logs."""
         address = str(self.valve_id) if self.valve_id is not None else ""
         return f"{address} {self.command}{self.value}"
 
-    def __bytes__(self):
+    def __bytes__(self) -> bytes:
         """Byte representation of the command used for serial communication."""
         return str(self).encode("ascii")
 
@@ -44,11 +44,11 @@ class ViciValcoValveIO:
         "bytesize": aioserial.EIGHTBITS,
     }
 
-    def __init__(self, aio_port: aioserial.Serial):
-        """
-        Initialize communication on the serial port where the valves are located and initialize them.
+    def __init__(self, aio_port: aioserial.Serial) -> None:
+        """Initialize communication on the serial port where the valves are located and initialize them.
 
         Args:
+        ----
             aio_port: aioserial.Serial() object
         """
         self._serial = aio_port
@@ -62,7 +62,7 @@ class ViciValcoValveIO:
         try:
             serial_object = aioserial.AioSerial(port, **configuration)
         except aioserial.SerialException as serial_exception:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Could not open serial port {port} with configuration {configuration}"
             ) from serial_exception
 
@@ -78,7 +78,7 @@ class ViciValcoValveIO:
         if reply_string:
             logger.debug(f"Reply received: {reply_string}")
         else:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "No response received from valve! Check valve address?"
             )
 
@@ -121,13 +121,13 @@ class ViciValve(FlowchemDevice):
         valve_io: ViciValcoValveIO,
         name: str = "",
         address: int | None = None,
-    ):
-        """
-        Create instance from an existing ViciValcoValveIO object. This allows dependency injection.
+    ) -> None:
+        """Create instance from an existing ViciValcoValveIO object. This allows dependency injection.
 
         See from_config() class method for config-based init.
 
         Args:
+        ----
             valve_io: An ViciValcoValveIO w/ serial connection to the daisy chain w/ target valve.
             address: number of valve in array, 1 for first one, auto-assigned on init based on position.
             name: 'cause naming stuff is important.
@@ -140,9 +140,8 @@ class ViciValve(FlowchemDevice):
         super().__init__(name=name)  # type: ignore
 
         self.address = address
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Vici-Valco",
             model="Universal Valve Actuator",
         )
@@ -159,10 +158,11 @@ class ViciValve(FlowchemDevice):
         existing_io = [v for v in ViciValve._io_instances if v._serial.port == port]
 
         # If no existing serial object are available for the port provided, create a new one
-        if existing_io:
-            valve_io = existing_io.pop()
-        else:
-            valve_io = ViciValcoValveIO.from_config(port, **serial_kwargs)
+        valve_io = (
+            existing_io.pop()
+            if existing_io
+            else ViciValcoValveIO.from_config(port, **serial_kwargs)
+        )
 
         return cls(valve_io, address=address, name=name)
 
@@ -175,8 +175,11 @@ class ViciValve(FlowchemDevice):
         await self.home()
 
         # Test connectivity by querying the valve's firmware version
-        self.metadata.version = await self.version()
-        logger.info(f"Connected to {self.name} - FW ver.: {self.metadata.version}!")
+        self.device_info.version = await self.version()
+        logger.info(f"Connected to {self.name} - FW ver.: {self.device_info.version}!")
+
+        # Add component
+        self.components.append(ViciInjectionValve("injection-valve", self))
 
     async def learn_positions(self) -> None:
         """Initialize valve only, there is no reply -> reply_lines = 0."""
@@ -204,7 +207,10 @@ class ViciValve(FlowchemDevice):
     async def set_raw_position(self, position: str):
         """Set valve position."""
         valve_by_name_cw = ViciCommand(
-            valve_id=self.address, command="GO", value=position, reply_lines=0
+            valve_id=self.address,
+            command="GO",
+            value=position,
+            reply_lines=0,
         )
         await self.valve_io.write_and_read_reply(valve_by_name_cw)
 
@@ -212,16 +218,14 @@ class ViciValve(FlowchemDevice):
         """Switch valve to a position for a given time."""
         delay = ureg.Quantity(injection_time).to("ms")
         set_delay = ViciCommand(
-            valve_id=self.address, command="DT", value=delay.magnitude
+            valve_id=self.address,
+            command="DT",
+            value=delay.magnitude,
         )
         await self.valve_io.write_and_read_reply(set_delay)
 
         time_toggle = ViciCommand(valve_id=self.address, command="TT")
         await self.valve_io.write_and_read_reply(time_toggle)
-
-    def get_components(self):
-        """Return a Valve component."""
-        return (ViciInjectionValve("injection-valve", self),)
 
 
 if __name__ == "__main__":

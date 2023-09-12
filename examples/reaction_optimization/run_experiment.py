@@ -2,26 +2,30 @@ import time
 
 import numpy as np
 import pandas as pd
-from examples.autonomous_reaction_optimization._hw_control import (
-    command_session,
-    socl2_endpoint,
-    r4_endpoint,
-    hexyldecanoic_endpoint,
-    flowir_endpoint,
-)
+
 from loguru import logger
 from scipy import integrate
 
+from flowchem.client.client import get_all_flowchem_devices
+
+# Flowchem devices
+flowchem_devices = get_all_flowchem_devices()
+
+socl2 = flowchem_devices["socl2"]["pump"]
+hexyldecanoic = flowchem_devices["hexyldecanoic"]["pump"]
+reactor = flowchem_devices["r4-heater"]["reactor1"]
+flowir = flowchem_devices["flowir"]["ir-control"]
+
 
 def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
-    """
-    Calculate pump flow rate based on target residence time and SOCl2 equivalents
+    """Calculate pump flow rate based on target residence time and SOCl2 equivalents.
 
     Stream A: hexyldecanoic acid ----|
                                      |----- REACTOR ---- IR ---- waste
     Stream B: thionyl chloride   ----|
 
     Args:
+    ----
         SOCl2_equivalent:
         residence_time:
 
@@ -34,7 +38,6 @@ def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
 
     total_flow_rate = REACTOR_VOLUME / residence_time  # ml/min
 
-    # Solving a system of 2 equations and 2 unknowns...
     return {
         "hexyldecanoic": (
             a := (total_flow_rate * SOCl2)
@@ -45,65 +48,51 @@ def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
 
 
 def set_parameters(rates: dict, temperature: float):
-    with command_session() as sess:
-        sess.put(
-            socl2_endpoint + "/flow-rate", params={"rate": f"{rates['socl2']} ml/min"}
-        )
-        sess.put(
-            hexyldecanoic_endpoint + "/flow-rate",
-            params={"rate": f"{rates['hexyldecanoic']} ml/min"},
-        )
-
-        # Sets heater
-        heater_data = {"temperature": f"{temperature:.2f} °C"}
-        sess.put(r4_endpoint + "/temperature", params=heater_data)
+    """Set flow rates and temperature to the reaction setup."""
+    socl2.put("flow-rate", {"rate": f"{rates['socl2']} ml/min"})
+    hexyldecanoic.put("flow-rate", {"rate": f"{rates['hexyldecanoic']} ml/min"})
+    reactor.put("temperature", {"temperature": f"{temperature:.2f} °C"})
 
 
 def wait_stable_temperature():
-    """Wait until the ste temperature has been reached."""
+    """Wait until a stable temperature has been reached."""
     logger.info("Waiting for the reactor temperature to stabilize")
     while True:
-        with command_session() as sess:
-            r = sess.get(r4_endpoint + "/target-reached")
-            if r.text == "true":
-                logger.info("Stable temperature reached!")
-                break
-            else:
-                time.sleep(5)
+        if reactor.get("target-reached").text == "true":
+            logger.info("Stable temperature reached!")
+            break
+        else:
+            time.sleep(5)
+
+
+def _get_new_ir_spectrum(last_sample_id):
+    while True:
+        current_sample_id = int(flowir.get("sample-count").text)
+        if current_sample_id > last_sample_id:
+            break
+        else:
+            time.sleep(2)
+    return current_sample_id
 
 
 def get_ir_once_stable():
-    """Keeps acquiring IR spectra until changes are small, then returns the spectrum."""
+    """Keep acquiring IR spectra until changes are small, then returns the spectrum."""
     logger.info("Waiting for the IR spectrum to be stable")
-    with command_session() as sess:
-        # Wait for first spectrum to be available
-        while int(sess.get(flowir_endpoint + "/sample-count").text) == 0:
-            time.sleep(1)
-        # Get spectrum
-        previous_spectrum = pd.read_json(
-            sess.get(flowir_endpoint + "/sample/spectrum-treated").text
-        )
-        previous_spectrum = previous_spectrum.set_index("wavenumber")
-        # In case the id has changed between requests (highly unlikely)
-        last_sample_id = int(sess.get(flowir_endpoint + "/sample-count").text)
 
+    # Wait for first spectrum to be available
+    while flowir.get("sample-count").text == 0:
+        time.sleep(1)
+
+    # Get spectrum
+    previous_spectrum = pd.read_json(flowir.get("sample/spectrum-treated").text)
+    previous_spectrum = previous_spectrum.set_index("wavenumber")
+
+    last_sample_id = int(flowir.get("sample-count").text)
     while True:
-        # Wait for a new spectrum
-        while True:
-            with command_session() as sess:
-                current_sample_id = int(
-                    sess.get(flowir_endpoint + "/sample-count").text
-                )
-            if current_sample_id > last_sample_id:
-                break
-            else:
-                time.sleep(2)
+        current_sample_id = _get_new_ir_spectrum(last_sample_id)
 
-        with command_session() as sess:
-            current_spectrum = pd.read_json(
-                sess.get(flowir_endpoint + "/sample/spectrum-treated").text
-            )
-            current_spectrum = current_spectrum.set_index("wavenumber")
+        current_spectrum = pd.read_json(flowir.get("sample/spectrum-treated").text)
+        current_spectrum = current_spectrum.set_index("wavenumber")
 
         previous_peaks = integrate_peaks(previous_spectrum)
         current_peaks = integrate_peaks(current_spectrum)
@@ -127,7 +116,7 @@ def integrate_peaks(ir_spectrum):
 
     peaks = {}
     for name, start, end in peak_list:
-        # This is a common mistake since wavenumber are plot in reverse order
+        # This is a common mistake since wavenumbers are plot in reverse order
         if start > end:
             start, end = end, start
 
@@ -138,17 +127,18 @@ def integrate_peaks(ir_spectrum):
         logger.debug(f"Integral of {name} between {start} and {end} is {peaks[name]}")
 
     # Normalize integrals
-
     return {k: v / sum(peaks.values()) for k, v in peaks.items()}
 
 
 def run_experiment(
-    SOCl2_equivalent: float, temperature: float, residence_time: float
+    SOCl2_equiv: float,
+    temperature: float,
+    residence_time: float,
 ) -> float:
-    """
-    Runs one experiment with the provided conditions
+    """Run one experiment with the provided conditions.
 
     Args:
+    ----
         SOCl2_equivalent: SOCl2 to substrate ratio
         temperature: in Celsius
         residence_time: in minutes
@@ -157,13 +147,13 @@ def run_experiment(
 
     """
     logger.info(
-        f"Starting experiment with {SOCl2_equivalent:.2f} eq SOCl2, {temperature:.1f} degC and {residence_time:.2f} min"
+        f"Starting experiment with {SOCl2_equiv:.2f} eq SOCl2, {temperature:.1f} degC and {residence_time:.2f} min",
     )
     # Set stand-by flow-rate first
     set_parameters({"hexyldecanoic": "0.1 ml/min", "socl2": "10 ul/min"}, temperature)
     wait_stable_temperature()
     # Set actual flow rate once the set temperature has been reached
-    pump_flow_rates = calculate_flow_rates(SOCl2_equivalent, residence_time)
+    pump_flow_rates = calculate_flow_rates(SOCl2_equiv, residence_time)
     set_parameters(pump_flow_rates, temperature)
     # Wait 1 residence time
     time.sleep(residence_time * 60)

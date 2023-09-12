@@ -6,12 +6,12 @@ import pint
 from loguru import logger
 
 from flowchem import ureg
+from flowchem.components.device_info import DeviceInfo
 from flowchem.components.technical.temperature import TempRange
-from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.huber.huber_temperature_control import HuberTemperatureControl
 from flowchem.devices.huber.pb_command import PBCommand
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -32,23 +32,21 @@ class HuberChiller(FlowchemDevice):
         name="",
         min_temp: float = -150,
         max_temp: float = 250,
-    ):
+    ) -> None:
         super().__init__(name)
         self._serial = aio
         self._min_t: float = min_temp
         self._max_t: float = max_temp
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Huber",
             model="generic chiller",
         )
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
-        """
-        Create instance from config dict. Used by server to initialize obj from config.
+        """Create instance from config dict. Used by server to initialize obj from config.
 
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
@@ -58,7 +56,7 @@ class HuberChiller(FlowchemDevice):
         try:
             serial_object = aioserial.AioSerial(port, **configuration)
         except (OSError, aioserial.SerialException) as serial_exception:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the HuberChiller on the port <{port}>"
             ) from serial_exception
 
@@ -66,34 +64,48 @@ class HuberChiller(FlowchemDevice):
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        self.metadata.serial_number = str(await self.serial_number())
-        if self.metadata.serial_number == "0":
-            raise InvalidConfiguration("No reply received from Huber Chiller!")
-        logger.debug(f"Connected with Huber Chiller S/N {self.metadata.serial_number}")
+        self.device_info.serial_number = str(await self.serial_number())
+        if self.device_info.serial_number == "0":
+            raise InvalidConfigurationError("No reply received from Huber Chiller!")
+        logger.debug(
+            f"Connected with Huber Chiller S/N {self.device_info.serial_number}",
+        )
 
         # Validate temperature limits
         device_limits = await self.temperature_limits()
         if self._min_t < device_limits[0]:
             logger.warning(
                 f"The device minimum temperature is higher than the specified minimum temperature!"
-                f"The lowest possible temperature will be {device_limits[0]} °C"
+                f"The lowest possible temperature will be {device_limits[0]} °C",
             )
             self._min_t = device_limits[0]
 
         if self._max_t > device_limits[1]:
             logger.warning(
                 f"The device maximum temperature is lower than the specified maximum temperature!"
-                f"The maximum possible temperature will be {device_limits[1]} °C"
+                f"The maximum possible temperature will be {device_limits[1]} °C",
             )
             self._max_t = device_limits[1]
+
+        temperature_range = TempRange(
+            min=ureg.Quantity(self._min_t),
+            max=ureg.Quantity(self._max_t),
+        )
+
+        # Set TemperatureControl component.
+        self.components.append(
+            HuberTemperatureControl("temperature-control", self, temperature_range)
+        )
 
     async def _send_command_and_read_reply(self, command: str) -> str:
         """Send a command to the chiller and read the reply.
 
         Args:
+        ----
             command (str): string to be transmitted
 
         Returns:
+        -------
             str: reply received
         """
         # Send command. Using PBCommand ensure command validation, see PBCommand.to_chiller()
@@ -175,15 +187,6 @@ class HuberChiller(FlowchemDevice):
     def _int_to_string(number: int) -> str:
         """From int to string for command. f^-1 of PCommand.parse_integer."""
         return f"{number:04X}"
-
-    def components(self):
-        """Return a TemperatureControl component."""
-        temperature_limits = TempRange(
-            min=ureg.Quantity(self._min_t), max=ureg.Quantity(self._max_t)
-        )
-        return (
-            HuberTemperatureControl("temperature-control", self, temperature_limits),
-        )
 
     # async def return_temperature(self) -> float | None:
     #     """Return the temp of the thermal fluid flowing back to the device."""
@@ -344,10 +347,10 @@ class HuberChiller(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    chiller = HuberChiller(aioserial.AioSerial(port="COM8"))
+    device = HuberChiller(aioserial.AioSerial(port="COM8"))
 
     async def main(chiller):
         await chiller.initialize()
         print(f"S/N is {chiller.serial_number()}")
 
-    asyncio.run(main(chiller))
+    asyncio.run(main(device))

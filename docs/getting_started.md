@@ -11,7 +11,7 @@ In a typical scenario, flowchem:
 <img src="./_static/architecture_v1.svg" alt="Flowchem software architecture (devices/config/server)" class="bg-primary mb-1" width="100%">
 
 **Figure 1** Schematic representation of flowchem software architecture.
-An heterogeneous collection of devices is physically connected to a control PC.
+A heterogeneous collection of devices is physically connected to a control PC.
 The configuration file in TOML format specifies the connection parameters for each device.
 After running flowchem with that configuration, a web server is started to control each device via a single API.
 :::

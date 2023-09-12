@@ -22,45 +22,50 @@ classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
 dependencies = [
-    "aioserial>=1.3.0",
+    "aioserial>=1.3.1",
     "anyio",
-    "asyncua>=0.9.92",
-    "bronkhorst-propar>=1.0.1",
-    "fastapi>=0.65.2",
-    "fastapi_utils>=0.2.1",
-    "loguru>=0.5.0",
-    "lxml>=4.6.4",
-    "packaging>=21.3",
+    "asyncua>=1.0.2",
+    "bronkhorst-propar>=1.1.0",
+    "click<=8.1.3", # Temporary due to https://github.com/pallets/click/issues/2558
+    "fastapi>=0.100.0",
+    "loguru>=0.7.0",
+    "lxml>=4.9.2",
+    "packaging>=23.1",
     "pint>=0.16.1,!=0.21", # See hgrecco/pint#1642
-    "pydantic>=1.8.2",
+    "pydantic[email]>=2.0.2",
     "pyserial>=3",
-    "rich_click>=0.3.0",
+    "requests",
+    "rich_click>=1.6.1",
     'tomli; python_version<"3.11"',
-    "uvicorn>=0.13.4",
-    "zeroconf>=0.39.4",
+    "uvicorn>=0.19.0",
+    "zeroconf>=0.71.0",
 ]
 
 [project.optional-dependencies]
+all = ["flowchem[dev,test,phidget,docs]"]
+ci = ["flowchem[dev,test,docs]"]
 dev = [
-    "mypy",
-    "ruff>=0.0.252",
     "black",
-    "pre-commit"
+    "data-science-types",
+    "lxml-stubs",
+    "mypy",
+    "pre-commit",
+    "ruff>=0.0.252",
+    "types-lxml",
+    "types-PyYAML",
+    "types-requests",
 ]
 test = [
     "flowchem-test>=0.1a3",
+    "httpx",
     "pytest",
     "pytest-asyncio",
     "pytest-cov",
     "pytest-mock",
-    "httpx",
-    "requests",
+    "pytest-xprocess",
 ]
 phidget = [
     "phidget22>=1.7.20211005",
-]
-plot = [
-    "matplotlib>=3.5.0",
 ]
 docs = [
     "furo",
@@ -72,13 +77,6 @@ docs = [
     "sphinx-rtd-theme",
     "sphinxcontrib-openapi",
 ]
-types = [
-    "data-science-types",
-    "types-lxml",
-    "types-PyYAML",
-    "types-requests",
-
-]
 
 [project.urls]
 homepage = "https://github.com/cambiegroup/flowchem"
@@ -87,26 +85,22 @@ repository = "https://github.com/cambiegroup/flowchem"
 
 [project.scripts]
 flowchem = "flowchem.__main__:main"
-flowchem-autodiscover = "flowchem.utils.autodiscover:main"
+flowchem-autodiscover = "flowchem.utils.device_finder:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data]
-flowchem = ["py.typed"]
+packages.find.where = ["src"]
+package-data.flowchem = ["py.typed"]
 
 [tool.mypy]
 ignore_missing_imports = true
-python_version = "3.10"
+python_version = "3.11"
 
 [tool.pytest.ini_options]
 testpaths = "tests"
 asyncio_mode = "auto"
-addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=30"
-
+# Note: pytest cov is not compatible with the pycharm debugger in tests
+addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=40"
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",
@@ -115,5 +109,6 @@ markers = [
 
 [tool.ruff]
 line-length = 120
-[tool.ruff.per-file-ignores]
-"__init__.py" = ["F403"]
+# Allow imports relative to the "src" and "test" directories.
+src = ["src", "test"]
+per-file-ignores."__init__.py" = ["F403"]

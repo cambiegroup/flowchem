@@ -1,10 +1,10 @@
 """Distribution valves, generally connected to syringe pumps, direct the flow from a fixed port to one of the others."""
-from flowchem.components.valves.base_valve import BaseValve
+from flowchem.components.valves.valve import Valve
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class TwoPortDistribution(BaseValve):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+class TwoPortDistributionValve(Valve):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
             "2": [("pump", "2")],
@@ -12,8 +12,8 @@ class TwoPortDistribution(BaseValve):
         super().__init__(name, hw_device, positions, ports=["pump", "1", "2"])
 
 
-class SixPortDistribution(BaseValve):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+class SixPortDistributionValve(Valve):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
             "2": [("pump", "2")],
@@ -23,12 +23,15 @@ class SixPortDistribution(BaseValve):
             "6": [("pump", "6")],
         }
         super().__init__(
-            name, hw_device, positions, ports=["pump", "1", "2", "3", "4", "5", "6"]
+            name,
+            hw_device,
+            positions,
+            ports=["pump", "1", "2", "3", "4", "5", "6"],
         )
 
 
-class TwelvePortDistribution(BaseValve):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+class TwelvePortDistributionValve(Valve):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
             "2": [("pump", "2")],
@@ -65,8 +68,8 @@ class TwelvePortDistribution(BaseValve):
         )
 
 
-class SixteenPortDistribution(BaseValve):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+class SixteenPortDistributionValve(Valve):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         positions = {
             "1": [("pump", "1")],
             "2": [("pump", "2")],

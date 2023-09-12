@@ -33,6 +33,5 @@ def test_device_finder():
         if name == "KnauerDADCommands":
             continue  # not a real device
 
-        assert hasattr(device, "components")
         assert hasattr(device, "initialize")
         assert hasattr(device, "repeated_task")

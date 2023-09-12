@@ -1,9 +1,9 @@
-import pytest
 import os
+
+import pytest
 from click.testing import CliRunner
 
-from flowchem.utils.autodiscover import main
-
+from flowchem.utils.device_finder import main
 
 IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
@@ -16,6 +16,7 @@ def test_autodiscover_cli():
     runner = CliRunner()
 
     with runner.isolated_filesystem():
+        # noinspection PyTypeChecker
         result = runner.invoke(
             main,
             ["--assume-yes", "--safe"],

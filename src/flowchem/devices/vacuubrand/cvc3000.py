@@ -5,11 +5,11 @@ import aioserial
 import pint
 from loguru import logger
 
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vacuubrand.cvc3000_pressure_control import CVC3000PressureControl
-from flowchem.devices.vacuubrand.utils import ProcessStatus
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.devices.vacuubrand.constants import ProcessStatus
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -28,22 +28,20 @@ class CVC3000(FlowchemDevice):
         self,
         aio: aioserial.AioSerial,
         name="",
-    ):
+    ) -> None:
         super().__init__(name)
         self._serial = aio
         self._device_sn: int = None  # type: ignore
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Vacuubrand",
             model="CVC3000",
         )
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
-        """
-        Create instance from config dict. Used by server to initialize obj from config.
+        """Create instance from config dict. Used by server to initialize obj from config.
 
         Only required parameter is 'port'. Optional 'loop' + others (see AioSerial())
         """
@@ -53,7 +51,7 @@ class CVC3000(FlowchemDevice):
         try:
             serial_object = aioserial.AioSerial(port, **configuration)
         except (OSError, aioserial.SerialException) as serial_exception:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the CVC3000 on the port <{port}>"
             ) from serial_exception
 
@@ -61,9 +59,9 @@ class CVC3000(FlowchemDevice):
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        self.metadata.version = await self.version()
-        if not self.metadata.version:
-            raise InvalidConfiguration("No reply received from CVC3000!")
+        self.device_info.version = await self.version()
+        if not self.device_info.version:
+            raise InvalidConfigurationError("No reply received from CVC3000!")
 
         # Set to CVC3000 mode and save
         await self._send_command_and_read_reply("CVC 3")
@@ -76,16 +74,19 @@ class CVC3000(FlowchemDevice):
         await self._send_command_and_read_reply("OUT_CFG 00001")
         await self.motor_speed(100)
 
-        logger.debug(f"Connected with CVC3000 version {self.metadata.version}")
+        logger.debug(f"Connected with CVC3000 version {self.device_info.version}")
+
+        self.components.append(CVC3000PressureControl("pressure-control", self))
 
     async def _send_command_and_read_reply(self, command: str) -> str:
-        """
-        Send command and read the reply.
+        """Send command and read the reply.
 
         Args:
+        ----
             command (str): string to be transmitted
 
         Returns:
+        -------
             str: reply received
         """
         await self._serial.write_async(command.encode("ascii") + b"\r\n")
@@ -122,7 +123,7 @@ class CVC3000(FlowchemDevice):
         return float(pressure_text.split()[0])
 
     async def motor_speed(self, speed):
-        """Sets motor speed to target % value."""
+        """Set motor speed to target % value."""
         return await self._send_command_and_read_reply(f"OUT_SP_2 {speed}")
 
     async def status(self) -> ProcessStatus:
@@ -132,7 +133,3 @@ class CVC3000(FlowchemDevice):
         if not raw_status:
             raw_status = await self._send_command_and_read_reply("IN_STAT")
         return ProcessStatus.from_reply(raw_status)
-
-    def components(self):
-        """Return a TemperatureControl component."""
-        return (CVC3000PressureControl("pressure-control", self),)

@@ -5,37 +5,31 @@ from typing import TYPE_CHECKING
 
 from fastapi import APIRouter
 from loguru import logger
-from pydantic import BaseModel
+
+from flowchem.components.component_info import ComponentInfo
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.flowchem_device import DeviceInfo
-
-
-class ComponentInfo(BaseModel):
-    """Metadata associated with flowchem components."""
-
-    name: str = ""
-    owl_subclass_of = "http://purl.obolibrary.org/obo/OBI_0000968"  # 'device'
-    hw_device: DeviceInfo
 
 
 class FlowchemComponent:
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """Initialize component."""
         self.name = name
         self.hw_device = hw_device
-        self.metadata = ComponentInfo(
-            hw_device=self.hw_device.get_metadata(), name=name
+        self.component_info = ComponentInfo(
+            name=name,
+            parent_device=self.hw_device.name,
         )
 
         # Initialize router
         self._router = APIRouter(
-            prefix=f"/{hw_device.name}/{name}", tags=[hw_device.name]
+            prefix=f"/{self.component_info.parent_device}/{name}",
+            tags=[self.component_info.parent_device],
         )
         self.add_api_route(
             "/",
-            self.get_metadata,
+            self.get_component_info,
             methods=["GET"],
             response_model=ComponentInfo,
         )
@@ -50,6 +44,6 @@ class FlowchemComponent:
         logger.debug(f"Adding route {path} for router of {self.name}")
         self._router.add_api_route(path, endpoint, **kwargs)
 
-    def get_metadata(self) -> ComponentInfo:
+    def get_component_info(self) -> ComponentInfo:
         """Return metadata."""
-        return self.metadata
+        return self.component_info

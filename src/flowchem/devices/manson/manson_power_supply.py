@@ -8,11 +8,10 @@ import aioserial
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.manson.manson_component import MansonPowerControl
-from flowchem.utils.exceptions import DeviceError
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 
@@ -21,28 +20,26 @@ class MansonPowerSupply(FlowchemDevice):
 
     MODEL_ALT_RANGE = ["HCS-3102", "HCS-3014", "HCS-3204", "HCS-3202"]
 
-    def __init__(self, aio: aioserial.AioSerial, name=""):
+    def __init__(self, aio: aioserial.AioSerial, name="") -> None:
         """Control class for Manson Power Supply."""
         super().__init__(name)
         self._serial = aio
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Manson",
             model="HCS-3***",
         )
 
     @classmethod
     def from_config(cls, port, name="", **serial_kwargs):
-        """
-        Create instance from config dict. Used by server to initialize obj from config.
+        """Create instance from config dict. Used by server to initialize obj from config.
 
         Only required parameter is 'port'.
         """
         try:
             serial_object = aioserial.AioSerial(port, **serial_kwargs)
         except aioserial.SerialException as error:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the MansonPowerSupply on the port <{port}>"
             ) from error
 
@@ -50,13 +47,15 @@ class MansonPowerSupply(FlowchemDevice):
 
     async def initialize(self):
         """Ensure the connection w/ device is working."""
-        self.metadata.model = await self.get_info()
-        if not self.metadata.model:
+        self.device_info.model = await self.get_info()
+        if not self.device_info.model:
             raise DeviceError("Communication with device failed!")
-        if self.metadata.model not in self.MODEL_ALT_RANGE:
-            raise InvalidConfiguration(
+        if self.device_info.model not in self.MODEL_ALT_RANGE:
+            raise InvalidConfigurationError(
                 f"Device is not supported! [Supported models: {self.MODEL_ALT_RANGE}]"
             )
+        # Set TemperatureControl component
+        self.components.append(MansonPowerControl("power-control", self))
 
     @staticmethod
     def _format_voltage(voltage_value: str) -> str:
@@ -86,7 +85,7 @@ class MansonPowerSupply(FlowchemDevice):
         reply_string = []
         for line in await self._serial.readlines_async():
             reply_string.append(line.decode("ascii").strip())
-            logger.debug(f"Received {repr(line)}!")
+            logger.debug(f"Received {line!r}!")
 
         return "\n".join(reply_string)
 
@@ -281,10 +280,6 @@ class MansonPowerSupply(FlowchemDevice):
         """Set both voltage and current."""
         await self.set_voltage(voltage)
         await self.set_current(current)
-
-    def get_components(self):
-        """Return an TemperatureControl component."""
-        return (MansonPowerControl("power-control", self),)
 
     # def get_router(self, prefix: str | None = None):
     #     """Create an APIRouter for this MansonPowerSupply instance."""

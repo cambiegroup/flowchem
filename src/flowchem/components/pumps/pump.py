@@ -1,10 +1,10 @@
 """Base pump component."""
-from flowchem.components.base_component import FlowchemComponent
+from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class BasePump(FlowchemComponent):
-    def __init__(self, name: str, hw_device: FlowchemDevice):
+class Pump(FlowchemComponent):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """A generic pump."""
         super().__init__(name, hw_device)
         self.add_api_route("/infuse", self.infuse, methods=["PUT"])
@@ -12,6 +12,7 @@ class BasePump(FlowchemComponent):
         self.add_api_route("/is-pumping", self.is_pumping, methods=["GET"])
         if self.is_withdrawing_capable():
             self.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
+        self.component_info.type = "Pump"
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:  # type: ignore
         """Start infusion."""

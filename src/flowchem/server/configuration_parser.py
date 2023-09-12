@@ -4,7 +4,6 @@ import sys
 import typing
 from io import BytesIO
 from pathlib import Path
-from textwrap import dedent
 
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.list_known_device_type import autodiscover_device_classes
@@ -15,14 +14,16 @@ if sys.version_info >= (3, 11):
 else:
     import tomli as tomllib
 
-from flowchem.devices.known_plugins import plugin_devices
-from flowchem.utils.exceptions import InvalidConfiguration
 from loguru import logger
+
+from flowchem.devices.known_plugins import plugin_devices
+from flowchem.utils.exceptions import InvalidConfigurationError
+
+DEVICE_NAME_MAX_LENGTH = 42
 
 
 def parse_toml(stream: typing.BinaryIO) -> dict:
-    """
-    Read the TOML configuration file and returns it as a dict.
+    """Read the TOML configuration file and returns it as a dict.
 
     Extensive exception handling due to the error-prone human editing needed in the configuration file.
     """
@@ -30,31 +31,30 @@ def parse_toml(stream: typing.BinaryIO) -> dict:
         return tomllib.load(stream)
     except tomllib.TOMLDecodeError as parser_error:
         logger.exception(parser_error)
-        raise InvalidConfiguration(
-            "The configuration provided does not contain valid TOML!"
-        ) from parser_error
+        msg = "Invalid syntax in configuration!"
+        raise InvalidConfigurationError(msg) from parser_error
 
 
-def parse_config(file_path: BytesIO | Path) -> dict:
-    """Parse a config file."""
-    # StringIO used for testing without creating actual files
+def parse_config(file_path: Path | BytesIO) -> dict:
+    """Parse a config file and add a `filename` key to the resulting dict w/ its location."""
+    # BytesIO used for testing without creating actual files
     if isinstance(file_path, BytesIO):
         config = parse_toml(file_path)
-        config["filename"] = "StringIO"
-    else:
-        assert (
-            file_path.exists() and file_path.is_file()
-        ), f"{file_path} is a valid file"
+        config["filename"] = "BytesIO"
+    elif isinstance(file_path, Path):
+        assert file_path.exists(), f"{file_path} exists"
+        assert file_path.is_file(), f"{file_path} is a file"
 
         with file_path.open("rb") as stream:
             config = parse_toml(stream)
-
         config["filename"] = file_path.stem
+    else:
+        raise InvalidConfigurationError("Invalid configuration type.")
 
-    return instantiate_device(config)
+    return config
 
 
-def instantiate_device(config: dict) -> dict:
+def instantiate_device_from_config(config: dict) -> list[FlowchemDevice]:
     """Instantiate all devices defined in the provided config dict."""
     assert "device" in config, "The configuration file must include a device section"
 
@@ -63,22 +63,38 @@ def instantiate_device(config: dict) -> dict:
     device_mapper = autodiscover_device_classes()
 
     # Iterate on all devices, parse device-specific settings and instantiate the relevant objects
-    config["device"] = [
+    return [
         parse_device(dev_settings, device_mapper)
         for dev_settings in config["device"].items()
     ]
-    logger.info("Configuration parsed!")
-
-    return config
 
 
-def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
+def ensure_device_name_is_valid(device_name: str) -> None:
+    """Device name validator.
+
+    Uniqueness of names is ensured by their toml dict key nature,
     """
-    Parse device config and return a device object.
+    if len(device_name) > DEVICE_NAME_MAX_LENGTH:
+        # f"{name}._labthing._tcp.local." has to be shorter than 64 characters to be valid for mDNS
+        msg = f"Device name '{device_name}' is too long: {len(device_name)} characters, max is {DEVICE_NAME_MAX_LENGTH}"
+        raise InvalidConfigurationError(msg)
+    if "." in device_name:
+        # This is not strictly needed but avoids potential zeroconf problems
+        msg = f"Invalid character '.' in device name '{device_name}'"
+        raise InvalidConfigurationError(msg)
+
+
+def parse_device(dev_settings: dict, device_object_mapper: dict) -> FlowchemDevice:
+    """Parse device config and return a device object.
+
+    The device type (i.e. domain) is searched in the known classes (and known plugins, even if uninstalled).
+    The device is instantiated via its `from_config` method or `init` if from_config is missing.
+    The device object is returned.
 
     Exception handling to provide more specific and diagnostic messages upon errors in the configuration file.
     """
     device_name, device_config = dev_settings
+    ensure_device_name_is_valid(device_name)
 
     # Get device class
     try:
@@ -91,17 +107,17 @@ def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
             logger.exception(
                 f"The device `{device_name}` of type `{device_config['type']}` needs a additional plugin"
                 f"Install {needed_plugin} to add support for it!"
-                f"e.g. `python -m pip install {needed_plugin}`"
+                f"e.g. `python -m pip install {needed_plugin}`",
             )
-            raise InvalidConfiguration(f"{needed_plugin} not installed.")
+            msg = f"{needed_plugin} not installed."
+            raise InvalidConfigurationError(msg) from error
 
         logger.exception(
             f"Device type `{device_config['type']}` unknown in 'device.{device_name}'!"
-            f"[Known types: {device_object_mapper.keys()}]"
+            f"[Known types: {device_object_mapper.keys()}]",
         )
-        raise InvalidConfiguration(
-            f"Unknown device type `{device_config['type']}`."
-        ) from error
+        msg = f"Unknown device type `{device_config['type']}`."
+        raise InvalidConfigurationError(msg) from error
 
     # If the object has a 'from_config' method, use that for instantiation, otherwise try straight with the constructor.
     try:
@@ -114,19 +130,19 @@ def parse_device(dev_settings, device_object_mapper) -> FlowchemDevice:
     except TypeError as error:
         logger.error(f"Wrong settings for device '{device_name}'!")
         get_helpful_error_message(device_config, inspect.getfullargspec(called))
-        raise ConnectionError(
+        msg = (
             f"Wrong configuration provided for device '{device_name}' of type {obj_type.__name__}!\n"
             f"Configuration: {device_config}\n"
             f"Accepted parameters: {inspect.getfullargspec(called).args}"
-        ) from error
+        )
 
-    logger.debug(
-        f"Created device '{device.name}' instance: {device.__class__.__name__}"
-    )
+        raise ConnectionError(msg) from error
+
+    logger.debug(f"Created '{device.name}' instance: {device.__class__.__name__}")
     return device
 
 
-def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
+def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec) -> None:
     """Give helpful debugging text on configuration errors."""
     # First check if we have provided an argument that is not supported.
     # Clearly no **kwargs should be defined in the signature otherwise all kwargs are ok
@@ -134,7 +150,7 @@ def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
         invalid_parameters = list(set(called_with.keys()).difference(arg_spec.args))
         if invalid_parameters:
             logger.error(
-                f"The following parameters were not recognized: {invalid_parameters}"
+                f"The following parameters were not recognized: {invalid_parameters}",
             )
 
     # Then check if a mandatory arguments was not satisfied. [1 to skip cls/self, -n to remove args w/ default]
@@ -143,45 +159,5 @@ def get_helpful_error_message(called_with: dict, arg_spec: inspect.FullArgSpec):
     missing_parameters = list(set(mandatory_args).difference(called_with.keys()))
     if missing_parameters:
         logger.error(
-            f"The following mandatory parameters were missing in the configuration: {missing_parameters}"
+            f"The following mandatory parameters were missing in the configuration: {missing_parameters}",
         )
-
-
-if __name__ == "__main__":
-    cfg_txt = BytesIO(
-        dedent(
-            """config_version = "1.0"
-    simulation = true
-
-    [device.donor]
-    type = "Elite11InfuseOnly"
-    port = "COM11"
-    address = 0
-    syringe_diameter = "4.6 mm"
-    syringe_volume = "1 ml"
-
-    [device.activator]
-    type = "Elite11InfuseOnly"
-    port = "COM11"
-    address= 1
-    syringe_diameter = "4.6 mm"
-    syringe_volume = "1 ml"
-
-    [device.quencher]
-    type = "AxuraCompactPump"
-    mac_address = "00:80:A3:BA:C3:4A"
-    max_pressure = "13 bar"
-
-    [device.sample-loop]
-    type = "ViciValve"
-    port = "COM13"
-    address = 0
-
-    [device.chiller]
-    type = "HubeerChiller"
-    port = "COM3"
-    """
-        ).encode("utf-8")
-    )
-    cfg = parse_config(cfg_txt)
-    print(cfg)

@@ -4,7 +4,7 @@ import time
 import pint
 from loguru import logger
 
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.phidgets.pressure_sensor_component import (
     PhidgetPressureSensorComponent,
@@ -20,8 +20,8 @@ except ImportError:
     HAS_PHIDGET = False
 
 
-from flowchem.utils.exceptions import InvalidConfiguration
 from flowchem import ureg
+from flowchem.utils.exceptions import InvalidConfigurationError
 
 
 class PhidgetPressureSensor(FlowchemDevice):
@@ -34,11 +34,11 @@ class PhidgetPressureSensor(FlowchemDevice):
         vint_channel: int = -1,
         phidget_is_remote: bool = False,
         name: str = "",
-    ):
+    ) -> None:
         """Initialize PressureSensor with the given pressure range (sensor-specific!)."""
         super().__init__(name=name)
         if not HAS_PHIDGET:
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 "Phidget unusable: library or package not installed."
             )
 
@@ -66,24 +66,23 @@ class PhidgetPressureSensor(FlowchemDevice):
         try:
             self.phidget.openWaitForAttachment(1000)
             logger.debug("Pressure sensor connected!")
-        except PhidgetException:
-            raise InvalidConfiguration(
+        except PhidgetException as pe:
+            raise InvalidConfigurationError(
                 "Cannot connect to sensor! Check it is not already opened elsewhere and settings..."
-            )
+            ) from pe
 
         # Set power supply to 24V
         self.phidget.setPowerSupply(PowerSupply.POWER_SUPPLY_24V)
         self.phidget.setDataInterval(200)  # 200ms
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Phidget",
             model="VINT",
             serial_number=vint_serial_number,
         )
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
         self.phidget.close()
 
@@ -102,8 +101,7 @@ class PhidgetPressureSensor(FlowchemDevice):
         return pressure_reading
 
     def read_pressure(self) -> pint.Quantity:  # type: ignore
-        """
-        Read pressure from the sensor and returns it as pint.Quantity.
+        """Read pressure from the sensor and returns it as pint.Quantity.
 
         This is the main class method, and it never fails, but rather return None. Why?
 

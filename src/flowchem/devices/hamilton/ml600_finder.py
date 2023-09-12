@@ -4,8 +4,7 @@ from textwrap import dedent
 
 from loguru import logger
 
-from flowchem.devices.hamilton.ml600 import HamiltonPumpIO
-from flowchem.devices.hamilton.ml600 import InvalidConfiguration
+from flowchem.devices.hamilton.ml600 import HamiltonPumpIO, InvalidConfigurationError
 
 
 def ml600_finder(serial_port) -> set[str]:
@@ -18,12 +17,12 @@ def ml600_finder(serial_port) -> set[str]:
 
     try:
         link = HamiltonPumpIO.from_config({"port": serial_port})
-    except InvalidConfiguration:
+    except InvalidConfigurationError:
         return dev_config
 
     try:
         asyncio.run(link.initialize(hw_initialization=False))
-    except InvalidConfiguration:
+    except InvalidConfigurationError:
         # This is necessary only on failure to release the port for the other inspector
         link._serial.close()
         return dev_config
@@ -38,8 +37,8 @@ def ml600_finder(serial_port) -> set[str]:
                 f"""type = "ML600"
                 port = "{serial_port}"
                 address = {count + 1}
-                syringe_volume = "XXX ml" # Specify syringe volume here!\n"""
-            )
+                syringe_volume = "XXX ml" # Specify syringe volume here!\n""",
+            ),
         )
 
     return dev_config

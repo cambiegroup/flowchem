@@ -10,9 +10,9 @@ type = "AzuraCompact"
 ip_address = "192.168.1.119"
 max_pressure = "10 bar"
 
-#[device.r4-heater]
-#type = "R4Heater"
-#port = "COM1"
+[device.r4-heater]
+type = "R4Heater"
+port = "COM1"
 
 [device.flowir]
 type = "IcIR"
