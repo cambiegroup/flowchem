@@ -29,7 +29,8 @@ class IcIRControl(IRControl):
             return await self.hw_device.last_spectrum_raw()
 
     async def spectrum_count(self) -> int:
-        if count := self.hw_device.sample_count() is not None:
+        count = await self.hw_device.sample_count()
+        if count is not None:
             return count
         else:
             return -1

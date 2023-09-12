@@ -6,6 +6,7 @@ from textwrap import dedent
 from loguru import logger
 
 from flowchem.devices import IcIR
+from flowchem.components.base_component import FlowchemComponent
 
 __all__ = ["icir_finder"]
 
