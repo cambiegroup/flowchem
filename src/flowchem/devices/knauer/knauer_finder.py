@@ -119,6 +119,7 @@ def broadcast_ip_heuristic(ip: str) -> int:
 
 def determine_broadcasting_ip(source="") -> str:
     """Determine the broadcasting IP to be used based on NIC name or IP range (e.g. 'eth0' or '192.168.*.*')."""
+    assert isinstance(source, str), "Source must be a string"
     # Get network interfaces data
     nics = {}
     for adapter in ifaddr.get_adapters():
@@ -145,7 +146,7 @@ def determine_broadcasting_ip(source="") -> str:
         pass
         # logger.debug(f"No network interface '{source}' found. Available are: {list(nics.keys())}")
 
-    # If the source IP is not fully defined try to fin d a match among all the local IPs available
+    # If the source IP is not fully defined try to find a match among all the local IPs available
     if "*" in source:
         fixed_part, *_ = source.split("*")
 
@@ -193,7 +194,7 @@ def autodiscover_knauer(network: str = "") -> dict[str, str]:
     return device_info
 
 
-def knauer_finder(source_ip=None):
+def knauer_finder(source_ip: str = ""):
     """Execute autodiscovery. This is the entry point of the `knauer-finder` CLI command."""
     # This is a bug of asyncio on Windows :|
     if sys.platform == "win32":

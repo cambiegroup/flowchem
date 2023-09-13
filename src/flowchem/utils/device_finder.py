@@ -95,7 +95,7 @@ def inspect_eth(source_ip: str) -> set[str]:
 @click.option(
     "--source-ip",
     help="Source IP for broadcast packets. (Relevant if multiple eth interface are available)",
-    default=None,
+    default="",
 )
 def main(output, overwrite, safe, assume_yes, source_ip):
     """Auto-find devices connected to the current PC."""
