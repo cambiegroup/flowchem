@@ -116,7 +116,7 @@ class UV150PhotoReactor(Photoreactor):
 
     async def power_on(self):
         """Turn on the whole system, no way to power UV150 independently."""
-        if self.hw_device.intensity:
+        if self.hw_device._intensity:
             await self.hw_device.power_on()
             return
         logger.error("UV150 power on requested without setting intensity first!")
