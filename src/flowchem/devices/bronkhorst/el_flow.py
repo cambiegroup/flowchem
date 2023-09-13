@@ -28,7 +28,12 @@ class EPC(FlowchemDevice):
         name="",
         channel: int = 1,
         address: int = 0x80,
+        max_pressure: float = 10,  # bar = 100 % = 32000
     ) -> None:
+        self.port = port
+        self.channel = channel
+        self.address = address
+        self.max_pressure = max_pressure
         super().__init__(name)
 
         # Metadata
@@ -58,22 +63,22 @@ class EPC(FlowchemDevice):
         set_p = ureg.Quantity(pressure)
         set_n = round(set_p.m_as("bar") * 32000 / self.max_pressure)
         if set_n > 32000:
-            self.device.setpoint = 32000
+            self.el_press.setpoint = 32000
             logger.debug(
                 "setting higher than maximum flow rate! set the flow rate to 100%",
             )
         else:
-            self.device.setpoint = set_n
+            self.el_press.setpoint = set_n
             logger.debug(f"set the pressure to {set_n / 320}%")
 
     async def get_pressure(self) -> float:
         """Get current flow rate in ml/min."""
-        m_num = float(self.device.measure)
+        m_num = float(self.el_press.measure)
         return m_num / 32000 * self.max_pressure
 
     async def get_pressure_percentage(self) -> float:
         """Get current flow rate in percentage."""
-        m_num = float(self.device.measure)
+        m_num = float(self.el_press.measure)
         return m_num / 320
 
 
@@ -88,7 +93,11 @@ class MFC(FlowchemDevice):
         address: int = 0x80,
         max_flow: float = 9,  # ml / min = 100 % = 32000
     ) -> None:
-        super().__init__(port, name, channel, address)
+        self.port = port
+        self.channel = channel
+        self.address = address
+        self.max_flow = max_flow
+        super().__init__(name)
         self.max_flow = max_flow
 
         # Metadata
@@ -121,22 +130,22 @@ class MFC(FlowchemDevice):
         set_f = ureg.Quantity(flowrate)
         set_n = round(set_f.m_as("ml/min") * 32000 / self.max_flow)
         if set_n > 32000:
-            self.device.setpoint = 32000
+            self.el_flow.setpoint = 32000
             logger.debug(
                 "setting higher than maximum flow rate! set the flow rate to 100%",
             )
         else:
-            self.device.setpoint = set_n
+            self.el_flow.setpoint = set_n
             logger.debug(f"set the flow rate to {set_n / 320}%")
 
     async def get_flow_setpoint(self) -> float:
         """Get current flow rate in ml/min."""
-        m_num = float(self.device.measure)
+        m_num = float(self.el_flow.measure)
         return m_num / 32000 * self.max_flow
 
     async def get_flow_percentage(self) -> float:
         """Get current flow rate in percentage."""
-        m_num = float(self.device.measure)
+        m_num = float(self.el_flow.measure)
         return m_num / 320
 
 

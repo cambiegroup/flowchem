@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from flowchem.components.device_info import DeviceInfo
-from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.knauer.dad_component import (
@@ -64,10 +63,6 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         """Initialize connection."""
         await super().initialize()
 
-        # to avoid the frequent switch the lamp on and off,
-        # if self._d2:
-        # if self._hal:
-
         if self._control:
             await self.display_control(True)
 
@@ -80,17 +75,14 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         await self.bandwidth(8)
         logger.info("set channel 1 : WL = 254 nm, BW = 8nm ")
 
-    # async def d2(self, state: bool = False) -> str:
-    #     """Turn off or on the deuterium lamp."""
-    #     cmd = self.cmd.D2_LAMP_ON if state else self.cmd.D2_LAMP_OFF
-    #     self._state_d2 = state
-    #     return await self._send_and_receive(cmd)
-    #
-    # async def hal(self, state: bool = False) -> str:
-    #     """Turn off or on the halogen lamp."""
-    #     cmd = self.cmd.HAL_LAMP_ON if state else self.cmd.HAL_LAMP_OFF
-    #     self._state_hal = state
-    #     return await self._send_and_receive(cmd)
+        self.components = [
+            KnauerDADLampControl("d2", self),
+            KnauerDADLampControl("hal", self),
+        ]
+
+        self.components.extend(
+            [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)]
+        )
 
     async def lamp(self, lamp: str, state: bool | str = "REQUEST") -> str:
         """Turn on or off the lamp, or request lamp state."""
@@ -239,16 +231,6 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
             await self.status()
 
         return 45, keepalive
-
-    def components(self) -> list["FlowchemComponent"]:
-        list_of_components: list[FlowchemComponent] = [
-            KnauerDADLampControl("d2", self),
-            KnauerDADLampControl("hal", self),
-        ]
-        list_of_components.extend(
-            [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)]
-        )
-        return list_of_components
 
 
 async def main(dad):

@@ -76,12 +76,12 @@ class R4Reactor(TemperatureControl):
         """Return temperature in Celsius."""
         return await self.hw_device.get_current_temperature(self.channel)
 
-    async def is_target_reached(self) -> bool:  # type: ignore
+    async def is_target_reached(self) -> bool | None:  # type: ignore
         """Return True if the set temperature target has been reached."""
         current_temp = await self.hw_device.get_current_temperature(self.channel)
         target_temp = await self.hw_device.get_target_temperature(self.channel)
         if target_temp == "-1000":
-            return "Off"
+            return None
         elif abs(current_temp - target_temp) <= 2:
             return True
         else:

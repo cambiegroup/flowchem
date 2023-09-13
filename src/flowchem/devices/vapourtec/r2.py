@@ -376,7 +376,7 @@ class R2(FlowchemDevice):
         """Turn off both devices, R2 and R4."""
         await self.write_and_read_reply(self.cmd.POWER_OFF)
 
-    async def get_current_temperature(self, channel) -> float | None:
+    async def get_current_temperature(self, channel) -> float:
         """Get temperature (in Celsius) from channel3."""
         temp_history = await self.write_and_read_reply(self.cmd.HISTORY_TEMPERATURE)
         if temp_history == "OK":
@@ -385,7 +385,6 @@ class R2(FlowchemDevice):
 
         # 0: time, 1..8: cooling, heating, or ...  / temp (alternating per channel)
         temp_time, *temps = temp_history.split(",")
-        print(temps)
         return float(temps[channel * 2 + 1]) / 10
 
     async def get_pressure_history(
@@ -437,7 +436,8 @@ class R2(FlowchemDevice):
                 AllState["pumpB_P"],
                 AllState["sysP (mbar)"],
             ) = await self.get_pressure_history()
-            AllState["Temp"] = await self.get_current_temperature()
+
+            # AllState["Temp"] = await self.get_current_temperature()
             return AllState
 
 
