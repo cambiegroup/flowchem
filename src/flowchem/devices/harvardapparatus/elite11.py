@@ -189,8 +189,7 @@ class Elite11(FlowchemDevice):
             f"Connected to '{self.name}'! [{self.pump_io._serial.name}:{self.address}]"
         )
         version = await self.version()
-        self.metadata.version = version.split(" ")[-1]
-        self._infuse_only = "I/W" not in self.metadata.version
+        self._infuse_only = "I/W" not in version
 
         # Clear target volume eventually set to prevent pump from stopping prematurely
         await self.set_target_volume("0 ml")
