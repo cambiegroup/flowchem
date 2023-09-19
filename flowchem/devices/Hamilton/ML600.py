@@ -320,7 +320,10 @@ class ML600Commands:
     VALVE_CONFIGURATION = Protocol1CommandTemplate(
         command="YQS"
     )  # 11-20 (see docs, Table 3.2.2)
-    VALVE_SPEED = Protocol1CommandTemplate(command="LQF")  # 15-720 degrees per sec
+    #Set valve speed
+    SET_VALVE_SPEED = Protocol1CommandTemplate(command="LSF")  # 15-720 degrees per sec
+    #Set valve speed
+    GET_VALVE_SPEED = Protocol1CommandTemplate(command="LQF")
     # TIMER REQUEST
     TIMER_DELAY = Protocol1CommandTemplate(command="<T")  # 0–99999999 ms
     # FIRMWARE REQUEST
@@ -638,7 +641,7 @@ class ML600:
         self.send_command_and_read_reply(ML600Commands.SET_VALVE_CONTINUOUS_DISPENSE)
         self.wait_until_idle()
         # set valve speed to as high as possible - thereby phases without pumping become short
-        # self.send_command_and_read_reply(ML600Commands.VALVE_SPEED, command_value="720")
+        self.send_command_and_read_reply(ML600Commands.SET_VALVE_SPEED, command_value=720)
         self.wait_until_idle()
         # initialise counter
         volume_delivered = 0
