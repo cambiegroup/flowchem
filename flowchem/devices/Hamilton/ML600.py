@@ -663,7 +663,6 @@ class ML600:
         # while True:
         # 2) fill right syringe half-way, empty left completely, at double speed
         # 3) fill left at double speed, empty right at normAL, timing will be accurate since double volume mkoves at double speed
-        self._fill_left_empty_right(1)
         while volume_delivered < volume_to_deliver:
             self.wait_until_idle()
             self._empty_left_fill_right(delivery_speed)
