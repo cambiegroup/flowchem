@@ -96,7 +96,7 @@ class Elite11(FlowchemDevice):
         Elite11._io_instances.add(self.pump_io)
 
         self.address = address
-        self._infuse_only = True  # Actual value set in initialize
+        self._infuse_only = False  # Actual value set in initialize
 
         # syringe diameter and volume, and force will be set in initialize()
         self._force = force
@@ -396,7 +396,7 @@ class Elite11(FlowchemDevice):
 
 if __name__ == "__main__":
     pump = Elite11.from_config(
-        port="COM5", syringe_volume="10 ml", syringe_diameter="14.567 mm", address=3
+        port="COM5", syringe_volume="250 ul", syringe_diameter="2.304 mm", address=5
     )
 
     async def main():
@@ -405,6 +405,7 @@ if __name__ == "__main__":
         # assert await pump.get_infused_volume() == 0
         # await pump.set_syringe_diameter("30 mm")
         # await pump.set_syringe_diameter("30 mm")
+        print(await pump.version())
         await pump.set_flow_rate("0.001 ml/min")
         await pump.set_target_volume("0.001 ml")
         await pump.infuse()
