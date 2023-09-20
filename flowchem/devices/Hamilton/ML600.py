@@ -594,7 +594,7 @@ class ML600:
         """ pickup by moving valves and moving syringe to absolute volume"""
         fill_syringe = [self.create_single_command(ML600Commands.VALVE_TO_INLET),
                         self._absolute_syringe_move(volume, flowrate),
-                        self.create_single_command(ML600Commands.VALVE_TO_OUTLET), ]
+                        ]
         return fill_syringe
 
     def pickup(self, volume, speed):
@@ -605,7 +605,7 @@ class ML600:
         """deliver by moving valves and deliver solution"""
         deliver_from_syringe = [self.create_single_command(ML600Commands.VALVE_TO_OUTLET),
                                 self._absolute_syringe_move(volume, speed_out),
-                                self.create_single_command(ML600Commands.VALVE_TO_INLET), ]
+                                ]
         return deliver_from_syringe
 
     def deliver(self, volume, speed):
@@ -621,7 +621,9 @@ class ML600:
         return self.send_multiple_commands([self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
                                             *self._orchestrated_pickup(self.syringe_volume, 2 * delivery_speed),
                                             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
-                                            *self._orchestrated_deliver(0, delivery_speed)])
+            self.create_single_command(ML600Commands.VALVE_TO_INLET),
+            self._absolute_syringe_move(0, delivery_speed),
+            ])
 
     def _empty_left_fill_right(self, delivery_speed):
         """ pump from left syringe at double speed and refill right syringe"""
@@ -631,7 +633,8 @@ class ML600:
         return self.send_multiple_commands([self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
                                             *self._orchestrated_deliver(0, 2 * delivery_speed),
                                             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
-                                            *self._orchestrated_pickup(0.5 * self.syringe_volume, delivery_speed)])
+                                            self.create_single_command(ML600Commands.VALVE_TO_INLET),
+                                            self._absolute_syringe_move(0.5*self.syringe_volume, delivery_speed),])
 
     def continuous_delivery(self, delivery_speed, volume_to_deliver):
         """ delivers continuoulsy at requested speed, be aware that there are short breaks due to valve switching"""
@@ -639,7 +642,7 @@ class ML600:
         single = self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE)
         assert single == 'N', f"Sorry, only works for dual syringes. answer is {single}"
         # make sure valves are set correctly for continuous dispense
-        self.send_command_and_read_reply(ML600Commands.SET_VALVE_CONTINUOUS_DISPENSE)
+        self.send_command_and_read_reply(ML600Commands.SET_VALVE_DUAL_DILUTOR)
         self.wait_until_idle()
         # set valve speed to as high as possible - thereby phases without pumping become short
         self.send_command_and_read_reply(ML600Commands.SET_VALVE_SPEED, command_value=720)
@@ -665,9 +668,8 @@ class ML600:
         # 2) fill right syringe half-way, empty left completely, at double speed
         # 3) fill left at double speed, empty right at normAL, timing will be accurate since double volume mkoves at double speed
         while volume_delivered < volume_to_deliver:
-            self.wait_until_idle()
+
             self._empty_left_fill_right(delivery_speed)
-            self.wait_until_idle()
             self._fill_left_empty_right(delivery_speed)
             volume_delivered += self.syringe_volume
 
