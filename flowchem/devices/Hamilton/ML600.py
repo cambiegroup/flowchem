@@ -395,7 +395,8 @@ class ML600:
             )
         self.syringe_volume = syringe_volume
         self.steps_per_ml = 48000 / self.syringe_volume
-        self.offset_steps = 24 # Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
+        self.return_steps = 24# Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
+        
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
 
@@ -481,7 +482,7 @@ class ML600:
         return round(seconds_per_stroke)
 
     def _volume_to_step(self, volume_in_ml: float) -> int:
-        return round(volume_in_ml * self.steps_per_ml) + self.offset_steps
+        return round(volume_in_ml * self.steps_per_ml)
 
     def _to_step_position(self, position: int, speed: int = ""):
         """ Absolute move to step position """
@@ -553,21 +554,19 @@ class ML600:
 
     @property
     def return_steps(self) -> int:
-        """ Represent the position of the valve: getter returns Enum, setter needs Enum """
+        """ Gives the dfined return steps for syringe movement """
         return int(self.send_command_and_read_reply(ML600Commands.GET_RETURN_STEPS))
 
     @return_steps.setter
-    def return_steps(self, target_steps: int):
+    def return_steps(self, return_steps: int):
         self.send_command_and_read_reply(
-            ML600Commands.SET_RETURN_STEPS, command_value=str(int(target_steps))
+            ML600Commands.SET_RETURN_STEPS, command_value=str(int(return_steps))
         )
 
     def syringe_position(self):
-        current_steps = (
-            int(
+        current_steps = int(
                 self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION)
-            ) - self.offset_steps
-        )
+            )
         return current_steps / self.steps_per_ml
 
     def _absolute_syringe_move(self, volume, flow_rate):
