@@ -273,6 +273,8 @@ class ML600Commands:
 
     # only works for pumps with two syringe drivers
     SET_VALVE_CONTINUOUS_DISPENSE = Protocol1CommandTemplate(command="LST19")
+    # only works for pumps with two syringe drivers
+    SET_VALVE_DUAL_DILUTOR = Protocol1CommandTemplate(command="LST20")
     # if there are two drivers, both sides can be selected
     SELECT_LEFT_SYRINGE = Protocol1CommandTemplate(command="B")
     SELECT_RIGHT_SYRINGE = Protocol1CommandTemplate(command="C")
@@ -308,7 +310,7 @@ class ML600Commands:
         command="YQS"
     )  # 2-3692 seconds per stroke
     CURRENT_SYRINGE_POSITION = Protocol1CommandTemplate(command="YQP")  # 0-52800 steps
-    SYRINGE_DEFAULT_BACKOFF = Protocol1CommandTemplate(command="YQP")  # 0-1000 steps
+    SYRINGE_DEFAULT_BACKOFF = Protocol1CommandTemplate(command="YQB")  # 0-1000 steps
     CURRENT_VALVE_POSITION = Protocol1CommandTemplate(
         command="LQP"
     )  # 1-8 (see docs, Table 3.2.2)
