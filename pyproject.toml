@@ -57,7 +57,7 @@ dev = [
     "types-requests",
 ]
 test = [
-    "flowchem-test>=0.1a3",
+    "flowchem-test>=0.1b4",
     "httpx",
     "pytest",
     "pytest-asyncio",
