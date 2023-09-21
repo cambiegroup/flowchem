@@ -3,50 +3,44 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.valves.distribution_valves import ThreePortFourPositionValve, FourPortFivePositionValve
+from loguru import logger
+
+from flowchem.components.valves.distribution_valves import TwoPortDistribution
 
 if TYPE_CHECKING:
     from .ml600 import ML600
 
 
-class ML600LeftValve(FourPortFivePositionValve):
+class ML600Valve(TwoPortDistribution):
     hw_device: ML600  # for typing's sake
-    identifier = "B"
 
-    # 0 degree syr-left,
-    # 45 right-front
-    # 90 nothing
-    # 135 front-syr
-    # 180
-    # 225 left front
-    # 270 syr-right
-    # 315
-    # 360
-    def _change_connections(self, raw_position, reverse: bool = False) -> int:
-        if not reverse:
-            translated = raw_position * 45
-        else:
-            translated = round(raw_position / 45)
-        return translated
+    # position_mapping = {
+    #     "input": "1",  # 9 is default inlet, i.e. 1
+    #     "output": "3",  # 10 is default outlet, i.e. 3
+    # }
+    def __init__(self, name: str, hw_device: ML600, valve_code: str = ""):
+        """Create a ValveControl object."""
+        super().__init__(name, hw_device)
+        self.valve_code = valve_code   #"left:B, right:C"
 
+    async def set_position(self, position: str) -> bool:
+        """Set pump to position."""
+        # await super().set_position(position)  # Validation
+        return await self.hw_device.set_valve_position(
+            target_position=ML600Valve.position_mapping[position],
+            valve_code=self.valve_code,
+            wait_for_movement_end=True,
 
-class ML600RightValve(ThreePortFourPositionValve):
-    hw_device: ML600  # for typing's sake
-    identifier = "C"
+        )
 
-    def _change_connections(self, raw_position, reverse: bool = False) -> int:
-        if not reverse:
-            translated = (raw_position + 2) * 90
-            if translated >= 360:
-                translated -= 360
-        else:
-            # round, the return is often off by 1°/the valve does not switch exactly
-            # the slightly complicated logic here is because the degrees are differently defined in the abstract valve
-            # and the physical ML600 valve, the offset in multiples of 90 degres is corrected here
-            translated = round(raw_position / 90)
-            if translated < 2:
-                translated += 2
-            else:
-                translated -= 2
-
-        return translated
+    async def get_position(self) -> str:
+        """Current pump position."""
+        pos = await self.hw_device.get_valve_position(valve_code=self.valve_code,)
+        reverse_position_mapping = {
+            v: k for k, v in ML600Valve.position_mapping.items()
+        }
+        try:
+            return reverse_position_mapping[pos]
+        except KeyError:
+            logger.error(f"Unknown valve position returned {pos}")
+            return ""
