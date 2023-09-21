@@ -185,7 +185,7 @@ def autodiscover_knauer(network: str = "") -> dict[str, str]:
     return device_info
 
 
-def knauer_finder(source_ip=None):
+def knauer_finder(source_ip=""):
     """Execute autodiscovery. This is the entry point of the `knauer-finder` CLI command."""
     # This is a bug of asyncio on Windows :|
     if sys.platform == "win32":
