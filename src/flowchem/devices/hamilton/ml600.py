@@ -12,7 +12,7 @@ from loguru import logger
 from flowchem import ureg
 from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.hamilton.ml600_pump import ML600Pump
+from flowchem.devices.hamilton.ml600_pump import ML600Pump, ML600MainSwitch
 from flowchem.devices.hamilton.ml600_valve import ML600Valve
 from flowchem.utils.exceptions import InvalidConfiguration
 from flowchem.utils.people import dario, jakob, wei_hsin
@@ -334,30 +334,32 @@ class ML600(FlowchemDevice):
 
         return str(round(speed.m_as("sec / stroke")))
 
-    async def initialize_pump(self, speed: pint.Quantity | None = None):
+    async def initialize_pump(self, speed: pint.Quantity | None = None, pump_code: str=""):
         """
         Initialize both syringe and valve.
 
         speed: 2-3692 in seconds/stroke
         """
         init_pump = Protocol1Command(
+            target_syringe=pump_code,
             command="X",
             optional_parameter="S",
             parameter_value=self._validate_speed(speed),
         )
         return await self.send_command_and_read_reply(init_pump)
 
-    # async def initialize_valve(self):
+    # async def initialize_valve(self, valve_code: str=""):
     #     """Initialize valve only."""
-    #     return await self.send_command_and_read_reply(Protocol1Command(command="LX"))
+    #     return await self.send_command_and_read_reply(Protocol1Command(target_syringe=valve_code,command="LX"))
 
-    # async def initialize_syringe(self, speed: pint.Quantity | None = None):
+    # async def initialize_syringe(self, speed: pint.Quantity | None = None, pump_code: str=""):
     #     """
     #     Initialize syringe only.
     #
     #     speed: 2-3692 in seconds/stroke
     #     """
     #     init_syringe = Protocol1Command(
+    #         target_syringe=pump_code,
     #         command="X1",
     #         optional_parameter="S",
     #         parameter_value=self._validate_speed(speed),
@@ -389,10 +391,11 @@ class ML600(FlowchemDevice):
         return round(steps.m_as("steps")) + self._offset_steps
 
     async def _to_step_position(
-        self, position: int, speed: pint.Quantity | None = None
+        self, position: int, speed: pint.Quantity | None = None, pump_code: str=""
     ):
         """Absolute move to step position."""
         abs_move_cmd = Protocol1Command(
+            target_syringe=pump_code,
             command="M",
             optional_parameter="S",
             command_value=str(position),
@@ -400,25 +403,25 @@ class ML600(FlowchemDevice):
         )
         return await self.send_command_and_read_reply(abs_move_cmd)
 
-    async def get_current_volume(self) -> pint.Quantity:
+    async def get_current_volume(self, pump_code:str="") -> pint.Quantity:
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
-            Protocol1Command(command="YQP")
+            Protocol1Command(target_syringe=pump_code, command="YQP")
         )
 
         current_steps = (int(syringe_pos) - self._offset_steps) * ureg.step
         return current_steps / self._steps_per_ml
 
-    async def to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity):
+    async def to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity, pump_code:str=""):
         """Absolute move to volume provided."""
         speed = self.flowrate_to_seconds_per_stroke(rate)
         await self._to_step_position(
-            self._volume_to_step_position(target_volume), speed
+            self._volume_to_step_position(target_volume), speed, pump_code
         )
-        logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {speed}")
+        logger.debug(f"Pump {self.name} {pump_code} set to volume {target_volume} at speed {speed}")
 
     async def pause(self):
-        """Pause any running command."""
+        """Pause any running command (both pumps)."""
         return await self.send_command_and_read_reply(
             Protocol1Command(command="", execution_command="K")
         )
@@ -430,7 +433,7 @@ class ML600(FlowchemDevice):
         )
 
     async def stop(self):
-        """Stop and abort any running command."""
+        """Stop and abort any running command (both pumps)."""
         await self.pause()
         return await self.send_command_and_read_reply(
             Protocol1Command(command="", execution_command="V")
@@ -453,13 +456,15 @@ class ML600(FlowchemDevice):
             await self.send_command_and_read_reply(Protocol1Command(command="F")) == "Y"
         )
 
-    async def get_valve_position(self) -> str:
+    async def get_valve_position(self, valve_code: str) -> str:
         """Represent the position of the valve: getter returns Enum, setter needs Enum."""
-        return await self.send_command_and_read_reply(Protocol1Command(command="LQP"))
+        return await self.send_command_and_read_reply(Protocol1Command(
+            target_syringe=valve_code, command="LQP"))
 
     async def set_valve_position(
         self,
         target_position: str,
+        valve_code: str="",
         wait_for_movement_end: bool = True,
     ):
         """
@@ -467,26 +472,42 @@ class ML600(FlowchemDevice):
 
         wait_for_movement_end is defaulted to True as it is a common mistake not to wait...
         """
+        cmd = Protocol1Command(target_syringe=valve_code, command="LP0", command_value=target_position)
+        print (cmd)
         await self.send_command_and_read_reply(
-            Protocol1Command(command="LP0", command_value=target_position)
+            Protocol1Command(target_syringe=valve_code, command="LP0", command_value=target_position)
         )
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
             await self.wait_until_idle()
 
-    # async def get_return_steps(self) -> int:
+    # async def get_return_steps(self, pump_code: str="") -> int:
     #     """Return steps' getter. Applied to the end of a downward syringe movement to removes mechanical slack."""
-    #     steps = await self.send_command_and_read_reply(Protocol1Command(command="YQN"))
+    #     steps = await self.send_command_and_read_reply(Protocol1Command(target_syringe=pump_code, command="YQN"))
     #     return int(steps)
     #
-    # async def set_return_steps(self, target_steps: int):
+    # async def set_return_steps(self, target_steps: int, pump_code: str=""):
     #     """Return steps' setter. Applied to the end of a downward syringe movement to removes mechanical slack."""
     #     target_steps = str(int(target_steps))
-    #     return await self.send_command_and_read_reply(Protocol1Command(command="YSN", command_value=target_steps))
+    #     return await self.send_command_and_read_reply(Protocol1Command(target_syringe=pump_code, command="YSN", command_value=target_steps))
+
+    async def log(self):
+        return await self.send_command_and_read_reply(Protocol1Command(command="#SP1"))
 
     def components(self):
         """Return a Syringe and a Valve component."""
-        return ML600Pump("pump", self), ML600Valve("valve", self)
+        # if model == "single_syringe":
+        list_of_components = [
+            ML600MainSwitch("Power", self),
+            ML600Pump("pumpL", self, "B"),
+            ML600Pump("pumpR", self, "C"),
+            ML600Valve("valveL", self, "B"),
+            ML600Valve("valveR", self, "C"),
+        ]
+
+        # return ML600Pump("pump", self), ML600Valve("valve", self)  # for single syringe
+        return list_of_components # for dual syringe
+
 
 
 if __name__ == "__main__":

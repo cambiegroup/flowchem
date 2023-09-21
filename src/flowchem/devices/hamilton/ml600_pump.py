@@ -7,6 +7,7 @@ from loguru import logger
 
 from flowchem import ureg
 from flowchem.components.pumps.syringe import SyringePump
+from flowchem.components.technical.power import PowerSwitch
 
 if TYPE_CHECKING:
     from .ml600 import ML600
@@ -14,6 +15,11 @@ if TYPE_CHECKING:
 
 class ML600Pump(SyringePump):
     hw_device: ML600  # for typing's sake
+
+    def __init__(self, name: str, hw_device: ML600, pump_code: str = ""):  # left is defult
+        """Create a ValveControl object."""
+        super().__init__(name, hw_device)
+        self.pump_code = pump_code   #"left:B, right:C"
 
     @staticmethod
     def is_withdrawing_capable():
@@ -26,7 +32,8 @@ class ML600Pump(SyringePump):
 
     async def stop(self):
         """Stops pump."""
-        await self.hw_device.stop()
+        await self.infuse(rate= "0 ml/min", volume="0 ml")
+
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
         """Start infusion with given rate and volume (both optional).
@@ -49,7 +56,7 @@ class ML600Pump(SyringePump):
                 )
                 return False
 
-        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate))
+        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
         return True
 
     async def withdraw(self, rate: str = "1 ml/min", volume: str | None = None) -> bool:
@@ -74,5 +81,20 @@ class ML600Pump(SyringePump):
                 )
                 return False
 
-        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate))
+        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
         return True
+
+
+class ML600MainSwitch(PowerSwitch):
+    hw_device: ML600  # just for typing
+
+    async def power_on(self) -> bool:
+        await self.hw_device.resume()
+        return True
+
+    async def power_off(self) -> bool:
+        await self.hw_device.stop()
+        return True
+
+    async def log(self) -> str:
+        return await self.hw_device.log()
