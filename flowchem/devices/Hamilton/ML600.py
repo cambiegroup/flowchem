@@ -641,7 +641,7 @@ class ML600:
                                             self.create_single_command(ML600Commands.VALVE_TO_INLET),
                                             self._absolute_syringe_move(0.5*self.syringe_volume, delivery_speed),])
 
-    def continuous_delivery(self, delivery_speed):
+    def prepare_continuous_delivery(self, delivery_speed, first_aspiration_speed)->True:
         """ delivers continuoulsy at requested speed, be aware that there are short breaks due to valve switching"""
         single = self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE)
         assert single == 'N', f"Sorry, only works for dual syringes. answer is {single}"
@@ -664,7 +664,11 @@ class ML600:
         self.log.info(f"Your actual flow is {actual_flowrate}. Offset is due to rounding.")
 
         self._fill_left_empty_right(self.syringe_volume)
+        
+        return True
 
+
+    def continuously_pump(self, delivery_speed):
         self.pumping_thread  = threading.Thread(target=self._continuous_pumping, args=[delivery_speed,])
         self.pumping_thread.start()
 
