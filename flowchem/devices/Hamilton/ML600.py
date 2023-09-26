@@ -437,6 +437,8 @@ class ML600:
         Initialize both syringe and valve
         speed: 2-3692 is in seconds/stroke
         """
+        self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
+        self.wait_until_idle()
         if speed:
             assert 2 < speed < 3692
             return self.send_command_and_read_reply(
