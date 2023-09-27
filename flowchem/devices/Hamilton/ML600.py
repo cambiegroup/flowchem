@@ -704,6 +704,7 @@ class ML600:
         self.stop()
         # actually stop both syringe moves
         self.pumping_thread.join()
+        self.cancelled.clear()
 
     def empty_both_syringes(self,speed_out):
         self.wait_until_idle()
