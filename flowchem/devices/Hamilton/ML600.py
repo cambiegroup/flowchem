@@ -235,7 +235,7 @@ class HamiltonPumpIO:
             for com in command:
                 command_compiled += com._compile()
             com_comp = com.compile(command_compiled)
-            self._write(com.compile(command_compiled))
+            self._write(com_comp)
             response = self._read_reply()
 
         if not response:
