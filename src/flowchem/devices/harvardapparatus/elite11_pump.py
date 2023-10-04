@@ -49,8 +49,7 @@ class Elite11PumpWithdraw(Elite11PumpOnly):
     async def withdraw(self, rate: str = "1 ml/min", volume: str | None = None) -> bool:
         """Withdraw."""
         if await self.is_pumping():
-            logger.warning("Cannot start withdrawing: pump already moving!")
-            return False
+            logger.warning("Pump already moving!")
 
         if rate:  # Else previous rate will be used
             await self.hw_device.set_withdrawing_flow_rate(rate)
