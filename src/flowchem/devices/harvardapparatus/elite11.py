@@ -373,7 +373,7 @@ class Elite11(FlowchemDevice):
 
     async def set_target_volume(self, volume: str):
         """Set target volume in ml. If the volume is set to 0, the target is cleared."""
-        await self._send_command_and_read_reply("civolume")
+        await self._send_command_and_read_reply("cvolume")
 
         target_volume = ureg.Quantity(volume)
         if target_volume.magnitude == 0:
