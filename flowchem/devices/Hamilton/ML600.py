@@ -224,7 +224,7 @@ class HamiltonPumpIO:
         except serial.PortNotOpenError as e:
             raise InvalidConfiguration from e
 
-    def write_and_read_reply(self, command: list[Protocol1Command] or Protocol1Command) -> str:
+    def write_and_read_reply(self, command: list[Protocol1Command] | Protocol1Command) -> str:
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
         command_compiled = ""
@@ -395,14 +395,13 @@ class ML600:
             )
         self.syringe_volume = syringe_volume
         self.steps_per_ml = 48000 / self.syringe_volume
-        self.return_steps = 24# Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
         
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
         self.cancelled = threading.Event()
         self.pumping_thread = None
         self.daemon = True
-
+        self.return_steps = 24# Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
         # This command is used to test connection: failure handled by HamiltonPumpIO
         self.log.info(
             f"Connected to pump '{self.name}'  FW version: {self.firmware_version}!"
@@ -564,6 +563,8 @@ class ML600:
 
     @return_steps.setter
     def return_steps(self, return_steps: int):
+        # waiting is necessary since this happens on (class) initialisation
+        self.wait_until_idle()
         self.send_command_and_read_reply(
             ML600Commands.SET_RETURN_STEPS, command_value=str(int(return_steps))
         )
@@ -643,6 +644,7 @@ class ML600:
 
     def prepare_continuous_delivery(self, delivery_speed, first_aspiration_speed)->True:
         """ delivers continuoulsy at requested speed, be aware that there are short breaks due to valve switching"""
+        self.wait_until_idle()
         single = self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE)
         assert single == 'N', f"Sorry, only works for dual syringes. answer is {single}"
         # make sure valves are set correctly for continuous dispense
