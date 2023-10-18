@@ -225,6 +225,7 @@ class HamiltonPumpIO:
             raise InvalidConfiguration from e
 
     def write_and_read_reply(self, command: list[Protocol1Command] | Protocol1Command) -> str:
+
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
         command_compiled = ""
@@ -395,7 +396,6 @@ class ML600:
             )
         self.syringe_volume = syringe_volume
         self.steps_per_ml = 48000 / self.syringe_volume
-        
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
         self.cancelled = threading.Event()
@@ -720,8 +720,6 @@ class ML600:
              self.create_single_command(ML600Commands.VALVE_TO_OUTLET),
              self._absolute_syringe_move(0, speed_out),
             ])
-
-
 
     # convenience function
     def refill_syringe(self, volume: float = None, flow_rate: float = 0, invert_input_output = False):
