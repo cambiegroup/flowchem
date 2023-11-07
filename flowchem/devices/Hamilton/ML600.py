@@ -434,13 +434,13 @@ class ML600:
     def send_multiple_commands(self, list_of_commands: [Protocol1Command]) -> str:
         return self.pump_io.write_and_read_reply(list_of_commands)
 
-    def initialize_pump(self, speed: int = None):
+    def initialize_pump(self, flowrate: int = None):
         """
         Initialize both syringe and valve
-        speed: 2-3692 is in seconds/stroke
+        speed: flowrate in mL/min
         """
         self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
-        self.wait_until_idle()
+        speed = self.flowrate_to_seconds_per_stroke(flowrate)
         if speed:
             assert 2 < speed < 3692
             return self.send_command_and_read_reply(
