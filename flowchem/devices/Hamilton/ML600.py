@@ -345,7 +345,8 @@ class ML600:
     example to dispense 9 mL from a 10 mL syringe you would determine the number of
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
-
+    # TODO the "dirty approach" to use both valves is actually setting to continuous pumping, then input and output can be selected, however on the right syringe the input and output are reverted (or one swaps the tubing...)
+    # Anyway, valves should be switched by degree and not by name, but one needs to know and be sure which exact valve was initialized
     class ValvePositionName(IntEnum):
         """ Maps valve position to the corresponding number """
 
