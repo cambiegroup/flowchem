@@ -73,26 +73,43 @@ class Valve(FlowchemComponent):
     def _create_connections(self):
         # this is where the heart of logic will sit
         connections = {}
-        _connections_per_position = {}
         if len(self._rotor_ports) != len(self._stator_ports):
             raise InvalidConfigurationError()
         if len(self._rotor_ports) == 1:
             # in case there is no 0 port, for data uniformity, internally add it.
             # strictly, the stator and rotor should reflect physical properties, so if stator has a hole in middle it
-            # should have 0, but only rotor None. Sinc ethis does not impact functinality, thoroughness will be left to the user
+            # should have 0, but only rotor None. Sinc ethis does not impact functionality, thoroughness will be left to the user
             self._rotor_ports.append([None])
             self._stator_ports.append([None])
-        # it is rather simple: we just move the rotor by one and thereby create a dicitionary
+        # it is rather simple: we just move the rotor by one and thereby create a dictionary
         for _ in range(len(self._rotor_ports[0])):
-            rotor_curr = self._rotor_ports[0][_:] + self._rotor_ports[0][0:_]
-            for rotor_position, stator_position in zip(rotor_curr[0]+self._rotor_ports[1], self._stator_ports[0]+self._stator_ports[1]):
+            rotor_curr = self._rotor_ports[0][-_:] + self._rotor_ports[0][:-_]
+            _connections_per_position = {}
+            for rotor_position, stator_position in zip(rotor_curr+self._rotor_ports[1], self._stator_ports[0]+self._stator_ports[1]):
                 # rotor acts as dictionary keys, take into account the [1] position for connecting the 0
                 # if dict key exists, instead of overwriting, simply append
-                # get rid of the keys, values are the connected ports in each position
-                try:
-                    _connections_per_position[rotor_position].append(stator_position)
-                except KeyError:
-                    _connections_per_position[rotor_position] = [stator_position]
+                # if rotor is none, means there is no connection, so do not even bother to add
+                if rotor_position is not None:
+                    try:
+                        _connections_per_position[rotor_position] += (stator_position,)
+                    except KeyError:
+                        _connections_per_position[rotor_position] = (stator_position,)
+                        # get rid of the keys, values are the connected ports in each position
+            connections[_] = tuple(_connections_per_position.values())
+        # lastly, trim the lists of connections that already exist
+        # trim returned connections
+        unique_connections = set(connections.values())
+        to_delete = []
+        for connection in unique_connections:
+            counter=0
+            for key, value in connections.items():
+                if connection == value:
+                    if counter > 0:
+                        to_delete.append(key)
+                    counter += 1
+        for _ in to_delete:
+            del connections[_]
+
 
 
     def _change_connections(self):
@@ -148,14 +165,14 @@ class Valve(FlowchemComponent):
 
         # # set those via property, in course make sure that those are the same length and do all required magic
         # # 6-way valve
-        # self._rotor_ports = [(1,2,3,4,5,6),(0,)]
-        # self._stator_ports = [(7, None, None, None, None, None),(7,)]
+        # self._stator_ports = [(1,2,3,4,5,6),(0,)]
+        # self._rotor_ports = [(7, None, None, None, None, None),(7,)]
         #
         # # injection valve
-        # self._rotor_ports = [(1, 2, 3, 4, 5, 6), ()]
-        # self._stator_ports = [(7, 7, 8, 8, 9, 9), ()]
+        # self._stator_ports = [(1, 2, 3, 4, 5, 6), ()]
+        # self._rotor_ports = [(7, 7, 8, 8, 9, 9), ()]
         #
         # # hamilton right valve
-        # self._rotor_ports = [(None, 1, 2, 3,), (0,)]
-        # self._stator_ports = [(4, 4, 5, 5), (4,)]
+        # self._stator_ports = [(None, 1, 2, 3,), (0,)]
+        # self._rotor_ports = [(4, 4, 5, 5), (4,)]
 
