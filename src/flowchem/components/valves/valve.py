@@ -114,22 +114,22 @@ class Valve(FlowchemComponent):
 
 
     def _change_connections(self):
-        # rule how to get from one position to the next, eg by +=1 or by degrees -> this allows for mapping of
+        # rule how to get from one position to the next, e.g. by +=1 or by degrees -> this allows for mapping of
         # connections to valve command parameters
-        pass
+        raise NotImplementedError
 
     def _initial_connection(self):
         # to apply change connections, we need some reference point, this will be, if possible: connection(0,1), but
         # without any other open connection (to 0 and 1) and if not possible connection (1,2)
-        pass
+        raise NotImplementedError
 
     def connect_positions(self, poitions_to_connect:tuple, potions_not_to_connect:tuple):
         # check if this is possible given the mapping
-        pass
+        raise NotImplementedError
 
     def get_position_connections(self):
         # output all positions that are currently connected
-        pass
+        raise NotImplementedError
 
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
