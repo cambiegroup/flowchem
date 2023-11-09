@@ -50,8 +50,9 @@ class Valve(FlowchemComponent):
         """
         # a valve consists of a rotor and a stator. Solenoid valves Are special cases and can be decomposed into
         # Open/closed valves, need not be treated here but could be simulated by a [1,2,None] and rotor [3,3,None]
-        self._rotor_ports = None#[(1,2,3,4,5,6),(0,)]
-        self._stator_ports = None#[(7, None, None, None, None, None),(7,)]
+        self._rotor_ports = rotor_ports
+        self._stator_ports = stator_ports
+        self._positions = self._create_connections(self._stator_ports, self._rotor_ports)
 
         #bwe can infer
         super().__init__(name, hw_device)
@@ -70,22 +71,22 @@ class Valve(FlowchemComponent):
     #     assert position in self._positions
     #     return True
 
-    def _create_connections(self):
+    def _create_connections(self, stator_ports, rotor_ports):
         # this is where the heart of logic will sit
         connections = {}
-        if len(self._rotor_ports) != len(self._stator_ports):
+        if len(rotor_ports) != len(stator_ports):
             raise InvalidConfigurationError()
-        if len(self._rotor_ports) == 1:
+        if len(rotor_ports) == 1:
             # in case there is no 0 port, for data uniformity, internally add it.
             # strictly, the stator and rotor should reflect physical properties, so if stator has a hole in middle it
             # should have 0, but only rotor None. Sinc ethis does not impact functionality, thoroughness will be left to the user
-            self._rotor_ports.append([None])
-            self._stator_ports.append([None])
+            rotor_ports.append([None])
+            stator_ports.append([None])
         # it is rather simple: we just move the rotor by one and thereby create a dictionary
-        for _ in range(len(self._rotor_ports[0])):
-            rotor_curr = self._rotor_ports[0][-_:] + self._rotor_ports[0][:-_]
+        for _ in range(len(rotor_ports[0])):
+            rotor_curr = rotor_ports[0][-_:] + rotor_ports[0][:-_]
             _connections_per_position = {}
-            for rotor_position, stator_position in zip(rotor_curr+self._rotor_ports[1], self._stator_ports[0]+self._stator_ports[1]):
+            for rotor_position, stator_position in zip(rotor_curr+rotor_ports[1], stator_ports[0]+stator_ports[1]):
                 # rotor acts as dictionary keys, take into account the [1] position for connecting the 0
                 # if dict key exists, instead of overwriting, simply append
                 # if rotor is none, means there is no connection, so do not even bother to add
