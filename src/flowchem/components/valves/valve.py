@@ -139,7 +139,8 @@ class Valve(FlowchemComponent):
 
         This can be used for debugging, since it informs which position(implicit valve-specific string) connects which ports
         """
-        return ValveInfo(ports=self._ports, positions=self._positions)
+        # TODO not really needed anymore, this is a helper function that is obsolete with improved valve logic
+        return ValveInfo(ports=self._stator_ports, positions=self._positions)
 
     # I kind of disagree, human friendly is misleading in this aspect
     # the human friendly approach is just needed because we are used to it, however, there is a simple solution that
@@ -166,17 +167,7 @@ class Valve(FlowchemComponent):
     # port does not connect to anything, we set it None. There is 1 example where that is strictly needed for the logic
     # to work: Again the hamilton, it will become clear why. So much now: The rotor has more open positions than the
     # stator. Actually, Any time there is a different amount of positions on rotor and stator, this will be needed.
-
-        # # set those via property, in course make sure that those are the same length and do all required magic
-        # # 6-way valve
-        # self._stator_ports = [(1,2,3,4,5,6),(0,)]
-        # self._rotor_ports = [(7, None, None, None, None, None),(7,)]
-        #
-        # # injection valve
-        # self._stator_ports = [(1, 2, 3, 4, 5, 6), ()]
-        # self._rotor_ports = [(7, 7, 8, 8, 9, 9), ()]
-        #
-        # # hamilton right valve
-        # self._stator_ports = [(None, 1, 2, 3,), (0,)]
-        # self._rotor_ports = [(4, 4, 5, 5), (4,)]
+    # 6) The so far mentioned logic only strictly applies to valves which face the user with there front side, however,
+    # eg the autosampler faces one valve to the ground, with its alway open port. To also include those in herein
+    # developed logic/terminology, there needs to be a defined mutation. This is simply the smallest angle needed
 
