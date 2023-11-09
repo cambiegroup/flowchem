@@ -110,6 +110,9 @@ class Valve(FlowchemComponent):
                     counter += 1
         for _ in to_delete:
             del connections[_]
+        # TODO also remove all "connections" that connect to None?
+
+        return connections
 
 
 
