@@ -5,13 +5,14 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from flowchem.components.valves.distribution_valves import TwoPortDistributionValve
+# todo this is wrong it is a 3/4 port distribution valve
+from flowchem.components.valves.distribution_valves import ThreePortTwoPositionValve, ThreePortFourPositionValve
 
 if TYPE_CHECKING:
     from .ml600 import ML600
 
 
-class ML600Valve(TwoPortDistributionValve):
+class ML600LeftValve(ThreePortTwoPositionValve):
     hw_device: ML600  # for typing's sake
 
     position_mapping = {
@@ -38,3 +39,5 @@ class ML600Valve(TwoPortDistributionValve):
         except KeyError:
             logger.error(f"Unknown valve position returned {pos}")
             return ""
+
+# todo implement right valve
