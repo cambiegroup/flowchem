@@ -169,6 +169,16 @@ class Valve(FlowchemComponent):
     def get_position_connections(self):
         # output all positions that are currently connected
         raise NotImplementedError
+    async def get_position(self) -> str:
+        """Get current valve position."""
+        pos = await self.hw_device.get_raw_position()
+        return self._change_connections(pos, reverse=True)
+
+    async def set_position(self, *args, **kwargs):
+        """Move valve to position, which connects named ports"""
+        target_pos = self._connect_positions(*args, **kwargs)
+        target_pos = self._change_connections(target_pos)
+        return await self.hw_device.set_raw_position(target_pos)
 
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
