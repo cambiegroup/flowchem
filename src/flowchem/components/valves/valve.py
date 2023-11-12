@@ -166,13 +166,10 @@ class Valve(FlowchemComponent):
     #     # by that we can determine position relative to initial - and thereby the rle to apply for getting to other connections
     #     raise NotImplementedError
 
-    def get_position_connections(self):
-        # output all positions that are currently connected
-        raise NotImplementedError
     async def get_position(self) -> str:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
-        return self._change_connections(pos, reverse=True)
+        return self._positions[self._change_connections(pos, reverse=True)]
 
     async def set_position(self, *args, **kwargs):
         """Move valve to position, which connects named ports"""
