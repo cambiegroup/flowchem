@@ -56,7 +56,7 @@ class ThreePortFourPositionValve(Valve):
         )
 class ThreePortTwoPositionValve(Valve):
     """
-    This is of type HamiltonDualPumpValveOnRight
+    This is of type HamiltonDualPumpValveOnLeft
     """
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(
