@@ -114,9 +114,7 @@ class Valve(FlowchemComponent):
 
         return connections
 
-
-
-    def _change_connections(self):
+    def _change_connections(self, raw_position, reverse: bool = False) -> str:
         # rule how to get from one position to the next, e.g. by +=1 or by degrees -> this allows for mapping of
         # connections to valve command parameters
         raise NotImplementedError
