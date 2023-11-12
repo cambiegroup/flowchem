@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.utils.exceptions import InvalidConfigurationError
+from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 
 # valve info can stay like that id say
 class ValveInfo(BaseModel):
@@ -126,9 +126,47 @@ class Valve(FlowchemComponent):
         # without any other open connection (to 0 and 1) and if not possible connection (1,2)
         raise NotImplementedError
 
-    def connect_positions(self, poitions_to_connect:tuple, potions_not_to_connect:tuple):
+    def _connect_positions(self, positions_to_connect: tuple[tuple], positions_not_to_connect: tuple[tuple] = None, arbitrary_switching:bool = True) -> int:
+        """
+        This is the heart of valve switching logic: select the suitable position (so actually the key in
+        self._positions) to create desired connections
+        """
+        # in order for this to work correctly:
+        #   1) positions need to be sorted
+        #   2) positions need to be split into elements of 2, e.g. a position that connects (1,2,3)
+        #       needs to be represented as (1,2), (2,3), (1,3). This (both) can already be achieved on creation of connections
+
+        positions_to_connect_canon = [tuple(sorted(positions)) for positions in positions_to_connect]#tuple(sorted(positions_to_connect))
+        positions_not_to_connect_canon = [tuple(sorted(positions)) for positions in positions_not_to_connect]
+        possible_positions = []
         # check if this is possible given the mapping
-        raise NotImplementedError
+        for position_name, connections in self._positions.items():
+            # identify positions with desired connectivity
+            for positions in positions_to_connect_canon:
+                if positions in connections:
+                    # only add the ones that do not include undesired connectivities
+                    for positions_not in positions_not_to_connect_canon:
+                        if positions_not not in connections:
+                            possible_positions.append(position_name)
+        if len(possible_positions) > 1:
+            if not arbitrary_switching:
+                raise DeviceError("There are multiple positions for the valve to connect your specified ports. "
+                                  "Either allow arbitrary switching, or specify which connections not to connect")
+            elif arbitrary_switching:
+                return possible_positions[0]
+            else:
+                raise DeviceError
+        elif len(possible_positions) == 1:
+            return possible_positions[0]
+        else:
+            # this means length == 0
+            raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
+                              "This can be due to exclusion of certain connections by setting positions_not_to_connect")
+    #
+    # def get_position_connections(self):
+    #     # output all positions that are currently connected
+    #     # by that we can determine position relative to initial - and thereby the rle to apply for getting to other connections
+    #     raise NotImplementedError
 
     def get_position_connections(self):
         # output all positions that are currently connected
