@@ -10,8 +10,6 @@ class TwoPortDistributionValve(Valve):
                          rotor_ports=[(3, None), (3,)],
 
                          )
-
-
 class SixPortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(
@@ -43,10 +41,12 @@ class SixteenPortDistributionValve(Valve):
                          (17,)],
         )
 
+
 class ThreePortFourPositionValve(Valve):
     """
     This is of type HamiltonDualPumpValveOnRight
     """
+
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(
             name,
@@ -54,10 +54,13 @@ class ThreePortFourPositionValve(Valve):
             stator_ports=[(None, 1, 2, 3,), (0,)],
             rotor_ports=[(4, 4, 5, 5), (4,)],
         )
+
+
 class ThreePortTwoPositionValve(Valve):
     """
     This is of type HamiltonDualPumpValveOnLeft
     """
+
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(
             name,

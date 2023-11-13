@@ -7,7 +7,7 @@ from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 
-# valve info can stay like that id say
+
 class ValveInfo(BaseModel):
     ports: list[str]
     positions: dict[str, list[tuple[str, str]]]
@@ -33,11 +33,11 @@ class Valve(FlowchemComponent):
     """
 
     def __init__(
-        self,
-        name: str,
-        hw_device: FlowchemDevice,
-        stator_ports: [(), ()],
-        rotor_ports: [(), ()],
+            self,
+            name: str,
+            hw_device: FlowchemDevice,
+            stator_ports: [(), ()],
+            rotor_ports: [(), ()],
     ) -> None:
         """Create a valve object.
 
@@ -54,14 +54,14 @@ class Valve(FlowchemComponent):
         self._stator_ports = stator_ports
         self._positions = self._create_connections(self._stator_ports, self._rotor_ports)
 
-        #bwe can infer
+        # bwe can infer
         super().__init__(name, hw_device)
 
         self.add_api_route("/position", self.get_position, methods=["GET"])
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
 
-# these need to go
+    # these need to go
     # async def get_position(self) -> str:  # type: ignore
     #     """Get the current position of the valve."""
     #     ...
@@ -86,7 +86,7 @@ class Valve(FlowchemComponent):
         for _ in range(len(rotor_ports[0])):
             rotor_curr = rotor_ports[0][-_:] + rotor_ports[0][:-_]
             _connections_per_position = {}
-            for rotor_position, stator_position in zip(rotor_curr+rotor_ports[1], stator_ports[0]+stator_ports[1]):
+            for rotor_position, stator_position in zip(rotor_curr + rotor_ports[1], stator_ports[0] + stator_ports[1]):
                 # rotor acts as dictionary keys, take into account the [1] position for connecting the 0
                 # if dict key exists, instead of overwriting, simply append
                 # if rotor is none, means there is no connection, so do not even bother to add
@@ -102,7 +102,7 @@ class Valve(FlowchemComponent):
         unique_connections = set(connections.values())
         to_delete = []
         for connection in unique_connections:
-            counter=0
+            counter = 0
             for key, value in connections.items():
                 if connection == value:
                     if counter > 0:
@@ -110,21 +110,17 @@ class Valve(FlowchemComponent):
                     counter += 1
         for _ in to_delete:
             del connections[_]
-        # TODO also remove all "connections" that connect to None?
 
         return connections
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
-        # rule how to get from one position to the next, e.g. by +=1 or by degrees -> this allows for mapping of
-        # connections to valve command parameters
+        # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
+        # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
+        # device level
         raise NotImplementedError
 
-    def _initial_connection(self):
-        # to apply change connections, we need some reference point, this will be, if possible: connection(0,1), but
-        # without any other open connection (to 0 and 1) and if not possible connection (1,2)
-        raise NotImplementedError
-
-    def _connect_positions(self, positions_to_connect: tuple[tuple], positions_not_to_connect: tuple[tuple] = None, arbitrary_switching:bool = True) -> int:
+    def _connect_positions(self, positions_to_connect: tuple[tuple], positions_not_to_connect: tuple[tuple] = None,
+                           arbitrary_switching: bool = True) -> int:
         """
         This is the heart of valve switching logic: select the suitable position (so actually the key in
         self._positions) to create desired connections
@@ -134,7 +130,8 @@ class Valve(FlowchemComponent):
         #   2) positions need to be split into elements of 2, e.g. a position that connects (1,2,3)
         #       needs to be represented as (1,2), (2,3), (1,3). This (both) can already be achieved on creation of connections
 
-        positions_to_connect_canon = [tuple(sorted(positions)) for positions in positions_to_connect]#tuple(sorted(positions_to_connect))
+        positions_to_connect_canon = [tuple(sorted(positions)) for positions in
+                                      positions_to_connect]  # tuple(sorted(positions_to_connect))
         positions_not_to_connect_canon = [tuple(sorted(positions)) for positions in positions_not_to_connect]
         possible_positions = []
         # check if this is possible given the mapping
@@ -160,16 +157,12 @@ class Valve(FlowchemComponent):
             # this means length == 0
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
-    #
-    # def get_position_connections(self):
-    #     # output all positions that are currently connected
-    #     # by that we can determine position relative to initial - and thereby the rle to apply for getting to other connections
-    #     raise NotImplementedError
 
-    async def get_position(self) -> str:
+
+    async def get_position(self) -> tuple[tuple]:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
-        return self._positions[self._change_connections(pos, reverse=True)]
+        return self._positions[int(self._change_connections(pos, reverse=True))]
 
     async def set_position(self, *args, **kwargs):
         """Move valve to position, which connects named ports"""
@@ -180,9 +173,8 @@ class Valve(FlowchemComponent):
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
 
-        This can be used for debugging, since it informs which position(implicit valve-specific string) connects which ports
+        This mainly has informative purpose
         """
-        # TODO not really needed anymore, this is a helper function that is obsolete with improved valve logic
         return ValveInfo(ports=self._stator_ports, positions=self._positions)
 
     # I kind of disagree, human friendly is misleading in this aspect
@@ -201,8 +193,8 @@ class Valve(FlowchemComponent):
     #   port that on some valves is always open
     # 2) from there, one goes up, and yes that means simply looking up at the physical valve. The port straight on top
     #   of port zero is port 1
-    # 3) If there is no port straight on top, then one goes in clockwise direction, until a port comes
-    # 4 )Beware: For logical reasons, we need to introduce ports of "number" None. These are needed because we need to
+    #   a) If there is no port straight on top, then one goes in clockwise direction, until a port comes
+    # 3 )Beware: For logical reasons, we need to introduce ports of "number" None. These are needed because we need to
     #   define dead-ends. These dead-ends are IMMUTABLE dead-ends, so the stator or rotor do not have a opneing there
     # 5) Mutable dead-ends: blanking plugs are treated as port number, the consumer needs to deal with its definition by
     #   graph or similar
@@ -213,4 +205,3 @@ class Valve(FlowchemComponent):
     # 6) The so far mentioned logic only strictly applies to valves which face the user with there front side, however,
     # eg the autosampler faces one valve to the ground, with its alway open port. To also include those in herein
     # developed logic/terminology, there needs to be a defined mutation. This is simply the smallest angle needed
-
