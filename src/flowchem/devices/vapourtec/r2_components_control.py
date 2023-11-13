@@ -130,6 +130,8 @@ class UV150PhotoReactor(Photoreactor):
 class R2InjectionValve(SixPortTwoPositionValve):
     """R2 reactor injection loop valve control class."""
 
+    #todo this needs to be adapted to new code
+
     hw_device: R2  # for typing's sake
 
     # get position
@@ -139,6 +141,7 @@ class R2InjectionValve(SixPortTwoPositionValve):
     def __init__(self, name: str, hw_device: R2, valve_code: int) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
+        raise NotImplementedError("Check that the mapping is correct")
         self.valve_code = valve_code
 
     async def get_position(self) -> str:
@@ -161,6 +164,7 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
     hw_device: R2
 
     # TODO: the mapping name is not applicable
+    # TODO this needs to be adjusted to new code
     position_mapping = {"Solvent": "0", "Reagent": "1"}
     _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
@@ -169,6 +173,7 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         super().__init__(name, hw_device)
         self.valve_code = valve_code
 
+        raise NotImplementedError("Check that the mapping is correct")
     async def get_position(self) -> str:
         """Get current valve position."""
         position = await self.hw_device.get_valve_Position(self.valve_code)
