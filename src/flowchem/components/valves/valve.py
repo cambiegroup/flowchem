@@ -9,8 +9,8 @@ from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 
 
 class ValveInfo(BaseModel):
-    ports: list[str]
-    positions: dict[str, list[tuple[str, str]]]
+    ports: list[tuple]
+    positions: dict[int, tuple[tuple[int, int], ...]]
 
 
 class Valve(FlowchemComponent):
