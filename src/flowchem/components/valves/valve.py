@@ -10,7 +10,29 @@ from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 
 class ValveInfo(BaseModel):
     ports: list[tuple]
-    positions: dict[int, tuple[tuple[int, int], ...]]
+    positions: dict[int, tuple[tuple[int, int], ...]] # define arbitrary length
+
+
+def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int,int], ...], tuple_contains: tuple[tuple[int,int,...], ...])->bool:
+    all_contained = []
+    for subtuple in tuple_in:
+        for supertuple in tuple_contains:
+            if set(subtuple) <= set(supertuple):
+                all_contained.append(True)
+                break
+    if len(all_contained) == len(tuple_in):
+        return True
+    else:
+        return False
+
+
+def no_tuple_in_nested_tuple(tuple_in: tuple[tuple[int,int], ...], tuple_contains: tuple[tuple[int,int,...], ...])->bool:
+    contains_tuple = False
+    for subtuple in tuple_in:
+        for supertuple in tuple_contains:
+            if set(subtuple) <= set(supertuple):
+                contains_tuple = True
+    return not contains_tuple
 
 
 class Valve(FlowchemComponent):
@@ -75,7 +97,7 @@ class Valve(FlowchemComponent):
         # this is where the heart of logic will sit
         connections = {}
         if len(rotor_ports) != len(stator_ports):
-            raise InvalidConfigurationError()
+            raise InvalidConfigurationError
         if len(rotor_ports) == 1:
             # in case there is no 0 port, for data uniformity, internally add it.
             # strictly, the stator and rotor should reflect physical properties, so if stator has a hole in middle it
@@ -125,24 +147,14 @@ class Valve(FlowchemComponent):
         This is the heart of valve switching logic: select the suitable position (so actually the key in
         self._positions) to create desired connections
         """
-        # in order for this to work correctly:
-        #   1) positions need to be sorted
-        #   2) positions need to be split into elements of 2, e.g. a position that connects (1,2,3)
-        #       needs to be represented as (1,2), (2,3), (1,3). This (both) can already be achieved on creation of connections
-
-        positions_to_connect_canon = [tuple(sorted(positions)) for positions in
-                                      positions_to_connect]  # tuple(sorted(positions_to_connect))
-        positions_not_to_connect_canon = [tuple(sorted(positions)) for positions in positions_not_to_connect]
         possible_positions = []
         # check if this is possible given the mapping
-        for position_name, connections in self._positions.items():
-            # identify positions with desired connectivity
-            for positions in positions_to_connect_canon:
-                if positions in connections:
-                    # only add the ones that do not include undesired connectivities
-                    for positions_not in positions_not_to_connect_canon:
-                        if positions_not not in connections:
-                            possible_positions.append(position_name)
+        for key, values in self._positions.items():
+            if positions_not_to_connect:
+                if all_tuples_in_nested_tuple(positions_to_connect, values) and no_tuple_in_nested_tuple(positions_not_to_connect, values):
+                    possible_positions.append(key)
+            elif all_tuples_in_nested_tuple(positions_to_connect, values):
+                possible_positions.append(key)
         if len(possible_positions) > 1:
             if not arbitrary_switching:
                 raise DeviceError("There are multiple positions for the valve to connect your specified ports. "
@@ -157,7 +169,6 @@ class Valve(FlowchemComponent):
             # this means length == 0
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
-
 
     async def get_position(self) -> tuple[tuple]:
         """Get current valve position."""
