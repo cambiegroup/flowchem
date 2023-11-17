@@ -176,11 +176,13 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
+# TODO not entirely sure if it works like that, test
     async def get_position(self) -> tuple[tuple]:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
+    # TODO not entirely sure if it works like that, test
     async def set_position(self, *args, **kwargs):
         """Move valve to position, which connects named ports"""
         target_pos = self._connect_positions(*args, **kwargs)
