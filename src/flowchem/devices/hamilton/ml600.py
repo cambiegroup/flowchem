@@ -321,8 +321,8 @@ class ML600(FlowchemDevice):
             )
 
         self._steps_per_ml = ureg.Quantity(f"{48000 / self.syringe_volume} step/ml")
-        self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
-        self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
+        self._max_vol = 48000 * ureg.step / self._steps_per_ml
+        self.return_steps = 24# Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
 
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
@@ -357,6 +357,19 @@ class ML600(FlowchemDevice):
             address=config.get("address", 1),
             name=config.get("name", ""),
         )
+
+    @property
+    async def return_steps(self) -> int:
+        """ Gives the dfined return steps for syringe movement """
+        reply=await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.GET_RETURN_STEPS.value))
+        return int(reply)
+
+    @return_steps.setter
+    async def return_steps(self, return_steps: int):
+        # waiting is necessary since this happens on (class) initialisation
+        target_steps = str(int(return_steps))
+        await self.wait_until_idle()
+        await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.SET_RETURN_STEPS.value, command_value=target_steps))
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
