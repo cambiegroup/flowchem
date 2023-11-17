@@ -484,7 +484,7 @@ class ML600(FlowchemDevice):
         """Convert a volume to a step position."""
         # noinspection PyArgumentEqualDefault
         steps = volume * self._steps_per_ml
-        return round(steps.m_as("steps")) + self._offset_steps
+        return round(steps.m_as("steps"))
 
     async def _to_step_position(
         self,
@@ -508,7 +508,7 @@ class ML600(FlowchemDevice):
 ),
         )
 
-        current_steps = (int(syringe_pos) - self._offset_steps) * ureg.step
+        current_steps = int(syringe_pos) * ureg.step
         return current_steps / self._steps_per_ml
 
     async def to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity):
