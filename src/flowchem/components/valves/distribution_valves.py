@@ -10,6 +10,16 @@ class TwoPortDistributionValve(Valve):
                          rotor_ports=[(3, None), (3,)],
 
                          )
+
+
+class FourPortDistributionValve(Valve):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+        super().__init__(name, hw_device,
+                         stator_ports=[(1, 2, 3, 4), (0,)],
+                         rotor_ports=[(3, None, None, None), (3,)],
+                         )
+
+
 class SixPortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(
