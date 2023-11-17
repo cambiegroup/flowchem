@@ -490,6 +490,7 @@ class ML600(FlowchemDevice):
         self,
         position: int,
         speed: pint.Quantity | None = None,
+        syringe: ML600Commands = None
     ):
         """Absolute move to step position."""
         abs_move_cmd = Protocol1Command(
@@ -497,10 +498,11 @@ class ML600(FlowchemDevice):
             optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
             command_value=str(position),
             parameter_value=self._validate_speed(speed),
+            target_syringe = syringe.value if self.dual_syringe else ""
         )
         return await self.send_command_and_read_reply(abs_move_cmd)
 
-    async def get_current_volume(self) -> pint.Quantity:
+    async def get_current_volume(self, syringe: ML600Commands = None) -> pint.Quantity:
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION.value,
@@ -511,12 +513,13 @@ class ML600(FlowchemDevice):
         current_steps = int(syringe_pos) * ureg.step
         return current_steps / self._steps_per_ml
 
-    async def to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity):
+    async def to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity, syringe: ML600Commands = None):
         """Absolute move to volume provided."""
         speed = self.flowrate_to_seconds_per_stroke(rate)
         await self._to_step_position(
             self._volume_to_step_position(target_volume),
             speed,
+            syringe=syringe
         )
         logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {speed}")
 
@@ -582,6 +585,7 @@ class ML600(FlowchemDevice):
         self,
         target_position: str,
         wait_for_movement_end: bool = True,
+            valve: ML600Commands = None
     ):
         """Set valve position.
         Strongly encouraged to use switching by angle
