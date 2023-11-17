@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from loguru import logger
-
 from flowchem.components.valves.distribution_valves import ThreePortTwoPositionValve, ThreePortFourPositionValve
 
 if TYPE_CHECKING:
@@ -21,7 +19,6 @@ class ML600LeftValve(ThreePortTwoPositionValve):
         else:
             translated = (raw_position/135)-1
         return translated
-
 
 
 class ML600GenericValve(ThreePortTwoPositionValve):

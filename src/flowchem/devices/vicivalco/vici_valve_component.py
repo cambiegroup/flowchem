@@ -12,8 +12,6 @@ class ViciInjectionValve(SixPortTwoPositionValve):
     hw_device: ViciValve  # for typing's sake
 
     # todo this needs to be adapted to new code
-
-    """Use this for a standard one syringe one valve hamilton."""
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         raise NotImplementedError("Check that provided mapping is correct")
         # TODO maybe needs addition of one, not sure

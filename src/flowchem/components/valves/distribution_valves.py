@@ -8,7 +8,6 @@ class TwoPortDistributionValve(Valve):
         super().__init__(name, hw_device,
                          stator_ports=[(1, 2), (0,)],
                          rotor_ports=[(3, None), (3,)],
-
                          )
 
 
@@ -27,7 +26,6 @@ class SixPortDistributionValve(Valve):
             hw_device,
             stator_ports=[(1, 2, 3, 4, 5, 6), (0,)],
             rotor_ports=[(7, None, None, None, None, None), (7,)],
-
         )
 
 

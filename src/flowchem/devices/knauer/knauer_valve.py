@@ -1,7 +1,6 @@
 """Knauer valve control."""
 import warnings
 from enum import Enum
-
 from loguru import logger
 
 from flowchem.components.flowchem_component import FlowchemComponent

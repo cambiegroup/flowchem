@@ -83,16 +83,6 @@ class Valve(FlowchemComponent):
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
 
-    # these need to go
-    # async def get_position(self) -> str:  # type: ignore
-    #     """Get the current position of the valve."""
-    #     ...
-    #
-    # async def set_position(self, position: str) -> bool:
-    #     """Set the valve to the specified position."""
-    #     assert position in self._positions
-    #     return True
-
     def _create_connections(self, stator_ports, rotor_ports):
         # this is where the heart of logic will sit
         connections = {}
@@ -183,7 +173,6 @@ class Valve(FlowchemComponent):
 
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
-
         This mainly has informative purpose
         """
         return ValveInfo(ports=self._stator_ports, positions=self._positions)
