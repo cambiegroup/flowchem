@@ -9,11 +9,18 @@ from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 
 
 class ValveInfo(BaseModel):
+    """
+    ports: an attribute representing the available ports on the stator
+    positions: an attribute mapping implicit, tacit numbers as keys to the stator ports that are connected at this
+                position
+    """
     ports: list[tuple]
     positions: dict[int, tuple[tuple[int, int], ...]] # define arbitrary length
 
 
-def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int,int], ...], tuple_contains: tuple[tuple[int,int,...], ...])->bool:
+def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
+                               tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
+    """Check if all requested tuples are in a tuple of tuples"""
     all_contained = []
     for subtuple in tuple_in:
         for supertuple in tuple_contains:
@@ -26,7 +33,9 @@ def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int,int], ...], tuple_conta
         return False
 
 
-def no_tuple_in_nested_tuple(tuple_in: tuple[tuple[int,int], ...], tuple_contains: tuple[tuple[int,int,...], ...])->bool:
+def no_tuple_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
+                             tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
+    """Check if none of requested tuples are in a tuple of tuples"""
     contains_tuple = False
     for subtuple in tuple_in:
         for supertuple in tuple_contains:
@@ -40,17 +49,14 @@ class Valve(FlowchemComponent):
 
     .. warning::
         Device objects should not directly generate components with this object but rather a more specific valve type,
-        such as `InjectionValve` or `MultiPositionValve`.
+        such as `SixPortTwoPositionValve` or `SixPortPositionValve`.
 
     All valves are characterized by:
 
-    - a `positions` attribute, which is a set of strings representing the valve positions.
-    - a `set_position()` method # here i disagree, that is a simple approach incorporating tacit knowledge
+    - a connections() method, which returns an Instance of the ValveInfo class
+    - a `set_position()` method
     - a `get_position()` method
 
-    Instead:
-    - 'connect()'
-    - 'get_connection'
     This is explicit and informative in itself and requires no further intermittant helper mappings
     """
 
@@ -67,8 +73,14 @@ class Valve(FlowchemComponent):
         ----
             name: device name, passed to FlowchemComponent.
             hw_device: the object that controls the hardware.
-            positions: list of string representing the valve ports. The order in the list reflect the physical world.
-                       This potentially enables to select rotation direction to avoid specific interactions.
+            stator_ports
+            rotor_ports
+            rotor and stator are both represented like:
+            (   (1,2,3,4,5,6),          (0))
+                radial ports       middle ports
+            Ports should be equally distributed, with equally spaced angle in between. If this is not the case, add None
+             for missing port
+
         """
         # a valve consists of a rotor and a stator. Solenoid valves Are special cases and can be decomposed into
         # Open/closed valves, need not be treated here but could be simulated by a [1,2,None] and rotor [3,3,None]
@@ -84,7 +96,10 @@ class Valve(FlowchemComponent):
         self.add_api_route("/connections", self.connections, methods=["GET"])
 
     def _create_connections(self, stator_ports, rotor_ports):
-        # this is where the heart of logic will sit
+        """
+        Create possible switching states from a stator and rotor representation. Position names are integers. Going to
+        the next position in clockwise direction increases position name by one
+        """
         connections = {}
         if len(rotor_ports) != len(stator_ports):
             raise InvalidConfigurationError

@@ -18,7 +18,7 @@ from flowchem.utils.people import dario, jakob, wei_hsin
 
 
 class KnauerValveHeads(Enum):
-    """Four different valve types can be used. 6port2position valve, and 6, 12, 16 multi-position valves."""
+    """Four different valve types can be used. 6port2position injection valve, and 6, 12, 16 multi-position valves."""
 
     SIX_PORT_TWO_POSITION = "LI"
     SIX_PORT_SIX_POSITION = "6"
@@ -30,8 +30,11 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
     """Control Knauer multi position valves.
 
     Valve type can be 6, 12, 16, or it can be 6 ports, two positions, which will be simply 2 (two states)
-    in this case, the response for T is LI. Load and inject can be switched by sending L or I
-    maybe valves should have an initial state which is set during init and updated, if no  change don't schedule command
+    in this case, the response for T is LI. Load and inject can be switched by sending L or I.
+    Switching will always be performed by following parent valve type switching commands, so specifying which port
+    should be connected
+    Regarding initial valve state: If it matters, users want to determine initial state, which then also can happen
+    explicit after initialisation and therefore is not deemed critical
     EN: https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_user-manual_en.pdf
     DE: https://www.knauer.net/Dokumente/valves/azura/manuals/v6860_azura_v_2.1s_benutzerhandbuch_de.pdf
     DIP switch for valve selection
@@ -103,7 +106,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
             )
         elif "E4" in reply:
             DeviceError(
-                "Valve homing position not recognized.\n" "Readjust sensor board.",
+                "Valve homing position not recognized.\n" "Adjust sensor board.",
             )
         elif "E5" in reply:
             DeviceError(
