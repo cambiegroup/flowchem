@@ -492,7 +492,7 @@ class ML600(FlowchemDevice):
         speed: pint.Quantity | None = None,
         syringe: ML600Commands = None
     ):
-        """Absolute move to step position."""
+        """Absolute move to step position. If syringe side is required, give left or right"""
         abs_move_cmd = Protocol1Command(
             command=ML600Commands.ABSOLUTE_MOVE.value,
             optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
@@ -523,6 +523,8 @@ class ML600(FlowchemDevice):
         )
         logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {speed}")
 
+
+    # TODO prob those also allow for selection
     async def pause(self):
         """Pause any running command."""
         return await self.send_command_and_read_reply(
