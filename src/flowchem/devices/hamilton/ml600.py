@@ -514,6 +514,19 @@ class ML600(FlowchemDevice):
             Protocol1Command(command="", execution_command=ML600Commands.PAUSE.value),
         )
 
+    async def single_syringe(self)->bool:
+        """Determine if single or dual syringe"""
+        is_single = await self.send_command_and_read_reply(
+            Protocol1Command(command=ML600Commands.IS_SINGLE_SYRINGE.value),
+        )
+        if is_single == "N":
+            return False
+        elif is_single == "Y":
+            return True
+        else:
+            raise InvalidConfigurationError("Neither single nor dual syringe - somethings wrong")
+
+
     async def resume(self):
         """Resume any paused command."""
         return await self.send_command_and_read_reply(
