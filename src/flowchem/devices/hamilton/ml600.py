@@ -429,8 +429,8 @@ class ML600(FlowchemDevice):
         speed: 2-3692 in seconds/stroke
         """
         init_pump = Protocol1Command(
-            command="X",
-            optional_parameter="S",
+            command=ML600Commands.INIT_ALL.value,
+            optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
             parameter_value=self._validate_speed(speed),
         )
         return await self.send_command_and_read_reply(init_pump)
@@ -482,8 +482,8 @@ class ML600(FlowchemDevice):
     ):
         """Absolute move to step position."""
         abs_move_cmd = Protocol1Command(
-            command="M",
-            optional_parameter="S",
+            command=ML600Commands.ABSOLUTE_MOVE.value,
+            optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
             command_value=str(position),
             parameter_value=self._validate_speed(speed),
         )
@@ -493,6 +493,8 @@ class ML600(FlowchemDevice):
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
             Protocol1Command(command="YQP"),
+            Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION.value,
+),
         )
 
         current_steps = (int(syringe_pos) - self._offset_steps) * ureg.step
@@ -510,20 +512,20 @@ class ML600(FlowchemDevice):
     async def pause(self):
         """Pause any running command."""
         return await self.send_command_and_read_reply(
-            Protocol1Command(command="", execution_command="K"),
+            Protocol1Command(command="", execution_command=ML600Commands.PAUSE.value),
         )
 
     async def resume(self):
         """Resume any paused command."""
         return await self.send_command_and_read_reply(
-            Protocol1Command(command="", execution_command="$"),
+            Protocol1Command(command="", execution_command=ML600Commands.RESUME.value),
         )
 
     async def stop(self):
         """Stop and abort any running command."""
         await self.pause()
         return await self.send_command_and_read_reply(
-            Protocol1Command(command="", execution_command="V"),
+            Protocol1Command(command="", execution_command=ML600Commands.CLEAR_BUFFER.value),
         )
 
     async def wait_until_idle(self):
@@ -535,12 +537,12 @@ class ML600(FlowchemDevice):
 
     async def version(self) -> str:
         """Return the current firmware version reported by the pump."""
-        return await self.send_command_and_read_reply(Protocol1Command(command="U"))
+        return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.FIRMWARE_VERSION.value))
 
     async def is_idle(self) -> bool:
         """Check if the pump is idle (actually check if the last command has ended)."""
         return (
-            await self.send_command_and_read_reply(Protocol1Command(command="F")) == "Y"
+            await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.REQUEST_DONE.value)) == "Y"
         )
 
     async def get_valve_position(self) -> str:
@@ -558,6 +560,8 @@ class ML600(FlowchemDevice):
         """
         await self.send_command_and_read_reply(
             Protocol1Command(command="LP0", command_value=target_position),
+            Protocol1Command(command=ML600Commands.VALVE_BY_NAME_CW.value, command_value=target_position,
+),
         )
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
