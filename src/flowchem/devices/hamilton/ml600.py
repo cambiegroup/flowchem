@@ -375,8 +375,7 @@ class ML600(FlowchemDevice):
         """Initialize pump and its components."""
         await self.pump_io.initialize()
         # Test connectivity by querying the pump's firmware version
-        fw_cmd = Protocol1Command(command="U", target_pump_num=self.address)
-        self.device_info.version = await self.pump_io.write_and_read_reply_async(fw_cmd)
+        self.device_info.version = await self.version()
         logger.info(
             f"Connected to Hamilton ML600 {self.name} - FW version: {self.device_info.version}!",
         )
@@ -492,8 +491,8 @@ class ML600(FlowchemDevice):
     async def get_current_volume(self) -> pint.Quantity:
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
-            Protocol1Command(command="YQP"),
             Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION.value,
+                             target_syringe= syringe.value if self.dual_syringe else ""
 ),
         )
 
@@ -559,23 +558,47 @@ class ML600(FlowchemDevice):
         wait_for_movement_end is defaulted to True as it is a common mistake not to wait...
         """
         await self.send_command_and_read_reply(
-            Protocol1Command(command="LP0", command_value=target_position),
             Protocol1Command(command=ML600Commands.VALVE_BY_NAME_CW.value, command_value=target_position,
+                             target_valve = valve.value if self.dual_syringe else ""
 ),
         )
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
             await self.wait_until_idle()
 
-    # async def get_return_steps(self) -> int:
-    #     """Return steps' getter. Applied to the end of a downward syringe movement to removes mechanical slack."""
-    #     steps = await self.send_command_and_read_reply(Protocol1Command(command="YQN"))
-    #     return int(steps)
-    #
-    # async def set_return_steps(self, target_steps: int):
-    #     """Return steps' setter. Applied to the end of a downward syringe movement to removes mechanical slack."""
-    #     target_steps = str(int(target_steps))
-    #     return await self.send_command_and_read_reply(Protocol1Command(command="YSN", command_value=target_steps))
+
+    async def get_valve_position(self, valve: ML600Commands = None) -> str:
+        """
+        Represent the position of the valve: getter returns Enum, setter needs Enum.
+        Strongly encouraged to use switching by angle
+        """
+        return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.VALVE_ANGLE.value,
+                                                                       target_valve = valve.value if self.dual_syringe else ""))
+
+    async def set_valve_position(
+        self,
+        target_position: str,
+        wait_for_movement_end: bool = True,
+        counter_clockwise = False, valve: ML600Commands = None
+    ):
+        """Set valve position.
+        Strongly encouraged to use switching by angle
+        wait_for_movement_end is defaulted to True as it is a common mistake not to wait...
+        """
+        if not counter_clockwise:
+            await self.send_command_and_read_reply(
+                Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CW.value, command_value=target_position,
+                                 target_valve = valve.value if self.dual_syringe else ""),
+            )
+            logger.debug(f"{self.name} valve position set to position {target_position}, switching CW")
+        else:
+            await self.send_command_and_read_reply(
+                Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW.value, command_value=target_position,
+                                 target_valve = valve.value if self.dual_syringe else ""),
+            )
+            logger.debug(f"{self.name} valve position set to position {target_position}, switching CCW")
+        if wait_for_movement_end:
+            await self.wait_until_idle()
 
 
 if __name__ == "__main__":
