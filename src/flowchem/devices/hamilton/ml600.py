@@ -557,17 +557,22 @@ class ML600(FlowchemDevice):
             await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.REQUEST_DONE.value)) == "Y"
         )
 
-    async def get_valve_position(self) -> str:
-        """Represent the position of the valve: getter returns Enum, setter needs Enum."""
-        return await self.send_command_and_read_reply(Protocol1Command(command="LQP"))
+    async def get_valve_position_by_name(self, valve: ML600Commands = None
+) -> str:
+        """
+        Represent the position of the valve: getter returns Enum, setter needs Enum.
+        Strongly encouraged to use switching by angle
+        """
+        return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.CURRENT_VALVE_POSITION.value,
+                                                                       target_valve = valve.value if self.dual_syringe else ""))
 
-    async def set_valve_position(
+    async def set_valve_position_by_name(
         self,
         target_position: str,
         wait_for_movement_end: bool = True,
     ):
         """Set valve position.
-
+        Strongly encouraged to use switching by angle
         wait_for_movement_end is defaulted to True as it is a common mistake not to wait...
         """
         await self.send_command_and_read_reply(
@@ -579,7 +584,6 @@ class ML600(FlowchemDevice):
         if wait_for_movement_end:
             await self.wait_until_idle()
 
-
     async def get_valve_position(self, valve: ML600Commands = None) -> str:
         """
         Represent the position of the valve: getter returns Enum, setter needs Enum.
@@ -587,7 +591,6 @@ class ML600(FlowchemDevice):
         """
         return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.VALVE_ANGLE.value,
                                                                        target_valve = valve.value if self.dual_syringe else ""))
-
     async def set_valve_position(
         self,
         target_position: str,
