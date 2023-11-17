@@ -326,6 +326,7 @@ class ML600(FlowchemDevice):
 
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
+        self.dual_syringe = False
 
     @classmethod
     def from_config(cls, **config):
@@ -382,8 +383,19 @@ class ML600(FlowchemDevice):
 
         if hw_init:
             await self.initialize_pump(speed=ureg.Quantity(init_speed))
+
+        #determine if syringe is single or dual - if dual, commands need to specify to which side theyre dispatched if
+        # syringe/valve specific
+        self.dual_syringe = not await self.single_syringe()
+
         # Add device components
-        self.components.extend([ML600Pump("pump", self), ML600Valve("valve", self)])
+        if self.dual_syringe:
+            self.components.extend([ML600Pump("left_pump", self),ML600Pump("right_pump", self),
+                                    ML600Valve("left_valve", self), ML600Valve("right_valve", self)])
+        else:
+            self.components.extend([ML600Pump("pump", self), ML600Valve("valve", self)])
+# TODO potentially set the suitable device mode - this might be needed despite switching by angle to achive the proper position reproducibly...
+
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
