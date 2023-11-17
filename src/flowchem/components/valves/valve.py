@@ -104,9 +104,9 @@ class Valve(FlowchemComponent):
         if len(rotor_ports) != len(stator_ports):
             raise InvalidConfigurationError
         if len(rotor_ports) == 1:
-            # in case there is no 0 port, for data uniformity, internally add it.
-            # strictly, the stator and rotor should reflect physical properties, so if stator has a hole in middle it
-            # should have 0, but only rotor None. Sinc ethis does not impact functionality, thoroughness will be left to the user
+            # in case there is no 0 port, for data uniformity, internally add it. strictly, the stator and rotor
+            # should reflect physical properties, so if stator has a hole in middle it should have 0, but only rotor
+            # None. Sinc ethis does not impact functionality, thoroughness will be left to the user
             rotor_ports.append([None])
             stator_ports.append([None])
         # it is rather simple: we just move the rotor by one and thereby create a dictionary
@@ -114,9 +114,9 @@ class Valve(FlowchemComponent):
             rotor_curr = rotor_ports[0][-_:] + rotor_ports[0][:-_]
             _connections_per_position = {}
             for rotor_position, stator_position in zip(rotor_curr + rotor_ports[1], stator_ports[0] + stator_ports[1]):
-                # rotor acts as dictionary keys, take into account the [1] position for connecting the 0
+                # rotor positions act as dictionary keys, take into account the [1] position for connecting the 0
                 # if dict key exists, instead of overwriting, simply append
-                # if rotor is none, means there is no connection, so do not even bother to add
+                # if rotor is none, means there is no connection, so do not add
                 if rotor_position is not None:
                     try:
                         _connections_per_position[rotor_position] += (stator_position,)
@@ -143,7 +143,7 @@ class Valve(FlowchemComponent):
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
-        # device level
+        # device level since this is device communication protocol specific
         raise NotImplementedError
 
     def _connect_positions(self, positions_to_connect: tuple[tuple], positions_not_to_connect: tuple[tuple] = None,
@@ -156,7 +156,8 @@ class Valve(FlowchemComponent):
         # check if this is possible given the mapping
         for key, values in self._positions.items():
             if positions_not_to_connect:
-                if all_tuples_in_nested_tuple(positions_to_connect, values) and no_tuple_in_nested_tuple(positions_not_to_connect, values):
+                if all_tuples_in_nested_tuple(positions_to_connect, values) and no_tuple_in_nested_tuple(
+                        positions_not_to_connect, values):
                     possible_positions.append(key)
             elif all_tuples_in_nested_tuple(positions_to_connect, values):
                 possible_positions.append(key)
@@ -171,7 +172,7 @@ class Valve(FlowchemComponent):
         elif len(possible_positions) == 1:
             return possible_positions[0]
         else:
-            # this means length == 0
+            # this means length == 0, no connection possible
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
@@ -192,31 +193,27 @@ class Valve(FlowchemComponent):
         """
         return ValveInfo(ports=self._stator_ports, positions=self._positions)
 
-    # I kind of disagree, human friendly is misleading in this aspect
-    # the human friendly approach is just needed because we are used to it, however, there is a simple solution that
-    # allows to map human-friendly and graph applicable to the physical world. More concrete: If we have an injection
-    # valve, we need to look at the specific valve and need to decide what inject and load mean, given the current
-    # connections, which requires some transfer. My suggestion is: Instead of going to positions, specify which ports to
-    # connect. In case of a simple multiposition valve, it always connects the always open port to the requested port.
-    # But there are more complex rotors available, already with an injection valve: connect((1, 2)) would be more neat.
-    # What is even more important, one can specify which ports to not connect (optionally during switching) but when
-    # connected. This issue arose with hamilton valves, where some positions connect 3 ports and it is very hard to
-    # foresee what command does what. SO here a simple connect((1,2)) would be great.
-
+    # Philosophy: explicitly specify which ports to connect
+    # In case of a simple multiposition valve, it always connects the always open central port to the requested port.
+    # But there are more complex rotors available, already with an injection valve: connect((1, 2)) is concise and clear.
+    # What is even more important, one can specify which ports to not connect (optionally during switching)
+    # This issue is most pressing with hamilton valves, where some positions connect 3 ports and it is very hard to
+    # foresee what command does what. SO here a simple connect((1,2)) helps.
     # In order for that to work, and to make the coding and usage simple and concise, some definitions are needed:
-    # 1) The port zero can exist, but does not necessarily. I advocate it to be the one on the valve turning axis, the
-    #   port that on some valves is always open
-    # 2) from there, one goes up, and yes that means simply looking up at the physical valve. The port straight on top
-    #   of port zero is port 1
-    #   a) If there is no port straight on top, then one goes in clockwise direction, until a port comes
+    # 1) The port zero can exist, but does not necessarily.
+    #    For nomenclature reasons, port zero is the one the turning axis and only this one. COmmonly, this port,
+    #    if existing, is always open
+    # 2) At the physical valve, the upmost is port 1
+    #   a) If there is no port straight on top, then one goes in clockwise direction, until a port comes, which is then one
     # 3 )Beware: For logical reasons, we need to introduce ports of "number" None. These are needed because we need to
-    #   define dead-ends. These dead-ends are IMMUTABLE dead-ends, so the stator or rotor do not have a opneing there
+    #   define dead-ends. These dead-ends are IMMUTABLE dead-ends, so the stator or rotor do not have an opening there
+    #   Any time there is a different amount of positions on rotor and stator, Noneports are introduced
     # 5) Mutable dead-ends: blanking plugs are treated as port number, the consumer needs to deal with its definition by
-    #   graph or similar
+    #   graph or similar since blanking plugs on valve side could be open
     # Dead-ends are needed because we represent valves as graphs, edges are represented by same numbers shared. If a
     # port does not connect to anything, we set it None. There is 1 example where that is strictly needed for the logic
     # to work: Again the hamilton, it will become clear why. So much now: The rotor has more open positions than the
-    # stator. Actually, Any time there is a different amount of positions on rotor and stator, this will be needed.
-    # 6) The so far mentioned logic only strictly applies to valves which face the user with there front side, however,
-    # eg the autosampler faces one valve to the ground, with its alway open port. To also include those in herein
-    # developed logic/terminology, there needs to be a defined mutation. This is simply the smallest angle needed
+    # stator.
+    # 6) The so far mentioned logic only strictly applies to valves facing the user with their front side, however,
+    # e.g. the autosampler faces one valve with its always open port to the ground. Simply flip horizontally until it
+    # faces you

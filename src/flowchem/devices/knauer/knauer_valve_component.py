@@ -13,9 +13,6 @@ from flowchem.components.valves.distribution_valves import (
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 
 
-# with new architecture, the only thing that is different is the Injection valve, all other knauer valves have exactly
-# the same code -> get additional level of inheritance?
-
 class KnauerInjectionValve(SixPortTwoPositionValve):
     hw_device: KnauerValve  # for typing's sake
 
