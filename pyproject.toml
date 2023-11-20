@@ -12,7 +12,7 @@ license =  { text = "MIT" }
 keywords = ["chemistry", "automation", "laboratory", "science"]
 authors = [
     { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
-    { name = "Jakob Wolf", email = "Jakob.Wolf@mpikg.mpg.de" },
+    { name = "Jakob Wolf", email = "75418671+JB-Wolf@users.noreply.github.com" },
     { name = "Wei-Hsin Hsu", email = "Wei-hsin.Hsu@mpikg.mpg.de" },
 ]
 maintainers = [
