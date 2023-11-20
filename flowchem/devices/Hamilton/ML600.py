@@ -345,7 +345,8 @@ class ML600:
     example to dispense 9 mL from a 10 mL syringe you would determine the number of
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
-
+    # TODO the "dirty approach" to use both valves is actually setting to continuous pumping, then input and output can be selected, however on the right syringe the input and output are reverted (or one swaps the tubing...)
+    # Anyway, valves should be switched by degree and not by name, but one needs to know and be sure which exact valve was initialized
     class ValvePositionName(IntEnum):
         """ Maps valve position to the corresponding number """
 
@@ -434,13 +435,13 @@ class ML600:
     def send_multiple_commands(self, list_of_commands: [Protocol1Command]) -> str:
         return self.pump_io.write_and_read_reply(list_of_commands)
 
-    def initialize_pump(self, speed: int = None):
+    def initialize_pump(self, flowrate: int = None):
         """
         Initialize both syringe and valve
-        speed: 2-3692 is in seconds/stroke
+        speed: flowrate in mL/min
         """
         self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
-        self.wait_until_idle()
+        speed = self.flowrate_to_seconds_per_stroke(flowrate)
         if speed:
             assert 2 < speed < 3692
             return self.send_command_and_read_reply(
