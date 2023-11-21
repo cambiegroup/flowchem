@@ -442,7 +442,7 @@ class R2(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    R2_device = R2(port="COM4")
+    R2_device = R2(port="COM6")
 
     async def main(Vapourtec_R2):
         """Test function."""
@@ -468,14 +468,16 @@ if __name__ == "__main__":
             r4,
         ) = Vapourtec_R2.components()
 
+        print(f"{await Vapourtec_R2.pooling()}")
+        # print(f"Injection valve A {await ivA.get_monitor_position()}")
+        print(await Vapourtec_R2.get_valve_position(1))
         # print(f"The system state is {await Vapourtec_R2.get_Run_State()}")
-        await r3.set_temperature("30°C")
-
-        print(f"Temperature is {await Vapourtec_R2.get_target_temperature(2)}")
+        # await r3.set_temperature("30°C")
+        # print(f"Temperature is {await Vapourtec_R2.get_target_temperature(2)}")
         # await pA.set_flowrate("100 ul/min")
-        while True:
+        # while True:
             # await pA.infuse("10 ul/min")
-            print(f"{await Vapourtec_R2.pooling()}")
+            # print(f"{await Vapourtec_R2.pooling()}")
 
             # print(f"current pressure of pump A is {await sA.read_pressure()}")
 

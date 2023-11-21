@@ -143,7 +143,6 @@ class R2InjectionValve(SixPortTwoPositionValve):
     def __init__(self, name: str, hw_device: R2, valve_code: int) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
-        raise NotImplementedError("Check that the mapping is correct")
         self.valve_code = valve_code
 
         self.add_api_route("/button_position", self.get_monitor_position, methods=["GET"])
@@ -177,7 +176,7 @@ class R2InjectionValve(SixPortTwoPositionValve):
         position = await self.hw_device.get_valve_position(self.valve_code)
         return "position is %s" % self._reverse_position_mapping[position]
 
-    async def set_position(self, position: str) -> bool:
+    async def set_monitor_position(self, position: str) -> bool:
         """Set position: 'load' or 'inject'."""
         target_pos = self.position_mapping[position]  # load or inject
         await self.hw_device.trigger_key_press(
@@ -232,7 +231,7 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         # self.hw_device.last_state.valve[self.valve_number]
         return "inlet is %s" % self._reverse_position_mapping[position]
 
-    async def set_position(self, position: str) -> bool:
+    async def set_monitor_position(self, position: str) -> bool:
         """Move valve to position."""
         target_pos = self.position_mapping[position]
         await self.hw_device.trigger_key_press(
@@ -281,7 +280,7 @@ class R2HPLCPump(HPLCPump):
 class R2PumpPressureSensor(PressureSensor):
     hw_device: R2  # for typing's sake
 
-    def __init__(self, name: str, hw_device: R2, pump_code: int) -> None:
+    def __init__(self, name: str, hw_device: FlowchemDevice, pump_code: int) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
         self.pump_code = pump_code
