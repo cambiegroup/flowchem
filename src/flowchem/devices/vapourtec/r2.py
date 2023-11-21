@@ -274,7 +274,7 @@ class R2(FlowchemDevice):
         ]
         return float(temp_list[channel])
 
-    async def get_valve_Position(self, valve_code: int) -> str:
+    async def get_valve_position(self, valve_code: int) -> str:
         """Get specific valves position."""
         state = await self.get_status()
         # Current state of all valves as bitmap
@@ -479,7 +479,7 @@ if __name__ == "__main__":
 
             # print(f"current pressure of pump A is {await sA.read_pressure()}")
 
-            # print(f"{await Vapourtec_R2.get_valve_Position(2)}")
+            # print(f"{await Vapourtec_R2.get_valve_position(2)}")
             # print(f"Injection valve A {await ivA.get_position()}")
             # await ivA.set_position("inject")
             # await asyncio.sleep(0.5)

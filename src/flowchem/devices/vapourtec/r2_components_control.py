@@ -146,7 +146,7 @@ class R2InjectionValve(SixPortTwoPositionValve):
 
     async def get_position(self) -> str:
         """Get current valve position."""
-        position = await self.hw_device.get_valve_Position(self.valve_code)
+        position = await self.hw_device.get_valve_position(self.valve_code)
         return "position is %s" % self._reverse_position_mapping[position]
 
     async def set_position(self, position: str) -> bool:
@@ -176,7 +176,7 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         raise NotImplementedError("Check that the mapping is correct")
     async def get_position(self) -> str:
         """Get current valve position."""
-        position = await self.hw_device.get_valve_Position(self.valve_code)
+        position = await self.hw_device.get_valve_position(self.valve_code)
         # self.hw_device.last_state.valve[self.valve_number]
         return "inlet is %s" % self._reverse_position_mapping[position]
 
