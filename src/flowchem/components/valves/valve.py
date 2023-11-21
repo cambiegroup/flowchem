@@ -7,6 +7,7 @@ from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 
+import json
 
 class ValveInfo(BaseModel):
     """
@@ -146,7 +147,9 @@ class Valve(FlowchemComponent):
         # device level since this is device communication protocol specific
         raise NotImplementedError
 
-    def _connect_positions(self, positions_to_connect: tuple[tuple], positions_not_to_connect: tuple[tuple] = None,
+    def _connect_positions(self,
+                           positions_to_connect: tuple[tuple],
+                           positions_not_to_connect: tuple[tuple] = None,
                            arbitrary_switching: bool = True) -> int:
         """
         This is the heart of valve switching logic: select the suitable position (so actually the key in
@@ -177,15 +180,17 @@ class Valve(FlowchemComponent):
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
 # TODO not entirely sure if it works like that, test
-    async def get_position(self) -> tuple[tuple]:
+    async def get_position(self) -> list[list]:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
-        return self._positions[int(self._change_connections(pos, reverse=True))]
+        return (self._positions[int(self._change_connections(pos, reverse=True))])
 
     # TODO not entirely sure if it works like that, test
-    async def set_position(self, *args, **kwargs):
-        """Move valve to position, which connects named ports"""
-        target_pos = self._connect_positions(*args, **kwargs)
+    async def set_position(self, positions_to_connect):
+        """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
+        positions_to_connect_l = json.loads(positions_to_connect)
+        position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
+        target_pos = self._connect_positions(position_to_connect)
         target_pos = self._change_connections(target_pos)
         return await self.hw_device.set_raw_position(target_pos)
 
