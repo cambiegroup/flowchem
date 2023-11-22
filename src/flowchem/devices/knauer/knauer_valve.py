@@ -129,7 +129,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         -------
             str: reply
         """
-        reply = await self._send_and_receive(message)
+        reply = await self._send_and_receive(str(message))
         self.handle_errors(reply)
 
         if reply == "?":
@@ -171,7 +171,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
 
     async def set_raw_position(self, position: str | int) -> bool:
         """Set valve position, following valve nomenclature."""
-        return await self._transmit_and_parse_reply(str(position)) != ""
+        return await self._transmit_and_parse_reply(position) != ""
 
 
 if __name__ == "__main__":
