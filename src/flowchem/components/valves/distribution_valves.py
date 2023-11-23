@@ -73,6 +73,6 @@ class ThreePortTwoPositionValve(Valve):
         super().__init__(
             name,
             hw_device,
-            stator_ports=[(None, 1, 2, 3,), (0,)],
-            rotor_ports=[(4, 4), None, None, (None,)],
+            stator_ports=[(None, 1, 2, 3,), (None,)],
+            rotor_ports=[(4, 4, None, None), (None,)],
         )
