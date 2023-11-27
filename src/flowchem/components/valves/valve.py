@@ -123,6 +123,8 @@ class Valve(FlowchemComponent):
         # bwe can infer
         super().__init__(name, hw_device)
 
+        # todo it would be nice if those would implement a transformation into tuples: So input "[1,2], [3,4]"
+        #  but what goes into fucntion is ((1,2),(3,4),). Also has to allow for add args
         self.add_api_route("/position", self.get_position, methods=["GET"])
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
@@ -216,15 +218,16 @@ class Valve(FlowchemComponent):
         pos = await self.hw_device.get_raw_position()
         return (self._positions[int(self._change_connections(pos, reverse=True))])
 
-    # TODO not entirely sure if it works like that, test
-    async def set_position(self, positions_to_connect):
-        """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
-        positions_to_connect_l = json.loads(positions_to_connect)
-        position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
-        target_pos = self._connect_positions(position_to_connect)
+    # todo, this alternatively has to accept one argument and decompose that from string to tuple, plus optionally
+    #  keyword argument
+    async def set_position(self, connect: str | tuple = "", disconnect: str | tuple = "",
+                           ambiguous_switching: str | bool = False):
+        """Move valve to position, which connects named ports"""
         connect=return_tuple_from_input(connect)
         disconnect=return_tuple_from_input(disconnect)
         ambiguous_switching=return_bool_from_input(ambiguous_switching)
+        target_pos = self._connect_positions(positions_to_connect=connect, positions_not_to_connect=disconnect,
+                                             arbitrary_switching=ambiguous_switching)
         target_pos = self._change_connections(target_pos)
         return await self.hw_device.set_raw_position(target_pos)
 
