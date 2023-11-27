@@ -2,12 +2,43 @@
 from __future__ import annotations
 
 from pydantic import BaseModel
+import json
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 
-import json
+
+def return_tuple_from_input(str_or_tuple):
+    # in case no input is given, required, simply return None, will be dealt with by consumer
+    if not str_or_tuple:
+        return None
+    elif type(str_or_tuple) is str:
+        parsed_input = json.loads(str_or_tuple)
+        if type(parsed_input[0]) is not list:
+            parsed_input = [parsed_input]
+        return tuple(tuple(inner) for inner in parsed_input)
+    elif type(str_or_tuple) is tuple:
+        if type(str_or_tuple[0]) is not tuple:
+            str_or_tuple = (str_or_tuple,)
+        return str_or_tuple
+    else:
+        raise DeviceError("Please provide input of type '[[1,2],[3,4]]'")
+
+
+def return_bool_from_input(str_or_bool):
+    if type(str_or_bool) is bool:
+        return str_or_bool
+    elif type(str_or_bool) is str:
+        if str_or_bool == "True":
+            return True
+        elif str_or_bool == "False":
+            return False
+        elif str_or_bool == "":
+            return None
+        else:
+            raise DeviceError("Please provide input of type bool, '' or 'True' or 'False'")
+
 
 class ValveInfo(BaseModel):
     """
@@ -191,6 +222,9 @@ class Valve(FlowchemComponent):
         positions_to_connect_l = json.loads(positions_to_connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
         target_pos = self._connect_positions(position_to_connect)
+        connect=return_tuple_from_input(connect)
+        disconnect=return_tuple_from_input(disconnect)
+        ambiguous_switching=return_bool_from_input(ambiguous_switching)
         target_pos = self._change_connections(target_pos)
         return await self.hw_device.set_raw_position(target_pos)
 
