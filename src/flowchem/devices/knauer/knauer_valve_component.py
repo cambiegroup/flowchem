@@ -11,6 +11,7 @@ from flowchem.components.valves.distribution_valves import (
     SixteenPortDistributionValve,
     TwelvePortDistributionValve,
 )
+from flowchem.components.flowchem_component import FlowchemDevice
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 
 
@@ -43,7 +44,7 @@ class KnauerInjectionValve(SixPortTwoPositionValve):
     async def set_monitor_position(self, position: str):
         """Move valve to position."""
         try:
-            return await self.hw_device.set_raw_position(self.LoadInject(position).value)
+            return await self.hw_device.set_raw_position(self.LoadInject[position.upper()].value)
         except KeyError as e:
             raise Exception(f"Please give allowed positions {[pos.name for pos in self.LoadInject]}") from e
 
