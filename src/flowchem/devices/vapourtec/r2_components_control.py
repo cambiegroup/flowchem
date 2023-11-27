@@ -149,6 +149,7 @@ class R2InjectionValve(SixPortTwoPositionValve):
         self.add_api_route("/button_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
+        #since nothing happens here, could simply become: return raw position
         if not reverse:
             translated = raw_position
         else:
