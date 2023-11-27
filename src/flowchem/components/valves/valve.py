@@ -174,7 +174,7 @@ class Valve(FlowchemComponent):
 
         return connections
 
-    def _change_connections(self, raw_position, reverse: bool = False) -> str:
+    def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
         # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
         # device level since this is device communication protocol specific
@@ -212,8 +212,8 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
-# TODO not entirely sure if it works like that, test
-    async def get_position(self) -> list[list]:
+    # TODO ideally this should also return a tuple to be consistent
+    async def get_position(self) -> tuple[tuple]:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
         return (self._positions[int(self._change_connections(pos, reverse=True))])
