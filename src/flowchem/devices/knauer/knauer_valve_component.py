@@ -54,12 +54,11 @@ class Knauer6PortDistributionValve(SixPortDistributionValve):
 
     hw_device: KnauerValve  # for typing's sake
 
-    def _change_connections(self, raw_position:str, reverse: bool = False):
-        r_position = int(raw_position)
+    def _change_connections(self, raw_position: int, reverse: bool = False):
         if reverse:
-            return r_position - 1
+            return raw_position - 1
         else:
-            return r_position + 1
+            return raw_position + 1
 
 
 class Knauer12PortDistributionValve(TwelvePortDistributionValve):
@@ -67,12 +66,11 @@ class Knauer12PortDistributionValve(TwelvePortDistributionValve):
 
     hw_device: KnauerValve  # for typing's sake
 
-    def _change_connections(self, raw_position:str, reverse: bool = False):
-        r_position = int(raw_position)
+    def _change_connections(self, raw_position:int, reverse: bool = False):
         if reverse:
-            return r_position - 1
+            return raw_position - 1
         else:
-            return r_position + 1
+            return raw_position + 1
 
 
 class Knauer16PortDistributionValve(SixteenPortDistributionValve):
@@ -80,9 +78,8 @@ class Knauer16PortDistributionValve(SixteenPortDistributionValve):
 
     hw_device: KnauerValve  # for typing's sake
 
-    def _change_connections(self, raw_position:str, reverse: bool = False):
-        r_position = int(raw_position)
+    def _change_connections(self, raw_position:int, reverse: bool = False):
         if reverse:
-            return r_position - 1
+            return raw_position - 1
         else:
-            return r_position + 1
+            return raw_position + 1
