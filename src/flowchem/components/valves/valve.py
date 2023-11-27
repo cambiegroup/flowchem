@@ -216,7 +216,13 @@ class Valve(FlowchemComponent):
     async def get_position(self) -> tuple[tuple]:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
-        return (self._positions[int(self._change_connections(pos, reverse=True))])
+        try:
+            pos = int(pos)
+        except ValueError:
+            # some valves return "L" or "I" for position. Since pos cant be cast to int in these case,
+            # hand the string to the mapper
+            pos = str(pos)
+        return self._positions[int(self._change_connections(pos, reverse=True))]
 
     # todo, this alternatively has to accept one argument and decompose that from string to tuple, plus optionally
     #  keyword argument
