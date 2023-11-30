@@ -1,13 +1,14 @@
 """Generic valve."""
 from __future__ import annotations
 
+from typing import Tuple, Any
+
 from pydantic import BaseModel
+import json
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
-
-import json
 
 class ValveInfo(BaseModel):
     """
@@ -92,6 +93,8 @@ class Valve(FlowchemComponent):
         # bwe can infer
         super().__init__(name, hw_device)
 
+        # todo it would be nice if those would implement a transformation into tuples: So input "[1,2], [3,4]"
+        #  but what goes into fucntion is ((1,2),(3,4),). Also has to allow for add args
         self.add_api_route("/position", self.get_position, methods=["GET"])
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
@@ -179,14 +182,13 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
-# TODO not entirely sure if it works like that, test
-    async def get_position(self) -> list[list]:
+    # TODO ideally this should also return a tuple to be consistent
+    async def get_position(self) -> tuple[tuple]:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
-        return (self._positions[int(self._change_connections(pos, reverse=True))])
+        return self._positions[int(self._change_connections(pos, reverse=True))]
 
-    # TODO not entirely sure if it works like that, test
-    async def set_position(self, positions_to_connect):
+    async def set_position(self, positions_to_connect: str, positions_not_to_connect: str = None, ambiguous_switching: bool = True):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(positions_to_connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
