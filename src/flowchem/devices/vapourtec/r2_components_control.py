@@ -145,8 +145,8 @@ class R2InjectionValve(SixPortTwoPositionValve):
         super().__init__(name, hw_device)
         self.valve_code = valve_code
 
-        self.add_api_route("/button_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/button_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         return raw_position
@@ -196,8 +196,8 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         super().__init__(name, hw_device)
         self.valve_code = valve_code
         # raise NotImplementedError("Check that the mapping is correct")
-        self.add_api_route("/button_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/button_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         if not reverse:
