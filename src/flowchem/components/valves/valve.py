@@ -186,6 +186,7 @@ class Valve(FlowchemComponent):
     async def get_position(self) -> list[list]:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
+        pos = int(pos) if pos.isnumeric() else pos
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
     async def set_position(self, positions_to_connect: str, positions_not_to_connect: str = None, ambiguous_switching: bool = True):
