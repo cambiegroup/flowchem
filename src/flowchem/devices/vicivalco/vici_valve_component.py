@@ -12,7 +12,7 @@ class ViciInjectionValve(SixPortTwoPositionValve):
     hw_device: ViciValve  # for typing's sake
 
     # todo this needs to be adapted to new code
-    def _change_connections(self, raw_position: str, reverse: bool = False) -> str:
+    def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
         raise NotImplementedError("Check that provided mapping is correct")
         # TODO maybe needs addition of one, not sure
         if not reverse:

@@ -149,16 +149,12 @@ class R2InjectionValve(SixPortTwoPositionValve):
         self.add_api_route("/button_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
-        if not reverse:
-            translated = raw_position
-        else:
-            translated = raw_position
-        return translated
+        return raw_position
 
     async def get_position(self) -> list[list]:
         """Get current valve position."""
         position = await self.hw_device.get_valve_position(self.valve_code)
-        return (self._positions[int(self._change_connections(position, reverse=True))])
+        return self._positions[int(self._change_connections(position, reverse=True))]
 
     async def set_position(self, positions_to_connect):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
