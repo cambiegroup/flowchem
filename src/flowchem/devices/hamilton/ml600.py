@@ -57,10 +57,12 @@ class HamiltonPumpIO:
 
     ACKNOWLEDGE = chr(6)
     NEGATIVE_ACKNOWLEDGE = chr(21)
+    ERROR = chr(15)
+
     DEFAULT_CONFIG = {
         "timeout": 0.1,
         "baudrate": 9600,
-        "parity": aioserial.PARITY_EVEN,
+        "parity": aioserial.PARITY_ODD,
         "stopbits": aioserial.STOPBITS_ONE,
         "bytesize": aioserial.SEVENBITS,
     }
@@ -459,7 +461,7 @@ class ML600(FlowchemDevice):
 
     async def get_valve_position(self) -> str:
         """Represent the position of the valve: getter returns Enum, setter needs Enum."""
-        return await self.send_command_and_read_reply(Protocol1Command(command="LQP"))
+        return await self.send_command_and_read_reply(Protocol1Command(command="LQA"))
 
     async def set_valve_position(
         self,
