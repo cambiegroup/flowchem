@@ -13,7 +13,7 @@ class ML600LeftValve(ThreePortTwoPositionValve):
     hw_device: ML600  # for typing's sake
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
-        raise NotImplementedError("Check that provided mapping is correct")
+        # raise NotImplementedError("Check that provided mapping is correct")
         if not reverse:
             translated = (raw_position+1) * 135
         else:
@@ -25,7 +25,7 @@ class ML600GenericValve(ThreePortTwoPositionValve):
     hw_device: ML600  # for typing's sake
     """Use this for a standard one syringe one valve hamilton."""
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
-        raise NotImplementedError("Check that provided mapping is correct")
+        # raise NotImplementedError("Check that provided mapping is correct")
         # TODO no clue which kind of degrees are required on this one - check
         if not reverse:
             translated = (raw_position+1) * 135
@@ -37,7 +37,7 @@ class ML600RightValve(ThreePortFourPositionValve):
     hw_device: ML600  # for typing's sake
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
-        raise NotImplementedError("Check that provided mapping is correct")
+        # raise NotImplementedError("Check that provided mapping is correct")
         if not reverse:
             translated = raw_position * 90
         else:

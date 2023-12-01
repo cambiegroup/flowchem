@@ -14,7 +14,7 @@ from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
-from flowchem.devices.hamilton.ml600_valve import ML600Valve
+from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600GenericValve, ML600RightValve
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
@@ -327,7 +327,7 @@ class ML600(FlowchemDevice):
         # self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         # self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
         self._max_vol = 48000 * ureg.step / self._steps_per_ml
-        self.return_steps = 24# Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
+        self.return_steps = 24 # Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
 
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
@@ -396,7 +396,7 @@ class ML600(FlowchemDevice):
         #determine if syringe is single or dual - if dual, commands need to specify to which side theyre dispatched if
         # syringe/valve specific
         self.dual_syringe = not await self.single_syringe()
-
+        print(self.dual_syringe)
         # todo: check
         # Add device components
         # self.components.extend([ML600Pump("pump", self), ML600Valve("valve", self)])
@@ -547,11 +547,12 @@ class ML600(FlowchemDevice):
             Protocol1Command(command="", execution_command=ML600Commands.PAUSE.value),
         )
 
-    async def single_syringe(self)->bool:
+    async def single_syringe(self) -> bool:
         """Determine if single or dual syringe"""
         is_single = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.IS_SINGLE_SYRINGE.value),
         )
+        logger.debug(is_single)
         if is_single == "N":
             return False
         elif is_single == "Y":
@@ -682,10 +683,10 @@ if __name__ == "__main__":
     import asyncio
 
     conf = {
-        "port": "COM12",
+        "port": "COM11",
         "address": 1,
         "name": "test1",
-        "syringe_volume": 5,
+        "syringe_volume": 1,
     }
     pump1 = ML600.from_config(**conf)
     asyncio.run(pump1.initialize_pump())
