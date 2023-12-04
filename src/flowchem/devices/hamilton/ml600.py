@@ -1,8 +1,11 @@
 """Control Hamilton ML600 syringe pump via the protocol1/RNO+."""
 from __future__ import annotations
 
+import asyncio
 import string
 import warnings
+import aioserial
+from loguru import logger
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -368,8 +371,9 @@ class ML600(FlowchemDevice):
 
     @property
     async def return_steps(self) -> int:
-        """ Gives the dfined return steps for syringe movement """
-        reply=await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.GET_RETURN_STEPS.value))
+        """ Gives the defined return steps for syringe movement """
+        reply = await self.send_command_and_read_reply(
+            Protocol1Command(command=ML600Commands.GET_RETURN_STEPS.value))
         return int(reply)
 
     @return_steps.setter
@@ -377,7 +381,8 @@ class ML600(FlowchemDevice):
         # waiting is necessary since this happens on (class) initialisation
         target_steps = str(int(return_steps))
         await self.wait_until_idle()
-        await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.SET_RETURN_STEPS.value, command_value=target_steps))
+        await self.send_command_and_read_reply(
+            Protocol1Command(command=ML600Commands.SET_RETURN_STEPS.value, command_value=target_steps))
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
@@ -636,7 +641,7 @@ class ML600(FlowchemDevice):
         Strongly encouraged to use switching by angle
         """
         return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.VALVE_ANGLE.value,
-                                                                       target_valve = valve.value if self.dual_syringe else ""))
+                                                                       target_valve=valve.value if self.dual_syringe else ""))
     async def set_valve_position(
         self,
         target_position: str,
