@@ -2,11 +2,11 @@
 ```{admonition} Additional software needed!
 :class: attention
 
-To use iCIR devices the iC OPC UA Server application must be installed alongside iCIR!
+To use iCIR-supported devices via flowchem, you must run iCIR installed with the additional module "iC OPC UA Server"!
 ```
 ## Introduction
 Both the ReactIR and the FlowIR from Mettler-Toledo can be controlled by the proprietary software iCIR.
-iCIR has an optional module that starts an [OPC UA](https://en.wikipedia.org/wiki/OPC_Unified_Architecture)
+iCIR has an optional module, available from the manufacturer website, that starts an [OPC UA](https://en.wikipedia.org/wiki/OPC_Unified_Architecture)
 server that can be used to control the spectrometer.
 
 As for all `flowchem` devices, a iCIR object can be instantiated via a configuration file that generates an openAPI endpoint.
