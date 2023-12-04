@@ -52,6 +52,78 @@ class Protocol1Command:
 
         return compiled_command + self.execution_command
 
+class ML600Commands(Enum):
+    """ Just a collection of commands. Grouped here to ease future, unlikely, changes. """
+
+    PAUSE = "K"
+    RESUME = "$"
+    CLEAR_BUFFER = "V"
+
+    INIT_ALL = "X"
+    INIT_VALVE_ONLY = "LX"
+    INIT_SYRINGE_ONLY = "X1"
+
+    # only works for pumps with two syringe drivers
+    SET_VALVE_CONTINUOUS_DISPENSE = "LST19"
+    SET_VALVE_DUAL_DILUTOR = "LST20"
+
+    # if there are two drivers, both sides can be selected
+    SELECT_LEFT = "B"
+    SELECT_RIGHT = "C"
+
+    # SYRINGE POSITION
+    PICKUP = "P"
+    DELIVER = "D"
+    ABSOLUTE_MOVE = "M"
+
+    # VALVE POSITION
+    # strongly discouraged since mapping changes
+    VALVE_TO_INLET = "I"
+    VALVE_TO_OUTLET = "O"
+    VALVE_TO_WASH = "W"
+    VALVE_BY_NAME_CW = "LP0"
+    VALVE_BY_NAME_CCW = "LP1"
+    # strongly encouraged since mapping is clear if initial/0 position is clear and rotor/stator are known
+    VALVE_BY_ANGLE_CW = "LA0"
+    VALVE_BY_ANGLE_CCW = "LA1"
+
+    # STATUS REQUEST
+    # INFORMATION REQUEST -- these all returns Y/N/* where * means busy
+    REQUEST_DONE = "F"
+    SYRINGE_HAS_ERROR = "Z"
+    VALVE_HAS_ERROR = "G"
+    IS_SINGLE_SYRINGE = "H"
+    # STATUS REQUEST  - these have complex responses, see relevant methods for details.
+    STATUS_REQUEST = "E1"
+    ERROR_REQUEST = "E2"
+    TIMER_REQUEST = "E3"
+    BUSY_STATUS = "T1"
+    ERROR_STATUS = "T2"
+    # PARAMETER REQUEST
+    SYRINGE_DEFAULT_SPEED = "YQS"
+      # 2-3692 seconds per stroke
+    CURRENT_SYRINGE_POSITION = "YQP"  # 0-52800 steps
+    SYRINGE_DEFAULT_BACKOFF = "YQB"  # 0-1000 steps
+    CURRENT_VALVE_POSITION = "LQP"
+      # 1-8 (see docs, Table 3.2.2
+    GET_RETURN_STEPS = "YQN"  # 0-1000 steps
+    # PARAMETER CHANGE
+    SET_RETURN_STEPS = "YSN"  # 0-1000
+    # VALVE REQUEST
+    VALVE_ANGLE = "LQA"  # 0-359 degrees
+    VALVE_CONFIGURATION = "YQS"
+      # 11-20 (see docs, Table 3.2.2
+    #Set valve speed
+    SET_VALVE_SPEED = "LSF"  # 15-720 degrees per sec
+    #Set valve speed
+    GET_VALVE_SPEED = "LQF"
+    # TIMER REQUEST
+    TIMER_DELAY = "<T"  # 0–99999999 ms
+    # FIRMWARE REQUEST
+    # TODO this is wrong, get correct
+    FIRMWARE_VERSION = "U"
+      # xxii.jj.k (ii major, jj minor, k revision)
+    OPTIONAL_PARAMETER = "S"
 
 class HamiltonPumpIO:
     """Setup with serial parameters, low level IO."""
@@ -138,7 +210,7 @@ class HamiltonPumpIO:
         logger.debug(f"Reply received: {reply_string}")
         return reply_string.decode("ascii")
 
-    def parse_response(self, response: str) -> str:
+    def _parse_response(self, response: str) -> str:
         """Split a received line in its components: status, reply."""
         status, reply = response[:1], response[1:]
 
@@ -164,80 +236,7 @@ class HamiltonPumpIO:
                 f"Maybe wrong pump address? (Set to {command.target_pump_num})"
             )
 
-        return self.parse_response(response)
-
-class ML600Commands(Enum):
-    """ Just a collection of commands. Grouped here to ease future, unlikely, changes. """
-
-    PAUSE = "K"
-    RESUME = "$"
-    CLEAR_BUFFER = "V"
-
-    INIT_ALL = "X"
-    INIT_VALVE_ONLY = "LX"
-    INIT_SYRINGE_ONLY = "X1"
-
-    # only works for pumps with two syringe drivers
-    SET_VALVE_CONTINUOUS_DISPENSE = "LST19"
-    SET_VALVE_DUAL_DILUTOR = "LST20"
-
-    # if there are two drivers, both sides can be selected
-    SELECT_LEFT = "B"
-    SELECT_RIGHT = "C"
-
-    # SYRINGE POSITION
-    PICKUP = "P"
-    DELIVER = "D"
-    ABSOLUTE_MOVE = "M"
-
-    # VALVE POSITION
-    # strongly discouraged since mapping changes
-    VALVE_TO_INLET = "I"
-    VALVE_TO_OUTLET = "O"
-    VALVE_TO_WASH = "W"
-    VALVE_BY_NAME_CW = "LP0"
-    VALVE_BY_NAME_CCW = "LP1"
-    # strongly encouraged since mapping is clear if initial/0 position is clear and rotor/stator are known
-    VALVE_BY_ANGLE_CW = "LA0"
-    VALVE_BY_ANGLE_CCW = "LA1"
-
-    # STATUS REQUEST
-    # INFORMATION REQUEST -- these all returns Y/N/* where * means busy
-    REQUEST_DONE = "F"
-    SYRINGE_HAS_ERROR = "Z"
-    VALVE_HAS_ERROR = "G"
-    IS_SINGLE_SYRINGE = "H"
-    # STATUS REQUEST  - these have complex responses, see relevant methods for details.
-    STATUS_REQUEST = "E1"
-    ERROR_REQUEST = "E2"
-    TIMER_REQUEST = "E3"
-    BUSY_STATUS = "T1"
-    ERROR_STATUS = "T2"
-    # PARAMETER REQUEST
-    SYRINGE_DEFAULT_SPEED = "YQS"
-      # 2-3692 seconds per stroke
-    CURRENT_SYRINGE_POSITION = "YQP"  # 0-52800 steps
-    SYRINGE_DEFAULT_BACKOFF = "YQB"  # 0-1000 steps
-    CURRENT_VALVE_POSITION = "LQP"
-      # 1-8 (see docs, Table 3.2.2
-    GET_RETURN_STEPS = "YQN"  # 0-1000 steps
-    # PARAMETER CHANGE
-    SET_RETURN_STEPS = "YSN"  # 0-1000
-    # VALVE REQUEST
-    VALVE_ANGLE = "LQA"  # 0-359 degrees
-    VALVE_CONFIGURATION = "YQS"
-      # 11-20 (see docs, Table 3.2.2
-    #Set valve speed
-    SET_VALVE_SPEED = "LSF"  # 15-720 degrees per sec
-    #Set valve speed
-    GET_VALVE_SPEED = "LQF"
-    # TIMER REQUEST
-    TIMER_DELAY = "<T"  # 0–99999999 ms
-    # FIRMWARE REQUEST
-    # TODO this is wrong, get correct
-    FIRMWARE_VERSION = "U"
-      # xxii.jj.k (ii major, jj minor, k revision)
-    OPTIONAL_PARAMETER = "S"
+        return self._parse_response(response)
 
 class ML600(FlowchemDevice):
     """ML600 implementation according to manufacturer docs. Tested on a 61501-01 (i.e. single syringe system).
