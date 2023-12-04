@@ -94,6 +94,7 @@ class HamiltonPumpIO:
         self.num_pump_connected = await self._assign_pump_address()
         if hw_initialization:
             await self._hw_init()
+            await asyncio.sleep(8)  # initialization take more than 8.5 sec for one instrument
 
     async def _assign_pump_address(self) -> int:
         """Auto assign pump addresses.
@@ -384,10 +385,6 @@ class ML600(FlowchemDevice):
         await self.pump_io.initialize()
         await self.wait_until_idle()
         # Test connectivity by querying the pump's firmware version
-        # todo:check
-        # fw_cmd = Protocol1Command(command="U", target_pump_num=self.address)
-        # self.device_info.version = await self.pump_io.write_and_read_reply_async(fw_cmd)
-
         self.device_info.version = await self.version()
         logger.info(
             f"Connected to Hamilton ML600 {self.name} - FW version: {self.device_info.version}!",
@@ -396,19 +393,13 @@ class ML600(FlowchemDevice):
         if hw_init:
             await self.initialize_pump(speed=ureg.Quantity(init_speed))
 
-        #determine if syringe is single or dual - if dual, commands need to specify to which side theyre dispatched if
-        # syringe/valve specific
         self.dual_syringe = not await self.single_syringe()
-        print(self.dual_syringe)
-        # todo: check
         # Add device components
-        # self.components.extend([ML600Pump("pump", self), ML600Valve("valve", self)])
-
         if self.dual_syringe:
             self.components.extend([ML600Pump("left_pump", self), ML600Pump("right_pump", self),
-                                    ML600Valve("left_valve", self), ML600Valve("right_valve", self)])
+                                    ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
         else:
-            self.components.extend([ML600Pump("pump", self), ML600Valve("valve", self)])
+            self.components.extend([ML600Pump("pump", self), ML600GenericValve("valve", self)])
 
 # TODO potentially set the suitable device mode - this might be needed despite switching by angle to achive the proper position reproducibly...
 
