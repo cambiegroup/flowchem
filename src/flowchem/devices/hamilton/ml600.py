@@ -470,7 +470,7 @@ class ML600(FlowchemDevice):
         self,
         target_position: str,
         wait_for_movement_end: bool = True,
-    ):
+    ) -> bool:
         """Set valve position.
 
         wait_for_movement_end is defaulted to True as it is a common mistake not to wait...
@@ -481,6 +481,7 @@ class ML600(FlowchemDevice):
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
             await self.wait_until_idle()
+            return True
 
     # async def get_return_steps(self) -> int:
     #     """Return steps' getter. Applied to the end of a downward syringe movement to removes mechanical slack."""
