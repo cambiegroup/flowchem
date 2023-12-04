@@ -15,8 +15,8 @@ class ML600Valve(TwoPortDistributionValve):
     hw_device: ML600  # for typing's sake
 
     position_mapping = {
-        "input": "9",  # 9 is default inlet, i.e. 1
-        "output": "10",  # 10 is default outlet, i.e. 3
+        "input": "1",  # 9 is default inlet, i.e. 1
+        "output": "3",  # 10 is default outlet, i.e. 3
     }
 
     async def set_position(self, position: str) -> bool:
