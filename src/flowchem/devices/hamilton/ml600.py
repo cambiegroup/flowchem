@@ -250,10 +250,10 @@ class ML600(FlowchemDevice):
                 f"The volume (in ml) has to be one of {ML600.VALID_SYRINGE_VOLUME}"
             )
 
-        self._steps_per_ml = ureg.Quantity(f"{48000 / self.syringe_volume} step/ml")
+        self._steps_per_ml = ureg.Quantity(f"{48000 / self.syringe_volume} step")
         self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
-
+        logger.warning(f"due to offset steps is {self._offset_steps}. the max_vol : {self._max_vol}")
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
 
@@ -413,6 +413,7 @@ class ML600(FlowchemDevice):
         )
 
         current_steps = (int(syringe_pos) - self._offset_steps) * ureg.step
+        logger.info(current_steps)
         return current_steps / self._steps_per_ml
 
     async def to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity):
