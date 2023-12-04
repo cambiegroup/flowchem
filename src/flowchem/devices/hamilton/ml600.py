@@ -382,6 +382,7 @@ class ML600(FlowchemDevice):
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
         await self.pump_io.initialize()
+        await self.wait_until_idle()
         # Test connectivity by querying the pump's firmware version
         # todo:check
         # fw_cmd = Protocol1Command(command="U", target_pump_num=self.address)
