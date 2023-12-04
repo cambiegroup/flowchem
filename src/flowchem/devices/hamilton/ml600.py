@@ -94,6 +94,24 @@ class HamiltonPumpIO:
         self.num_pump_connected = await self._assign_pump_address()
         if hw_initialization:
             await self._hw_init()
+        await self._is_single_syringe()
+
+    async def _is_single_syringe(self):
+        try:
+            await self._write_async(b"aH\r")
+        except aioserial.SerialException as e:
+            raise InvalidConfigurationError from e
+
+        reply = await self._read_reply_async()
+        print(reply)
+        try:
+            await self._write_async(b"aHR\r")
+        except aioserial.SerialException as e:
+            raise InvalidConfigurationError from e
+
+        reply = await self._read_reply_async()
+
+        print(f"+R:{reply}")
 
     async def _assign_pump_address(self) -> int:
         """Auto assign pump addresses.
@@ -129,12 +147,13 @@ class HamiltonPumpIO:
     async def _write_async(self, command: bytes):
         """Write a command to the pump."""
         await self._serial.write_async(command)
-        logger.debug(f"Command {command!r} sent!")
+        logger.info(f"Command {command!r} sent!")
 
     async def _read_reply_async(self) -> str:
         """Read the pump reply from serial communication."""
         reply_string = await self._serial.readline_async()
-        logger.debug(f"Reply received: {reply_string}")
+        logger.info(f"Reply received: {reply_string}")
+        logger.info(f"decode: {reply_string.decode('utf-8')}")
         return reply_string.decode("ascii")
 
     def parse_response(self, response: str) -> str:
@@ -464,7 +483,8 @@ class ML600(FlowchemDevice):
 
     async def get_valve_position(self) -> str:
         """Represent the position of the valve: getter returns Enum, setter needs Enum."""
-        return await self.send_command_and_read_reply(Protocol1Command(command="LQA"))
+        await self.send_command_and_read_reply(Protocol1Command(command="LQA"))
+        return await self.send_command_and_read_reply(Protocol1Command(command="LQP"))
 
     async def set_valve_position(
         self,
