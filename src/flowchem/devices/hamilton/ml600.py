@@ -579,7 +579,7 @@ class ML600(FlowchemDevice):
     async def wait_until_idle(self):
         """Return when no more commands are present in the pump buffer."""
         logger.debug(f"ML600 pump {self.name} wait until idle...")
-        while not self.is_idle():
+        while not await self.is_idle():
             await asyncio.sleep(0.1)
         logger.debug(f"...ML600 pump {self.name} idle now!")
 
