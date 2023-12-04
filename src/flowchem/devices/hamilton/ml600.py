@@ -1,6 +1,7 @@
 """Control Hamilton ML600 syringe pump via the protocol1/RNO+."""
 from __future__ import annotations
 
+import asyncio
 import string
 import warnings
 from dataclasses import dataclass
@@ -442,12 +443,13 @@ class ML600(FlowchemDevice):
             Protocol1Command(command="", execution_command="V"),
         )
 
-    async def wait_until_idle(self):
+    async def wait_until_idle(self) -> bool:
         """Return when no more commands are present in the pump buffer."""
         logger.debug(f"ML600 pump {self.name} wait until idle...")
-        while not self.is_idle():
+        while not await self.is_idle():
             await asyncio.sleep(0.1)
         logger.debug(f"...ML600 pump {self.name} idle now!")
+        return True
 
     async def version(self) -> str:
         """Return the current firmware version reported by the pump."""
@@ -456,7 +458,7 @@ class ML600(FlowchemDevice):
     async def is_idle(self) -> bool:
         """Check if the pump is idle (actually check if the last command has ended)."""
         return (
-            await self.send_command_and_read_reply(Protocol1Command(command="F")) == "Y"
+            await self.send_command_and_read_reply(Protocol1Command(command="F", execution_command="")) == "Y"
         )
 
     async def get_valve_position(self) -> str:
