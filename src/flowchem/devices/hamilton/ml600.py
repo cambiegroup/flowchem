@@ -553,7 +553,7 @@ class ML600(FlowchemDevice):
     async def single_syringe(self) -> bool:
         """Determine if single or dual syringe"""
         is_single = await self.send_command_and_read_reply(
-            Protocol1Command(command=ML600Commands.IS_SINGLE_SYRINGE.value),
+            Protocol1Command(command=ML600Commands.IS_SINGLE_SYRINGE.value, execution_command=""),
         )
         logger.debug(is_single)
         if is_single == "N":
@@ -590,7 +590,8 @@ class ML600(FlowchemDevice):
     async def is_idle(self) -> bool:
         """Check if the pump is idle (actually check if the last command has ended)."""
         return (
-            await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.REQUEST_DONE.value)) == "Y"
+            await self.send_command_and_read_reply(
+                Protocol1Command(command=ML600Commands.REQUEST_DONE.value, execution_command="")) == "Y"
         )
 
     # async def get_valve_position(self) -> str:
