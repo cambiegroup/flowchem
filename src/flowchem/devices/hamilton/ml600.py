@@ -34,7 +34,7 @@ class Protocol1Command:
 
     command: str
     target_pump_num: int = 1
-    target_syringe: str = ""
+    target_component: str = ""
     command_value: str = ""
     optional_parameter: str = ""
     parameter_value: str = ""
@@ -44,7 +44,7 @@ class Protocol1Command:
         """Create actual command byte by prepending pump address to command and appending executing command."""
         compiled_command = (
             f"{PUMP_ADDRESS[self.target_pump_num]}"
-            f"{self.target_syringe}"
+            f"{self.target_component}"
             f"{self.command}{self.command_value}"
         )
 
@@ -500,7 +500,7 @@ class ML600(FlowchemDevice):
             optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
             command_value=str(position),
             parameter_value=self._validate_speed(speed),
-            target_syringe = syringe.value if self.dual_syringe else ""
+            target_component = syringe.value if self.dual_syringe else ""
         )
         return await self.send_command_and_read_reply(abs_move_cmd)
 
@@ -508,7 +508,7 @@ class ML600(FlowchemDevice):
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION.value,
-                             target_syringe= syringe.value if self.dual_syringe else ""
+                             target_component= syringe.value if self.dual_syringe else ""
 ),
         )
 
@@ -584,7 +584,7 @@ class ML600(FlowchemDevice):
         Strongly encouraged to use switching by angle
         """
         return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.CURRENT_VALVE_POSITION.value,
-                                                                       target_valve = valve.value if self.dual_syringe else ""))
+                                                                       target_component = valve.value if self.dual_syringe else ""))
 
 
     async def set_valve_position_by_name(
@@ -600,25 +600,26 @@ class ML600(FlowchemDevice):
         await self.send_command_and_read_reply(
 
             Protocol1Command(command=ML600Commands.VALVE_BY_NAME_CW.value, command_value=target_position,
-                             target_valve = valve.value if self.dual_syringe else ""
+                             target_component = valve.value if self.dual_syringe else ""
 ),
         )
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
             await self.wait_until_idle()
 
-    async def get_valve_position(self, valve: ML600Commands = None) -> str:
+    async def get_raw_position(self, target_component:str) -> str:
         """
         Represent the position of the valve: getter returns Enum, setter needs Enum.
         Strongly encouraged to use switching by angle
         """
         return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.VALVE_ANGLE.value,
-                                                                       target_valve = valve.value if self.dual_syringe else ""))
-    async def set_valve_position(
+                                                                       target_component = target_component if self.dual_syringe else ""))
+    async def set_raw_position(
         self,
         target_position: str,
         wait_for_movement_end: bool = True,
-        counter_clockwise = False, valve: ML600Commands = None
+        counter_clockwise = False, valve: ML600Commands = None,
+        target_component = None
     ):
         """Set valve position.
         Strongly encouraged to use switching by angle
@@ -627,13 +628,13 @@ class ML600(FlowchemDevice):
         if not counter_clockwise:
             await self.send_command_and_read_reply(
                 Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CW.value, command_value=target_position,
-                                 target_valve = valve.value if self.dual_syringe else ""),
+                                 target_component = target_component if self.dual_syringe else ""),
             )
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CW")
         else:
             await self.send_command_and_read_reply(
                 Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW.value, command_value=target_position,
-                                 target_valve = valve.value if self.dual_syringe else ""),
+                                 target_component = target_component if self.dual_syringe else ""),
             )
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CCW")
         if wait_for_movement_end:
