@@ -386,7 +386,7 @@ class ML600(FlowchemDevice):
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
         await self.pump_io.initialize()
-        await self.wait_until_idle()
+        await self.wait_until_system_idle()
         # Test connectivity by querying the pump's firmware version
         self.device_info.version = await self.version()
         logger.info(
@@ -568,23 +568,36 @@ class ML600(FlowchemDevice):
             Protocol1Command(command="", execution_command=ML600Commands.CLEAR_BUFFER.value),
         )
 
-    async def wait_until_idle(self):
+
+    async def wait_until_system_idle(self):
         """Return when no more commands are present in the pump buffer."""
         logger.debug(f"ML600 pump {self.name} wait until idle...")
-        while not await self.is_idle():
+        while not await self.is_system_idle():
             await asyncio.sleep(0.1)
         logger.debug(f"...ML600 pump {self.name} idle now!")
+
+    async def is_system_idle(self) -> bool:
+        """Check if the pump is idle (actually check if the last command has ended)."""
+        return (
+            await self.send_command_and_read_reply(
+                Protocol1Command(command="F", execution_command="")) == "Y"
+        )
+    async def single_syringe(self) -> bool:
+        """Determine if single or dual syringe"""
+        is_single = await self.send_command_and_read_reply(
+            Protocol1Command(command=ML600Commands.IS_SINGLE_SYRINGE.value, execution_command=""),
+        )
+        logger.debug(is_single)
+        if is_single == "N":
+            return False
+        elif is_single == "Y":
+            return True
+        else:
+            raise InvalidConfigurationError("Neither single nor dual syringe - somethings wrong")
 
     async def version(self) -> str:
         """Return the current firmware version reported by the pump."""
         return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.FIRMWARE_VERSION.value))
-
-    async def is_idle(self) -> bool:
-        """Check if the pump is idle (actually check if the last command has ended)."""
-        return (
-            await self.send_command_and_read_reply(
-                Protocol1Command(command=ML600Commands.REQUEST_DONE.value, execution_command="")) == "Y"
-        )
 
     # async def get_valve_position(self) -> str:
     #     """Represent the position of the valve: getter returns Enum, setter needs Enum."""
@@ -604,7 +617,7 @@ class ML600(FlowchemDevice):
     #     )
     #     logger.debug(f"{self.name} valve position set to position {target_position}")
     #     if wait_for_movement_end:
-    #         await self.wait_until_idle()
+    #         await self.wait_until_system_idle()
     #
     async def get_valve_position_by_name(self, valve: ML600Commands = None) -> str:
         """
@@ -630,7 +643,7 @@ class ML600(FlowchemDevice):
         )
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
-            await self.wait_until_idle()
+            await self.wait_until_system_idle()
 
     async def get_valve_position(self, valve: ML600Commands = None) -> str:
         """
@@ -662,7 +675,7 @@ class ML600(FlowchemDevice):
             )
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CCW")
         if wait_for_movement_end:
-            await self.wait_until_idle()
+            await self.wait_until_system_idle()
 
     # async def get_return_steps(self) -> int:
     #     """Return steps' getter. Applied to the end of a downward syringe movement to removes mechanical slack."""
