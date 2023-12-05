@@ -1,2 +1,4 @@
 [device.test-device]
-type = "FakeDevice"
+type = "ML600"
+port = "COM9"
+syringe_volume = "0.05 ml"
