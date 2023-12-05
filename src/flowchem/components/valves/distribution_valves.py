@@ -5,110 +5,74 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 class TwoPortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        positions = {
-            "1": [("pump", "1")],
-            "2": [("pump", "2")],
-        }
-        super().__init__(name, hw_device, positions, ports=["pump", "1", "2"])
+        super().__init__(name, hw_device,
+                         stator_ports=[(1, 2), (0,)],
+                         rotor_ports=[(3, None), (3,)],
+                         )
+
+
+class FourPortDistributionValve(Valve):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+        super().__init__(name, hw_device,
+                         stator_ports=[(1, 2, 3, 4), (0,)],
+                         rotor_ports=[(3, None, None, None), (3,)],
+                         )
 
 
 class SixPortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        positions = {
-            "1": [("pump", "1")],
-            "2": [("pump", "2")],
-            "3": [("pump", "3")],
-            "4": [("pump", "4")],
-            "5": [("pump", "5")],
-            "6": [("pump", "6")],
-        }
         super().__init__(
             name,
             hw_device,
-            positions,
-            ports=["pump", "1", "2", "3", "4", "5", "6"],
+            stator_ports=[(1, 2, 3, 4, 5, 6), (0,)],
+            rotor_ports=[(7, None, None, None, None, None), (7,)],
         )
 
 
 class TwelvePortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        positions = {
-            "1": [("pump", "1")],
-            "2": [("pump", "2")],
-            "3": [("pump", "3")],
-            "4": [("pump", "4")],
-            "5": [("pump", "5")],
-            "6": [("pump", "6")],
-            "7": [("pump", "7")],
-            "8": [("pump", "8")],
-            "9": [("pump", "9")],
-            "10": [("pump", "10")],
-            "11": [("pump", "11")],
-            "12": [("pump", "12")],
-        }
         super().__init__(
             name,
             hw_device,
-            positions,
-            ports=[
-                "pump",
-                "1",
-                "2",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-                "8",
-                "9",
-                "10",
-                "11",
-                "12",
-            ],
+            stator_ports=[(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), (0,)],
+            rotor_ports=[(13, None, None, None, None, None, None, None, None, None, None, None), (13,)],
         )
 
 
 class SixteenPortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        positions = {
-            "1": [("pump", "1")],
-            "2": [("pump", "2")],
-            "3": [("pump", "3")],
-            "4": [("pump", "4")],
-            "5": [("pump", "5")],
-            "6": [("pump", "6")],
-            "7": [("pump", "7")],
-            "8": [("pump", "8")],
-            "9": [("pump", "9")],
-            "10": [("pump", "10")],
-            "11": [("pump", "11")],
-            "12": [("pump", "12")],
-            "13": [("pump", "13")],
-            "14": [("pump", "14")],
-            "15": [("pump", "15")],
-            "16": [("pump", "16")],
-        }
         super().__init__(
             name,
             hw_device,
-            positions,
-            ports=[
-                "pump",
-                "1",
-                "2",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-                "8",
-                "9",
-                "10",
-                "11",
-                "12",
-                "13",
-                "14",
-                "15",
-                "16",
-            ],
+            stator_ports=[(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16), (0,)],
+            rotor_ports=[(17, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None),
+                         (17,)],
+        )
+
+
+class ThreePortFourPositionValve(Valve):
+    """
+    This is of type HamiltonDualPumpValveOnRight
+    """
+
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+        super().__init__(
+            name,
+            hw_device,
+            stator_ports=[(None, 1, 2, 3,), (0,)],
+            rotor_ports=[(4, 4, 5, 5), (4,)],
+        )
+
+
+class ThreePortTwoPositionValve(Valve):
+    """
+    This is of type HamiltonDualPumpValveOnLeft
+    """
+
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+        super().__init__(
+            name,
+            hw_device,
+            stator_ports=[(None, 1, 2, 3,), (0,)],
+            rotor_ports=[(4, 4), None, None, (None,)],
         )

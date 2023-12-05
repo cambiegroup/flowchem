@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from enum import Enum
 
 if TYPE_CHECKING:
     from .knauer_valve import KnauerValve
@@ -10,25 +11,42 @@ from flowchem.components.valves.distribution_valves import (
     SixteenPortDistributionValve,
     TwelvePortDistributionValve,
 )
+from flowchem.components.flowchem_component import FlowchemDevice
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 
 
 class KnauerInjectionValve(SixPortTwoPositionValve):
     hw_device: KnauerValve  # for typing's sake
-    position_mapping = {"load": "L", "inject": "I"}
-    _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
-    async def get_position(self) -> str:
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+        """Create a ValveControl object."""
+        super().__init__(name, hw_device)
+
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+
+    class LoadInject(Enum):
+        LOAD = "L"
+        INJECT = "I"
+
+    def _change_connections(self, raw_position: str | int, reverse: bool = False):
+        position_mapping = {0: "L", 1: "I"}
+        if reverse:
+            return str([key for key, value in position_mapping.items() if value == raw_position][0])
+        else:
+            return position_mapping[raw_position]
+
+    async def get_monitor_position(self) -> str:
         """Get current valve position."""
-        pos = await self.hw_device.get_raw_position()
-        assert pos in ("L", "I"), "Valve position is 'I' or 'L'"
-        return self._reverse_position_mapping[pos]
+        pos = self.LoadInject(await self.hw_device.get_raw_position())
+        return pos.name
 
-    async def set_position(self, position: str):
+    async def set_monitor_position(self, position: str):
         """Move valve to position."""
-        await super().set_position(position)
-        target_pos = self.position_mapping[position]
-        return await self.hw_device.set_raw_position(target_pos)
+        try:
+            return await self.hw_device.set_raw_position(self.LoadInject[position.upper()].value)
+        except KeyError as e:
+            raise Exception(f"Please give allowed positions {[pos.name for pos in self.LoadInject]}") from e
 
 
 class Knauer6PortDistributionValve(SixPortDistributionValve):
@@ -36,14 +54,11 @@ class Knauer6PortDistributionValve(SixPortDistributionValve):
 
     hw_device: KnauerValve  # for typing's sake
 
-    async def get_position(self) -> str:
-        """Get current valve position."""
-        return await self.hw_device.get_raw_position()
-
-    async def set_position(self, position: str):
-        """Move valve to position."""
-        await super().set_position(position)
-        return await self.hw_device.set_raw_position(position)
+    def _change_connections(self, raw_position: int, reverse: bool = False):
+        if reverse:
+            return raw_position - 1
+        else:
+            return raw_position + 1
 
 
 class Knauer12PortDistributionValve(TwelvePortDistributionValve):
@@ -51,14 +66,11 @@ class Knauer12PortDistributionValve(TwelvePortDistributionValve):
 
     hw_device: KnauerValve  # for typing's sake
 
-    async def get_position(self) -> str:
-        """Get current valve position."""
-        return await self.hw_device.get_raw_position()
-
-    async def set_position(self, position: str):
-        """Move valve to position."""
-        await super().set_position(position)
-        return await self.hw_device.set_raw_position(position)
+    def _change_connections(self, raw_position:int, reverse: bool = False):
+        if reverse:
+            return raw_position - 1
+        else:
+            return raw_position + 1
 
 
 class Knauer16PortDistributionValve(SixteenPortDistributionValve):
@@ -66,11 +78,8 @@ class Knauer16PortDistributionValve(SixteenPortDistributionValve):
 
     hw_device: KnauerValve  # for typing's sake
 
-    async def get_position(self) -> str:
-        """Get current valve position."""
-        return await self.hw_device.get_raw_position()
-
-    async def set_position(self, position: str):
-        """Move valve to position."""
-        await super().set_position(position)
-        return await self.hw_device.set_raw_position(position)
+    def _change_connections(self, raw_position:int, reverse: bool = False):
+        if reverse:
+            return raw_position - 1
+        else:
+            return raw_position + 1

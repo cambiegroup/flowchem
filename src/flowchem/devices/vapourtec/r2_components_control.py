@@ -17,6 +17,8 @@ from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 if TYPE_CHECKING:
     from .r2 import R2
 
+import json
+
 AllValveDic = {
     "TwoPortValve_A": 0,
     "TwoPortValve_B": 1,
@@ -130,6 +132,8 @@ class UV150PhotoReactor(Photoreactor):
 class R2InjectionValve(SixPortTwoPositionValve):
     """R2 reactor injection loop valve control class."""
 
+    #todo this needs to be adapted to new code
+
     hw_device: R2  # for typing's sake
 
     # get position
@@ -141,12 +145,39 @@ class R2InjectionValve(SixPortTwoPositionValve):
         super().__init__(name, hw_device)
         self.valve_code = valve_code
 
-    async def get_position(self) -> str:
+        self.add_api_route("/button_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/button_position", self.set_monitor_position, methods=["PUT"])
+
+    def _change_connections(self, raw_position, reverse: bool = False) -> str:
+        #since nothing happens here, could simply become: return raw position
+        if not reverse:
+            translated = raw_position
+        else:
+            translated = raw_position
+        return translated
+
+    async def get_position(self) -> list[list]:
         """Get current valve position."""
-        position = await self.hw_device.get_valve_Position(self.valve_code)
+        position = await self.hw_device.get_valve_position(self.valve_code)
+        return self._positions[int(self._change_connections(position, reverse=True))]
+
+    async def set_position(self, positions_to_connect):
+        """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
+        positions_to_connect_l = json.loads(positions_to_connect)
+        position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
+        target_pos = self._connect_positions(position_to_connect)
+        target_pos = self._change_connections(target_pos)
+        await self.hw_device.trigger_key_press(
+            str(self.valve_code * 2 + int(target_pos)),
+        )
+        return True
+
+    async def get_monitor_position(self) -> str:
+        """Get current valve position."""
+        position = await self.hw_device.get_valve_position(self.valve_code)
         return "position is %s" % self._reverse_position_mapping[position]
 
-    async def set_position(self, position: str) -> bool:
+    async def set_monitor_position(self, position: str) -> bool:
         """Set position: 'load' or 'inject'."""
         target_pos = self.position_mapping[position]  # load or inject
         await self.hw_device.trigger_key_press(
@@ -161,6 +192,7 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
     hw_device: R2
 
     # TODO: the mapping name is not applicable
+    # TODO this needs to be adjusted to new code
     position_mapping = {"Solvent": "0", "Reagent": "1"}
     _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
@@ -168,14 +200,39 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
         self.valve_code = valve_code
+        # raise NotImplementedError("Check that the mapping is correct")
+        self.add_api_route("/button_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/button_position", self.set_monitor_position, methods=["PUT"])
 
-    async def get_position(self) -> str:
+    def _change_connections(self, raw_position, reverse: bool = False) -> str:
+        if not reverse:
+            translated = raw_position
+        else:
+            translated = raw_position
+        return translated
+
+    async def get_position(self) -> list[list]:
         """Get current valve position."""
-        position = await self.hw_device.get_valve_Position(self.valve_code)
+        position = await self.hw_device.get_valve_position(self.valve_code)
+        return (self._positions[int(self._change_connections(position, reverse=True))])
+
+    async def set_position(self, positions_to_connect):
+        """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
+        positions_to_connect_l = json.loads(positions_to_connect)
+        position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
+        target_pos = self._connect_positions(position_to_connect)
+        target_pos = self._change_connections(target_pos)
+        await self.hw_device.trigger_key_press(
+            str(self.valve_code * 2 + int(target_pos)),
+        )
+        return True
+    async def get_monitor_position(self) -> str:
+        """Get current valve position."""
+        position = await self.hw_device.get_valve_position(self.valve_code)
         # self.hw_device.last_state.valve[self.valve_number]
         return "inlet is %s" % self._reverse_position_mapping[position]
 
-    async def set_position(self, position: str) -> bool:
+    async def set_monitor_position(self, position: str) -> bool:
         """Move valve to position."""
         target_pos = self.position_mapping[position]
         await self.hw_device.trigger_key_press(
@@ -224,7 +281,7 @@ class R2HPLCPump(HPLCPump):
 class R2PumpPressureSensor(PressureSensor):
     hw_device: R2  # for typing's sake
 
-    def __init__(self, name: str, hw_device: R2, pump_code: int) -> None:
+    def __init__(self, name: str, hw_device: FlowchemDevice, pump_code: int) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
         self.pump_code = pump_code

@@ -248,6 +248,8 @@ class ML600(FlowchemDevice):
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
 
+# TODO: 1) get switch by degrees, this should be simply set_position. Todo get command mapping as enum
+
     DEFAULT_CONFIG = {
         "default_infuse_rate": "1 ml/min",
         "default_withdraw_rate": "1 ml/min",
@@ -584,6 +586,7 @@ class ML600(FlowchemDevice):
         return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.CURRENT_VALVE_POSITION.value,
                                                                        target_valve = valve.value if self.dual_syringe else ""))
 
+
     async def set_valve_position_by_name(
         self,
         target_position: str,
@@ -595,6 +598,7 @@ class ML600(FlowchemDevice):
         wait_for_movement_end is defaulted to True as it is a common mistake not to wait...
         """
         await self.send_command_and_read_reply(
+
             Protocol1Command(command=ML600Commands.VALVE_BY_NAME_CW.value, command_value=target_position,
                              target_valve = valve.value if self.dual_syringe else ""
 ),

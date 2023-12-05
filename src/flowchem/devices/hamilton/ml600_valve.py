@@ -3,38 +3,43 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from loguru import logger
-
-from flowchem.components.valves.distribution_valves import TwoPortDistributionValve
+from flowchem.components.valves.distribution_valves import ThreePortTwoPositionValve, ThreePortFourPositionValve
 
 if TYPE_CHECKING:
     from .ml600 import ML600
 
 
-class ML600Valve(TwoPortDistributionValve):
+class ML600LeftValve(ThreePortTwoPositionValve):
     hw_device: ML600  # for typing's sake
 
-    position_mapping = {
-        "input": "9",  # 9 is default inlet, i.e. 1
-        "output": "10",  # 10 is default outlet, i.e. 3
-    }
+    def _change_connections(self, raw_position, reverse: bool = False) -> str:
+        raise NotImplementedError("Check that provided mapping is correct")
+        if not reverse:
+            translated = (raw_position+1) * 135
+        else:
+            translated = (raw_position/135)-1
+        return translated
 
-    async def set_position(self, position: str) -> bool:
-        """Set pump to position."""
-        await super().set_position(position)  # Validation
-        return await self.hw_device.set_valve_position(
-            target_position=ML600Valve.position_mapping[position],
-            wait_for_movement_end=True,
-        )
 
-    async def get_position(self) -> str:
-        """Get current pump position."""
-        pos = await self.hw_device.get_valve_position()
-        reverse_position_mapping = {
-            v: k for k, v in ML600Valve.position_mapping.items()
-        }
-        try:
-            return reverse_position_mapping[pos]
-        except KeyError:
-            logger.error(f"Unknown valve position returned {pos}")
-            return ""
+class ML600GenericValve(ThreePortTwoPositionValve):
+    hw_device: ML600  # for typing's sake
+    """Use this for a standard one syringe one valve hamilton."""
+    def _change_connections(self, raw_position, reverse: bool = False) -> str:
+        raise NotImplementedError("Check that provided mapping is correct")
+        # TODO no clue which kind of degrees are required on this one - check
+        if not reverse:
+            translated = (raw_position+1) * 135
+        else:
+            translated = (raw_position/135)-1
+        return translated
+
+class ML600RightValve(ThreePortFourPositionValve):
+    hw_device: ML600  # for typing's sake
+
+    def _change_connections(self, raw_position, reverse: bool = False) -> str:
+        raise NotImplementedError("Check that provided mapping is correct")
+        if not reverse:
+            translated = raw_position * 90
+        else:
+            translated = raw_position/135
+        return translated
