@@ -6,6 +6,7 @@ import warnings
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
+import asyncio
 
 import aioserial
 from loguru import logger
@@ -322,8 +323,7 @@ class ML600(FlowchemDevice):
 
         self._steps_per_ml = ureg.Quantity(f"{48000 / self.syringe_volume} step/ml")
         self._max_vol = 48000 * ureg.step / self._steps_per_ml
-        self.return_steps = 24# Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
-
+        
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
         self.dual_syringe = False
@@ -359,14 +359,12 @@ class ML600(FlowchemDevice):
             name=config.get("name", ""),
         )
 
-    @property
-    async def return_steps(self) -> int:
+    async def get_return_steps(self) -> int:
         """ Gives the dfined return steps for syringe movement """
         reply=await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.GET_RETURN_STEPS.value))
         return int(reply)
 
-    @return_steps.setter
-    async def return_steps(self, return_steps: int):
+    async def set_return_steps(self, return_steps: int):
         # waiting is necessary since this happens on (class) initialisation
         target_steps = str(int(return_steps))
         await self.wait_until_idle()
@@ -374,6 +372,8 @@ class ML600(FlowchemDevice):
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
+
+        await self.set_return_steps(24)  # Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
         await self.pump_io.initialize()
         # Test connectivity by querying the pump's firmware version
         self.device_info.version = await self.version()
@@ -533,6 +533,7 @@ class ML600(FlowchemDevice):
 
     async def single_syringe(self)->bool:
         """Determine if single or dual syringe"""
+        await self.wait_until_idle()
         is_single = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.IS_SINGLE_SYRINGE.value),
         )
@@ -560,7 +561,7 @@ class ML600(FlowchemDevice):
     async def wait_until_idle(self):
         """Return when no more commands are present in the pump buffer."""
         logger.debug(f"ML600 pump {self.name} wait until idle...")
-        while not self.is_idle():
+        while not await self.is_idle():
             await asyncio.sleep(0.1)
         logger.debug(f"...ML600 pump {self.name} idle now!")
 
