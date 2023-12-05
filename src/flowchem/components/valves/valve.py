@@ -213,7 +213,7 @@ class Valve(FlowchemComponent):
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
     # TODO ideally this should also return a tuple to be consistent
-    async def get_position(self) -> tuple[tuple]:
+    async def get_position(self) -> tuple[tuple, tuple]:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
         try:
