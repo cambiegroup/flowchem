@@ -47,7 +47,7 @@ class ValveInfo(BaseModel):
                 position
     """
     ports: list[tuple]
-    positions: dict[int, tuple[tuple[int, ...], ...]]
+    positions: dict[int, tuple[tuple[None | int, ...], ...]]
 
 
 def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
