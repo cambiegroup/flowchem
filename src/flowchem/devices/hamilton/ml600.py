@@ -618,7 +618,7 @@ class ML600(FlowchemDevice):
         self,
         target_position: str,
         wait_for_movement_end: bool = True,
-        counter_clockwise = False, valve: ML600Commands = None,
+        counter_clockwise = False, 
         target_component = None
     ):
         """Set valve position.
