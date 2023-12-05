@@ -4,8 +4,6 @@ from __future__ import annotations
 import asyncio
 import string
 import warnings
-import aioserial
-from loguru import logger
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
@@ -124,8 +122,7 @@ class ML600Commands(Enum):
     TIMER_DELAY = "<T"  # 0–99999999 ms
     # FIRMWARE REQUEST
     # TODO this is wrong, get correct
-    FIRMWARE_VERSION = "U"
-      # xxii.jj.k (ii major, jj minor, k revision)
+    FIRMWARE_VERSION = "U"  # xxii.jj.k (ii major, jj minor, k revision)
     OPTIONAL_PARAMETER = "S"
 
 class HamiltonPumpIO:
@@ -314,6 +311,7 @@ class ML600(FlowchemDevice):
 
         # Syringe pumps only perform linear movement, and the volume displaced is function of the syringe loaded.
         try:
+            # todo: set syringe_volume to a dict/str??
             self.syringe_volume = ureg.Quantity(syringe_volume)
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
@@ -333,11 +331,11 @@ class ML600(FlowchemDevice):
         # self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         # self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
         self._max_vol = 48000 * ureg.step / self._steps_per_ml
-        self.return_steps = 24 # Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
+        self.return_steps = 24  # Steps added to each absolute move command (default)
 
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
-        self.dual_syringe = False  # todo: check
+        self.dual_syringe = False
 
     @classmethod
     def from_config(cls, **config):
@@ -370,20 +368,20 @@ class ML600(FlowchemDevice):
             name=config.get("name", ""),
         )
 
-    @property
-    async def return_steps(self) -> int:
-        """ Gives the defined return steps for syringe movement """
-        reply = await self.send_command_and_read_reply(
-            Protocol1Command(command=ML600Commands.GET_RETURN_STEPS.value))
-        return int(reply)
-
-    @return_steps.setter
-    async def return_steps(self, return_steps: int):
-        # waiting is necessary since this happens on (class) initialisation
-        target_steps = str(int(return_steps))
-        await self.wait_until_idle()
-        await self.send_command_and_read_reply(
-            Protocol1Command(command=ML600Commands.SET_RETURN_STEPS.value, command_value=target_steps))
+    # @property
+    # async def return_steps(self) -> int:
+    #     """ Gives the defined return steps for syringe movement """
+    #     reply = await self.send_command_and_read_reply(
+    #         Protocol1Command(command=ML600Commands.GET_RETURN_STEPS.value))
+    #     return int(reply)
+    #
+    # @return_steps.setter
+    # async def return_steps(self, return_steps: int):
+    #     # waiting is necessary since this happens on (class) initialisation
+    #     target_steps = str(int(return_steps))
+    #     await self.wait_until_system_idle()
+    #     await self.send_command_and_read_reply(
+    #         Protocol1Command(command=ML600Commands.SET_RETURN_STEPS.value, command_value=target_steps))
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
@@ -406,7 +404,12 @@ class ML600(FlowchemDevice):
         else:
             self.components.extend([ML600Pump("pump", self), ML600GenericValve("valve", self)])
 
-# TODO potentially set the suitable device mode - this might be needed despite switching by angle to achive the proper position reproducibly...
+        # if hw_init:
+        #     # initialization take more than 8.5 sec for one instrument (both pump and valve)
+        #     await self.pump_io.all_hw_init()
+
+        # TODO potentially set the suitable device mode -
+        #  this might be needed despite switching by angle to achieve the proper position reproducibly...
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
@@ -445,35 +448,28 @@ class ML600(FlowchemDevice):
 
         return str(round(speed.m_as("sec / stroke")))
 
-    async def initialize_pump(self, speed: pint.Quantity | None = None):
-        """Initialize both syringe and valve.
+    # async def initialize_instrument(self, speed: pint.Quantity | None = None):
+    #     """Initialize both syringe and valve. speed: 2-3692 in seconds/stroke"""
+    #     init_pump = Protocol1Command(
+    #         command=ML600Commands.INIT_ALL.value,
+    #         optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
+    #         parameter_value=self._validate_speed(speed),
+    #     )
+    #     return await self.send_command_and_read_reply(init_pump)
 
-        speed: 2-3692 in seconds/stroke
-        """
-        # init_pump = Protocol1Command(
-        #     command="X",
-        #     optional_parameter="S",
-        #     parameter_value=self._validate_speed(speed),
-        # )
-        init_pump = Protocol1Command(
-            command=ML600Commands.INIT_ALL.value,
-            optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
-            parameter_value=self._validate_speed(speed),
-        )
-        return await self.send_command_and_read_reply(init_pump)
-
-    # async def initialize_valve(self):
-    #     """Initialize valve only."""
-    #     return await self.send_command_and_read_reply(Protocol1Command(command="LX"))
-
-    # async def initialize_syringe(self, speed: pint.Quantity | None = None):
-    #     """
-    #     Initialize syringe only.
+    # async def initialize_valves(self):
+    #     """Initialize valves only."""
+    #     # todo: check for individual or not
+    #     return await self.send_command_and_read_reply(
+    #         Protocol1Command(command="LX"))
     #
-    #     speed: 2-3692 in seconds/stroke
+    # async def initialize_pump(self, pump: str, speed: pint.Quantity | None = None):
+    #     """
+    #     Initialize syringe only. speed: 2-3692 in seconds/stroke
     #     """
     #     init_syringe = Protocol1Command(
     #         command="X1",
+    #         target_syringe=pump,
     #         optional_parameter="S",
     #         parameter_value=self._validate_speed(speed),
     #     )
@@ -680,8 +676,6 @@ class ML600(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    import asyncio
-
     conf = {
         "port": "COM11",
         "address": 1,
