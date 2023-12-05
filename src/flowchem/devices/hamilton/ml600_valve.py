@@ -12,6 +12,15 @@ if TYPE_CHECKING:
 class ML600LeftValve(ThreePortTwoPositionValve):
     hw_device: ML600  # for typing's sake
     identifier = "B"
+    # 0 degree syr-left, 
+    # 45 right-front
+    # 90 nothing
+    # 135 front-syr
+    # 180
+    # 225 left front
+    # 270 syr-right
+    # 315
+    # 360
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         if not reverse:
             translated = (raw_position+1) * 135
