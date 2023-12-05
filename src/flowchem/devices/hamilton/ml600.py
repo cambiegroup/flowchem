@@ -168,7 +168,7 @@ class HamiltonPumpIO:
         """Ensure connection with pump and initialize it (if hw_initialization is True)."""
         self.num_pump_connected = await self._assign_pump_address()
         if hw_initialization:
-            await self._hw_init()
+            await self.all_hw_init()
             await asyncio.sleep(8)  # initialization take more than 8.5 sec for one instrument
 
     async def _assign_pump_address(self) -> int:
@@ -197,8 +197,9 @@ class HamiltonPumpIO:
         logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
         return int(last_pump)
 
-    async def _hw_init(self):
+    async def all_hw_init(self):
         """Send to all pumps the HW initialization command (i.e. homing)."""
+        await self._write_async(b":V\r")
         await self._write_async(b":XR\r")  # Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
 
