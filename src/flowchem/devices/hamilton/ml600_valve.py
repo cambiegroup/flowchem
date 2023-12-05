@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.valves.distribution_valves import ThreePortTwoPositionValve, ThreePortFourPositionValve
+from flowchem.components.valves.distribution_valves import ThreePortTwoPositionValve, ThreePortFourPositionValve, FourPortFivePositionValve
 
 if TYPE_CHECKING:
     from .ml600 import ML600
 
 
-class ML600LeftValve(ThreePortTwoPositionValve):
+class ML600LeftValve(FourPortFivePositionValve):
     hw_device: ML600  # for typing's sake
     identifier = "B"
     # 0 degree syr-left, 
@@ -23,9 +23,9 @@ class ML600LeftValve(ThreePortTwoPositionValve):
     # 360
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         if not reverse:
-            translated = (raw_position+1) * 135
+            translated = (raw_position) * 45
         else:
-            translated = (raw_position/135)-1
+            translated = (raw_position/45)
         return translated
 
 

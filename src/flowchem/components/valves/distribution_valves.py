@@ -76,3 +76,17 @@ class ThreePortTwoPositionValve(Valve):
             stator_ports=[(None, 1, 2, 3,), (0,)],
             rotor_ports=[(4, 4, None, None), (None,)],
         )
+        
+class FourPortFivePositionValve(Valve):
+    """
+    This is of type HamiltonDualPumpValveOnLeft
+    """
+    # rotor and stator look confusing, however this is necessary to apply the logic
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+        super().__init__(
+            name,
+            hw_device,
+            stator_ports=[(None, None, 1, None, 2, None, 3, None,), (0,)],
+            rotor_ports=[(None, 5, None, None, 4, None, 4, None), (5,)],
+        )
+
