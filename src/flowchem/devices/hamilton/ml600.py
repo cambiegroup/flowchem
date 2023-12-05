@@ -399,7 +399,7 @@ class ML600(FlowchemDevice):
         self.dual_syringe = not await self.single_syringe()
         # Add device components
         if self.dual_syringe:
-            self.components.extend([ML600Pump("left_pump", self), ML600Pump("right_pump", self),
+            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C"),
                                     ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
         else:
             self.components.extend([ML600Pump("pump", self), ML600GenericValve("valve", self)])
@@ -514,11 +514,11 @@ class ML600(FlowchemDevice):
         )
         return await self.send_command_and_read_reply(abs_move_cmd)
 
-    async def get_current_volume(self, syringe: ML600Commands = None) -> pint.Quantity:
+    async def get_current_volume(self, pump: str) -> pint.Quantity:
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION.value,
-                             target_syringe=syringe.value if self.dual_syringe else ""),
+                             target_syringe=pump),
         )
 
         current_steps = int(syringe_pos) * ureg.step
@@ -535,33 +535,7 @@ class ML600(FlowchemDevice):
         logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {speed}")
 
 
-    # TODO prob those also allow for selection
-    async def pause(self):
-        """Pause any running command."""
-        return await self.send_command_and_read_reply(
-            Protocol1Command(command="", execution_command=ML600Commands.PAUSE.value),
-        )
-
-    async def single_syringe(self) -> bool:
-        """Determine if single or dual syringe"""
-        is_single = await self.send_command_and_read_reply(
-            Protocol1Command(command=ML600Commands.IS_SINGLE_SYRINGE.value, execution_command=""),
-        )
-        logger.debug(is_single)
-        if is_single == "N":
-            return False
-        elif is_single == "Y":
-            return True
-        else:
-            raise InvalidConfigurationError("Neither single nor dual syringe - somethings wrong")
-
-    async def resume(self):
-        """Resume any paused command."""
-        return await self.send_command_and_read_reply(
-            Protocol1Command(command="", execution_command=ML600Commands.RESUME.value),
-        )
-
-    async def stop(self):
+    async def stop(self, pump: str):
         """Stop and abort any running command."""
         await self.pause()
         return await self.send_command_and_read_reply(

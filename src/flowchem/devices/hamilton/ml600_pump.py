@@ -15,8 +15,17 @@ if TYPE_CHECKING:
 class ML600Pump(SyringePump):
     hw_device: ML600  # for typing's sake
 
+    def __init__(self, name: str, hw_device: ML600, pump_code: str = "") -> None:
+        """
+        Create a Pump object.
+        "" for single syringe pump. B or C  for dual syringe pump.
+        """
+        super().__init__(name, hw_device)
+        self.pump_code = pump_code
+        # self.add_api_route("/pump", self.get_monitor_position, methods=["GET"])
+
     @staticmethod
-    def is_withdrawing_capable():
+    def is_withdrawing_capable() -> bool:
         """ML600 can withdraw."""
         return True
 
@@ -26,7 +35,7 @@ class ML600Pump(SyringePump):
 
     async def stop(self):
         """Stop pump."""
-        await self.hw_device.stop()
+        await self.hw_device.stop(self.pump_code)
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
         """Start infusion with given rate and volume (both optional).
@@ -40,7 +49,7 @@ class ML600Pump(SyringePump):
         if not volume:
             target_vol = ureg.Quantity("0 ml")
         else:
-            current_volume = await self.hw_device.get_current_volume()
+            current_volume = await self.hw_device.get_current_volume(self.pump_code)
             target_vol = current_volume - ureg.Quantity(volume)
             if target_vol < 0:
                 logger.error(
@@ -74,5 +83,5 @@ class ML600Pump(SyringePump):
                 )
                 return False
 
-        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate))
+        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
         return True
