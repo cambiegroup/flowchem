@@ -242,7 +242,7 @@ class R2HPLCPump(HPLCPump):
     hw_device: R2  # for typing's sake
 
     def __init__(self, name: str, hw_device: R2, pump_code: str) -> None:
-        """Create a ValveControl object."""
+        """Create a pump object."""
         super().__init__(name, hw_device)
         self.pump_code = pump_code
 
