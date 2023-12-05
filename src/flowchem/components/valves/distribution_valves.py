@@ -49,7 +49,7 @@ class SixteenPortDistributionValve(Valve):
                          (17,)],
         )
 
-
+# tot this should be 4 port sth valve
 class ThreePortFourPositionValve(Valve):
     """
     This is of type HamiltonDualPumpValveOnRight
@@ -63,7 +63,7 @@ class ThreePortFourPositionValve(Valve):
             rotor_ports=[(4, 4, 5, 5), (4,)],
         )
 
-
+# tot this shopuld be 4 port
 class ThreePortTwoPositionValve(Valve):
     """
     This is of type HamiltonDualPumpValveOnLeft
