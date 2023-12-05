@@ -15,7 +15,7 @@ from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
-from flowchem.devices.hamilton.ml600_valve import ML600Valve
+from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve, ML600GenericValve
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
@@ -393,9 +393,9 @@ class ML600(FlowchemDevice):
         # Add device components
         if self.dual_syringe:
             self.components.extend([ML600Pump("left_pump", self),ML600Pump("right_pump", self),
-                                    ML600Valve("left_valve", self), ML600Valve("right_valve", self)])
+                                    ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
         else:
-            self.components.extend([ML600Pump("pump", self), ML600Valve("valve", self)])
+            self.components.extend([ML600Pump("pump", self), ML600GenericValve("valve", self)])
 # TODO potentially set the suitable device mode - this might be needed despite switching by angle to achive the proper position reproducibly...
 
 
