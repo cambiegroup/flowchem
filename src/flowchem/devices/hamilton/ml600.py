@@ -648,7 +648,7 @@ if __name__ == "__main__":
         "port": "COM12",
         "address": 1,
         "name": "test1",
-        "syringe_volume": 5,
+        "syringe_volume": "5 mL",
     }
     pump1 = ML600.from_config(**conf)
     asyncio.run(pump1.initialize_pump())
