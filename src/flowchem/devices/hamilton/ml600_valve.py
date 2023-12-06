@@ -25,7 +25,7 @@ class ML600LeftValve(FourPortFivePositionValve):
         if not reverse:
             translated = (raw_position) * 45
         else:
-            translated = (raw_position/45)
+            translated = round(raw_position/45)
         return translated
 
 
