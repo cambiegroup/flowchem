@@ -392,11 +392,9 @@ class ML600(FlowchemDevice):
         logger.info(
             f"Connected to Hamilton ML600 {self.name} - FW version: {self.device_info.version}!",
         )
-
-        if hw_init:
-            await self.initialize_pump(speed=ureg.Quantity(init_speed))
-
         self.dual_syringe = not await self.single_syringe()
+        await self.general_status_info()
+
         # Add device components
         if self.dual_syringe:
             self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C"),
@@ -534,13 +532,67 @@ class ML600(FlowchemDevice):
         )
         logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {speed}")
 
-
-    async def stop(self, pump: str):
+    async def stop(self, pump: str) -> bool:
         """Stop and abort any running command."""
-        await self.pause()
-        return await self.send_command_and_read_reply(
-            Protocol1Command(command="", execution_command=ML600Commands.CLEAR_BUFFER.value),
+        await self.send_command_and_read_reply(
+            Protocol1Command(command="", target_syringe=pump,
+                             execution_command=ML600Commands.PAUSE.value),
         )
+        await self.send_command_and_read_reply(
+            Protocol1Command(command="",  target_syringe=pump,
+                             execution_command=ML600Commands.CLEAR_BUFFER.value),
+        )
+        return not await self.get_pump_status(pump)
+
+    async def get_pump_status(self, pump: str = "") -> bool:
+        checking_mapping = {"B": 1, "C": 3}
+        pump = "B" if not pump else pump
+        status = await self.system_status(checking_mapping[pump])
+        logger.info(f"pump {pump} is busy: {status}")
+        return status
+
+    async def system_status(self, component: int = -1) -> bool | dict[str: bool]:
+        """
+        Returns: bool for specific component checking.
+                 dict for all part of instrument.
+        """
+        reply = await self.send_command_and_read_reply(
+                Protocol1Command(command="T1", execution_command=""))
+        all_status = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
+        # binary_list = []
+        # [binary_list.append(format(byte, '08b')[::-1]) for byte in reply.encode('ascii')]
+        # all_status = binary_list[0]
+        # todo: 1 is true and 0 is false according to the manual; but the real signal is opposite, check
+        if -1 < component < 5:
+            return all_status[component] == 0
+
+        value_map = {0: "left_valve busy", 1: "left_pump busy",
+                     2: "right_valve busy", 3: "right_pump busy",
+                     4: "step_active busy", 5: "handprobe_active busy"}
+        status = {}
+        for key in value_map:
+            logger.debug(f"{value_map[key]} : {all_status[key] == 0}")
+            status[value_map[key]] = all_status[key] == 0
+        return status
+
+    async def general_status_info(self, component: int = -1) -> bool | dict[str: bool]:
+        reply = await self.send_command_and_read_reply(
+            Protocol1Command(command="E1", execution_command=""))
+        binary_representation = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
+        if -1 < component < 5:
+            return binary_representation[component] == 1
+
+        value_map = {0: "instrument idle, command buffer isn't empty",
+                     1: "syringe(s) busy",
+                     2: "valve(s) busy",
+                     3: "syntax error",
+                     4: "valve or syringe error"}
+        status = {}
+        for key in value_map:
+            logger.info(f"{value_map[key]} : {binary_representation[key] == 1}")
+            status[value_map[key]] = binary_representation[key] == 1
+        return status
+
 
 
     async def wait_until_system_idle(self):
