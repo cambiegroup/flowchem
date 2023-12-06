@@ -46,7 +46,17 @@ class ML600RightValve(ThreePortFourPositionValve):
     identifier = "C"
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         if not reverse:
-            translated = raw_position * 90
+            translated = (raw_position+2) * 90
+            if translated >= 360:
+                translated -= 360
         else:
-            translated = raw_position/135
+            # round, the return is often off by 1°/the valve does not switch exactly
+            # the slightly complicated logic here is because the degrees are differently defined in the abstract valve 
+            # and the physical ML600 valve, the offset in multiples of 90 degres is corrected here
+            translated = round(raw_position/90)
+            if translated < 2:
+                translated += 2
+            else:
+                translated -= 2
+    
         return translated
