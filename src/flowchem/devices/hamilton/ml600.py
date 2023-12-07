@@ -685,6 +685,7 @@ class ML600(FlowchemDevice):
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
             await self.wait_until_system_idle()
+            # todo: it's will be good check only pump but not whole system
 
     async def get_raw_position(self, target_component: str) -> str:
         """
@@ -720,6 +721,7 @@ class ML600(FlowchemDevice):
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CCW")
         if wait_for_movement_end:
             await self.wait_until_system_idle()
+            # todo: it's will be good check only pump but not whole system
 
 if __name__ == "__main__":
     import asyncio
