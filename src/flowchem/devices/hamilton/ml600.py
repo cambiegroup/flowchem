@@ -556,6 +556,13 @@ class ML600(FlowchemDevice):
         logger.info(f"pump {pump} is busy: {status}")
         return status
 
+    async def get_valve_status(self, valve: str = "") -> bool:
+        checking_mapping = {"B": 0, "C": 2}
+        pump = "B" if not valve else valve
+        status = await self.system_status(checking_mapping[pump])
+        logger.info(f"pump {pump} is busy: {status}")
+        return status
+
     async def system_status(self, component: int = -1) -> bool | dict[str: bool]:
         """
         Returns: bool for specific component checking.
