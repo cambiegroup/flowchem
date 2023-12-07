@@ -191,12 +191,9 @@ class Valve(FlowchemComponent):
 
     async def set_position(self,
                            positions_to_connect: str,
-                           positions_not_to_connect: str = None,
-                           ambiguous_switching: bool = True):
-        """
-        Move valve to position, which connects named ports.
-        For example, [[5,0]] or [[2,3]]
-        """
+                           positions_not_to_connect: str = " ",
+                           ambiguous_switching: bool = False):
+        """Move valve to position, which connects named ports.For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(positions_to_connect)
         position_to_connect_t = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
         if not positions_not_to_connect:
