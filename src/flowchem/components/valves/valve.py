@@ -211,7 +211,7 @@ class Valve(FlowchemComponent):
         if not hasattr(self, "identifier"):
             await self.hw_device.set_raw_position(target_pos)
         else:
-            await self.hw_device.set_raw_position(target_pos, target_component = self.identifier)
+            await self.hw_device.set_raw_position(target_pos, target_component=self.identifier)
 
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
