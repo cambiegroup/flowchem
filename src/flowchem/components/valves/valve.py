@@ -185,10 +185,15 @@ class Valve(FlowchemComponent):
     # TODO ideally this should also return a tuple to be consistent
     async def get_position(self) -> list[list]:
         """Get current valve position."""
-        pos = await self.hw_device.get_raw_position()
+        if not hasattr(self, "identifier"):
+            pos = await self.hw_device.get_raw_position()
+        else:
+            pos = await self.hw_device.get_raw_position(self.identifier)
         pos = int(pos) if pos.isnumeric() else pos
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
+    # todo, this alternatively has to accept one argument and decompose that from string to tuple, plus optionally
+    #  keyword argument
     async def set_position(self,
                            positions_to_connect: str,
                            positions_not_to_connect: str = " ",
@@ -203,7 +208,10 @@ class Valve(FlowchemComponent):
                                              positions_not_to_connect=positions_not_to_connect,
                                              arbitrary_switching=ambiguous_switching)
         target_pos = self._change_connections(target_pos)
-        return await self.hw_device.set_raw_position(target_pos)
+        if not hasattr(self, "identifier"):
+            await self.hw_device.set_raw_position(target_pos)
+        else:
+            await self.hw_device.set_raw_position(target_pos, target_component = self.identifier)
 
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
