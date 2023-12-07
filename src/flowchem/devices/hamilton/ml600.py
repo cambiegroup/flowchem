@@ -686,7 +686,7 @@ class ML600(FlowchemDevice):
         if wait_for_movement_end:
             await self.wait_until_system_idle()
 
-    async def get_raw_position(self, target_component:str) -> str:
+    async def get_raw_position(self, target_component: str) -> str:
         """
         Represent the position of the valve: getter returns Enum, setter needs Enum.
         Strongly encouraged to use switching by angle
