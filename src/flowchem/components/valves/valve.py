@@ -58,7 +58,7 @@ class Valve(FlowchemComponent):
 
     async def set_position(self, position: str) -> bool:
         """Set the valve to the specified position."""
-        assert position in self._positions
+        # assert position in self._positions #todo: check
         return True
 
     def connections(self) -> ValveInfo:
