@@ -101,6 +101,9 @@ class HamiltonPumpIO:
         A custom command syntax with no addresses is used here so read and write has been rewritten
         """
         try:
+            # the command for an unknown reason often replies wrongly on first attempt. therefore, this is done twice
+            await self._write_async(b"1a\r")
+            await self._read_reply_async()
             await self._write_async(b"1a\r")
         except aioserial.SerialException as e:
             raise InvalidConfigurationError from e
