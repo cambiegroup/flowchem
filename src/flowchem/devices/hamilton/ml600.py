@@ -377,9 +377,10 @@ class ML600(FlowchemDevice):
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
+        # this command MUST be executed in the beginning
+        await self.pump_io.initialize()
 
         await self.set_return_steps(24)  # Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
-        await self.pump_io.initialize()
         # Test connectivity by querying the pump's firmware version
         self.device_info.version = await self.version()
         logger.info(
