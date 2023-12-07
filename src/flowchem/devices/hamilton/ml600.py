@@ -335,7 +335,6 @@ class ML600(FlowchemDevice):
         # todo: check
         # self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         # self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
-        self._max_vol = 48000 * ureg.step / self._steps_per_ml
         self.return_steps = 24  # Steps added to each absolute move command (default)
 
         # This enables to configure on per-pump basis uncommon parameters
