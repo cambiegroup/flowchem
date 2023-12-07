@@ -16,7 +16,7 @@ from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
 from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600GenericValve, ML600RightValve
-from flowchem.utils.exceptions import InvalidConfigurationError
+from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 if TYPE_CHECKING:
@@ -166,7 +166,8 @@ class HamiltonPumpIO:
         self.num_pump_connected = await self._assign_pump_address()
         if hw_initialization:
             await self.all_hw_init()
-            await asyncio.sleep(8)  # initialization take more than 8.5 sec for one instrument
+            await asyncio.sleep(8)
+            # initialization take more than 8.5 sec for one instrument
 
     async def _assign_pump_address(self) -> int:
         """Auto assign pump addresses.
@@ -196,7 +197,11 @@ class HamiltonPumpIO:
 
     async def all_hw_init(self):
         """Send to all pumps the HW initialization command (i.e. homing)."""
+        await self._write_async(b"1a\r")
+        await self._write_async(b"1a\r")
+        await self._write_async(b":K\r")
         await self._write_async(b":V\r")
+        await self._write_async(b":#SP2\r")
         await self._write_async(b":XR\r")  # Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
 
@@ -576,11 +581,12 @@ class ML600(FlowchemDevice):
         return status
 
     async def general_status_info(self, component: int = -1) -> bool | dict[str: bool]:
+        # todo: this command will reset the error of syntax and instrument, use others error monitoring method
         reply = await self.send_command_and_read_reply(
             Protocol1Command(command="E1", execution_command=""))
         binary_representation = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
         if -1 < component < 5:
-            return binary_representation[component] == 1
+            return binary_representation[component] == "1"
 
         value_map = {0: "instrument idle, command buffer isn't empty",
                      1: "syringe(s) busy",
@@ -589,11 +595,14 @@ class ML600(FlowchemDevice):
                      4: "valve or syringe error"}
         status = {}
         for key in value_map:
-            logger.info(f"{value_map[key]} : {binary_representation[key] == 1}")
-            status[value_map[key]] = binary_representation[key] == 1
+            status[value_map[key]] = binary_representation[key] == '1'
+            logger.info(f"{value_map[key]} : {status[value_map[key]]}")
+
+            if status[value_map[key]]:
+                raise DeviceError((
+                    f"{value_map[key]} shows {status[value_map[key]]}. Check! "
+                ))
         return status
-
-
 
     async def wait_until_system_idle(self):
         """Return when no more commands are present in the pump buffer."""
@@ -608,6 +617,7 @@ class ML600(FlowchemDevice):
             await self.send_command_and_read_reply(
                 Protocol1Command(command="F", execution_command="")) == "Y"
         )
+
     async def single_syringe(self) -> bool:
         """Determine if single or dual syringe"""
         is_single = await self.send_command_and_read_reply(
