@@ -17,7 +17,7 @@ class ValveInfo(BaseModel):
                 position
     """
     ports: list[tuple]
-    positions: dict[int, tuple[tuple[int, ...], ...]]
+    positions: dict[int, tuple[tuple[None | int, ...], ...]]
 
 
 def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
@@ -144,7 +144,7 @@ class Valve(FlowchemComponent):
 
         return connections
 
-    def _change_connections(self, raw_position, reverse: bool = False) -> str:
+    def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
         # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
         # device level since this is device communication protocol specific
@@ -189,8 +189,14 @@ class Valve(FlowchemComponent):
         pos = int(pos) if pos.isnumeric() else pos
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
-    async def set_position(self, positions_to_connect: str, positions_not_to_connect: str = None, ambiguous_switching: bool = True):
-        """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
+    async def set_position(self,
+                           positions_to_connect: str,
+                           positions_not_to_connect: str = None,
+                           ambiguous_switching: bool = True):
+        """
+        Move valve to position, which connects named ports.
+        For example, [[5,0]] or [[2,3]]
+        """
         positions_to_connect_l = json.loads(positions_to_connect)
         position_to_connect_t = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
         if not positions_not_to_connect:
