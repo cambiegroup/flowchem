@@ -15,7 +15,7 @@ from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
-from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve, ML600GenericValve
+from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
