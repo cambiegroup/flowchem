@@ -230,6 +230,14 @@ class HamiltonPumpIO:
 
         return reply.rstrip()  # removes trailing <cr>
 
+    def _translate_ascii_to_binary(self, reply: str):
+        binary_representation = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
+        return binary_representation
+
+        # binary_list = []
+        # [binary_list.append(format(byte, '08b')[::-1]) for byte in reply.encode('ascii')]
+        # all_status = binary_list[0]
+
     async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
         """Send a command to the pump, read the replies and returns it, optionally parsed."""
         self._serial.reset_input_buffer()
