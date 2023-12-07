@@ -208,12 +208,12 @@ class HamiltonPumpIO:
     async def _write_async(self, command: bytes):
         """Write a command to the pump."""
         await self._serial.write_async(command)
-        logger.debug(f"Command {command!r} sent!")
+        logger.info(f"Command {command!r} sent!")
 
     async def _read_reply_async(self) -> str:
         """Read the pump reply from serial communication."""
         reply_string = await self._serial.readline_async()
-        logger.debug(f"Reply received: {reply_string}")
+        logger.info(f"Reply received: {reply_string}")
         return reply_string.decode("ascii")
 
     def _parse_response(self, response: str) -> str:
@@ -458,6 +458,7 @@ class ML600(FlowchemDevice):
 
     def _volume_to_step_position(self, volume: pint.Quantity) -> int:
         """Convert a volume to a step position."""
+        # todo: different syringes
         # noinspection PyArgumentEqualDefault
         steps = volume * self._steps_per_ml
         return round(steps.m_as("steps"))
@@ -472,15 +473,21 @@ class ML600(FlowchemDevice):
         current_steps = int(syringe_pos) * ureg.step
         return current_steps / self._steps_per_ml
 
-    async def to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity, syringe: ML600Commands = None):
-        """Absolute move to volume provided."""
-        speed = self.flowrate_to_seconds_per_stroke(rate)
-        await self._to_step_position(
-            self._volume_to_step_position(target_volume),
-            speed,
-            syringe=syringe
+    async def set_to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity, pump: str):
+        """Absolute move to target volume provided by set step position and speed."""
+        speed = self._flowrate_to_seconds_per_stroke(rate)  # in seconds/stroke
+        set_speed = self._validate_speed(speed)
+        position = self._volume_to_step_position(target_volume)
+        logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {set_speed}")
+
+        abs_move_cmd = Protocol1Command(
+            command=ML600Commands.ABSOLUTE_MOVE.value,
+            optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
+            command_value=str(position),
+            parameter_value=set_speed,
+            target_syringe=pump
         )
-        logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {speed}")
+        return await self.send_command_and_read_reply(abs_move_cmd)
 
     async def stop(self, pump: str) -> bool:
         """Stop and abort any running command."""
@@ -492,7 +499,7 @@ class ML600(FlowchemDevice):
             Protocol1Command(command="",  target_syringe=pump,
                              execution_command=ML600Commands.CLEAR_BUFFER.value),
         )
-        return not await self.get_pump_status(pump)
+        return True
 
     async def get_pump_status(self, pump: str = "") -> bool:
         checking_mapping = {"B": 1, "C": 3}
@@ -509,10 +516,7 @@ class ML600(FlowchemDevice):
         reply = await self.send_command_and_read_reply(
                 Protocol1Command(command="T1", execution_command=""))
         all_status = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
-        # binary_list = []
-        # [binary_list.append(format(byte, '08b')[::-1]) for byte in reply.encode('ascii')]
-        # all_status = binary_list[0]
-        # todo: 1 is true and 0 is false according to the manual; but the real signal is opposite, check
+        # 1 is true and 0 is false according to the manual; but the real signal is opposite.
         if -1 < component < 5:
             return all_status[component] == "0"
 
@@ -551,10 +555,10 @@ class ML600(FlowchemDevice):
 
     async def wait_until_system_idle(self):
         """Return when no more commands are present in the pump buffer."""
-        logger.debug(f"ML600 pump {self.name} wait until idle...")
+        logger.debug(f"ML600 {self.name} wait until idle...")
         while not await self.is_system_idle():
             await asyncio.sleep(0.1)
-        logger.debug(f"...ML600 pump {self.name} idle now!")
+        logger.debug(f"...ML600 {self.name} idle now!")
 
     async def is_system_idle(self) -> bool:
         """Check if the pump is idle (actually check if the last command has ended)."""
@@ -658,13 +662,16 @@ class ML600(FlowchemDevice):
         if wait_for_movement_end:
             await self.wait_until_system_idle()
 
-
-if __name__ == "__main__":
+async def main():
     conf = {
         "port": "COM11",
         "address": 1,
         "name": "test1",
-        "syringe_volume": 1,
+        "syringe_volume": "1 ml",
     }
     pump1 = ML600.from_config(**conf)
-    asyncio.run(pump1.initialize_pump())
+    await pump1.initialize()
+    # await pump1.pump_io._write_async(b"aBM24000S0060R\r")
+
+if __name__ == "__main__":
+    asyncio.run(main())
