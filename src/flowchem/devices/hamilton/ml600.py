@@ -58,7 +58,6 @@ class HamiltonPumpIO:
 
     ACKNOWLEDGE = chr(6)
     NEGATIVE_ACKNOWLEDGE = chr(21)
-    ERROR = chr(15)
 
     DEFAULT_CONFIG = {
         "timeout": 0.1,
