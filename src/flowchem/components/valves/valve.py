@@ -188,8 +188,7 @@ class Valve(FlowchemComponent):
         pos = await self.hw_device.get_raw_position()
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
-    # TODO not entirely sure if it works like that, test
-    async def set_position(self, positions_to_connect):
+    async def set_position(self, positions_to_connect: str, positions_not_to_connect: str = None, ambiguous_switching: bool = True):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(positions_to_connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
