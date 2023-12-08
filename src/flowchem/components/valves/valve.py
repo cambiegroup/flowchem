@@ -186,7 +186,7 @@ class Valve(FlowchemComponent):
     async def get_position(self) -> list[list]:
         """Get current valve position."""
         pos = await self.hw_device.get_raw_position()
-        return (self._positions[int(self._change_connections(pos, reverse=True))])
+        return self._positions[int(self._change_connections(pos, reverse=True))]
 
     # TODO not entirely sure if it works like that, test
     async def set_position(self, positions_to_connect):

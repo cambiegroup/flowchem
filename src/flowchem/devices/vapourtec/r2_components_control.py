@@ -159,7 +159,7 @@ class R2InjectionValve(SixPortTwoPositionValve):
     async def get_position(self) -> list[list]:
         """Get current valve position."""
         position = await self.hw_device.get_valve_position(self.valve_code)
-        return (self._positions[int(self._change_connections(position, reverse=True))])
+        return self._positions[int(self._change_connections(position, reverse=True))]
 
     async def set_position(self, positions_to_connect):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
