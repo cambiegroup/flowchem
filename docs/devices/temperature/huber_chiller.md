@@ -1,4 +1,4 @@
-# Huber Chiller
+# Huber Chillers
 ## Introduction
 The majority of Huber chillers can be controlled via so-called `PB Commands` over serial communication.
 A variety of `PB Commands` are supported in `flowchem`, but some of them may be unavailable on specific models, see the

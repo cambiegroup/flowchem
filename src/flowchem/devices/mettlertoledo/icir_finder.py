@@ -6,7 +6,6 @@ from textwrap import dedent
 from loguru import logger
 
 from flowchem.devices import IcIR
-from flowchem.components.base_component import FlowchemComponent
 
 __all__ = ["icir_finder"]
 
@@ -14,7 +13,7 @@ Address = tuple[str, int]
 
 
 async def is_iCIR_running_locally() -> bool:
-    """Is iCIR available on the local machine (default URL)?"""
+    """Is iCIR available on the local machine (default URL)?."""
     ir = IcIR()
     try:
         await ir.opcua.connect()
@@ -25,7 +24,7 @@ async def is_iCIR_running_locally() -> bool:
 
 
 async def generate_icir_config() -> str:
-    """Generates config string if iCIR is available."""
+    """Generate config string if iCIR is available."""
     if await is_iCIR_running_locally():
         logger.debug("Local iCIR found!")
         return dedent(
@@ -33,7 +32,7 @@ async def generate_icir_config() -> str:
                [device.icir-local]
                type = "IcIR"
                template = ""  # Add template name with acquisition settings!
-               \n\n"""
+               \n\n""",
         )
     return ""
 

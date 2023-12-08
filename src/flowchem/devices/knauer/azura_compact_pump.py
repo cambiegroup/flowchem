@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from ... import ureg
+from flowchem import ureg
 
 if TYPE_CHECKING:
     from .azura_compact import AzuraCompact
-from flowchem.components.pumps.hplc import HPLCPump
+from flowchem.components.pumps.hplc_pump import HPLCPump
 
 
 def isfloat(rate: str) -> bool:
@@ -23,7 +23,7 @@ def isfloat(rate: str) -> bool:
 class AzuraCompactPump(HPLCPump):
     hw_device: AzuraCompact  # for typing's sake
 
-    def __init__(self, name: str, hw_device: AzuraCompact):
+    def __init__(self, name: str, hw_device: AzuraCompact) -> None:
         """Initialize component."""
         super().__init__(name, hw_device)
 

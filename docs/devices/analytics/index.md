@@ -6,5 +6,6 @@
 clarity
 spinsolve
 icir
+knauer_dad
 
 ```

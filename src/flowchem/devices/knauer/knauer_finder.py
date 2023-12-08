@@ -7,10 +7,9 @@ from textwrap import dedent
 
 import ifaddr
 from anyio.from_thread import start_blocking_portal
-
 from loguru import logger
 
-from flowchem.utils.getmac import get_mac_address
+from flowchem.vendor.getmac import get_mac_address
 
 __all__ = ["autodiscover_knauer", "knauer_finder"]
 
@@ -20,7 +19,7 @@ Address = tuple[str, int]
 class BroadcastProtocol(asyncio.DatagramProtocol):
     """See `https://gist.github.com/yluthu/4f785d4546057b49b56c`."""
 
-    def __init__(self, target: Address, response_queue: queue.Queue):
+    def __init__(self, target: Address, response_queue: queue.Queue) -> None:
         self.target = target
         self.loop = asyncio.get_event_loop()
         self._queue = response_queue
@@ -38,7 +37,7 @@ class BroadcastProtocol(asyncio.DatagramProtocol):
 
 
 async def get_device_type(ip_address: str) -> str:
-    """Return either 'Pump', 'Valve' or 'Unknown'."""
+    """Detect device type based on the reply to a test command or IP heuristic."""
     fut = asyncio.open_connection(host=ip_address, port=10001)
     try:
         reader, writer = await asyncio.wait_for(fut, timeout=3)
@@ -54,18 +53,24 @@ async def get_device_type(ip_address: str) -> str:
     try:
         reply = await asyncio.wait_for(reader.readuntil(separator=b"\r"), timeout=1)
     except asyncio.TimeoutError:
-        return "TimeoutError"
-
-    if reply.startswith(b"HEADTYPE"):
-        logger.debug(f"Device {ip_address} is a Pump")
-        return "AzuraCompact"
+        pass
+    else:
+        if reply.startswith(b"HEADTYPE"):
+            logger.debug(f"Device {ip_address} is a pump")
+            return "AzuraCompact"
+    logger.debug("Not a pump")
 
     # Test Valve
     writer.write(b"T:?\n\r")
-    reply = await reader.readuntil(separator=b"\r")
-    if reply.startswith(b"VALVE"):
-        logger.debug(f"Device {ip_address} is a Valve")
-        return "KnauerValve"
+    try:
+        reply = await asyncio.wait_for(reader.readuntil(separator=b"\r"), timeout=1)
+    except asyncio.TimeoutError:
+        pass
+    else:
+        if reply.startswith(b"VALVE"):
+            logger.debug(f"Device {ip_address} is a valve")
+            return "KnauerValve"
+    logger.debug("Not a valve")
 
     return "Unknown"
 
@@ -114,6 +119,7 @@ def broadcast_ip_heuristic(ip: str) -> int:
 
 def determine_broadcasting_ip(source="") -> str:
     """Determine the broadcasting IP to be used based on NIC name or IP range (e.g. 'eth0' or '192.168.*.*')."""
+    assert isinstance(source, str), "Source must be a string"
     # Get network interfaces data
     nics = {}
     for adapter in ifaddr.get_adapters():
@@ -140,7 +146,7 @@ def determine_broadcasting_ip(source="") -> str:
         pass
         # logger.debug(f"No network interface '{source}' found. Available are: {list(nics.keys())}")
 
-    # If the source IP is not fully defined try to fin d a match among all the local IPs available
+    # If the source IP is not fully defined try to find a match among all the local IPs available
     if "*" in source:
         fixed_part, *_ = source.split("*")
 
@@ -162,10 +168,13 @@ def autodiscover_knauer(network: str = "") -> dict[str, str]:
     Automatically find Knauer ethernet device on the network and returns the IP associated to each MAC address.
     Note that the MAC is the key here as it is the parameter used in configuration files.
     Knauer devices only support DHCP so static IPs are not an option.
+
     Args:
+    ----
         network: source for autodiscover (either IP, NIC or IP range e.g. '192.168.*.*')
     Returns:
-        List of tuples (IP, MAC, device_type), one per device replying to autodiscover
+    -------
+        List of tuples (IP, MAC, device_type), one per device replying to autodiscover.
     """
     source_ip = determine_broadcasting_ip(network)
     logger.info(f"Starting detection from IP {source_ip}")
@@ -185,7 +194,7 @@ def autodiscover_knauer(network: str = "") -> dict[str, str]:
     return device_info
 
 
-def knauer_finder(source_ip=""):
+def knauer_finder(source_ip: str = ""):
     """Execute autodiscovery. This is the entry point of the `knauer-finder` CLI command."""
     # This is a bug of asyncio on Windows :|
     if sys.platform == "win32":
@@ -199,28 +208,39 @@ def knauer_finder(source_ip=""):
         logger.info(f"Determining device type for device at {ip} [{mac_address}]")
         # Device Type
         device_type = asyncio.run(get_device_type(ip))
-        logger.info(f"Found a {device_type} on IP {ip}")
+        logger.info(f"Device type detected for IP {ip}: {device_type}")
 
-        if device_type == "AzuraCompact":
-            dev_config.add(
-                dedent(
-                    f"""
-                       [device.pump-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
-                       type = "AzuraCompact"
-                       ip_address = "{ip}"  # MAC address during discovery: {mac_address}
-                       # max_pressure = "XX bar"
-                       # min_pressure = "XX bar"\n\n"""
+        match device_type:
+            case "AzuraCompact":
+                dev_config.add(
+                    dedent(
+                        f"""
+                        [device.pump-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
+                        type = "AzuraCompact"
+                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}
+                        # max_pressure = "XX bar"
+                        # min_pressure = "XX bar"\n\n""",
+                    ),
                 )
-            )
-        elif device_type == "KnauerValve":
-            dev_config.add(
-                dedent(
-                    f"""
+            case "KnauerValve":
+                dev_config.add(
+                    dedent(
+                        f"""
                         [device.valve-{mac_address[-8:-6] + mac_address[-5:-3] + mac_address[-2:]}]
                         type = "KnauerValve"
-                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n\n"""
+                        ip_address = "{ip}"  # MAC address during discovery: {mac_address}\n\n""",
+                    ),
                 )
-            )
+            case "FlowIR":
+                dev_config.add(
+                    dedent(
+                        """
+                        [device.flowir]
+                        type = "IcIR"
+                        url = "opc.tcp://localhost:62552/iCOpcUaServer"  # Default, replace with IP of PC with IcIR
+                        template = "some-template.iCIRTemplate"  # Replace with valid template name, see docs.\n\n""",
+                    ),
+                )
 
     return dev_config
 

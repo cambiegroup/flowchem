@@ -1,19 +1,18 @@
-""" Control module for the Vapourtec R2 valves """
+"""Control module for the Vapourtec R2 valves."""
 from __future__ import annotations
 
-import asyncio
 from typing import TYPE_CHECKING
 
 from loguru import logger
 
-from flowchem.components.valves.injection_valves import SixPortTwoPosition
-from flowchem.components.valves.distribution_valves import TwoPortDistribution
-from flowchem.components.pumps.hplc import HPLCPump
+from flowchem.components.pumps.hplc_pump import HPLCPump
+from flowchem.components.sensors.sensor import Sensor
+from flowchem.components.sensors.pressure_sensor import PressureSensor
 from flowchem.components.technical.photo import Photoreactor
-from flowchem.components.sensors.base_sensor import Sensor
-from flowchem.components.sensors.pressure import PressureSensor
 from flowchem.components.technical.power import PowerSwitch
 from flowchem.components.technical.temperature import TemperatureControl, TempRange
+from flowchem.components.valves.distribution_valves import TwoPortDistributionValve
+from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 
 if TYPE_CHECKING:
     from .r2 import R2
@@ -31,13 +30,14 @@ AllPumpDic = {"HPLCPump_A": 0, "HPLCPump_B": 1}
 class R2GeneralSensor(Sensor):
     hw_device: R2  # for typing's sake
 
-    def __init__(self, name: str, hw_device: R2):
-        """A generic Syringe pump."""
+    def __init__(self, name: str, hw_device: R2) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor-system", self.monitor_sys, methods=["GET"])
         self.add_api_route("/get-run-state", self.get_run_state, methods=["GET"])
         self.add_api_route(
-            "/set-system-max-pressure", self.set_sys_pressure_limit, methods=["PUT"]
+            "/set-system-max-pressure",
+            self.set_sys_pressure_limit,
+            methods=["PUT"],
         )
 
     async def monitor_sys(self) -> dict:
@@ -45,11 +45,11 @@ class R2GeneralSensor(Sensor):
         return await self.hw_device.pooling()
 
     async def get_run_state(self) -> str:
-        """Get current system state"""
+        """Get current system state."""
         return await self.hw_device.get_state()
 
     async def set_sys_pressure_limit(self, pressure: str) -> bool:
-        """Set maximum system pressure: range 1,000 to 50,000 mbar"""
+        """Set maximum system pressure: range 1,000 to 50,000 mbar."""
         # TODO: change to accept different units
         await self.hw_device.set_pressure_limit(pressure)
         return True
@@ -60,12 +60,14 @@ class R4Reactor(TemperatureControl):
 
     hw_device: R2  # for typing's sake
 
-    def __init__(self, name: str, hw_device: R2, channel: int, temp_limits: TempRange):
+    def __init__(
+        self, name: str, hw_device: R2, channel: int, temp_limits: TempRange
+    ) -> None:
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device, temp_limits)
         self.channel = channel
 
-    async def set_temperature(self, temp: str, heating: bool| None = None):
+    async def set_temperature(self, temp: str, heating: bool | None = None):
         """Set the target temperature to the given string in natural language."""
         set_t = await super().set_temperature(temp)
         return await self.hw_device.set_temperature(self.channel, set_t, heating)
@@ -74,14 +76,13 @@ class R4Reactor(TemperatureControl):
         """Return temperature in Celsius."""
         return await self.hw_device.get_current_temperature(self.channel)
 
-
-    async def is_target_reached(self) -> bool:  # type: ignore
+    async def is_target_reached(self) -> bool | None:  # type: ignore
         """Return True if the set temperature target has been reached."""
         current_temp = await self.hw_device.get_current_temperature(self.channel)
         target_temp = await self.hw_device.get_target_temperature(self.channel)
         if target_temp == "-1000":
-            return "Off"
-        elif abs(current_temp-target_temp) <=2:
+            return None
+        elif abs(current_temp - target_temp) <= 2:
             return True
         else:
             return False
@@ -96,16 +97,16 @@ class R4Reactor(TemperatureControl):
 
 
 class UV150PhotoReactor(Photoreactor):
-    """R2 reactor control class"""
+    """R2 reactor control class."""
 
     hw_device: R2  # for typing's sake
 
-    def __init__(self, name: str, hw_device: R2):
+    def __init__(self, name: str, hw_device: R2) -> None:
         super().__init__(name, hw_device)
         # self._intensity = 0  # 0 set upon device init
 
     async def set_intensity(self, percent: int = 100):
-        """Set UV light intensity at the range 50-100%"""
+        """Set UV light intensity at the range 50-100%."""
         self.hw_device._intensity = percent
         await self.hw_device.set_UV150(percent)
 
@@ -115,7 +116,7 @@ class UV150PhotoReactor(Photoreactor):
 
     async def power_on(self):
         """Turn on the whole system, no way to power UV150 independently."""
-        if self.hw_device.intensity:
+        if self.hw_device._intensity:
             await self.hw_device.power_on()
             return
         logger.error("UV150 power on requested without setting intensity first!")
@@ -126,7 +127,7 @@ class UV150PhotoReactor(Photoreactor):
         await self.hw_device.set_UV150(0)
 
 
-class R2InjectionValve(SixPortTwoPosition):
+class R2InjectionValve(SixPortTwoPositionValve):
     """R2 reactor injection loop valve control class."""
 
     hw_device: R2  # for typing's sake
@@ -135,7 +136,7 @@ class R2InjectionValve(SixPortTwoPosition):
     position_mapping = {"load": "0", "inject": "1"}
     _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
-    def __init__(self, name: str, hw_device: R2, valve_code: int):
+    def __init__(self, name: str, hw_device: R2, valve_code: int) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
         self.valve_code = valve_code
@@ -143,28 +144,27 @@ class R2InjectionValve(SixPortTwoPosition):
     async def get_position(self) -> str:
         """Get current valve position."""
         position = await self.hw_device.get_valve_Position(self.valve_code)
-        # self.hw_device.last_state.valve[self.valve_number]
         return "position is %s" % self._reverse_position_mapping[position]
 
     async def set_position(self, position: str) -> bool:
         """Set position: 'load' or 'inject'."""
         target_pos = self.position_mapping[position]  # load or inject
         await self.hw_device.trigger_key_press(
-            str(self.valve_code * 2 + int(target_pos))
+            str(self.valve_code * 2 + int(target_pos)),
         )
         return True
 
 
-class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
-    """R2 reactor injection loop valve control class."""
+class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Collection)
+    """R2 reactor injection loop valve control."""
 
-    hw_device: R2  # for typing's sake
+    hw_device: R2
 
     # TODO: the mapping name is not applicable
     position_mapping = {"Solvent": "0", "Reagent": "1"}
     _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
 
-    def __init__(self, name: str, hw_device: R2, valve_code: int):
+    def __init__(self, name: str, hw_device: R2, valve_code: int) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
         self.valve_code = valve_code
@@ -179,7 +179,7 @@ class R2TwoPortValve(TwoPortDistribution):  # total 3 valve (A, B, Collection)
         """Move valve to position."""
         target_pos = self.position_mapping[position]
         await self.hw_device.trigger_key_press(
-            str(self.valve_code * 2 + int(target_pos))
+            str(self.valve_code * 2 + int(target_pos)),
         )
         return True
 
@@ -189,7 +189,7 @@ class R2HPLCPump(HPLCPump):
 
     hw_device: R2  # for typing's sake
 
-    def __init__(self, name: str, hw_device: R2, pump_code: str):
+    def __init__(self, name: str, hw_device: R2, pump_code: str) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
         self.pump_code = pump_code
@@ -199,12 +199,12 @@ class R2HPLCPump(HPLCPump):
         return await self.hw_device.get_current_flow(self.pump_code)
 
     async def set_flowrate(self, flowrate: str) -> bool:
-        """Set flow rate to the pump"""
+        """Set flow rate to the pump."""
         await self.hw_device.set_flowrate(self.pump_code, flowrate)
         return True
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
-        """set the flow rate: in ul/min and start infusion."""
+        """Set the flow rate: in ul/min and start infusion."""
         if volume:
             logger.warning(f"Volume parameter ignored: not supported by {self.name}!")
 
@@ -213,7 +213,7 @@ class R2HPLCPump(HPLCPump):
         return True
 
     async def stop(self):
-        """Stop infusion"""
+        """Stop infusion."""
         await self.hw_device.set_flowrate(pump=self.pump_code, flowrate="0 ul/min")
 
     async def is_pumping(self) -> bool:
@@ -224,27 +224,28 @@ class R2HPLCPump(HPLCPump):
 class R2PumpPressureSensor(PressureSensor):
     hw_device: R2  # for typing's sake
 
-    def __init__(self, name: str, hw_device: R2, pump_code: int):
+    def __init__(self, name: str, hw_device: R2, pump_code: int) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
         self.pump_code = pump_code
 
     async def read_pressure(self, units: str = "mbar") -> int | None:  # mbar
         """Get current pump pressure in mbar."""
-        return await self.hw_device.get_current_pressure(self.pump_code)
+        pressure = await self.hw_device.get_current_pressure(self.pump_code)
+        return pressure.m_as(units)
 
 
 class R2GeneralPressureSensor(PressureSensor):
     hw_device: R2  # for typing's sake
 
-    def __init__(self, name: str, hw_device: R2):
+    def __init__(self, name: str, hw_device: R2) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
 
     async def read_pressure(self, units: str = "mbar") -> int:
-        """Get system pressure"""
-        # TODO: now the output are always mbar, change it to fit the base component
-        return await self.hw_device.get_current_pressure()
+        """Get system pressure."""
+        pressure = await self.hw_device.get_current_pressure()
+        return pressure.m_as(units)
 
 
 class R2MainSwitch(PowerSwitch):

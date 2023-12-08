@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.components.pumps.syringe import SyringePump
-from flowchem.components.technical.power import PowerSwitch
+from flowchem.components.pumps.syringe_pump import SyringePump
 
 if TYPE_CHECKING:
     from .ml600 import ML600
@@ -16,24 +15,18 @@ if TYPE_CHECKING:
 class ML600Pump(SyringePump):
     hw_device: ML600  # for typing's sake
 
-    def __init__(self, name: str, hw_device: ML600, pump_code: str = ""):  # left is defult
-        """Create a ValveControl object."""
-        super().__init__(name, hw_device)
-        self.pump_code = pump_code   #"left:B, right:C"
-
     @staticmethod
     def is_withdrawing_capable():
         """ML600 can withdraw."""
         return True
 
     async def is_pumping(self) -> bool:
-        """True if pump is moving."""
+        """Check if pump is moving."""
         return await self.hw_device.is_idle() is False
 
     async def stop(self):
-        """Stops pump."""
-        await self.infuse(rate= "0 ml/min", volume="0 ml")
-
+        """Stop pump."""
+        await self.hw_device.stop()
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
         """Start infusion with given rate and volume (both optional).
@@ -52,11 +45,11 @@ class ML600Pump(SyringePump):
             if target_vol < 0:
                 logger.error(
                     f"Cannot infuse target volume {volume}! "
-                    f"Only {current_volume} in the syringe!"
+                    f"Only {current_volume} in the syringe!",
                 )
                 return False
 
-        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
+        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate))
         return True
 
     async def withdraw(self, rate: str = "1 ml/min", volume: str | None = None) -> bool:
@@ -77,24 +70,9 @@ class ML600Pump(SyringePump):
             if target_vol > self.hw_device.syringe_volume:
                 logger.error(
                     f"Cannot withdraw target volume {volume}! "
-                    f"Max volume left is {self.hw_device.syringe_volume - current_volume}!"
+                    f"Max volume left is {self.hw_device.syringe_volume - current_volume}!",
                 )
                 return False
 
-        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate), self.pump_code)
+        await self.hw_device.to_volume(target_vol, ureg.Quantity(rate))
         return True
-
-
-class ML600MainSwitch(PowerSwitch):
-    hw_device: ML600  # just for typing
-
-    async def power_on(self) -> bool:
-        await self.hw_device.resume()
-        return True
-
-    async def power_off(self) -> bool:
-        await self.hw_device.stop()
-        return True
-
-    async def log(self) -> str:
-        return await self.hw_device.log()

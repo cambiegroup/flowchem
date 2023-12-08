@@ -1,4 +1,4 @@
-# Miscellaneous
+# Sensors
 
 ```{toctree}
 :maxdepth: 1

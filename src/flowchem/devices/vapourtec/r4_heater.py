@@ -1,4 +1,4 @@
-""" Control module for the Vapourtec R4 heater """
+"""Control module for the Vapourtec R4 heater."""
 from __future__ import annotations
 
 from collections import namedtuple
@@ -9,14 +9,15 @@ import pint
 from loguru import logger
 
 from flowchem import ureg
+from flowchem.components.device_info import DeviceInfo
 from flowchem.components.technical.temperature import TempRange
-from flowchem.devices.flowchem_device import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vapourtec.r4_heater_channel_control import R4HeaterChannelControl
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 try:
+    # noinspection PyUnresolvedReferences
     from flowchem_vapourtec import VapourtecR4Commands
 
     HAS_VAPOURTEC_COMMANDS = True
@@ -43,7 +44,7 @@ class R4Heater(FlowchemDevice):
         min_temp: float | list[float] = -100,
         max_temp: float | list[float] = 250,
         **config,
-    ):
+    ) -> None:
         super().__init__(name)
         # Set min and max temp for all 4 channels
         if not isinstance(min_temp, Iterable):
@@ -51,14 +52,17 @@ class R4Heater(FlowchemDevice):
         if not isinstance(max_temp, Iterable):
             max_temp = [max_temp] * 4
         assert len(min_temp) == len(max_temp) == 4
-        self._min_t = min_temp * ureg.degreeC
-        self._max_t = max_temp * ureg.degreeC
+        self._min_t = min_temp
+        self._max_t = max_temp
 
         if not HAS_VAPOURTEC_COMMANDS:
-            raise InvalidConfiguration(
-                "You tried to use a Vapourtec device but the relevant commands are missing!\n"
-                "Unfortunately, we cannot publish those as they were provided under NDA.\n"
+            msg = (
+                "You tried to use a Vapourtec device but the relevant commands are missing!"
+                "Unfortunately, we cannot publish those as they were provided under NDA."
                 "Contact Vapourtec for further assistance."
+            )
+            raise InvalidConfigurationError(
+                msg,
             )
 
         self.cmd = VapourtecR4Commands()
@@ -68,43 +72,56 @@ class R4Heater(FlowchemDevice):
         try:
             self._serial = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as ex:
-            raise InvalidConfiguration(
-                f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
+            msg = f"Cannot connect to the R4Heater on the port <{config.get('port')}>"
+            raise InvalidConfigurationError(
+                msg,
             ) from ex
 
-        self.metadata = DeviceInfo(
+        self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
-            maintainers=[dario],
             manufacturer="Vapourtec",
             model="R4 reactor module",
         )
 
     async def initialize(self):
         """Ensure connection."""
-        self.metadata.version = await self.version()
-        logger.info(f"Connected with R4Heater version {self.metadata.version}")
+        self.device_info.version = await self.version()
+        logger.info(f"Connected with R4Heater version {self.device_info.version}")
+        temp_limits = {
+            ch_num: TempRange(
+                min=ureg.Quantity(f"{t[0]} °C"),
+                max=ureg.Quantity(f"{t[1]} °C"),
+            )
+            for ch_num, t in enumerate(zip(self._min_t, self._max_t, strict=True))
+        }
+        reactor_positions = [
+            R4HeaterChannelControl(f"reactor{n+1}", self, n, temp_limits[n])
+            for n in range(4)
+        ]
+        self.components.extend(reactor_positions)
 
     async def _write(self, command: str):
-        """Writes a command to the pump"""
+        """Write a command to the pump."""
         cmd = command + "\r\n"
         await self._serial.write_async(cmd.encode("ascii"))
-        logger.debug(f"Sent command: {repr(command)}")
+        logger.debug(f"Sent command: {command!r}")
 
     async def _read_reply(self) -> str:
-        """Reads the pump reply from serial communication."""
+        """Read the pump reply from serial communication."""
         reply_string = await self._serial.readline_async()
         logger.debug(f"Reply received: {reply_string.decode('ascii').rstrip()}")
         return reply_string.decode("ascii")
 
     async def write_and_read_reply(self, command: str) -> str:
-        """Sends a command to the pump, read the replies and returns it, optionally parsed."""
+        """Send a command to the pump, read the replies and return it, optionally parsed."""
         self._serial.reset_input_buffer()
         await self._write(command)
         logger.debug(f"Command {command} sent to R4!")
         response = await self._read_reply()
 
         if not response:
-            raise InvalidConfiguration("No response received from heating module!")
+            msg = "No response received from heating module!"
+            raise InvalidConfigurationError(msg)
 
         logger.debug(f"Reply received: {response}")
         return response.rstrip()
@@ -116,7 +133,8 @@ class R4Heater(FlowchemDevice):
     async def set_temperature(self, channel, temperature: pint.Quantity):
         """Set temperature to channel."""
         cmd = self.cmd.SET_TEMPERATURE.format(
-            channel=channel, temperature_in_C=round(temperature.m_as("°C"))
+            channel=channel,
+            temperature_in_C=round(temperature.m_as("°C")),
         )
         await self.write_and_read_reply(cmd)
         # Set temperature implies channel on
@@ -125,7 +143,7 @@ class R4Heater(FlowchemDevice):
         status = await self.get_status(channel)
         if status.state == "U":
             logger.error(
-                f"TARGET CHANNEL {channel} UNPLUGGED! (Note: numbering starts at 0)"
+                f"TARGET CHANNEL {channel} UNPLUGGED! (Note: numbering starts at 0)",
             )
 
     async def get_status(self, channel) -> ChannelStatus:
@@ -135,10 +153,10 @@ class R4Heater(FlowchemDevice):
         while True:
             try:
                 raw_status = await self.write_and_read_reply(
-                    self.cmd.GET_STATUS.format(channel=channel)
+                    self.cmd.GET_STATUS.format(channel=channel),
                 )
                 return R4Heater.ChannelStatus(raw_status[:1], raw_status[1:])
-            except InvalidConfiguration as ex:
+            except InvalidConfigurationError as ex:
                 failure += 1
                 # Allows 3 failures cause the R4 is choosy at times...
                 if failure > 3:
@@ -159,26 +177,14 @@ class R4Heater(FlowchemDevice):
         """Turn off channel."""
         await self.write_and_read_reply(self.cmd.POWER_OFF.format(channel=channel))
 
-    def components(self):
-        temp_limits = {
-            ch_num: TempRange(
-                min=ureg.Quantity(f"{t[0]} °C"), max=ureg.Quantity(f"{t[1]} °C")
-            )
-            for ch_num, t in enumerate(zip(self._min_t, self._max_t))
-        }
-        return [
-            R4HeaterChannelControl(f"reactor{n+1}", self, n, temp_limits[n])
-            for n in range(4)
-        ]
-
 
 if __name__ == "__main__":
     import asyncio
 
-    heat = R4Heater(port="COM1")
+    r4_device = R4Heater(port="COM1")
 
     async def main(heat):
-        """test function"""
+        """Test function."""
         await heat.initialize()
         # Get reactors
         r1, r2, r3, r4 = heat.components()
@@ -186,4 +192,4 @@ if __name__ == "__main__":
         await r1.set_temperature("30 °C")
         print(f"Temperature is {await r1.get_temperature()}")
 
-    asyncio.run(main(heat))
+    asyncio.run(main(r4_device))

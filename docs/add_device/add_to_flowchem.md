@@ -38,7 +38,7 @@ either directly or with an intermediate `/flowchem/devices/weasley/__init__.py` 
 ### Device configuration
 Additional parameters needed for the device setup can be specified in the `__init__` method, if a default is provided
 the parameter will also be optional in the device section in the configuration file.
-In our case, the ExtentableEar has an optional length parameter, with a default value of "10 cm".
+In our case, the ExtendableEar has an optional length parameter, with a default value of "10 cm".
 To prevent ambiguities, all amounts with units should be provided as strings and parsed by the pint UnitRegistry
 `flowchem.ureg`.
 ```python
@@ -120,7 +120,7 @@ For example, we can define three methods: one to start the recording, one to sto
 The stop method will be responsible for returning the path of the file where the recording was saved.
 
 ```python
-from flowchem.components.sensors.base_sensor import Sensor
+from flowchem.components.sensors.sensor import Sensor
 
 
 class Microphone(Sensor):
@@ -155,31 +155,32 @@ commands to our device and some metadata about our device:
 ```python
 ...
 from flowchem.devices.weasley.extendable_ear_microphone import ExtendableEarMicrophone
-from flowchem.devices.flowchem_device import FlowchemDevice, DeviceInfo, Person
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.components.device_info import DeviceInfo, Person
 
 
 class ExtendableEar(FlowchemDevice):
-    metadata = DeviceInfo(
-        authors=[Person(name="George Weasley", email="george.weasley@gmail.com"),
-                 Person(name="Fred Weasley", email="fred.weasley@gmail.com")],
-        maintainers=[Person(name="George Weasley", email="george.weasley@gmail.com")],
-        manufacturer="Weasley & Weasley",
-        model="Extendable Ear",
-    )
+    def __init__(self, name):
+        super().__init__(name)
+        self.device_info.manufacturer = "Weasley & Weasley",
+        self.device_info.authors = [Person(name="George Weasley", email="george.weasley@gmail.com"),
+                     Person(name="Fred Weasley", email="fred.weasley@gmail.com")]
+        self.device_info.model = "Extendable Ear"
 
     ...
 
     def send_command(self, command):
         print(command)  # This is in place of actual communication with the device
 
-   def components(self):
-        return ExtendableEarMicrophone("microphone", self),
+
+def components(self):
+    return ExtendableEarMicrophone("microphone", self),
 ```
 
 Now if we run `flowchem ear.toml` again the server will start successfully and show the metadata info together with the
 `start` and `stop` methods.
 
-![](C:\Users\cambie\PycharmProjects\flowchem\docs\add_device\extendable_ear1.png)
+![](extendable_ear1.png)
 
 However, executing start and stop will not execute any code.
 For that we need to add some code in out `ExtendableEarMicrophone` to transform these calls into action.
@@ -202,7 +203,7 @@ class ExtendableEarMicrophone(Microphone):
 If we run `flowchem ear.toml` once again we can now see the code in `ExtendableEar` being executed when the API
 is called.
 
-![](C:\Users\cambie\PycharmProjects\flowchem\docs\add_device\extendable_ear2.png)
+![](extendable_ear2.png)
 
 
 Finally, if we want to support some additional feature off our device that go beyond those of the standard component,

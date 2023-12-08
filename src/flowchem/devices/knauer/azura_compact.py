@@ -7,7 +7,7 @@ import pint
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.devices.flowchem_device import DeviceInfo
+from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.knauer.azura_compact_pump import AzuraCompactPump
@@ -52,22 +52,20 @@ class AzuraPumpHeads(Enum):
 class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
     """Control module for Knauer Azura Compact pumps."""
 
-    metadata = DeviceInfo(
-        authors=[dario, jakob, wei_hsin],
-        maintainers=[dario],
-        manufacturer="knauer",
-        model="Azura Compact",
-    )
-
     def __init__(
         self,
         ip_address=None,
         mac_address=None,
         max_pressure: str = "",
         min_pressure: str = "",
-        **kwargs
+        **kwargs,
     ):
         super().__init__(ip_address, mac_address, **kwargs)
+        self.device_info = DeviceInfo(
+            authors=[dario, jakob, wei_hsin],
+            manufacturer="knauer",
+            model="Azura Compact",
+        )
         self.eol = b"\n\r"
 
         # All the following are set upon initialize()
@@ -97,6 +95,11 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         if self._pressure_min:
             await self.set_minimum_pressure(self._pressure_min)
 
+        # Set Pump and Sensor components.
+        self.components.extend(
+            [AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)]
+        )
+
     @staticmethod
     def error_present(reply: str) -> bool:
         """Return True if there are errors, False otherwise. Warns for errors."""
@@ -105,19 +108,19 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
             return False
 
         if "ERROR:1" in reply:
-            warnings.warn("Invalid message sent to device.\n")
+            warnings.warn("Invalid message sent to device.\n", stacklevel=2)
 
         elif "ERROR:2" in reply:
             warnings.warn(
-                "Setpoint refused by device.\n" "Refer to manual for allowed values.\n"
+                "Setpoint refused by device.\n" "Refer to manual for allowed values.\n",
+                stacklevel=2,
             )
         else:
             warnings.warn("Unspecified error detected!")
         return True
 
     async def _transmit_and_parse_reply(self, message: str) -> str:
-        """
-        Send command and receive reply.
+        """Send command and receive reply.
 
         Deals with all communication based stuff and checks that the valve is of expected type.
         :param message:
@@ -147,10 +150,12 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         return reply
 
     async def create_and_send_command(
-        self, message, setpoint: int | None = None, setpoint_range: tuple | None = None
+        self,
+        message,
+        setpoint: int | None = None,
+        setpoint_range: tuple | None = None,
     ):
-        """
-        Create and sends a message from the command.
+        """Create and sends a message from the command.
 
         If setpoint is given, then the command is appended with :value
         If not setpoint is given, a "?" is added for getter syntax
@@ -167,13 +172,13 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         if setpoint_range:
             if setpoint in range(*setpoint_range):
                 return await self._transmit_and_parse_reply(
-                    message + ":" + str(setpoint)
+                    message + ":" + str(setpoint),
                 )
 
             warnings.warn(
                 f"The setpoint provided {setpoint} is not valid for the command "
                 f"{message}!\n Accepted range is: {setpoint_range}.\n"
-                f"Command ignored"
+                f"Command ignored",
             )
             return ""
 
@@ -228,6 +233,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         """Set flow rate.
 
         Args:
+        ----
             rate (str): value with units
         """
         await self.create_and_send_command(
@@ -276,7 +282,9 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         command = IMIN10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else IMIN50
 
         reply = await self.create_and_send_command(
-            command, setpoint=setpoint, setpoint_range=(0, 101)
+            command,
+            setpoint=setpoint,
+            setpoint_range=(0, 101),
         )
         logger.debug(f"Minimum motor current set to {setpoint}, returns {reply}")
 
@@ -286,8 +294,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         return not bool(int(runlevel))
 
     async def require_start_in(self, value: bool = True):
-        """
-        Configure START IN. If required, the pump starts only if the STARTIN pin is shortened to GND.
+        """Configure START IN. If required, the pump starts only if the STARTIN pin is shortened to GND.
 
         True = Pump starts the flow at short circuit contact only. (Start In <> Ground). [0]
         False = Pump starts the flow without a short circuit contact. (Start In <> Ground). [1]
@@ -302,8 +309,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         return bool(int(reply))
 
     async def enable_autostart(self, value: bool = True):
-        """
-        Set the default behaviour of the pump upon power on.
+        """Set the default behaviour of the pump upon power on.
 
         :param value: False: pause pump after switch on. True: start pumping with previous flow rate at startup
         :return: device message
@@ -321,7 +327,9 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         """Set the adjust parameter. Not clear what it is."""
         command = ADJ10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else ADJ50
         reply = await self.create_and_send_command(
-            command, setpoint=setpoint, setpoint_range=(0, 2001)
+            command,
+            setpoint=setpoint,
+            setpoint_range=(0, 2001),
         )
         logger.debug(f"Adjusting factor of set to {setpoint}, returns {reply}")
 
@@ -334,13 +342,15 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         """Set the correction factor. Not clear what it is."""
         command = CORR10 if self._headtype == AzuraPumpHeads.FLOWRATE_TEN_ML else CORR50
         reply = await self.create_and_send_command(
-            command, setpoint=setpoint, setpoint_range=(0, 301)
+            command,
+            setpoint=setpoint,
+            setpoint_range=(0, 301),
         )
         logger.debug(f"Correction factor set to {setpoint}, returns {reply}")
 
     async def read_pressure(self) -> pint.Quantity:
         """Return pressure if the pump has a pressure sensor."""
-        return await self._transmit_and_parse_reply(PRESSURE) * ureg.bar
+        return int(await self._transmit_and_parse_reply(PRESSURE)) * 0.1 * ureg.bar
 
     async def read_extflow(self) -> float:
         """Read the set flowrate from analog in."""
@@ -403,10 +413,6 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         await self.create_and_send_command(EXTCONTR, setpoint=int(value))
         logger.debug(f"External control set to {value}")
 
-    def components(self):
-        """Create a Pump and a Sensor components."""
-        return AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)
-
 
 if __name__ == "__main__":
     # This is a bug of asyncio on Windows :|
@@ -420,9 +426,9 @@ if __name__ == "__main__":
     async def main(pump: AzuraCompact):
         """Test function."""
         await pump.initialize()
-        c = pump.components()
+        c = pump.components
         print(c)
-        pc: AzuraCompactPump = c[0]
+        pc: AzuraCompactPump = c[0]  # type:ignore
         print(pc)
         print(await pc.infuse(rate="0.1 ml/min"))
         await pump.set_flow_rate(ureg.Quantity("0.1 ml/min"))

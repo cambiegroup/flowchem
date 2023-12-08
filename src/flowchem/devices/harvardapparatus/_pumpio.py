@@ -5,8 +5,7 @@ from enum import Enum
 import aioserial
 from loguru import logger
 
-from flowchem.utils.exceptions import DeviceError
-from flowchem.utils.exceptions import InvalidConfiguration
+from flowchem.utils.exceptions import DeviceError, InvalidConfigurationError
 
 
 class PumpStatus(Enum):
@@ -33,7 +32,7 @@ class HarvardApparatusPumpIO:
 
     DEFAULT_CONFIG = {"timeout": 0.1, "baudrate": 115200}
 
-    def __init__(self, port: str, **kwargs):
+    def __init__(self, port: str, **kwargs) -> None:
         # Merge default settings, including serial, with provided ones.
         configuration = dict(HarvardApparatusPumpIO.DEFAULT_CONFIG, **kwargs)
 
@@ -43,7 +42,7 @@ class HarvardApparatusPumpIO:
             self._serial = aioserial.AioSerial(port, **configuration)
         except aioserial.SerialException as serial_exception:
             logger.error(f"Cannot connect to the Pump on the port <{port}>")
-            raise InvalidConfiguration(
+            raise InvalidConfigurationError(
                 f"Cannot connect to the Pump on the port <{port}>"
             ) from serial_exception
 
@@ -54,8 +53,8 @@ class HarvardApparatusPumpIO:
         try:
             await self._serial.write_async(command_msg.encode("ascii"))
         except aioserial.SerialException as serial_exception:
-            raise InvalidConfiguration from serial_exception
-        logger.debug(f"Sent {repr(command_msg)}!")
+            raise InvalidConfigurationError from serial_exception
+        logger.debug(f"Sent {command_msg!r}!")
 
     async def _read_reply(self) -> list[str]:
         """Read the pump reply from serial communication."""
@@ -63,7 +62,7 @@ class HarvardApparatusPumpIO:
 
         for line in await self._serial.readlines_async():
             reply_string.append(line.decode("ascii").strip())
-            logger.debug(f"Received {repr(line)}!")
+            logger.debug(f"Received {line!r}!")
 
         # First line is usually empty, but some prompts such as T* actually leak into this line sometimes.
         reply_string.pop(0)
@@ -86,7 +85,7 @@ class HarvardApparatusPumpIO:
     ) -> tuple[list[int], list[PumpStatus], list[str]]:
         """Aggregate address prompt and reply body from all the reply lines and return them."""
         parsed_lines = list(map(HarvardApparatusPumpIO.parse_response_line, response))
-        return zip(*parsed_lines)  # type: ignore
+        return zip(*parsed_lines, strict=True)  # type: ignore
 
     @staticmethod
     def check_for_errors(response_line, command_sent):
@@ -97,18 +96,19 @@ class HarvardApparatusPumpIO:
             "Argument error",
             "Out of range",
         )
-        if any([e in response_line for e in error_string]):
+        if any(e in response_line for e in error_string):
             logger.error(
                 f"Error for command {command_sent} on pump {command_sent.pump_address}!"
-                f"Reply: {response_line}"
+                f"Reply: {response_line}",
             )
             raise DeviceError("Command error")
 
     async def write_and_read_reply(
-        self, command: Protocol11Command, return_parsed: bool = True
+        self,
+        command: Protocol11Command,
+        return_parsed: bool = True,
     ) -> list[str]:
-        """
-        Send a command to the pump, read the replies and return it, optionally parsed.
+        """Send a command to the pump, read the replies and return it, optionally parsed.
 
         If unparsed reply is a List[str] with raw replies.
         If parsed reply is a List[str] w/ reply body (address and prompt removed from each line).
@@ -120,7 +120,9 @@ class HarvardApparatusPumpIO:
 
         if not response:
             logger.error("No reply received from pump!")
-            raise InvalidConfiguration("No response received. Is the address right?")
+            raise InvalidConfigurationError(
+                "No response received. Is the address right?"
+            )
 
         pump_address, status, parsed_response = self.parse_response(response)
 

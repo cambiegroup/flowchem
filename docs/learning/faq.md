@@ -1,4 +1,4 @@
-## FAQ
+# FAQ
 
 %### Why no device orchestration functionalities are included?
 %Lab automation holds great potential, yet research lab rarely reuse existing code.

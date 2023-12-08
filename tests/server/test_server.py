@@ -1,40 +1,20 @@
-import asyncio
-from pathlib import Path
-from textwrap import dedent
+import requests
 
-import pytest
-from click.testing import CliRunner
-from fastapi.testclient import TestClient
-
-from flowchem.server.api_server import create_server_from_file
+OK = 200
+NOT_FOUND = 404
 
 
-@pytest.fixture(scope="function")
-def app():
-    runner = CliRunner()
-    with runner.isolated_filesystem():
-        with open("test_configuration.toml", "w") as f:
-            f.write(
-                dedent(
-                    """[device.test-device]\n
-                    type = "FakeDevice"\n"""
-                )
-            )
-        server = asyncio.run(
-            create_server_from_file(Path("test_configuration.toml"), "127.0.0.1")
-        )
-        yield server["api_server"]
-
-
-def test_read_main(app):
-    client = TestClient(app)
-    response = client.get("/")
-    assert response.status_code == 200
+def test_read_main(flowchem_test_instance):
+    response = requests.get(r"http://127.0.0.1:8000/", timeout=5)
+    assert response.status_code == OK
     assert "Flowchem" in response.text
 
-    response = client.get("/test-device/test-component/test")
-    assert response.status_code == 200
+    response = requests.get(
+        r"http://127.0.0.1:8000/test-device/test-component/test",
+        timeout=5,
+    )
+    assert response.status_code == OK
     assert response.text == "true"
 
-    response = client.get("/test-device2")
-    assert response.status_code == 404
+    response = requests.get(r"http://127.0.0.1:8000/test-device2", timeout=5)
+    assert response.status_code == NOT_FOUND

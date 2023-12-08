@@ -1,22 +1,22 @@
 """Zeroconf (mDNS) server."""
-import hashlib
 import uuid
 
 from loguru import logger
-from zeroconf import get_all_addresses
-from zeroconf import IPVersion
-from zeroconf import ServiceInfo
-from zeroconf import Zeroconf
+from zeroconf import (
+    IPVersion,
+    NonUniqueNameException,
+    ServiceInfo,
+    Zeroconf,
+    get_all_addresses,
+)
 
 
 class ZeroconfServer:
-    """ZeroconfServer to advertise FlowchemComponents."""
+    """Server to advertise Flowchem devices via zero configuration networking."""
 
-    def __init__(self, port=8000, debug=False):
+    def __init__(self, port: int = 8000) -> None:
         # Server properties
         self.port = port
-        self.debug = debug
-
         self.server = Zeroconf(ip_version=IPVersion.V4Only)
 
         # Get list of host addresses
@@ -26,50 +26,39 @@ class ZeroconfServer:
             if ip not in ("127.0.0.1", "0.0.0.0")
             and not ip.startswith("169.254")  # Remove invalid IPs
         ]
+        if not self.mdns_addresses:
+            self.mdns_addresses.append("127.0.0.1")
 
-    @staticmethod
-    def _get_valid_service_name(name: str):
-        """Given a desired service name, returns a valid one ;)"""
-        candidate_name = f"{name}._labthing._tcp.local."
-        if len(candidate_name) < 64:
-            prefix = name
-        else:
-            logger.warning(
-                f"The device name '{name}' is too long to be used as identifier."
-                f"It will be trimmed to "
-            )
-            # First 30 characters of name + 10 of hash for uniqueness (2^40 ~ 1E12 collision rate is acceptable).
-            # The hash is based on the (unique?) name end and limited to 64 i.e. max Blake2b key size
-            prefix = (
-                name[:30]
-                + hashlib.blake2b(
-                    key=name[-64:].encode("utf-8"), digest_size=10
-                ).hexdigest()
-            )
+        logger.info(f"Zeroconf server up, broadcasting on IPs: {self.mdns_addresses}")
 
-        return f"{prefix}._labthing._tcp.local."
-
-    async def add_component(self, name, url):
-        """Adds device to the server."""
-        logger.debug(f"Adding zeroconf component {name}")
-        service_name = ZeroconfServer._get_valid_service_name(name)
+    async def add_device(self, name: str) -> None:
+        """Add device to the server."""
+        properties = {
+            "path": rf"http://{self.mdns_addresses[0]}:{self.port}/{name}/",
+            "id": f"{name}:{uuid.uuid4()}".replace(" ", ""),
+        }
 
         # LabThing service
         service_info = ServiceInfo(
             type_="_labthing._tcp.local.",
-            name=service_name,
+            name=name + "._labthing._tcp.local.",
             port=self.port,
-            properties={
-                "path": url,
-                "id": f"{service_name}:{uuid.uuid4()}".replace(" ", ""),
-            },
+            properties=properties,
             parsed_addresses=self.mdns_addresses,
         )
 
-        await self.server.async_register_service(service_info)
-        logger.debug(f"Registered {service_name} on the mDNS server! [ -> {url}]")
+        try:
+            await self.server.async_register_service(service_info)
+        except NonUniqueNameException as name_error:
+            msg = (
+                f"Cannot initialize zeroconf service for '{name}'"
+                f"The same name is already in use: you cannot run flowchem twice for the same device!"
+            )
+            raise RuntimeError(msg) from name_error
+        logger.debug(f"Device {name} registered as Zeroconf service!")
 
 
 if __name__ == "__main__":
     test = ZeroconfServer()
+    print("Press Enter to exit.")
     input()

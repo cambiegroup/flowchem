@@ -7,7 +7,7 @@ from loguru import logger
 
 if TYPE_CHECKING:
     from .elite11 import Elite11
-from flowchem.components.pumps.syringe import SyringePump
+from flowchem.components.pumps.syringe_pump import SyringePump
 
 
 class Elite11PumpOnly(SyringePump):
@@ -19,11 +19,11 @@ class Elite11PumpOnly(SyringePump):
         return False
 
     async def is_pumping(self) -> bool:
-        """True if pump is moving."""
+        """Check if pump is moving."""
         return await self.hw_device.is_moving()
 
     async def stop(self):
-        """Stops pump."""
+        """Stop pump."""
         await self.hw_device.stop()
 
     async def infuse(self, rate: str = "", volume: str = "0 ml") -> bool:
@@ -49,8 +49,7 @@ class Elite11PumpWithdraw(Elite11PumpOnly):
     async def withdraw(self, rate: str = "1 ml/min", volume: str | None = None) -> bool:
         """Withdraw."""
         if await self.is_pumping():
-            logger.warning("Cannot start withdrawing: pump already moving!")
-            return False
+            logger.warning("Pump already moving!")
 
         if rate:  # Else previous rate will be used
             await self.hw_device.set_withdrawing_flow_rate(rate)

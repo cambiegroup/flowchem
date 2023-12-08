@@ -37,7 +37,7 @@ class PBCommand:
         return self.command[4:8]
 
     def parse_temperature(self) -> float:
-        """Parse a device temp from hex string to celsius float."""
+        """Parse a device temp from hex string to Celsius float."""
         # self.data is the two's complement 16-bit signed hex, see manual
         temp = (
             (int(self.data, 16) - 65536) / 100
@@ -86,7 +86,7 @@ class PBCommand:
         }
 
     def parse_status2(self) -> dict[str, bool]:
-        """Parse response to status2 command and returns dict. See manufacturer docs for more info"""
+        """Parse response to status2 command and returns dict. See manufacturer docs for more info."""
         bits = self.parse_bits()
         return {
             "controller_is_external": bits[0],

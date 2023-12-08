@@ -1,14 +1,13 @@
 """Temperature control, either for heating or cooling."""
 from __future__ import annotations
 
-from typing import NamedTuple
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 import pint
 from loguru import logger
 
 from flowchem import ureg
-from flowchem.components.base_component import FlowchemComponent
+from flowchem.components.flowchem_component import FlowchemComponent
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
@@ -22,7 +21,9 @@ class TempRange(NamedTuple):
 class TemperatureControl(FlowchemComponent):
     """A generic temperature controller."""
 
-    def __init__(self, name: str, hw_device: FlowchemDevice, temp_limits: TempRange):
+    def __init__(
+        self, name: str, hw_device: FlowchemDevice, temp_limits: TempRange
+    ) -> None:
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device)
 
@@ -33,7 +34,7 @@ class TemperatureControl(FlowchemComponent):
         self.add_api_route("/power-off", self.power_off, methods=["PUT"])
 
         self.add_api_route("/target-reached", self.is_target_reached, methods=["GET"])
-        self.add_api_route("/limits", self.temperature_limits, methods=["GET"])
+        # self.add_api_route("/limits", self.temperature_limits, methods=["GET"])
 
         self._limits = temp_limits
 
@@ -48,14 +49,14 @@ class TemperatureControl(FlowchemComponent):
             set_t = self._limits[0]
             logger.warning(
                 f"Temperature requested {set_t} is out of range [{self._limits}] for {self.name}!"
-                f"Setting to {self._limits[0]} instead."
+                f"Setting to {self._limits[0]} instead.",
             )
 
         if set_t > self._limits[1]:
             set_t = self._limits[1]
             logger.warning(
                 f"Temperature requested {set_t} is out of range [{self._limits}] for {self.name}!"
-                f"Setting to {self._limits[1]} instead."
+                f"Setting to {self._limits[1]} instead.",
             )
         return set_t
 
