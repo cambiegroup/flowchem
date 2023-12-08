@@ -93,6 +93,8 @@ class Valve(FlowchemComponent):
         # bwe can infer
         super().__init__(name, hw_device)
 
+        # todo it would be nice if those would implement a transformation into tuples: So input "[1,2], [3,4]"
+        #  but what goes into fucntion is ((1,2),(3,4),). Also has to allow for add args
         self.add_api_route("/position", self.get_position, methods=["GET"])
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
