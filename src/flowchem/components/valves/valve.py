@@ -1,13 +1,14 @@
 """Generic valve."""
 from __future__ import annotations
 
+from typing import Tuple, Any
+
 from pydantic import BaseModel
+import json
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
-
-import json
 
 class ValveInfo(BaseModel):
     """
