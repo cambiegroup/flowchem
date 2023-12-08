@@ -118,7 +118,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         else:
             DeviceError("Unspecified error detected!")
 
-    async def _transmit_and_parse_reply(self, message: str) -> str:
+    async def _transmit_and_parse_reply(self, message: str | int) -> str:
         """Send command, receive reply and parse it.
 
         Args:
@@ -129,7 +129,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         -------
             str: reply
         """
-        reply = await self._send_and_receive(message)
+        reply = await self._send_and_receive(str(message))
         self.handle_errors(reply)
 
         if reply == "?":
@@ -169,9 +169,9 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
         """Return current valve position, following valve nomenclature."""
         return await self._transmit_and_parse_reply("P")
 
-    async def set_raw_position(self, position: str | int) -> bool:
+    async def set_raw_position(self, position: str) -> bool:
         """Set valve position, following valve nomenclature."""
-        return await self._transmit_and_parse_reply(str(position)) != ""
+        return await self._transmit_and_parse_reply(position) != ""
 
 
 if __name__ == "__main__":
