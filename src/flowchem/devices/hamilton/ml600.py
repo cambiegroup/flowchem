@@ -59,8 +59,6 @@ class HamiltonPumpIO:
 
     ACKNOWLEDGE = chr(6)
     NEGATIVE_ACKNOWLEDGE = chr(21)
-    ERROR = chr(15)
-
     DEFAULT_CONFIG = {
         "timeout": 0.1,
         "baudrate": 9600,
@@ -594,7 +592,6 @@ class ML600(FlowchemDevice):
         is_single = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.IS_SINGLE_SYRINGE.value),
         )
-        logger.debug(is_single)
         if is_single == "N":
             return False
         elif is_single == "Y":
