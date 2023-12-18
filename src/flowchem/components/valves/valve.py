@@ -1,14 +1,44 @@
 """Generic valve."""
 from __future__ import annotations
 
-from typing import Tuple, Any
-
 from pydantic import BaseModel
 import json
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
+
+
+def return_tuple_from_input(str_or_tuple):
+    # in case no input is given, required, simply return None, will be dealt with by consumer
+    if not str_or_tuple:
+        return None
+    elif type(str_or_tuple) is str:
+        parsed_input = json.loads(str_or_tuple)
+        if type(parsed_input[0]) is not list:
+            parsed_input = [parsed_input]
+        return tuple(tuple(inner) for inner in parsed_input)
+    elif type(str_or_tuple) is tuple:
+        if type(str_or_tuple[0]) is not tuple:
+            str_or_tuple = (str_or_tuple,)
+        return str_or_tuple
+    else:
+        raise DeviceError("Please provide input of type '[[1,2],[3,4]]'")
+
+
+def return_bool_from_input(str_or_bool):
+    if type(str_or_bool) is bool:
+        return str_or_bool
+    elif type(str_or_bool) is str:
+        if str_or_bool.lower() == "true":
+            return True
+        elif str_or_bool.lower() == "false":
+            return False
+        elif str_or_bool == "":
+            return None
+        else:
+            raise DeviceError("Please provide input of type bool, '' or 'True' or 'False'")
+
 
 class ValveInfo(BaseModel):
     """
@@ -17,7 +47,7 @@ class ValveInfo(BaseModel):
                 position
     """
     ports: list[tuple]
-    positions: dict[int, tuple[tuple[int, ...], ...]]
+    positions: dict[int, tuple[tuple[None | int, ...], ...]]
 
 
 def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
@@ -144,7 +174,7 @@ class Valve(FlowchemComponent):
 
         return connections
 
-    def _change_connections(self, raw_position, reverse: bool = False) -> str:
+    def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
         # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
         # device level since this is device communication protocol specific
@@ -183,24 +213,31 @@ class Valve(FlowchemComponent):
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
     # TODO ideally this should also return a tuple to be consistent
-    async def get_position(self) -> tuple[tuple]:
+    async def get_position(self) -> tuple[tuple, tuple]:
         """Get current valve position."""
-        pos = await self.hw_device.get_raw_position()
+        if not hasattr(self, "identifier"):
+            pos = await self.hw_device.get_raw_position()
+        else:
+            pos = await self.hw_device.get_raw_position(self.identifier)
         pos = int(pos) if pos.isnumeric() else pos
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
-    async def set_position(self, positions_to_connect: str, positions_not_to_connect: str = None, ambiguous_switching: bool = True):
-        """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
-        positions_to_connect_l = json.loads(positions_to_connect)
-        position_to_connect_t = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
-        if not positions_not_to_connect:
-            positions_not_to_connect_l = json.loads(positions_not_to_connect)
-            positions_not_to_connect = tuple(tuple(inner_list) for inner_list in positions_not_to_connect_l)
-        target_pos = self._connect_positions(positions_to_connect=position_to_connect_t,
-                                             positions_not_to_connect=positions_not_to_connect,
+    # todo, this alternatively has to accept one argument and decompose that from string to tuple, plus optionally
+    #  keyword argument
+    async def set_position(self, connect: str | tuple = "", disconnect: str | tuple = "",
+                           ambiguous_switching: str | bool = False):
+        """Move valve to position, which connects named ports"""
+        connect=return_tuple_from_input(connect)
+        disconnect=return_tuple_from_input(disconnect)
+        ambiguous_switching=return_bool_from_input(ambiguous_switching)
+        target_pos = self._connect_positions(positions_to_connect=connect, positions_not_to_connect=disconnect,
                                              arbitrary_switching=ambiguous_switching)
         target_pos = self._change_connections(target_pos)
-        return await self.hw_device.set_raw_position(target_pos)
+        if not hasattr(self, "identifier"):
+            await self.hw_device.set_raw_position(target_pos)
+        else:
+            await self.hw_device.set_raw_position(target_pos, target_component = self.identifier)
+
 
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
