@@ -247,7 +247,6 @@ class ML600Commands(Enum):
     # TIMER REQUEST
     TIMER_DELAY = "<T"  # 0–99999999 ms
     # FIRMWARE REQUEST
-    # TODO this is wrong, get correct
     FIRMWARE_VERSION = "U"
       # xxii.jj.k (ii major, jj minor, k revision)
     OPTIONAL_PARAMETER = "S"
@@ -263,7 +262,6 @@ class ML600(FlowchemDevice):
     steps by multiplying 48000 steps (9 mL/10 mL) to get 43,200 steps.
     """
 
-# TODO: 1) get switch by degrees, this should be simply set_position. Todo get command mapping as enum
 
     DEFAULT_CONFIG = {
         "default_infuse_rate": "1 ml/min",
@@ -418,8 +416,6 @@ class ML600(FlowchemDevice):
                                     ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
         else:
             self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
-        # TODO potentially set the suitable device mode -
-        #  this might be needed despite switching by angle to achieve the proper position reproducibly...
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""

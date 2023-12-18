@@ -125,8 +125,6 @@ class Valve(FlowchemComponent):
         # bwe can infer
         super().__init__(name, hw_device)
 
-        # todo it would be nice if those would implement a transformation into tuples: So input "[1,2], [3,4]"
-        #  but what goes into fucntion is ((1,2),(3,4),). Also has to allow for add args
         self.add_api_route("/position", self.get_position, methods=["GET"])
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
@@ -214,7 +212,6 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
-    # TODO ideally this should also return a tuple to be consistent
     async def get_position(self) -> tuple[tuple, tuple]:
         """Get current valve position."""
         if not hasattr(self, "identifier"):
@@ -224,8 +221,7 @@ class Valve(FlowchemComponent):
         pos = int(pos) if pos.isnumeric() else pos
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
-    # todo, this alternatively has to accept one argument and decompose that from string to tuple, plus optionally
-    #  keyword argument
+
     async def set_position(self, connect: str | tuple = "", disconnect: str | tuple = "",
                            ambiguous_switching: str | bool = False):
         """Move valve to position, which connects named ports"""
