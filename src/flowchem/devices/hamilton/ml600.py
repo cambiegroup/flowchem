@@ -487,7 +487,7 @@ class ML600(FlowchemDevice):
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION.value,
-                             target_syringe=pump),
+                             target_component=pump),
         )
 
         current_steps = int(syringe_pos) * ureg.step
@@ -505,18 +505,18 @@ class ML600(FlowchemDevice):
             optional_parameter=ML600Commands.OPTIONAL_PARAMETER.value,
             command_value=str(position),
             parameter_value=set_speed,
-            target_syringe=pump
+            target_component=pump
         )
         return await self.send_command_and_read_reply(abs_move_cmd)
 
     async def stop(self, pump: str) -> bool:
         """Stop and abort any running command."""
         await self.send_command_and_read_reply(
-            Protocol1Command(command="", target_syringe=pump,
+            Protocol1Command(command="", target_component=pump,
                              execution_command=ML600Commands.PAUSE.value),
         )
         await self.send_command_and_read_reply(
-            Protocol1Command(command="",  target_syringe=pump,
+            Protocol1Command(command="",  target_component=pump,
                              execution_command=ML600Commands.CLEAR_BUFFER.value),
         )
         return True
@@ -637,10 +637,9 @@ class ML600(FlowchemDevice):
         Represent the position of the valve: getter returns Enum, setter needs Enum.
         Strongly encouraged to use switching by angle
         """
-        return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.CURRENT_VALVE_POSITION.value,
-                                                                       target_valve=valve.value if self.dual_syringe else ""))
-                                                                       target_component = valve.value if self.dual_syringe else ""))
-
+        return await self.send_command_and_read_reply(
+            Protocol1Command(command=ML600Commands.CURRENT_VALVE_POSITION.value,
+                             target_component = valve.value if self.dual_syringe else ""))
 
     async def set_valve_position_by_name(
         self,
@@ -665,8 +664,10 @@ class ML600(FlowchemDevice):
         Represent the position of the valve: getter returns Enum, setter needs Enum.
         Strongly encouraged to use switching by angle
         """
-        return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.VALVE_ANGLE.value,
-                                                                       target_component = target_component if self.dual_syringe else ""))
+        return await self.send_command_and_read_reply(
+            Protocol1Command(command=ML600Commands.VALVE_ANGLE.value,
+                             target_component=target_component if self.dual_syringe else ""))
+
     async def set_raw_position(
         self,
         target_position: str,
@@ -681,13 +682,13 @@ class ML600(FlowchemDevice):
         if not counter_clockwise:
             await self.send_command_and_read_reply(
                 Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CW.value, command_value=target_position,
-                                 target_component = target_component if self.dual_syringe else ""),
+                                 target_component=target_component if self.dual_syringe else ""),
             )
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CW")
         else:
             await self.send_command_and_read_reply(
                 Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW.value, command_value=target_position,
-                                 target_component = target_component if self.dual_syringe else ""),
+                                 target_component=target_component if self.dual_syringe else ""),
             )
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CCW")
         if wait_for_movement_end:
