@@ -418,8 +418,6 @@ class ML600(FlowchemDevice):
                                     ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
         else:
             self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
-# TODO potentially set the suitable device mode - this might be needed despite switching by angle to achive the proper position reproducibly...
-
         # TODO potentially set the suitable device mode -
         #  this might be needed despite switching by angle to achieve the proper position reproducibly...
 
