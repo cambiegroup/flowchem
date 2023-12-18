@@ -413,7 +413,7 @@ class ML600(FlowchemDevice):
 
         # Add device components
         if self.dual_syringe:
-            self.components.extend([ML600Pump("left_pump", self),ML600Pump("right_pump", self),
+            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C"),
                                     ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
         else:
             self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
