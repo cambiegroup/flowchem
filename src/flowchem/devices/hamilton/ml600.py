@@ -661,8 +661,7 @@ class ML600(FlowchemDevice):
             await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.REQUEST_DONE.value)) == "Y"
         )
 
-    async def get_valve_position_by_name(self, valve: ML600Commands = None
-) -> str:
+    async def get_valve_position_by_name(self, valve: ML600Commands = None) -> str:
         """
         Represent the position of the valve: getter returns Enum, setter needs Enum.
         Strongly encouraged to use switching by angle
