@@ -388,8 +388,9 @@ class ML600(FlowchemDevice):
     async def set_return_steps(self, return_steps: int):
         # waiting is necessary since this happens on (class) initialisation
         target_steps = str(int(return_steps))
-        await self.wait_until_idle()
-        await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.SET_RETURN_STEPS.value, command_value=target_steps))
+        await self.wait_until_system_idle()
+        await self.send_command_and_read_reply(Protocol1Command(
+            command=ML600Commands.SET_RETURN_STEPS.value, command_value=target_steps))
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
