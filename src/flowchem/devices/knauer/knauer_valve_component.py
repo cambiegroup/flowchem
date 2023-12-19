@@ -73,10 +73,12 @@ class Knauer6PortDistributionValve(SixPortDistributionValve):
     async def set_monitor_position(self, position: str):
         return await self.hw_device.set_raw_position(position)
 
+
 class Knauer12PortDistributionValve(TwelvePortDistributionValve):
     """KnauerValve of type SIX_PORT_SIX_POSITION."""
 
     hw_device: KnauerValve  # for typing's sake
+
     def __init__(self, name: str, hw_device: KnauerValve) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
@@ -84,7 +86,7 @@ class Knauer12PortDistributionValve(TwelvePortDistributionValve):
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
-    def _change_connections(self, raw_position:int, reverse: bool = False):
+    def _change_connections(self, raw_position: int, reverse: bool = False):
         if reverse:
             return raw_position - 1
         else:
@@ -96,10 +98,12 @@ class Knauer12PortDistributionValve(TwelvePortDistributionValve):
     async def set_monitor_position(self, position: str):
         return await self.hw_device.set_raw_position(position)
 
+
 class Knauer16PortDistributionValve(SixteenPortDistributionValve):
     """KnauerValve of type SIX_PORT_SIX_POSITION."""
 
     hw_device: KnauerValve  # for typing's sake
+
     def __init__(self, name: str, hw_device: KnauerValve) -> None:
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
