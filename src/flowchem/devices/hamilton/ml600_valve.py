@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from flowchem.components.valves.distribution_valves import ThreePortTwoPositionValve, ThreePortFourPositionValve, FourPortFivePositionValve
+from flowchem.components.valves.distribution_valves import ThreePortFourPositionValve, FourPortFivePositionValve
 
 if TYPE_CHECKING:
     from .ml600 import ML600

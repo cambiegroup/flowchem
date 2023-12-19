@@ -11,7 +11,6 @@ from flowchem.components.valves.distribution_valves import (
     SixteenPortDistributionValve,
     TwelvePortDistributionValve,
 )
-from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 
 
