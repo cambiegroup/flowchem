@@ -533,7 +533,7 @@ class ML600(FlowchemDevice):
         )
         return await self.send_command_and_read_reply(abs_move_cmd)
 
-    async def stop(self, pump: str) -> bool:
+    async def stop(self, pump: str):
         """Stop and abort any running command."""
         await self.send_command_and_read_reply(
             Protocol1Command(command="", target_component=pump,
@@ -543,7 +543,6 @@ class ML600(FlowchemDevice):
             Protocol1Command(command="",  target_component=pump,
                              execution_command=ML600Commands.CLEAR_BUFFER.value),
         )
-        return True
 
     async def get_pump_status(self, pump: str = "") -> bool:
         checking_mapping = {"B": 1, "C": 3}
