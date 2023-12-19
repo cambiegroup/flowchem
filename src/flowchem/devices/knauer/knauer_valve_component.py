@@ -107,7 +107,6 @@ class Knauer16PortDistributionValve(SixteenPortDistributionValve):
         """Create a ValveControl object."""
         super().__init__(name, hw_device)
 
-    def _change_connections(self, raw_position:int, reverse: bool = False):
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
