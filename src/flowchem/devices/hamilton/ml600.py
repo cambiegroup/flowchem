@@ -683,7 +683,7 @@ class ML600(FlowchemDevice):
         """
         await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.VALVE_BY_NAME_CW.value, command_value=target_position,
-                             target_valve=valve.value if self.dual_syringe else ""),
+                             target_component=valve.value if self.dual_syringe else ""),
         )
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
