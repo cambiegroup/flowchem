@@ -229,7 +229,7 @@ class R2PumpPressureSensor(PressureSensor):
         super().__init__(name, hw_device)
         self.pump_code = pump_code
 
-    async def read_pressure(self, units: str = "mbar") -> int | None:  # mbar
+    async def read_pressure(self, units: str = "mbar") -> int | float | None:  # mbar
         """Get current pump pressure in mbar."""
         pressure = await self.hw_device.get_current_pressure(self.pump_code)
         return pressure.m_as(units)
