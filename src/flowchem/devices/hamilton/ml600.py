@@ -242,6 +242,7 @@ class ML600(FlowchemDevice):
 
         # Syringe pumps only perform linear movement, and the volume displaced is function of the syringe loaded.
         try:
+            # todo: set syringe_volume to a dict/str??
             self.syringe_volume = ureg.Quantity(syringe_volume)
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
@@ -257,9 +258,7 @@ class ML600(FlowchemDevice):
             )
 
         self._steps_per_ml = ureg.Quantity(f"{48000 / self.syringe_volume} step")
-        self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
-        self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
-        logger.warning(f"due to offset steps is {self._offset_steps}. the max_vol : {self._max_vol}")
+
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
         self.dual_syringe = False
@@ -381,7 +380,7 @@ class ML600(FlowchemDevice):
     #     )
     #     return await self.send_command_and_read_reply(init_syringe)
 
-    def flowrate_to_seconds_per_stroke(self, flowrate: pint.Quantity):
+    def _flowrate_to_seconds_per_stroke(self, flowrate: pint.Quantity):
         """Convert flow rates to steps per seconds.
 
         To determine the volume dispensed per step the total syringe volume is divided by
@@ -400,42 +399,35 @@ class ML600(FlowchemDevice):
 
     def _volume_to_step_position(self, volume: pint.Quantity) -> int:
         """Convert a volume to a step position."""
+        # todo: different syringes
         # noinspection PyArgumentEqualDefault
         steps = volume * self._steps_per_ml
-        return round(steps.m_as("steps")) + self._offset_steps
+        return round(steps.m_as("steps"))
 
-    async def _to_step_position(
-        self,
-        position: int,
-        speed: pint.Quantity | None = None,
-    ):
-        """Absolute move to step position."""
+    async def get_current_volume(self, pump: str) -> pint.Quantity:
+        """Return current syringe position in ml."""
+        syringe_pos = await self.send_command_and_read_reply(
+            Protocol1Command(command="YQP",target_component=pump),)
+
+        current_steps = int(syringe_pos) * ureg.step
+        return current_steps / self._steps_per_ml
+
+    async def set_to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity, pump: str):
+        """Absolute move to target volume provided by set step position and speed."""
+        # in pump component, it already checked the desired volume setting is possible to execute or not
+        speed = self._flowrate_to_seconds_per_stroke(rate)  # in seconds/stroke
+        set_speed = self._validate_speed(speed)  # check desired speed is possible to execute
+        position = self._volume_to_step_position(target_volume)
+        logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {set_speed}")
+
         abs_move_cmd = Protocol1Command(
             command="M",
             optional_parameter="S",
             command_value=str(position),
-            parameter_value=self._validate_speed(speed),
+            parameter_value=set_speed,
+            target_component=pump
         )
         return await self.send_command_and_read_reply(abs_move_cmd)
-
-    async def get_current_volume(self) -> pint.Quantity:
-        """Return current syringe position in ml."""
-        syringe_pos = await self.send_command_and_read_reply(
-            Protocol1Command(command="YQP"),
-        )
-
-        current_steps = (int(syringe_pos) - self._offset_steps) * ureg.step
-        logger.info(current_steps)
-        return current_steps / self._steps_per_ml
-
-    async def to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity):
-        """Absolute move to volume provided."""
-        speed = self.flowrate_to_seconds_per_stroke(rate)
-        await self._to_step_position(
-            self._volume_to_step_position(target_volume),
-            speed,
-        )
-        logger.debug(f"Pump {self.name} set to volume {target_volume} at speed {speed}")
 
     async def pause(self):
         """Pause any running command."""
