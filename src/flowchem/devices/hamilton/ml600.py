@@ -468,17 +468,96 @@ class ML600(FlowchemDevice):
     async def stop(self):
         """Stop and abort any running command."""
         await self.pause()
-        return await self.send_command_and_read_reply(
-            Protocol1Command(command="", execution_command="V"),
+        await self.send_command_and_read_reply(
+            Protocol1Command(command="", target_component=pump, execution_command="V"),)
+        return True  # Todo: need?
+
+    async def get_pump_status(self, pump: str = "") -> bool:
+        checking_mapping = {"B": 1, "C": 3}
+        pump = "B" if not pump else pump
+        status = await self.system_status(checking_mapping[pump])
+        logger.info(f"pump {pump} is busy: {status}")
+        return status
+
+    async def get_valve_status(self, valve: str = "") -> bool:
+        checking_mapping = {"B": 0, "C": 2}
+        pump = "B" if not valve else valve
+        status = await self.system_status(checking_mapping[pump])
+        logger.info(f"pump {pump} is busy: {status}")
+        return status
+
+    async def system_status(self, component: int = -1) -> bool | dict[str: bool]:
+        """
+        Returns: bool for specific component checking.
+                 dict for all part of instrument.
+        """
+        reply = await self.send_command_and_read_reply(
+                Protocol1Command(command="T1", execution_command=""))
+        all_status = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
+        # 1 is true and 0 is false according to the manual; but the real signal is opposite.
+        if -1 < component < 5:
+            return all_status[component] == "0"
+
+        value_map = {0: "left_valve busy", 1: "left_pump busy",
+                     2: "right_valve busy", 3: "right_pump busy",
+                     4: "step_active busy", 5: "handprobe_active busy"}
+        status = {}
+        for key in value_map:
+            logger.debug(f"{value_map[key]} : {all_status[key] == '0'}")
+            status[value_map[key]] = all_status[key] == "0"
+        return status
+
+    async def general_status_info(self, component: int = -1) -> bool | dict[str: bool]:
+        # todo: this command will reset the error of syntax and instrument, use others error monitoring method
+        reply = await self.send_command_and_read_reply(
+            Protocol1Command(command="E1", execution_command=""))
+        binary_representation = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
+
+        if -1 < component < 5:
+            # for specific component
+            return binary_representation[component] == "1"
+
+        value_map = {0: "instrument idle, command buffer isn't empty",
+                     1: "syringe(s) busy",
+                     2: "valve(s) busy",
+                     3: "syntax error",
+                     4: "valve or syringe error"}
+        status = {}
+        for key in value_map:
+            status[value_map[key]] = binary_representation[key] == '1'
+            logger.info(f"{value_map[key]} : {status[value_map[key]]}")
+
+            if status[value_map[key]]:
+                raise DeviceError((
+                    f"{value_map[key]} shows {status[value_map[key]]}. Check! "
+                ))
+        return status
+
+    async def wait_until_system_idle(self):
+        """Return when no more commands are present in the pump buffer."""
+        logger.debug(f"ML600 {self.name} wait until idle...")
+        while not await self.is_system_idle():
+            await asyncio.sleep(0.1)
+        logger.debug(f"...ML600 {self.name} idle now!")
+
+    async def is_system_idle(self) -> bool:
+        """Check if the pump is idle (actually check if the last command has ended)."""
+        return (
+            await self.send_command_and_read_reply(
+                Protocol1Command(command="F", execution_command="")) == "Y"
         )
 
-    async def wait_until_idle(self) -> bool:
-        """Return when no more commands are present in the pump buffer."""
-        logger.debug(f"ML600 pump {self.name} wait until idle...")
-        while not await self.is_idle():
-            await asyncio.sleep(0.1)
-        logger.debug(f"...ML600 pump {self.name} idle now!")
-        return True
+    async def is_single_syringe(self) -> bool:
+        """Determine if single or dual syringe"""
+        is_single = await self.send_command_and_read_reply(
+            Protocol1Command(command="H", execution_command=""),
+        )
+        if is_single == "N":
+            return False
+        elif is_single == "Y":
+            return True
+        else:
+            raise InvalidConfigurationError("Neither single nor dual syringe - somethings wrong")
 
     async def version(self) -> str:
         """Return the current firmware version reported by the pump."""
