@@ -134,16 +134,15 @@ class HamiltonPumpIO:
     async def _write_async(self, command: bytes):
         """Write a command to the pump."""
         await self._serial.write_async(command)
-        logger.info(f"Command {command!r} sent!")
+        logger.debug(f"Command {command!r} sent!")
 
     async def _read_reply_async(self) -> str:
         """Read the pump reply from serial communication."""
         reply_string = await self._serial.readline_async()
-        logger.info(f"Reply received: {reply_string}")
-        logger.info(f"decode: {reply_string.decode('utf-8')}")
+        logger.debug(f"Reply received: {reply_string}")
         return reply_string.decode("ascii")
 
-    def parse_response(self, response: str) -> str:
+    def _parse_response(self, response: str) -> str:
         """Split a received line in its components: status, reply."""
         status, reply = response[:1], response[1:]
 
@@ -157,6 +156,14 @@ class HamiltonPumpIO:
 
         return reply.rstrip()  # removes trailing <cr>
 
+    def _translate_ascii_to_binary(self, reply: str):
+        binary_representation = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
+        return binary_representation
+
+        # binary_list = []
+        # [binary_list.append(format(byte, '08b')[::-1]) for byte in reply.encode('ascii')]
+        # all_status = binary_list[0]
+
     async def write_and_read_reply_async(self, command: Protocol1Command) -> str:
         """Send a command to the pump, read the replies and returns it, optionally parsed."""
         self._serial.reset_input_buffer()
@@ -169,7 +176,7 @@ class HamiltonPumpIO:
                 f"Maybe wrong pump address? (Set to {command.target_pump_num})"
             )
 
-        return self.parse_response(response)
+        return self._parse_response(response)
 
 
 class ML600(FlowchemDevice):
