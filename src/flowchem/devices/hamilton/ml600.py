@@ -101,6 +101,9 @@ class HamiltonPumpIO:
         A custom command syntax with no addresses is used here so read and write has been rewritten
         """
         try:
+            # the command for an unknown reason often replies wrongly on first attempt. therefore, this is done twice
+            await self._write_async(b"1a\r")
+            await self._read_reply_async()
             await self._write_async(b"1a\r")
         except aioserial.SerialException as e:
             raise InvalidConfigurationError from e
@@ -120,8 +123,11 @@ class HamiltonPumpIO:
         logger.debug(f"Found {last_pump} pumps on {self._serial.port}!")
         return int(last_pump)
 
-    async def _hw_init(self):
+    async def all_hw_init(self):
         """Send to all pumps the HW initialization command (i.e. homing)."""
+        await self._write_async(b":K\r")
+        await self._write_async(b":V\r")
+        await self._write_async(b":#SP2\r")
         await self._write_async(b":XR\r")  # Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
 
@@ -291,7 +297,9 @@ class ML600(FlowchemDevice):
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
+        # this command MUST be executed in the beginning
         await self.pump_io.initialize()
+        await self.wait_until_system_idle()
         # Test connectivity by querying the pump's firmware version
         self.device_info.version = await self.version()
         logger.info(
@@ -300,8 +308,6 @@ class ML600(FlowchemDevice):
         self.dual_syringe = not await self.is_single_syringe()
         await self.general_status_info()
 
-        if hw_init:
-            await self.initialize_pump(speed=ureg.Quantity(init_speed))
         # Add device components
         if self.dual_syringe:
             self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C"),
