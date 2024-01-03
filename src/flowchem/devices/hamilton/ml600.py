@@ -15,7 +15,7 @@ from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
 from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve
-from flowchem.utils.exceptions import InvalidConfigurationError
+from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
 if TYPE_CHECKING:
@@ -58,7 +58,6 @@ class HamiltonPumpIO:
 
     ACKNOWLEDGE = chr(6)
     NEGATIVE_ACKNOWLEDGE = chr(21)
-
     DEFAULT_CONFIG = {
         "timeout": 0.1,
         "baudrate": 9600,
@@ -453,19 +452,17 @@ class ML600(FlowchemDevice):
         )
         return await self.send_command_and_read_reply(abs_move_cmd)
 
-    async def pause(self):
+    async def pause(self, pump: str):
         """Pause any running command."""
         return await self.send_command_and_read_reply(
-            Protocol1Command(command="", execution_command="K"),
-        )
+            Protocol1Command(command="", target_component=pump, execution_command="K"),)
 
-    async def resume(self):
+    async def resume(self, pump: str):
         """Resume any paused command."""
         return await self.send_command_and_read_reply(
-            Protocol1Command(command="", execution_command="$"),
-        )
+            Protocol1Command(command="", target_component=pump, execution_command="$"),)
 
-    async def stop(self):
+    async def stop(self, pump: str) -> bool:
         """Stop and abort any running command."""
         await self.pause()
         await self.send_command_and_read_reply(
