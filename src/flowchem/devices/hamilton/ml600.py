@@ -301,6 +301,23 @@ class ML600(FlowchemDevice):
             name=config.get("name", ""),
         )
 
+    async def get_return_steps(self) -> int:
+        """ Gives the defined return steps for syringe movement """
+        reply = await self.send_command_and_read_reply(Protocol1Command(command="YQN"))
+        return int(reply)
+
+    async def set_return_steps(self, return_steps: int):
+        """
+        Return steps are used to compensate for the mechanical drive system backlash,
+        independent of syringe size and default is 24 steps.
+        The return step should be in # 0-1000 steps.
+        """
+        # waiting is necessary since this happens on (class) initialisation
+        target_steps = str(int(return_steps))
+        await self.wait_until_system_idle()  #todo: needs???
+        await self.send_command_and_read_reply(Protocol1Command(
+            command="YSN", command_value=target_steps))
+
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
         # this command MUST be executed in the beginning
@@ -515,16 +532,6 @@ class ML600(FlowchemDevice):
             pass
             # await self.wait_until_idle()
         return True
-
-    # async def get_return_steps(self) -> int:
-    #     """Return steps' getter. Applied to the end of a downward syringe movement to removes mechanical slack."""
-    #     steps = await self.send_command_and_read_reply(Protocol1Command(command="YQN"))
-    #     return int(steps)
-    #
-    # async def set_return_steps(self, target_steps: int):
-    #     """Return steps' setter. Applied to the end of a downward syringe movement to removes mechanical slack."""
-    #     target_steps = str(int(target_steps))
-    #     return await self.send_command_and_read_reply(Protocol1Command(command="YSN", command_value=target_steps))
 
 
 if __name__ == "__main__":
