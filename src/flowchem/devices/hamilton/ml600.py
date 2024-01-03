@@ -33,7 +33,7 @@ class Protocol1Command:
 
     command: str
     target_pump_num: int = 1
-    target_syringe: str = ""
+    target_component: str = ""
     command_value: str = ""
     optional_parameter: str = ""
     parameter_value: str = ""
@@ -43,7 +43,7 @@ class Protocol1Command:
         """Create actual command byte by prepending pump address to command and appending executing command."""
         compiled_command = (
             f"{PUMP_ADDRESS[self.target_pump_num]}"
-            f"{self.target_syringe}"
+            f"{self.target_component}"
             f"{self.command}{self.command_value}"
         )
 
