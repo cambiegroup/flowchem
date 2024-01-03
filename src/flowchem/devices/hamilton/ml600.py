@@ -14,7 +14,7 @@ from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
-from flowchem.devices.hamilton.ml600_valve import ML600Valve
+from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
@@ -274,6 +274,7 @@ class ML600(FlowchemDevice):
         logger.warning(f"due to offset steps is {self._offset_steps}. the max_vol : {self._max_vol}")
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
+        self.dual_syringe = False
 
     @classmethod
     def from_config(cls, **config):
@@ -319,7 +320,11 @@ class ML600(FlowchemDevice):
         if hw_init:
             await self.initialize_pump(speed=ureg.Quantity(init_speed))
         # Add device components
-        self.components.extend([ML600Pump("pump", self), ML600Valve("valve", self)])
+        if self.dual_syringe:
+            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C"),
+                                    ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
+        else:
+            self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
@@ -480,27 +485,48 @@ class ML600(FlowchemDevice):
             await self.send_command_and_read_reply(Protocol1Command(command="F", execution_command="")) == "Y"
         )
 
-    async def get_valve_position(self) -> str:
-        """Represent the position of the valve: getter returns Enum, setter needs Enum."""
-        await self.send_command_and_read_reply(Protocol1Command(command="LQA"))
-        return await self.send_command_and_read_reply(Protocol1Command(command="LQP"))
+    async def get_valve_angle(self, valve_code: str = "") -> str:
+        """get the angle of the valve: 0-359 degrees"""
+        return await self.send_command_and_read_reply(Protocol1Command(command="LQA", target_component=valve_code))
 
-    async def set_valve_position(
-        self,
-        target_position: str,
-        wait_for_movement_end: bool = True,
-    ) -> bool:
+    async def set_valve_angle(self,
+                              target_angle: str,
+                              valve_code: str = "",
+                              wait_for_movement_end: bool = True) -> int:
+        """set the angle of the valve"""
+        await self.send_command_and_read_reply(
+            Protocol1Command(command="LP0", target_component=valve_code, command_value=target_angle)
+        )
+        logger.debug(f"{self.name} valve position set to {target_angle} degree")
+        if wait_for_movement_end:
+            pass
+            # fixme: check valve is busy or not
+            # await self.wait_until_idle()
+        return True
+
+    async def get_valve_position(self, valve_code: str = "") -> str:
+        """Represent the position of the valve: getter returns Enum, setter needs Enum."""
+        # todo: set the dispense mode
+        return await self.send_command_and_read_reply(Protocol1Command(command="LQP",  target_component=valve_code))
+
+    async def set_valve_position(self,
+                                 target_position: str,
+                                 valve_code: str = "",
+                                 wait_for_movement_end: bool = True,) -> bool:
         """Set valve position.
 
         wait_for_movement_end is defaulted to True as it is a common mistake not to wait...
         """
+        # todo: set the dispense mode
         await self.send_command_and_read_reply(
-            Protocol1Command(command="LP0", command_value=target_position),
+            Protocol1Command(command="LP0", command_value=target_position, target_component=valve_code),
         )
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
-            await self.wait_until_idle()
-            return True
+            # fixme: check valve is busy or not
+            pass
+            # await self.wait_until_idle()
+        return True
 
     # async def get_return_steps(self) -> int:
     #     """Return steps' getter. Applied to the end of a downward syringe movement to removes mechanical slack."""
