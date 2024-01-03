@@ -92,6 +92,7 @@ class HamiltonPumpIO:
         self.num_pump_connected = await self._assign_pump_address()
         if hw_initialization:
             await self.all_hw_init()  # initialization take more than 8.5 sec for one instrument
+            await asyncio.sleep(8)  # this might be necessary due to checking request_done sometime fail with "" return
 
     async def _assign_pump_address(self) -> int:
         """Auto assign pump addresses.
@@ -607,4 +608,4 @@ if __name__ == "__main__":
         "syringe_volume": "5 mL",
     }
     pump1 = ML600.from_config(**conf)
-    asyncio.run(pump1.initialize_pump())
+    asyncio.run(pump1.initialize())

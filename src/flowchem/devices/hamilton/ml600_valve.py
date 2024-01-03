@@ -73,7 +73,7 @@ class ML600LeftValve(Valve):
 class ML600RightValve(Valve):
     hw_device: ML600  # for typing's sake
     identifier = "C"
-    angle_mapping = {0: [[2, 3, 0]], 90: [[2, 1], [3, 0]], 180: [[2, 3], [1, 0]], 270: [[2, 1, 0]]}
+    # angle_mapping = {0: [[2, 3, 0]], 90: [[2, 1], [3, 0]], 180: [[2, 3], [1, 0]], 270: [[2, 1, 0]]}
     angle_mapping_name = {0: "syr-left-front",
                           90: "syr-right&left-front",
                           180: "syr-left&right-front",
