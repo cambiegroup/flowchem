@@ -317,9 +317,8 @@ class ML600(FlowchemDevice):
         await self.send_command_and_read_reply(Protocol1Command(
             command="YSN", command_value=target_steps))
 
-    async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
+    async def initialize(self, init_speed: str = "200 sec / stroke"):
         """Initialize pump and its components."""
-        # this command MUST be executed in the beginning
         await self.pump_io.initialize()
         await self.wait_until_system_idle()
         # Test connectivity by querying the pump's firmware version
@@ -375,10 +374,7 @@ class ML600(FlowchemDevice):
         return str(round(speed.m_as("sec / stroke")))
 
     async def initialize_pump(self, speed: pint.Quantity | None = None):
-        """Initialize both syringe and valve.
-
-        speed: 2-3692 in seconds/stroke
-        """
+        """Initialize both syringe and valve. speed: 2-3692 in seconds/stroke"""
         init_pump = Protocol1Command(
             command="X",
             optional_parameter="S",
@@ -386,22 +382,18 @@ class ML600(FlowchemDevice):
         )
         return await self.send_command_and_read_reply(init_pump)
 
-    # async def initialize_valve(self):
-    #     """Initialize valve only."""
-    #     return await self.send_command_and_read_reply(Protocol1Command(command="LX"))
+    async def initialize_valve(self):
+        """Initialize valve only."""
+        return await self.send_command_and_read_reply(Protocol1Command(command="LX"))
 
-    # async def initialize_syringe(self, speed: pint.Quantity | None = None):
-    #     """
-    #     Initialize syringe only.
-    #
-    #     speed: 2-3692 in seconds/stroke
-    #     """
-    #     init_syringe = Protocol1Command(
-    #         command="X1",
-    #         optional_parameter="S",
-    #         parameter_value=self._validate_speed(speed),
-    #     )
-    #     return await self.send_command_and_read_reply(init_syringe)
+    async def initialize_syringe(self, speed: pint.Quantity | None = None):
+        """Initialize syringe only. speed: 2-3692 in seconds/stroke"""
+        init_syringe = Protocol1Command(
+            command="X1",
+            optional_parameter="S",
+            parameter_value=self._validate_speed(speed),
+        )
+        return await self.send_command_and_read_reply(init_syringe)
 
     def _flowrate_to_seconds_per_stroke(self, flowrate: pint.Quantity):
         """Convert flow rates to steps per seconds.
