@@ -462,6 +462,7 @@ class ML600(FlowchemDevice):
         return True  # Todo: need?
 
     async def get_pump_status(self, pump: str = "") -> bool:
+        """Ture means pump is busy. False means pump is idle."""
         checking_mapping = {"B": 1, "C": 3}
         pump = "B" if not pump else pump
         status = await self.system_status(checking_mapping[pump])
@@ -469,16 +470,17 @@ class ML600(FlowchemDevice):
         return status
 
     async def get_valve_status(self, valve: str = "") -> bool:
+        """Ture means valve is busy. False means valve is idle."""
         checking_mapping = {"B": 0, "C": 2}
-        pump = "B" if not valve else valve
-        status = await self.system_status(checking_mapping[pump])
-        logger.info(f"pump {pump} is busy: {status}")
+        valve = "B" if not valve else valve
+        status = await self.system_status(checking_mapping[valve])
+        logger.info(f"valve {valve} is busy: {status}")
         return status
 
     async def system_status(self, component: int = -1) -> bool | dict[str: bool]:
         """
-        Returns: bool for specific component checking.
-                 dict for all part of instrument.
+        Represent the status of specific component. True means busy; False meaens idle.
+        Return status of all parts of instrument in dictionary.
         """
         reply = await self.send_command_and_read_reply(
                 Protocol1Command(command="T1", execution_command=""))
@@ -567,9 +569,8 @@ class ML600(FlowchemDevice):
         )
         logger.debug(f"{self.name} valve position set to {target_angle} degree")
         if wait_for_movement_end:
-            pass
-            # fixme: check valve is busy or not
-            # await self.wait_until_idle()
+            while await self.get_valve_status(valve_code):
+                await asyncio.sleep(0.1)
         return True
 
     async def get_valve_position(self, valve_code: str = "") -> str:
@@ -591,9 +592,8 @@ class ML600(FlowchemDevice):
         )
         logger.debug(f"{self.name} valve position set to position {target_position}")
         if wait_for_movement_end:
-            # fixme: check valve is busy or not
-            pass
-            # await self.wait_until_idle()
+            while await self.get_valve_status(valve_code):
+                await asyncio.sleep(0.1)
         return True
 
 
