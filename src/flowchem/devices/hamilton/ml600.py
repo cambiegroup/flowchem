@@ -484,15 +484,10 @@ class ML600(FlowchemDevice):
         """Return the current firmware version reported by the pump."""
         return await self.send_command_and_read_reply(Protocol1Command(command="U"))
 
-    async def is_idle(self) -> bool:
-        """Check if the pump is idle (actually check if the last command has ended)."""
-        return (
-            await self.send_command_and_read_reply(Protocol1Command(command="F", execution_command="")) == "Y"
-        )
-
-    async def get_valve_angle(self, valve_code: str = "") -> str:
+    async def get_valve_angle(self, valve_code: str = "") -> int:
         """get the angle of the valve: 0-359 degrees"""
-        return await self.send_command_and_read_reply(Protocol1Command(command="LQA", target_component=valve_code))
+        reply = await self.send_command_and_read_reply(Protocol1Command(command="LQA", target_component=valve_code))
+        return int(reply)
 
     async def set_valve_angle(self,
                               target_angle: str,
