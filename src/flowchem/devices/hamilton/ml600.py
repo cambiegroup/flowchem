@@ -92,25 +92,7 @@ class HamiltonPumpIO:
         """Ensure connection with pump and initialize it (if hw_initialization is True)."""
         self.num_pump_connected = await self._assign_pump_address()
         if hw_initialization:
-            await self._hw_init()
-        await self._is_single_syringe()
-
-    async def _is_single_syringe(self):
-        try:
-            await self._write_async(b"aH\r")
-        except aioserial.SerialException as e:
-            raise InvalidConfigurationError from e
-
-        reply = await self._read_reply_async()
-        print(reply)
-        try:
-            await self._write_async(b"aHR\r")
-        except aioserial.SerialException as e:
-            raise InvalidConfigurationError from e
-
-        reply = await self._read_reply_async()
-
-        print(f"+R:{reply}")
+            await self.all_hw_init()  # initialization take more than 8.5 sec for one instrument
 
     async def _assign_pump_address(self) -> int:
         """Auto assign pump addresses.
@@ -311,11 +293,12 @@ class ML600(FlowchemDevice):
         """Initialize pump and its components."""
         await self.pump_io.initialize()
         # Test connectivity by querying the pump's firmware version
-        fw_cmd = Protocol1Command(command="U", target_pump_num=self.address)
-        self.device_info.version = await self.pump_io.write_and_read_reply_async(fw_cmd)
+        self.device_info.version = await self.version()
         logger.info(
             f"Connected to Hamilton ML600 {self.name} - FW version: {self.device_info.version}!",
         )
+        self.dual_syringe = not await self.is_single_syringe()
+        await self.general_status_info()
 
         if hw_init:
             await self.initialize_pump(speed=ureg.Quantity(init_speed))
