@@ -49,8 +49,15 @@ class ML600LeftValve(Valve):
                           270: "syr-right"}
 
     def __init__(self, name: str, hw_device: ML600) -> None:
-        position_dict = {k + 1: v for k, v in enumerate(self.angle_mapping_name.values())}
-        super().__init__(name, hw_device, position_dict, ports=["front", "right", "syr", "left"])
+        # position_dict = {str(k + 1): [tuple(v.split("-"))] for k, v in enumerate(self.angle_mapping_name.values())}
+        positions = {
+            "1": [("pump", "1")],  # left
+            "2": [("pump", "2")],  # front
+            "3": [("pump", "3")],  # right
+            "4": [("1", "2")],
+            "5": [("3", "2")]
+        }
+        super().__init__(name, hw_device, positions, ports=["pump", "1", "2", "3"])
 
     async def get_position(self) -> str:  # type: ignore
         """Get the current position of the valve."""
@@ -59,7 +66,7 @@ class ML600LeftValve(Valve):
 
     async def set_position(self, position: str) -> bool:
         """Set the valve to the specified position."""
-        assert position in self._positions
+        # assert position in self._positions
         reverse_angle_mapping = {
             v: k for k, v in self.angle_mapping_name.items()
         }
@@ -80,17 +87,24 @@ class ML600RightValve(Valve):
                           270: "syr-right-front"}
 
     def __init__(self, name: str, hw_device: ML600) -> None:
-        position_dict = {k + 1: v for k, v in enumerate(self.angle_mapping_name.values())}
-        super().__init__(name, hw_device, position_dict, ports=["front", "right", "syr", "left"])
+        # fixme : v.split("&") -> ['syr-right', 'left-front']
+        # position_dict = {str(k + 1): [tuple(v.split("-"))] for k, v in enumerate(self.angle_mapping_name.values())}
+        positions = {
+            "1": [("pump", "1&2")],  # syr-left-front
+            "2": [("pump", "3"), ("1", "2")],  # syr-right&left-front
+            "3": [("pump", "1"), ("3", "2")],  # syr-left&right-front
+            "4": [("pump", "3&2")]  # syr-right-front
+        }
+        super().__init__(name, hw_device, positions, ports=["pump", "1", "2", "3"])
 
     async def get_position(self) -> str:  # type: ignore
         """Get the current position of the valve."""
-        degree = int(await self.hw_device.get_valve_angle(valve_code=self.identifier))
+        degree = await self.hw_device.get_valve_angle(valve_code=self.identifier)
         return self.angle_mapping_name[degree]
 
     async def set_position(self, position: str) -> bool:
         """Set the valve to the specified position."""
-        assert position in self._positions
+        # assert position in self._positions
         reverse_angle_mapping = {
             v: k for k, v in self.angle_mapping_name.items()
         }

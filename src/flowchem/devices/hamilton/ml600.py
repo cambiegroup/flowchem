@@ -561,7 +561,7 @@ class ML600(FlowchemDevice):
         return int(reply)
 
     async def set_valve_angle(self,
-                              target_angle: str,
+                              target_angle: int,
                               valve_code: str = "",
                               wait_for_movement_end: bool = True) -> int:
         """set the angle of the valve"""
@@ -597,15 +597,30 @@ class ML600(FlowchemDevice):
                 await asyncio.sleep(0.1)
         return True
 
-
-if __name__ == "__main__":
-    import asyncio
-
+async def main():
     conf = {
-        "port": "COM12",
+        "port": "COM11",
         "address": 1,
         "name": "test1",
         "syringe_volume": "5 mL",
     }
     pump1 = ML600.from_config(**conf)
-    asyncio.run(pump1.initialize())
+    # await pump1.initialize()
+    print(await pump1.get_valve_status())
+    print(await pump1.get_valve_angle("B"))
+    await pump1.set_valve_angle()
+
+if __name__ == "__main__":
+    # asyncio.run(main())
+
+    conf = {
+        "port": "COM11",
+        "address": 1,
+        "name": "test1",
+        "syringe_volume": "5 mL",
+    }
+    pump1 = ML600.from_config(**conf)
+    # asyncio.run(pump1.initialize())
+    print(asyncio.run(pump1.get_valve_status()))
+    print(asyncio.run(pump1.get_valve_angle("B")))
+    asyncio.run(pump1.set_valve_angle(270, "B"))
