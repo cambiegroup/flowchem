@@ -265,7 +265,9 @@ class ML600(FlowchemDevice):
             )
 
         self._steps_per_ml = ureg.Quantity(f"{48000 / self.syringe_volume} step")
-
+        # self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
+        # self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
+        # logger.warning(f"due to offset steps is {self._offset_steps}. the max_vol : {self._max_vol}")
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
         self.dual_syringe = False
@@ -457,7 +459,7 @@ class ML600(FlowchemDevice):
 
     async def stop(self, pump: str) -> bool:
         """Stop and abort any running command."""
-        await self.pause()
+        await self.pause(pump)
         await self.send_command_and_read_reply(
             Protocol1Command(command="", target_component=pump, execution_command="V"),)
         return True  # Todo: need?
