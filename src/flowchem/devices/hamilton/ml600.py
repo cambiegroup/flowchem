@@ -566,7 +566,7 @@ class ML600(FlowchemDevice):
                               wait_for_movement_end: bool = True) -> int:
         """set the angle of the valve"""
         await self.send_command_and_read_reply(
-            Protocol1Command(command="LP0", target_component=valve_code, command_value=target_angle)
+            Protocol1Command(command="LA0", target_component=valve_code, command_value=str(target_angle))
         )
         logger.debug(f"{self.name} valve position set to {target_angle} degree")
         if wait_for_movement_end:
