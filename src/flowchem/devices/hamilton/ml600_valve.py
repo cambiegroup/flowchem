@@ -7,6 +7,7 @@ from loguru import logger
 
 from flowchem.components.valves.valve import Valve
 from flowchem.components.valves.distribution_valves import TwoPortDistributionValve
+from flowchem.utils.exceptions import DeviceError
 
 if TYPE_CHECKING:
     from .ml600 import ML600
@@ -75,6 +76,17 @@ class ML600LeftValve(Valve):
             valve_code=self.identifier,
             wait_for_movement_end=True,
         )
+        c_position = await self.get_position()
+        trying = 1
+        if trying > 4:
+            logger.error(f"fail {trying} time.")
+            raise DeviceError(f"ask to switch to {position}. but still at {c_position}.")
+
+        if c_position != position:
+            trying += 1
+            logger.warning(f"ask to switch to {position}. but still at {c_position}. try {trying} time")
+            return await self.set_position(position)
+
         return True
 
 class ML600RightValve(Valve):
@@ -113,4 +125,15 @@ class ML600RightValve(Valve):
             valve_code=self.identifier,
             wait_for_movement_end=True,
         )
+        c_position = await self.get_position()
+        trying = 1
+        if trying > 4:
+            logger.error(f"fail {trying} time.")
+            raise DeviceError(f"ask to switch to {position}. but still at {c_position}.")
+
+        if c_position != position:
+            trying += 1
+            logger.warning(f"ask to switch to {position}. but still at {c_position}. try {trying} time")
+            return await self.set_position(position)
+
         return True
