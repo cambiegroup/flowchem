@@ -179,8 +179,8 @@ class Valve(FlowchemComponent):
         raise NotImplementedError
 
     def _connect_positions(self,
-                           positions_to_connect: tuple[tuple],
-                           positions_not_to_connect: tuple[tuple] = None,
+                           positions_to_connect: tuple[tuple[int, int],...],
+                           positions_not_to_connect: tuple[tuple[int, int],...] = None,
                            arbitrary_switching: bool = True) -> int:
         """
         This is the heart of valve switching logic: select the suitable position (so actually the key in
@@ -210,7 +210,7 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
-    async def get_position(self) -> list[list, list]:
+    async def get_position(self) -> list[list[int, int], ...]:
         """Get current valve position."""
         if not hasattr(self, "identifier"):
             pos = await self.hw_device.get_raw_position()
@@ -220,7 +220,7 @@ class Valve(FlowchemComponent):
         return_value = self._positions[int(self._change_connections(pos, reverse=True))]
         return [list(value) for value in return_value]
 
-    async def set_position(self, connect: list[list] = None, disconnect: list[list] = None,
+    async def set_position(self, connect: list[list[int, int], ...] = None, disconnect: list[list[int, int], ...] = None,
                            ambiguous_switching: str | bool = False):
         """Move valve to position, which connects named ports"""
         connect= return_tuple_from_input(connect)
