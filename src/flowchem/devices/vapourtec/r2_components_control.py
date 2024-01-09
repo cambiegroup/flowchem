@@ -206,12 +206,14 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
             translated = raw_position
         return translated
 
+    # todo should not overwrite parent method
     async def get_position(self) -> list[list]:
         """Get current valve position."""
         position = await self.hw_device.get_valve_position(self.valve_code)
         return (self._positions[int(self._change_connections(position, reverse=True))])
 
     async def set_position(self, positions_to_connect):
+        # todo this should not overwrite parent method
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(positions_to_connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
@@ -221,6 +223,7 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
             str(self.valve_code * 2 + int(target_pos)),
         )
         return True
+
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
         position = await self.hw_device.get_valve_position(self.valve_code)
