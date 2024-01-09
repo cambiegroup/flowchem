@@ -177,7 +177,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
 if __name__ == "__main__":
     import asyncio
 
-    v = KnauerValve(ip_address="192.168.1.176")
+    v = KnauerValve(mac_address="00:80:A3:CE:7E:CB")
 
     async def main(valve):
         """Test function."""
@@ -186,5 +186,6 @@ if __name__ == "__main__":
         print(await valve.get_raw_position())
         await valve.set_raw_position("L")
         print(await valve.get_raw_position())
+
 
     asyncio.run(main(v))

@@ -40,7 +40,7 @@ def test_set_get_monitor_position(api_dev):
 def  test_set_get_position(api_dev):
     """Test the set_position method """
     valve = api_dev['test']['distribution-valve']
-    valve.put("position", params={"connect": [[1, 0]]})
+    valve.put("position", params={"connect": "[[1, 0]]"})
     time.sleep(2)
     pos = valve.get("position").json()
     assert pos == [[1, 0]], "The set and get position do not worked."

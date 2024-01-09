@@ -286,7 +286,7 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
-    async def get_position(self) -> tuple[tuple, tuple]:
+    async def get_position(self) -> list[list[int]]:
         """
         Get the current valve position.
 
@@ -301,7 +301,9 @@ class Valve(FlowchemComponent):
         # check the type (tuple[tuple, tuple]) -> return a tuple[Any,]
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
-    async def set_position(self, connect: str | tuple = "", disconnect: str | tuple = "",
+    async def set_position(self,
+                           connect: str = "",
+                           disconnect: str = "",
                            ambiguous_switching: str | bool = False):
         """
         Move the valve to the position that connects the specified ports.
