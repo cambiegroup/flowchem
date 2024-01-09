@@ -94,6 +94,7 @@ class Valve(FlowchemComponent):
     def __init__(
             self,
             name: str,
+# todo maybe create a subclass from Flowchem Device, namely Flowchem valve, which implements abstract methods get_raw_position and set_raw_position
             hw_device: FlowchemDevice,
             stator_ports: [(), ()],
             rotor_ports: [(), ()],
