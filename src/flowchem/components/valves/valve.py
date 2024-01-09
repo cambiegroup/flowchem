@@ -9,21 +9,20 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 
 
-def return_tuple_from_input(str_or_tuple):
-    # in case no input is given, required, simply return None, will be dealt with by consumer
-    if not str_or_tuple:
+def return_tuple_from_input(str_or_list):
+    # in case no input is given simply return None, will be dealt with by consumer
+    if not str_or_list:
         return None
-    elif type(str_or_tuple) is str:
-        parsed_input = json.loads(str_or_tuple)
+    elif type(str_or_list) is str:
+        parsed_input = json.loads(str_or_list)
         if type(parsed_input[0]) is not list:
             parsed_input = [parsed_input]
         return tuple(tuple(inner) for inner in parsed_input)
-    elif type(str_or_tuple) is tuple:
-        if type(str_or_tuple[0]) is not tuple:
-            str_or_tuple = (str_or_tuple,)
-        return str_or_tuple
+    # if nested list is given, return nested tuple
+    elif type(str_or_list) is list:
+        return tuple([tuple(to_tuple) for to_tuple in str_or_list])
     else:
-        raise DeviceError("Please provide input of type '[[1,2],[3,4]]'")
+        raise DeviceError("Please provide input of type nested list, e.g. '[[1,2],[3,4]]'")
 
 
 def return_bool_from_input(str_or_bool):
@@ -210,21 +209,21 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
-    async def get_position(self) -> tuple[tuple, tuple]:
+    async def get_position(self) -> list[list, list]:
         """Get current valve position."""
         if not hasattr(self, "identifier"):
             pos = await self.hw_device.get_raw_position()
         else:
             pos = await self.hw_device.get_raw_position(self.identifier)
         pos = int(pos) if pos.isnumeric() else pos
-        return self._positions[int(self._change_connections(pos, reverse=True))]
+        return_value = self._positions[int(self._change_connections(pos, reverse=True))]
+        return [list(value) for value in return_value]
 
-
-    async def set_position(self, connect: str | tuple = "", disconnect: str | tuple = "",
+    async def set_position(self, connect: list[list] = None, disconnect: list[list] = None,
                            ambiguous_switching: str | bool = False):
         """Move valve to position, which connects named ports"""
-        connect=return_tuple_from_input(connect)
-        disconnect=return_tuple_from_input(disconnect)
+        connect= return_tuple_from_input(connect)
+        disconnect= return_tuple_from_input(disconnect)
         ambiguous_switching=return_bool_from_input(ambiguous_switching)
         target_pos = self._connect_positions(positions_to_connect=connect, positions_not_to_connect=disconnect,
                                              arbitrary_switching=ambiguous_switching)
