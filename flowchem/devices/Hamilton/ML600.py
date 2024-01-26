@@ -570,10 +570,17 @@ class ML600:
             ML600Commands.SET_RETURN_STEPS, command_value=str(int(return_steps))
         )
 
-    def syringe_position(self):
+    def syringe_position(self, syringe="left"):
+        if syringe == "left":
+            syringe = ML600Commands.SELECT_LEFT_SYRINGE
+        elif syringe == "right":
+            syringe = ML600Commands.SELECT_RIGHT_SYRINGE
+        else:
+            raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
+
         current_steps = int(
-                self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION)
-            )
+            self.send_multiple_commands([self.create_single_command(syringe),
+            self.create_single_command(ML600Commands.CURRENT_SYRINGE_POSITION)]))
         return current_steps / self.steps_per_ml
 
     def _absolute_syringe_move(self, volume, flow_rate):
