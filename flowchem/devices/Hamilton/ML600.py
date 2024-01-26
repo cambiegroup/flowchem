@@ -422,7 +422,7 @@ class ML600:
     def create_single_command(
             self,
             command_template: Protocol1CommandTemplate,
-            command_value="",
+            command_value: str or int="",
             argument_value="",
     ) -> Protocol1Command:
         # if this holds a list of dictionaries, that specify
@@ -591,7 +591,159 @@ class ML600:
         return self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed))
 
 
+    def fill_single_syringe(self, volume, speed, syringe="left"):
+        """
+        Fill a single syringe. This should also work on dual syringe, but only for the left one.
+        Assumes Input on left of valve and output on the right
 
+        Args:
+            volume:
+            speed:
+
+        Returns:
+
+        """
+        if syringe == "left":
+            syringe_select = ML600Commands.SELECT_LEFT_SYRINGE
+        elif syringe == "right":
+            syringe_select = ML600Commands.SELECT_RIGHT_SYRINGE
+        else:
+            raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
+
+        # switch valves
+        self.wait_until_idle()
+        # easy to get working on right one: just make default variable for right or left
+        self.send_multiple_commands([
+            self.create_single_command(syringe_select),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=270),
+        ])
+        self.wait_until_idle()
+        # actuate syringes
+        curr_vol = self.syringe_position(syringe=syringe)
+        to_vol = round(curr_vol + volume, 3)
+        self.send_multiple_commands([
+            self.create_single_command(syringe_select),
+            self._absolute_syringe_move(to_vol, speed),
+        ])
+        self.wait_until_idle()
+        sleep(1)
+
+
+    def deliver_from_single_syringe(self, volume_to_deliver, speed, syringe="left"):
+        """
+        Assumes Input on left of valve and output on the right
+
+        Args:
+            volume_to_deliver:
+            speed:
+            syringe:
+
+        Returns:
+
+        """
+        # switch valves
+        if syringe == "left":
+            syringe_select = ML600Commands.SELECT_LEFT_SYRINGE
+        elif syringe == "right":
+            syringe_select = ML600Commands.SELECT_RIGHT_SYRINGE
+        else:
+            raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
+
+        self.wait_until_idle()
+        self.send_multiple_commands([
+            self.create_single_command(syringe_select),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=270),
+        ])
+        # actuate syringes
+        self.wait_until_idle()
+        curr_vol = self.syringe_position(syringe=syringe)
+        to_vol = round(curr_vol - volume_to_deliver, 3)
+        self.send_multiple_commands([
+            self.create_single_command(syringe_select),
+            self._absolute_syringe_move(to_vol, speed)])
+        self.wait_until_idle()
+
+
+    def home_single_syringe(self, speed, syringe="left"):
+        """
+                Assumes Input on left of valve and output on the right
+
+        Args:
+            speed:
+            syringe:
+
+        Returns:
+
+        """
+        # switch valves
+        if syringe == "left":
+            syringe_select = ML600Commands.SELECT_LEFT_SYRINGE
+        elif syringe == "right":
+            syringe_select = ML600Commands.SELECT_RIGHT_SYRINGE
+        else:
+            raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
+        self.wait_until_idle()
+        self.send_multiple_commands([
+            self.create_single_command(syringe_select),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=270),
+        ])
+        # actuate syringes
+        self.wait_until_idle()
+        self.send_multiple_commands([
+            self.create_single_command(syringe_select),
+            self._absolute_syringe_move(0, speed)])
+        self.wait_until_idle()
+
+    def fill_dual_syringes(self, volume, speed):
+        """
+        Assumes Input on left of valve and output on the right
+        """
+        # switch valves
+        self.wait_until_idle()
+        self.send_multiple_commands([
+            self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value="0"),
+            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=180),
+        ])
+        self.wait_until_idle()
+        # actuate syringes
+        self.send_multiple_commands([
+            self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
+            self._absolute_syringe_move(volume, speed),
+            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
+            self._absolute_syringe_move(volume, speed)
+        ])
+        self.wait_until_idle()
+        sleep(1)
+
+
+    def deliver_from_dual_syringes(self, to_volume, speed):
+        """
+        Assumes Input on left of valve and output on the right
+
+        Args:
+            to_volume:
+            speed:
+
+        Returns:
+
+        """
+        # switch valves
+        self.wait_until_idle()
+        self.send_multiple_commands([
+            self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value=270),
+            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value=90),
+        ])
+        # actuate syringes
+        self.wait_until_idle()
+        self.send_multiple_commands([
+            self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
+            self._absolute_syringe_move(to_volume, speed),
+            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
+            self._absolute_syringe_move(to_volume, speed)])
 
 
 if __name__ == "__main__":
