@@ -594,7 +594,8 @@ class ML600:
     def fill_single_syringe(self, volume, speed, syringe="left"):
         """
         Fill a single syringe. This should also work on dual syringe, but only for the left one.
-        Assumes Input on left of valve and output on the right
+        Assumes Input and output on the right so the valve is not used here
+
 
         Args:
             volume:
@@ -607,6 +608,7 @@ class ML600:
             syringe_select = ML600Commands.SELECT_LEFT_SYRINGE
         elif syringe == "right":
             syringe_select = ML600Commands.SELECT_RIGHT_SYRINGE
+            raise NotImplementedError
         else:
             raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
 
@@ -631,7 +633,7 @@ class ML600:
 
     def deliver_from_single_syringe(self, volume_to_deliver, speed, syringe="left"):
         """
-        Assumes Input on left of valve and output on the right
+        Assumes Input and output on the right so the valve is not used here
 
         Args:
             volume_to_deliver:
@@ -646,6 +648,7 @@ class ML600:
             syringe_select = ML600Commands.SELECT_LEFT_SYRINGE
         elif syringe == "right":
             syringe_select = ML600Commands.SELECT_RIGHT_SYRINGE
+            raise NotImplementedError
         else:
             raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
 
