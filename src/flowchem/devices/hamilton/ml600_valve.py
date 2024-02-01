@@ -77,14 +77,9 @@ class ML600LeftValve(Valve):
             wait_for_movement_end=True,
         )
         c_position = await self.get_position()
-        trying = 1
-        if trying > 4:
-            logger.error(f"fail {trying} time.")
-            raise DeviceError(f"ask to switch to {position}. but still at {c_position}.")
 
         if c_position != position:
-            trying += 1
-            logger.warning(f"ask to switch to {position}. but still at {c_position}. try {trying} time")
+            logger.warning(f"ask to switch to {position}. but still at {c_position}. try 2 time")
             return await self.set_position(position)
 
         return True
@@ -120,20 +115,20 @@ class ML600RightValve(Valve):
         reverse_angle_mapping = {
             v: k for k, v in self.angle_mapping_name.items()
         }
-        await self.hw_device.set_valve_angle(
-            target_angle=reverse_angle_mapping[position],
-            valve_code=self.identifier,
-            wait_for_movement_end=True,
-        )
-        c_position = await self.get_position()
         trying = 1
-        if trying > 4:
-            logger.error(f"fail {trying} time.")
-            raise DeviceError(f"ask to switch to {position}. but still at {c_position}.")
-
-        if c_position != position:
+        while trying < 5:
             trying += 1
-            logger.warning(f"ask to switch to {position}. but still at {c_position}. try {trying} time")
-            return await self.set_position(position)
+            await self.hw_device.set_valve_angle(
+                target_angle=reverse_angle_mapping[position],
+                valve_code=self.identifier,
+                wait_for_movement_end=True,
+            )
+            c_position = await self.get_position()
+            if c_position == position:
+                return True
 
-        return True
+            logger.warning(f"ask to switch to {position}. but still at {c_position}. try {trying} time")
+
+        logger.error(f"fail {trying} time.")
+        raise DeviceError(f"ask to switch to {position}. but still at {c_position}.")
+
