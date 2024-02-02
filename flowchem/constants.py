@@ -1,7 +1,8 @@
 from pint import UnitRegistry
+from decimal import Decimal
 
 # necessary/workaround for offset units like celsius, internally these are now converted to  absolute units for arithmetic operations
-flowchem_ureg = UnitRegistry(autoconvert_offset_to_baseunit = True)
+flowchem_ureg = UnitRegistry(autoconvert_offset_to_baseunit = True, non_int_type=Decimal)
 
 class DeviceError(BaseException):
     """ Generic DeviceError """
