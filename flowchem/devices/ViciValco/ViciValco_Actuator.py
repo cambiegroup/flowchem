@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 import aioserial
-from aioserial import SerialException
 
 from flowchem.constants import InvalidConfiguration, ActuationError, DeviceError
 
@@ -93,7 +92,7 @@ class ViciValcoValveIO:
 
         try:
             serial_object = aioserial.AioSerial(**configuration)
-        except SerialException as e:
+        except aioserial.SerialException as e:
             raise InvalidConfiguration(f"Cannot connect to the valve on the port <{configuration.get('port')}>") from e
 
         return cls(serial_object)
