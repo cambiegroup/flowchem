@@ -15,7 +15,7 @@ import threading
 from enum import IntEnum
 from dataclasses import dataclass
 from typing import Union, Tuple, Optional
-from serial import PARITY_EVEN, SEVENBITS, STOPBITS_ONE
+from serial import PARITY_EVEN, SEVENBITS, STOPBITS_ONE, PARITY_ODD
 from threading import Thread
 
 
@@ -141,7 +141,7 @@ class HamiltonPumpIO:
             self._serial = serial.Serial(
                 port=port,
                 baudrate=baud_rate,
-                parity=PARITY_EVEN,
+                parity=PARITY_ODD,
                 stopbits=STOPBITS_ONE,
                 bytesize=SEVENBITS,
                 timeout=0.1,
