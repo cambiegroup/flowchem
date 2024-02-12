@@ -591,7 +591,7 @@ class ML600:
         return self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed))
 
 
-    def fill_single_syringe(self, volume, speed, syringe="left"):
+    def fill_single_syringe(self, volume:str, speed, valve_angle = 270, syringe="left"):
         """
         Fill a single syringe. This should also work on dual syringe, but only for the left one.
         Assumes Input and output on the right so the valve is not used here
@@ -617,7 +617,7 @@ class ML600:
         # easy to get working on right one: just make default variable for right or left
         self.send_multiple_commands([
             self.create_single_command(syringe_select),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=270),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle),
         ])
         self.wait_until_idle()
         # actuate syringes
@@ -627,11 +627,9 @@ class ML600:
             self.create_single_command(syringe_select),
             self._absolute_syringe_move(to_vol, speed),
         ])
-        self.wait_until_idle()
-        sleep(1)
 
 
-    def deliver_from_single_syringe(self, volume_to_deliver, speed, syringe="left"):
+    def deliver_from_single_syringe(self, volume_to_deliver, speed, valve_angle=270, syringe="left"):
         """
         Assumes Input and output on the right so the valve is not used here
 
@@ -655,7 +653,7 @@ class ML600:
         self.wait_until_idle()
         self.send_multiple_commands([
             self.create_single_command(syringe_select),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=270),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle),
         ])
         # actuate syringes
         self.wait_until_idle()
@@ -664,7 +662,6 @@ class ML600:
         self.send_multiple_commands([
             self.create_single_command(syringe_select),
             self._absolute_syringe_move(to_vol, speed)])
-        self.wait_until_idle()
 
 
     def home_single_syringe(self, speed, syringe="left"):
@@ -695,7 +692,6 @@ class ML600:
         self.send_multiple_commands([
             self.create_single_command(syringe_select),
             self._absolute_syringe_move(0, speed)])
-        self.wait_until_idle()
 
     def fill_dual_syringes(self, volume, speed):
         """
@@ -717,11 +713,9 @@ class ML600:
             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
             self._absolute_syringe_move(volume, speed)
         ])
-        self.wait_until_idle()
-        sleep(1)
 
 
-    def deliver_from_dual_syringes(self, to_volume, speed):
+    def deliver_from_dual_syringes(self, to_volume:float, speed:float):
         """
         Assumes Input on left of valve and output on the right
 
