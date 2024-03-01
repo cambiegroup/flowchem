@@ -664,7 +664,7 @@ class ML600:
             self._absolute_syringe_move(to_vol, speed)])
 
 
-    def home_single_syringe(self, speed, syringe="left"):
+    def home_single_syringe(self, speed, syringe="left", valve_angle = 270):
         """
                 Assumes Input on left of valve and output on the right
 
@@ -685,7 +685,7 @@ class ML600:
         self.wait_until_idle()
         self.send_multiple_commands([
             self.create_single_command(syringe_select),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=270),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle),
         ])
         # actuate syringes
         self.wait_until_idle()
