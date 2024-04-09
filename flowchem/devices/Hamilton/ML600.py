@@ -591,7 +591,7 @@ class ML600:
         return self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed))
 
 
-    def fill_single_syringe(self, volume:str, speed, valve_angle = 270, syringe="left"):
+    def fill_single_syringe(self, volume:str, speed, valve_angle = 180, syringe="left"):
         """
         Fill a single syringe. This should also work on dual syringe, but only for the left one.
         Assumes Input and output on the right so the valve is not used here
@@ -629,7 +629,7 @@ class ML600:
         ])
 
 
-    def deliver_from_single_syringe(self, volume_to_deliver, speed, valve_angle=270, syringe="left"):
+    def deliver_from_single_syringe(self, volume_to_deliver, speed, valve_angle=180, syringe="left"):
         """
         Assumes Input and output on the right so the valve is not used here
 
@@ -664,7 +664,7 @@ class ML600:
             self._absolute_syringe_move(to_vol, speed)])
 
 
-    def home_single_syringe(self, speed, syringe="left", valve_angle = 270):
+    def home_single_syringe(self, speed, syringe="left", valve_angle = 180):
         """
                 Assumes Input on left of valve and output on the right
 
@@ -703,7 +703,7 @@ class ML600:
             self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
             self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value="0"),
             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=180),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value="0"),
         ])
         self.wait_until_idle()
         # actuate syringes
@@ -732,7 +732,7 @@ class ML600:
             self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
             self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value=135),
             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value=90),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value=135),
         ])
         # actuate syringes
         self.wait_until_idle()
