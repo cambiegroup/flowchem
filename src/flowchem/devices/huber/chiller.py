@@ -352,6 +352,6 @@ if __name__ == "__main__":
 
     async def main(chiller):
         await chiller.initialize()
-        print(f"S/N is {chiller.serial_number()}")
+        print(f"S/N is {await chiller.serial_number()}")
 
     asyncio.run(main(device))
