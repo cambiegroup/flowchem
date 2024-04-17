@@ -153,7 +153,8 @@ class HuberChiller(FlowchemDevice):
 
     async def process_temperature(self) -> float | None:
         """Return the current process temperature. If not T probe, the temperature is None."""
-        reply = await self._send_command_and_read_reply("{M3A****")
+        reply = await self._send_command_and_read_reply("{M07****")
+
         return PBCommand(reply).parse_temperature()
 
     async def temperature_limits(self) -> tuple[float, float]:
