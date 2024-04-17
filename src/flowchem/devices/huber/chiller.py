@@ -88,8 +88,8 @@ class HuberChiller(FlowchemDevice):
             self._max_t = device_limits[1]
 
         temperature_range = TempRange(
-            min=ureg.Quantity(self._min_t),
-            max=ureg.Quantity(self._max_t),
+            min=ureg.Quantity(f"{self._min_t} °C"),
+            max=ureg.Quantity(f"{self._max_t} °C"),
         )
 
         # Set TemperatureControl component.
