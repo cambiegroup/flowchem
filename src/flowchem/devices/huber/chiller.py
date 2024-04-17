@@ -115,7 +115,7 @@ class HuberChiller(FlowchemDevice):
 
         # Receive reply and return it after decoding
         try:
-            reply = await asyncio.wait_for(self._serial.readline_async(), 1)
+            reply = await asyncio.wait_for(self._serial.readline_async(), 3)
         except asyncio.TimeoutError:
             logger.error("No reply received! Unsupported command?")
             return ""
