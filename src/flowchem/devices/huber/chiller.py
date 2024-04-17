@@ -88,8 +88,8 @@ class HuberChiller(FlowchemDevice):
             self._max_t = device_limits[1]
 
         temperature_range = TempRange(
-            min=ureg.Quantity(self._min_t),
-            max=ureg.Quantity(self._max_t),
+            min=ureg.Quantity(f"{self._min_t} °C"),
+            max=ureg.Quantity(f"{self._max_t} °C"),
         )
 
         # Set TemperatureControl component.
@@ -115,7 +115,7 @@ class HuberChiller(FlowchemDevice):
 
         # Receive reply and return it after decoding
         try:
-            reply = await asyncio.wait_for(self._serial.readline_async(), 1)
+            reply = await asyncio.wait_for(self._serial.readline_async(), 3)
         except asyncio.TimeoutError:
             logger.error("No reply received! Unsupported command?")
             return ""
@@ -153,7 +153,8 @@ class HuberChiller(FlowchemDevice):
 
     async def process_temperature(self) -> float | None:
         """Return the current process temperature. If not T probe, the temperature is None."""
-        reply = await self._send_command_and_read_reply("{M3A****")
+        reply = await self._send_command_and_read_reply("{M07****")
+
         return PBCommand(reply).parse_temperature()
 
     async def temperature_limits(self) -> tuple[float, float]:
@@ -351,6 +352,6 @@ if __name__ == "__main__":
 
     async def main(chiller):
         await chiller.initialize()
-        print(f"S/N is {chiller.serial_number()}")
+        print(f"S/N is {await chiller.serial_number()}")
 
     asyncio.run(main(device))
