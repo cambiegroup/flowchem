@@ -311,13 +311,13 @@ class ML600Commands:
         command="YQS"
     )  # 2-3692 seconds per stroke
     CURRENT_SYRINGE_POSITION = Protocol1CommandTemplate(command="YQP")  # 0-52800 steps
-    SYRINGE_DEFAULT_BACKOFF = Protocol1CommandTemplate(command="YQB")  # 0-1000 steps
+    SYRINGE_DEFAULT_BACKOFF = Protocol1CommandTemplate(command="YQB")  # 0-1000 steps, these are per feault 80 for <= 1mL and 96 above. This is just the distance that the plunger retracts after initialisation reaches the overload point. This is done to not compress the plunger
     CURRENT_VALVE_POSITION = Protocol1CommandTemplate(
         command="LQP"
     )  # 1-8 (see docs, Table 3.2.2)
     GET_RETURN_STEPS = Protocol1CommandTemplate(command="YQN")  # 0-1000 steps
     # PARAMETER CHANGE
-    SET_RETURN_STEPS = Protocol1CommandTemplate(command="YSN")  # 0-1000
+    SET_RETURN_STEPS = Protocol1CommandTemplate(command="YSN")  # 0-1000, return steps increase accuracy and precision. This is done by moving past the syringe position setpoint and then moving back the amount of set steps. This reduces mechanical system backlash
     # VALVE REQUEST
     VALVE_ANGLE = Protocol1CommandTemplate(command="LQA")  # 0-359 degrees
     VALVE_CONFIGURATION = Protocol1CommandTemplate(
@@ -378,6 +378,7 @@ class ML600:
         syringe_volume: float,
         address: int = 1,
         name: str = None,
+            return_steps = 0
     ):
         """
 
@@ -402,7 +403,7 @@ class ML600:
         self.cancelled = threading.Event()
         self.pumping_thread = None
         self.daemon = True
-        self.return_steps = 24# Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
+        self.return_steps = return_steps# Steps added to each absolute move command, to decrease wear and tear at volume = 0, 24 is manual default
         # This command is used to test connection: failure handled by HamiltonPumpIO
         self.log.info(
             f"Connected to pump '{self.name}'  FW version: {self.firmware_version}!"
