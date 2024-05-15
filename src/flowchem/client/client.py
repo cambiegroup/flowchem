@@ -14,10 +14,11 @@ from flowchem.client.device_client import FlowchemDeviceClient
 
 
 class FlowchemDeviceListener(FlowchemCommonDeviceListener):
-    def _save_device_info(self, zc: Zeroconf, type_: str, name: str) -> None:
+    """Listener for Zeroconf service browser."""
+    def _save_device_info(self, zc: Zeroconf, type_: str, name: str, active_ips: list | None = None) -> None:
         if service_info := zc.get_service_info(type_, name):
             device_name = zeroconf_name_to_device_name(name)
-            if url := device_url_from_service_info(service_info, device_name):
+            if url := device_url_from_service_info(service_info, device_name, active_ips):
                 self.flowchem_devices[device_name] = url
         else:
             logger.warning(f"No info for service {name}!")

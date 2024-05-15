@@ -375,6 +375,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
         await self._transmit_and_parse_reply(PUMP_ON)
         self._running = True
         logger.info("Pump started!")
+        return True
 
     async def stop(self):
         """Stop flow."""

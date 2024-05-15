@@ -67,9 +67,9 @@ class R4Reactor(TemperatureControl):
         super().__init__(name, hw_device, temp_limits)
         self.channel = channel
 
-    async def set_temperature(self, temp: str, heating: bool | None = None):
+    async def set_temperature(self, temperature: str, heating: bool | None = None):
         """Set the target temperature to the given string in natural language."""
-        set_t = await super().set_temperature(temp)
+        set_t = await super().set_temperature(temperature)
         return await self.hw_device.set_temperature(self.channel, set_t, heating)
 
     async def get_temperature(self) -> float:  # type: ignore
@@ -229,7 +229,7 @@ class R2PumpPressureSensor(PressureSensor):
         super().__init__(name, hw_device)
         self.pump_code = pump_code
 
-    async def read_pressure(self, units: str = "mbar") -> int | None:  # mbar
+    async def read_pressure(self, units: str = "mbar") -> int | float | None:  # mbar
         """Get current pump pressure in mbar."""
         pressure = await self.hw_device.get_current_pressure(self.pump_code)
         return pressure.m_as(units)

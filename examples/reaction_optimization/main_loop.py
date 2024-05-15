@@ -25,14 +25,14 @@ observations = []
 
 # Initialize hardware
 # Heater to r.t.
-reactor.put("temperature", {"temperature": "21"})
+reactor.put("temperature", params={"temperature": "21"})
 reactor.put("power-on")
 
 # Start pumps with low flow rate
-socl2.put("flow-rate", {"rate": "5 ul/min"})
+socl2.put("flow-rate", params={"rate": "5 ul/min"})
 socl2.put("infuse")
 
-hexyldecanoic.put("flow-rate", {"rate": "50 ul/min"})
+hexyldecanoic.put("flow-rate", params={"rate": "50 ul/min"})
 hexyldecanoic.put("infuse")
 
 # Ensure iCIR is running
