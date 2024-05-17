@@ -13,7 +13,7 @@ keywords = ["chemistry", "automation", "laboratory", "science"]
 authors = [
     { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
     { name = "Jakob Wolf", email = "75418671+JB-Wolf@users.noreply.github.com" },
-    { name = "Wei-Hsin Hsu", email = "Wei-hsin.Hsu@mpikg.mpg.de" },
+    { name = "Wei-Hsin Hsu", email = "98024191+cynthiabour@users.noreply.github.com" },
 ]
 maintainers = [
   { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" }
