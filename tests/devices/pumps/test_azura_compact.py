@@ -56,11 +56,10 @@ async def test_headtype(pump: AzuraCompact):
 async def test_flow_rate(pump: AzuraCompact):
     await pump.set_flow_rate(ureg.Quantity("1.25 ml/min"))
     await pump.infuse()
-    # FIXME
-    assert pint.Quantity(await pump.get_flow_rate()).magnitude == 1.25
+    assert pint.Quantity(await pump.get_flow_rate()).m_as("mL/min") == 1.25
     await pump.set_flow_rate(ureg.Quantity(f"{math.pi} ml/min"))
     assert math.isclose(
-        pint.Quantity(await pump.get_flow_rate()).magnitude,
+        pint.Quantity(await pump.get_flow_rate()).m_as("mL/min"),
         math.pi,
         abs_tol=1e-3,
     )

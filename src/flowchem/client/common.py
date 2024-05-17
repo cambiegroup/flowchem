@@ -37,6 +37,9 @@ def device_url_from_service_info(
 
 
 class FlowchemCommonDeviceListener(ServiceListener):
+    """
+    create the list of devices from http://192.168.10.107:80000
+    """
     def __init__(self) -> None:
         self.flowchem_devices: dict[str, AnyHttpUrl] = {}
 
