@@ -7,9 +7,13 @@ class SixPortTwoPositionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         # These are hardware-port, only input and output are routable from the fixed syringe.
         # All three are listed as this simplifies the creation of graphs
+        positions = {
+            "load": [("1", "2"), ("3", "4"), ("5", "6")],
+            "inject": [("6", "1"), ("2", "3"), ("4", "5")],
+        }
         super().__init__(
             name,
             hw_device,
-            stator_ports=[(1, 2, 3, 4, 5, 6), ()],
-            rotor_ports=[(7, 7, 8, 8, 9, 9), ()],
+            positions,
+            ports=["1", "2", "3", "4", "5", "6"],
         )

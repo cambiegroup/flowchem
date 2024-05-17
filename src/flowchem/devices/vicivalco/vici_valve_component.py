@@ -11,12 +11,17 @@ from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 class ViciInjectionValve(SixPortTwoPositionValve):
     hw_device: ViciValve  # for typing's sake
 
-    # todo this needs to be adapted to new code
-    def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
-        raise NotImplementedError("Check that provided mapping is correct")
-        # TODO maybe needs addition of one, not sure
-        if not reverse:
-            translated = raw_position
-        else:
-            translated = raw_position
-        return translated
+    position_mapping = {"load": "1", "inject": "2"}
+    _reverse_position_mapping = {v: k for k, v in position_mapping.items()}
+
+    async def get_position(self) -> str:
+        """Get current valve position."""
+        pos = await self.hw_device.get_raw_position()
+        assert pos in ("1", "2"), "Valve position is '1' or '2'"
+        return self._reverse_position_mapping[pos]
+
+    async def set_position(self, position: str):
+        """Move valve to position."""
+        await super().set_position(position)
+        target_pos = self.position_mapping[position]
+        return await self.hw_device.set_raw_position(target_pos)
