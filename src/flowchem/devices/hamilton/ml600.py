@@ -59,6 +59,8 @@ class HamiltonPumpIO:
 
     ACKNOWLEDGE = chr(6)
     NEGATIVE_ACKNOWLEDGE = chr(21)
+    ERROR = chr(15)
+
     DEFAULT_CONFIG = {
         "timeout": 0.1,
         "baudrate": 9600,
@@ -92,8 +94,26 @@ class HamiltonPumpIO:
         """Ensure connection with pump and initialize it (if hw_initialization is True)."""
         self.num_pump_connected = await self._assign_pump_address()
         if hw_initialization:
-            await self.all_hw_init()
-            # initialization take more than 8.5 sec for one instrument
+
+            await self._hw_init()
+        await self._is_single_syringe()
+
+    async def _is_single_syringe(self):
+        try:
+            await self._write_async(b"aH\r")
+        except aioserial.SerialException as e:
+            raise InvalidConfigurationError from e
+
+        reply = await self._read_reply_async()
+        print(reply)
+        try:
+            await self._write_async(b"aHR\r")
+        except aioserial.SerialException as e:
+            raise InvalidConfigurationError from e
+
+        reply = await self._read_reply_async()
+
+        print(f"+R:{reply}")
 
     async def _assign_pump_address(self) -> int:
         """Auto assign pump addresses.
@@ -135,12 +155,13 @@ class HamiltonPumpIO:
     async def _write_async(self, command: bytes):
         """Write a command to the pump."""
         await self._serial.write_async(command)
-        logger.debug(f"Command {command!r} sent!")
+        logger.info(f"Command {command!r} sent!")
 
     async def _read_reply_async(self) -> str:
         """Read the pump reply from serial communication."""
         reply_string = await self._serial.readline_async()
-        logger.debug(f"Reply received: {reply_string}")
+        logger.info(f"Reply received: {reply_string}")
+        logger.info(f"decode: {reply_string.decode('utf-8')}")
         return reply_string.decode("ascii")
 
     def _parse_response(self, response: str) -> str:
@@ -338,10 +359,12 @@ class ML600(FlowchemDevice):
             )
 
         self._steps_per_ml = ureg.Quantity(f"{48000 / self.syringe_volume} step")
+
         # todo: check
         # self._offset_steps = 100  # Steps added to each absolute move command, to decrease wear and tear at volume = 0
         # self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
         self.return_steps = 24  # Steps added to each absolute move command (default)
+
 
         # This enables to configure on per-pump basis uncommon parameters
         self.config = ML600.DEFAULT_CONFIG | config
@@ -610,6 +633,7 @@ class ML600(FlowchemDevice):
             await asyncio.sleep(0.1)
         logger.debug(f"...ML600 {self.name} idle now!")
 
+
     async def is_system_idle(self) -> bool:
         """Check if the pump is idle (actually check if the last command has ended)."""
         return (
@@ -644,12 +668,13 @@ class ML600(FlowchemDevice):
             Protocol1Command(command="", execution_command=ML600Commands.CLEAR_BUFFER.value),
         )
 
-    async def wait_until_idle(self):
+    async def wait_until_idle(self) -> bool:
         """Return when no more commands are present in the pump buffer."""
         logger.debug(f"ML600 pump {self.name} wait until idle...")
         while not await self.is_idle():
             await asyncio.sleep(0.1)
         logger.debug(f"...ML600 pump {self.name} idle now!")
+        return True
 
     async def version(self) -> str:
         """Return the current firmware version reported by the pump."""
@@ -658,6 +683,7 @@ class ML600(FlowchemDevice):
     async def is_idle(self) -> bool:
         """Check if the pump is idle (actually check if the last command has ended)."""
         return (
+
             await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.REQUEST_DONE.value)) == "Y"
         )
 
@@ -688,6 +714,7 @@ class ML600(FlowchemDevice):
         if wait_for_movement_end:
             await self.wait_until_system_idle()
             # todo: it's will be good check only pump but not whole system
+
 
     async def get_raw_position(self, target_component: str) -> str:
         """

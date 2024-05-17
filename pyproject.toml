@@ -12,7 +12,7 @@ license =  { text = "MIT" }
 keywords = ["chemistry", "automation", "laboratory", "science"]
 authors = [
     { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
-    { name = "Jakob Wolf", email = "Jakob.Wolf@mpikg.mpg.de" },
+    { name = "Jakob Wolf", email = "75418671+JB-Wolf@users.noreply.github.com" },
     { name = "Wei-Hsin Hsu", email = "Wei-hsin.Hsu@mpikg.mpg.de" },
 ]
 maintainers = [
@@ -101,7 +101,7 @@ python_version = "3.11"
 testpaths = "tests"
 asyncio_mode = "auto"
 # Note: pytest cov is not compatible with the pycharm debugger in tests
-addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --cov=flowchem --cov-fail-under=40"
+addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --no-cov"
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",

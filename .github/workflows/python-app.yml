@@ -46,4 +46,4 @@ jobs:
         run: ruff .
 
       - name: Run pytest
-        run: python -m pytest
+        run: python -m pytest --cov=flowchem --cov-fail-under=40
