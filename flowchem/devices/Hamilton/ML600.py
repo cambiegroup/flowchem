@@ -651,29 +651,16 @@ class ML600:
         Returns:
 
         """
-        if syringe == "left":
-            syringe_select = ML600Commands.SELECT_LEFT_SYRINGE
-        elif syringe == "right":
-            syringe_select = ML600Commands.SELECT_RIGHT_SYRINGE
-            raise NotImplementedError
-        else:
-            raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
-
         # switch valves
-        self.wait_until_idle()
+        assert syringe in ["left", "right"], "Either select left or right syringe"
+        self.wait_until_idle(syringe=syringe)
         # easy to get working on right one: just make default variable for right or left
-        self.send_multiple_commands([
-            self.create_single_command(syringe_select),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle),
-        ])
-        self.wait_until_idle()
+        self.send_command_and_read_reply(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle, syringe=syringe)
+        self.wait_until_idle(syringe=syringe)
         # actuate syringes
         curr_vol = self.syringe_position(syringe=syringe)
         to_vol = round(curr_vol + volume, 3)
-        self.send_multiple_commands([
-            self.create_single_command(syringe_select),
-            self._absolute_syringe_move(to_vol, speed),
-        ])
+        self.to_volume(to_vol, speed, syringe=syringe)
 
 
     def deliver_from_single_syringe(self, volume_to_deliver, speed, valve_angle=180, syringe="left"):
@@ -693,22 +680,16 @@ class ML600:
             syringe_select = ML600Commands.SELECT_LEFT_SYRINGE
         elif syringe == "right":
             syringe_select = ML600Commands.SELECT_RIGHT_SYRINGE
-            raise NotImplementedError
         else:
             raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
 
-        self.wait_until_idle()
-        self.send_multiple_commands([
-            self.create_single_command(syringe_select),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle),
-        ])
+        self.wait_until_idle(syringe=syringe)
+        self.send_command_and_read_reply(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle, syringe=syringe)
         # actuate syringes
-        self.wait_until_idle()
+        self.wait_until_idle(syringe=syringe)
         curr_vol = self.syringe_position(syringe=syringe)
         to_vol = round(curr_vol - volume_to_deliver, 3)
-        self.send_multiple_commands([
-            self.create_single_command(syringe_select),
-            self._absolute_syringe_move(to_vol, speed)])
+        self.to_volume(to_vol, speed, syringe=syringe)
 
 
     def home_single_syringe(self, speed, syringe="left", valve_angle = 180):
@@ -723,22 +704,11 @@ class ML600:
 
         """
         # switch valves
-        if syringe == "left":
-            syringe_select = ML600Commands.SELECT_LEFT_SYRINGE
-        elif syringe == "right":
-            syringe_select = ML600Commands.SELECT_RIGHT_SYRINGE
-        else:
-            raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
-        self.wait_until_idle()
-        self.send_multiple_commands([
-            self.create_single_command(syringe_select),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle),
-        ])
+        self.wait_until_idle(syringe=syringe)
+        self.send_command_and_read_reply(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle, syringe=syringe)
         # actuate syringes
-        self.wait_until_idle()
-        self.send_multiple_commands([
-            self.create_single_command(syringe_select),
-            self._absolute_syringe_move(0, speed)])
+        self.wait_until_idle(syringe=syringe)
+        self.to_volume(0, speed, syringe=syringe)
 
     def fill_dual_syringes(self, volume, speed):
         """
