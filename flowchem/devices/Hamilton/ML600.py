@@ -626,12 +626,16 @@ class ML600:
             self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION, syringe=syringe))
         return current_steps / self.steps_per_ml(syringe)
 
-    def _absolute_syringe_move(self, volume, flow_rate):
+    def _absolute_syringe_move(self, volume, flow_rate, syringe:str="left"):
         """ Absolute move to volume, so no matter what volume is now, it will move to this volume.
         This is bad for dosing, but good for general pumping"""
-        speed = self.flowrate_to_seconds_per_stroke(flow_rate)
-        position = self._volume_to_step(volume)
-        return self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed))
+        speed = self.flowrate_to_seconds_per_stroke(flow_rate, syringe=syringe)
+        position = self._volume_to_step(volume, syringe)
+        if syringe in ["left", "right"]:
+            selection = [self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE) if syringe == "left" else self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE)]
+        else:
+            raise ValueError("Syringe must be specified as either 'left' or 'right'")
+        return selection.append(self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed)))
 
 
     def fill_single_syringe(self, volume:str, speed, valve_angle = 180, syringe="left"):
