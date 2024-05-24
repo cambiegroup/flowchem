@@ -537,12 +537,15 @@ class ML600:
             ML600Commands.ABSOLUTE_MOVE, str(position), str(speed), syringe=syringe
         )
 
-    def to_volume(self, volume_in_ml: float, speed: int = ""):
+    # todo if this selects none, it should wwork but only if both syringes are same size
+    def to_volume(self, volume_in_ml: float, flow_rate: int = "", syringe="left"):
         """ Absolute move to volume, so no matter what volume is now, it will move to this volume.
         This is bad for dosing, but good for general pumping"""
-        self._to_step_position(self._volume_to_step(volume_in_ml), speed)
+        speed = self.flowrate_to_seconds_per_stroke(flow_rate, syringe=syringe)
+        position = self._volume_to_step(volume_in_ml, syringe)
+        self._to_step_position(position, speed, syringe=syringe)
         self.log.debug(
-            f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}"
+            f"Pump {self.name} set to volume {volume_in_ml} at speed {flow_rate}"
         )
 
     def pause(self, syringe=None):
