@@ -471,39 +471,41 @@ class ML600:
     def send_multiple_commands(self, list_of_commands: [Protocol1Command]) -> str:
         return self.pump_io.write_and_read_reply(list_of_commands)
 
-    def initialize_pump(self, flowrate: int = None):
+    def initialize_pump(self, flowrate: int, syringe:str = None):
         """
-        Initialize both syringe and valve
+        Initialize both syringe and valve on specified side
         speed: flowrate in mL/min
         """
-        self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
-        speed = self.flowrate_to_seconds_per_stroke(flowrate)
+        self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER, syringe=syringe)
+
+        speed = self.flowrate_to_seconds_per_stroke(flowrate, syringe=syringe)
         if speed:
             assert 2 < speed < 3692
             return self.send_command_and_read_reply(
-                ML600Commands.INIT_ALL, argument_value=str(speed)
+                ML600Commands.INIT_ALL, argument_value=str(speed), syringe=syringe
             )
         else:
-            return self.send_command_and_read_reply(ML600Commands.INIT_ALL)
+            return self.send_command_and_read_reply(ML600Commands.INIT_ALL, syringe=syringe)
 
-    def initialize_valve(self):
+    def initialize_valve(self, syringe=None):
         """
         Initialize valve only
         """
-        return self.send_command_and_read_reply(ML600Commands.INIT_VALVE_ONLY)
+        return self.send_command_and_read_reply(ML600Commands.INIT_VALVE_ONLY, syringe=syringe)
 
-    def initialize_syringe(self, speed: int = None):
+    def initialize_syringe(self, flowrate: int, syringe=None):
         """
-        Initialize syringe only
+        Initialize syringe on specified side only
         speed: 2-3692 is in seconds/stroke
         """
+        speed = self.flowrate_to_seconds_per_stroke(flowrate, syringe=syringe)
         if speed:
             assert 2 < speed < 3692
             return self.send_command_and_read_reply(
-                ML600Commands.INIT_SYRINGE_ONLY, argument_value=str(speed)
+                ML600Commands.INIT_SYRINGE_ONLY, argument_value=str(speed), syringe=syringe
             )
         else:
-            return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY)
+            return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY, syringe=syringe)
 
 # todo if this selects none, it should wwork but only if both syringes are same size
     def flowrate_to_seconds_per_stroke(self, flowrate_in_ml_min: float, syringe=None):
