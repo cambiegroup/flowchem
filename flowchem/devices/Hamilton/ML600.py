@@ -654,7 +654,7 @@ class ML600:
         assert syringe in ["left", "right"], "Either select left or right syringe"
         self.wait_until_idle(syringe=syringe)
         # easy to get working on right one: just make default variable for right or left
-        self.send_command_and_read_reply(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle, syringe=syringe)
+        self.switch_valve_by_angle(valve_angle, syringe=syringe)
         self.wait_until_idle(syringe=syringe)
         # actuate syringes
         curr_vol = self.syringe_position(syringe=syringe)
@@ -683,7 +683,7 @@ class ML600:
             raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
 
         self.wait_until_idle(syringe=syringe)
-        self.send_command_and_read_reply(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle, syringe=syringe)
+        self.switch_valve_by_angle(valve_angle, syringe=syringe)
         # actuate syringes
         self.wait_until_idle(syringe=syringe)
         curr_vol = self.syringe_position(syringe=syringe)
@@ -706,7 +706,7 @@ class ML600:
         """
         # switch valves
         self.wait_until_idle(syringe=syringe)
-        self.send_command_and_read_reply(ML600Commands.VALVE_BY_ANGLE_CW, command_value=valve_angle, syringe=syringe)
+        self.switch_valve_by_angle(valve_angle, syringe=syringe)
         # actuate syringes
         self.wait_until_idle(syringe=syringe)
         self.to_volume(0, speed, syringe=syringe)
