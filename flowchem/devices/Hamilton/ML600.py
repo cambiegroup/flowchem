@@ -505,7 +505,8 @@ class ML600:
         else:
             return self.send_command_and_read_reply(ML600Commands.INIT_SYRINGE_ONLY)
 
-    def flowrate_to_seconds_per_stroke(self, flowrate_in_ml_min: float):
+# todo if this selects none, it should wwork but only if both syringes are same size
+    def flowrate_to_seconds_per_stroke(self, flowrate_in_ml_min: float, syringe=None):
         """
         Convert flow rates in ml/min to steps per seconds
 
@@ -517,18 +518,21 @@ class ML600:
         """
         assert flowrate_in_ml_min > 0
         flowrate_in_ml_sec = flowrate_in_ml_min / 60
-        flowrate_in_steps_sec = flowrate_in_ml_sec * self.steps_per_ml
+        flowrate_in_steps_sec = flowrate_in_ml_sec * self.steps_per_ml(syringe)
         seconds_per_stroke = round(48000 / flowrate_in_steps_sec)
         assert 2 <= seconds_per_stroke <= 3692
         return round(seconds_per_stroke)
 
-    def _volume_to_step(self, volume_in_ml: float) -> int:
-        return round(volume_in_ml * self.steps_per_ml)
+    # todo if this selects none, it should wwork but only if both syringes are same size
+    def _volume_to_step(self, volume_in_ml: float, syringe=None) -> int:
+        return round(volume_in_ml * self.steps_per_ml(syringe))
 
-    def _to_step_position(self, position: int, speed: int = ""):
+    # todo if this selects none, it should wwork but only if both syringes are same size
+    def _to_step_position(self, position: int, speed: int = "", syringe="left"):
         """ Absolute move to step position """
+        assert syringe in ["left", "right"], f"Choose left or right as syringe argument, you chose {syringe}. "
         return self.send_command_and_read_reply(
-            ML600Commands.ABSOLUTE_MOVE, str(position), str(speed)
+            ML600Commands.ABSOLUTE_MOVE, str(position), str(speed), syringe=syringe
         )
 
     def to_volume(self, volume_in_ml: float, speed: int = ""):
