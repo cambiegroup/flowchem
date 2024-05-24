@@ -637,7 +637,7 @@ class ML600:
         return selection.append(self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed)))
 
 
-    def fill_single_syringe(self, volume:str, speed, valve_angle = 180, syringe="left"):
+    def fill_single_syringe(self, volume:float, speed, valve_angle = 180, syringe="left"):
         """
         Fill a single syringe. This should also work on dual syringe, but only for the left one.
         Assumes Input and output on the right so the valve is not used here
@@ -662,7 +662,7 @@ class ML600:
         self.to_volume(to_vol, speed, syringe=syringe)
 
 
-    def deliver_from_single_syringe(self, volume_to_deliver, speed, valve_angle=180, syringe="left"):
+    def deliver_from_single_syringe(self, volume_to_deliver:float, speed, valve_angle=180, syringe="left"):
         """
         Assumes Input and output on the right so the valve is not used here
 
@@ -690,6 +690,8 @@ class ML600:
         to_vol = round(curr_vol - volume_to_deliver, 3)
         self.to_volume(to_vol, speed, syringe=syringe)
 
+    def switch_valve_by_angle(self, angle, syringe="left"):
+        self.send_command_and_read_reply(ML600Commands.VALVE_BY_ANGLE_CW, command_value=angle, syringe=syringe)
 
     def home_single_syringe(self, speed, syringe="left", valve_angle = 180):
         """
