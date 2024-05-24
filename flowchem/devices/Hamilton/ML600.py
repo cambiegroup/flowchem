@@ -375,7 +375,7 @@ class ML600:
     def __init__(
         self,
         pump_io: HamiltonPumpIO,
-        syringe_volume: float,
+        syringe_volume: float or dict,
         address: int = 1,
         name: str = None,
             return_steps = 0
@@ -391,11 +391,20 @@ class ML600:
         self.pump_io = pump_io
         self.name = f"Pump {self.pump_io.name}:{address}" if name is None else name
         self.address: int = address
-        if syringe_volume not in ML600.VALID_SYRINGE_VOLUME:
-            raise InvalidConfiguration(
-                f"The specified syringe volume ({syringe_volume}) does not seem to be valid!\n"
-                f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}"
-            )
+        self.is_single=self.is_single_syringe()
+        if isinstance(syringe_volume, (int, float)):
+            if self.is_single:
+                syringe_volume = {"left": syringe_volume, "right": None}
+            else:
+                syringe_volume = {"left": syringe_volume, "right": syringe_volume}
+        elif type(syringe_volume) is dict:
+            assert "left" and "right" in syringe_volume.keys(), "Left syringe volume not specified"
+        for syr_vol in syringe_volume.values():
+            if syr_vol is not None and syr_vol not in ML600.VALID_SYRINGE_VOLUME:
+                raise InvalidConfiguration(
+                    f"The specified syringe volume ({syringe_volume}) does not seem to be valid!\n"
+                    f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}"
+                )
         self.syringe_volume = syringe_volume
         self.steps_per_ml = 48000 / self.syringe_volume
 
@@ -408,6 +417,20 @@ class ML600:
         self.log.info(
             f"Connected to pump '{self.name}'  FW version: {self.firmware_version}!"
         )
+
+    def steps_per_ml(self, syringe: str or None) -> int:
+        """ Returns the number of steps per ml for the given syringe """
+        if syringe is None:
+            if self.is_single:
+                syringe = "left"
+            elif self.syringe_volume["left"] == self.syringe_volume["right"]:
+                syringe = "left"
+            else:
+                raise ValueError("Syringe not specified, but pump has different syringe volumes")
+        return 48000 / self.syringe_volume[syringe]
+    
+    def is_single_syringe(self) -> bool:
+        return self.send_command_and_read_reply(ML600Commands.IS_SINGLE_SYRINGE) == "Y"
 
     def send_command_and_read_reply(
         self,
