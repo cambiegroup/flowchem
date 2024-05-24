@@ -406,7 +406,6 @@ class ML600:
                     f"The volume in ml has to be one of {ML600.VALID_SYRINGE_VOLUME}"
                 )
         self.syringe_volume = syringe_volume
-        self.steps_per_ml = 48000 / self.syringe_volume
 
         self.log = logging.getLogger(__name__).getChild(__class__.__name__)
         self.cancelled = threading.Event()
