@@ -610,8 +610,12 @@ class ML600:
         # waiting is necessary since this happens on (class) initialisation
         self.wait_until_idle()
         self.send_command_and_read_reply(
-            ML600Commands.SET_RETURN_STEPS, command_value=str(int(return_steps))
+            ML600Commands.SET_RETURN_STEPS, command_value=str(int(return_steps)), syringe="left"
         )
+        if not self.is_single:
+            self.send_command_and_read_reply(
+                ML600Commands.SET_RETURN_STEPS, command_value=str(int(return_steps)), syringe="right"
+            )
 
     def syringe_position(self, syringe="left"):
         if syringe == "left":
