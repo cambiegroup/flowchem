@@ -545,23 +545,23 @@ class ML600:
             f"Pump {self.name} set to volume {volume_in_ml} at speed {speed}"
         )
 
-    def pause(self):
+    def pause(self, syringe=None):
         """ Pause any running command """
-        return self.send_command_and_read_reply(ML600Commands.PAUSE)
+        return self.send_command_and_read_reply(ML600Commands.PAUSE, syringe=syringe)
 
-    def resume(self):
+    def resume(self, syringe=None):
         """ Resume any paused command """
-        return self.send_command_and_read_reply(ML600Commands.RESUME)
+        return self.send_command_and_read_reply(ML600Commands.RESUME, syringe=syringe)
 
-    def stop(self):
+    def stop(self, syringe=None):
         """ Stops and abort any running command """
-        self.pause()
-        return self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER)
+        self.pause(syringe=syringe)
+        return self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER, syringe=syringe)
 
-    def wait_until_idle(self):
+    def wait_until_idle(self, syringe=None):
         """ Returns when no more commands are present in the pump buffer. """
         self.log.debug(f"Pump {self.name} wait until idle")
-        while self.is_busy:
+        while self.is_busy(syringe=syringe):
             time.sleep(0.001)
 
     @property
@@ -569,15 +569,13 @@ class ML600:
         """ Returns the current firmware version reported by the pump """
         return self.send_command_and_read_reply(ML600Commands.STATUS)
 
-    @property
-    def is_idle(self) -> bool:
+    def is_idle(self, syringe=None) -> bool:
         """ Checks if the pump is idle (not really, actually check if the last command has ended) """
-        return self.send_command_and_read_reply(ML600Commands.REQUEST_DONE) == "Y"
+        return self.send_command_and_read_reply(ML600Commands.REQUEST_DONE, syringe=syringe) == "Y"
 
-    @property
-    def is_busy(self) -> bool:
+    def is_busy(self, syringe=None) -> bool:
         """ Not idle """
-        return not self.is_idle
+        return not self.is_idle(syringe=syringe)
 
     @property
     def firmware_version(self) -> str:
