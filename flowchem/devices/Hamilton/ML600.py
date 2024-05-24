@@ -618,17 +618,13 @@ class ML600:
             )
 
     def syringe_position(self, syringe="left"):
-        if syringe == "left":
-            syringe = ML600Commands.SELECT_LEFT_SYRINGE
-        elif syringe == "right":
-            syringe = ML600Commands.SELECT_RIGHT_SYRINGE
-        else:
-            raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
-
+        """ Returns the current position of the syringe in ml """
+        # todo this only should work with specified syringe
+        if syringe not in ["left", "right"] and not self.is_single:
+            raise ValueError("Syringe must be specified as either 'left' or 'right'")
         current_steps = int(
-            self.send_multiple_commands([self.create_single_command(syringe),
-            self.create_single_command(ML600Commands.CURRENT_SYRINGE_POSITION)]))
-        return current_steps / self.steps_per_ml
+            self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION, syringe=syringe))
+        return current_steps / self.steps_per_ml(syringe)
 
     def _absolute_syringe_move(self, volume, flow_rate):
         """ Absolute move to volume, so no matter what volume is now, it will move to this volume.
