@@ -715,20 +715,19 @@ class ML600:
         Assumes Input on left of valve and output on the right
         """
         # switch valves
-        self.wait_until_idle()
+        assert self.syringe_volume["left"] == self.syringe_volume["right"], "Syringes are not the same size, this can create unexpected behaviour"
+        self.wait_until_idle(syringe=None)
         self.send_multiple_commands([
             self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
             self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value="0"),
             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
             self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value="0"),
         ])
-        self.wait_until_idle()
+        self.wait_until_idle(syringe=None)
         # actuate syringes
         self.send_multiple_commands([
-            self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
-            self._absolute_syringe_move(volume, speed),
-            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
-            self._absolute_syringe_move(volume, speed)
+            self._absolute_syringe_move(volume, speed, syringe="left"),
+            self._absolute_syringe_move(volume, speed, syringe="right")
         ])
 
 
@@ -743,8 +742,9 @@ class ML600:
         Returns:
 
         """
+        assert self.syringe_volume["left"] == self.syringe_volume["right"], "Syringes are not the same size, this can create unexpected behaviour"
         # switch valves
-        self.wait_until_idle()
+        self.wait_until_idle(syringe=None)
         self.send_multiple_commands([
             self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
             self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value=135),
@@ -752,12 +752,10 @@ class ML600:
             self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value=135),
         ])
         # actuate syringes
-        self.wait_until_idle()
+        self.wait_until_idle(syringe=None)
         self.send_multiple_commands([
-            self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
-            self._absolute_syringe_move(to_volume, speed),
-            self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
-            self._absolute_syringe_move(to_volume, speed)])
+            self._absolute_syringe_move(to_volume, speed, syringe="left"),
+            self._absolute_syringe_move(to_volume, speed, syringe="right")])
 
 
 if __name__ == "__main__":
