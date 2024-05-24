@@ -437,11 +437,23 @@ class ML600:
         command_template: Protocol1CommandTemplate,
         command_value="",
         argument_value="",
+            syringe=None,
     ) -> str:
         """ Sends a command based on its template and return the corresponding reply as str """
-        return self.pump_io.write_and_read_reply(
-            command_template.to_pump(self.address, command_value, argument_value)
-        )
+        if syringe == "left":
+            syringe_select = ML600Commands.SELECT_LEFT_SYRINGE
+        elif syringe == "right":
+            syringe_select = ML600Commands.SELECT_RIGHT_SYRINGE
+        elif syringe == None:
+            return self.pump_io.write_and_read_reply([
+                self.create_single_command(command_template, command_value, argument_value),
+            ])
+        else:
+            raise NotImplementedError(f"Choose left or right as syringe argument, you chose {syringe}.")
+        return self.pump_io.write_and_read_reply([
+            self.create_single_command(syringe_select),
+            self.create_single_command(command_template, command_value, argument_value),
+                                                  ])
 
     def create_single_command(
             self,
