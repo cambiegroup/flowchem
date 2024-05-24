@@ -17,6 +17,9 @@ https://github.com/ap--/python-seabreeze/tree/main?tab=readme-ov-file
 """
 
 import seabreeze
+# use the pyseabreeze backend (pyusb)
+seabreeze.use("pyseabreeze")
+
 from seabreeze.spectrometers import Spectrometer
 
 from loguru import logger
@@ -25,10 +28,6 @@ import asyncio
 
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.people import wei_hsin
-
-# use the pyseabreeze backend (pyusb)
-seabreeze.use("pyseabreeze")
-
 
 class FlameOptical(FlowchemDevice):
 
@@ -76,10 +75,10 @@ class FlameOptical(FlowchemDevice):
         self.spectrometer.close()
 
     async def get_spectrum(self):
-        pass
+        return self.spectrometer.spectrum()
 
     async def get_intensity(self):
-        pass
+        return self.spectrometer.intensities()
 
     async def get_wavelength(self):
         return self.wavelengths
@@ -122,8 +121,10 @@ def all_usb_devices_by_usb():
     #     # match the first IN endpoint
     #     custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN)
 
+async def main():
+    flame = FlameOptical()
+    await flame.power_off()
 
 if __name__ == "__main__":
     # all_usb_devices_by_usb()
-    flame = FlameOptical()
-    flame.power_off()
+    asyncio.run(main())
