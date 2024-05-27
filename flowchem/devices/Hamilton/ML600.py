@@ -625,7 +625,7 @@ class ML600:
             self.send_command_and_read_reply(ML600Commands.CURRENT_SYRINGE_POSITION, syringe=syringe))
         return current_steps / self.steps_per_ml(syringe)
 
-    def _absolute_syringe_move(self, volume, flow_rate, syringe:str="left"):
+    def _absolute_syringe_move(self, volume, flow_rate, syringe:str="left") -> List[str]:
         """ Absolute move to volume, so no matter what volume is now, it will move to this volume.
         This is bad for dosing, but good for general pumping"""
         speed = self.flowrate_to_seconds_per_stroke(flow_rate, syringe=syringe)
@@ -634,8 +634,8 @@ class ML600:
             selection = [self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE) if syringe == "left" else self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE)]
         else:
             raise ValueError("Syringe must be specified as either 'left' or 'right'")
-        return selection.append(self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed)))
-
+        selection.append(self.create_single_command(ML600Commands.ABSOLUTE_MOVE, str(position), str(speed)))
+        return selection
 
     def fill_single_syringe(self, volume:float, speed, valve_angle = 180, syringe="left"):
         """
@@ -726,10 +726,10 @@ class ML600:
         ])
         self.wait_until_idle(syringe=None)
         # actuate syringes
-        self.send_multiple_commands([
-            self._absolute_syringe_move(volume, speed, syringe="left"),
+        self.send_multiple_commands(
+            self._absolute_syringe_move(volume, speed, syringe="left") +
             self._absolute_syringe_move(volume, speed, syringe="right")
-        ])
+        )
 
 
     def deliver_from_dual_syringes(self, to_volume:float, speed:float):
@@ -754,9 +754,9 @@ class ML600:
         ])
         # actuate syringes
         self.wait_until_idle(syringe=None)
-        self.send_multiple_commands([
-            self._absolute_syringe_move(to_volume, speed, syringe="left"),
-            self._absolute_syringe_move(to_volume, speed, syringe="right")])
+        self.send_multiple_commands(
+            self._absolute_syringe_move(to_volume, speed, syringe="left")+
+            self._absolute_syringe_move(to_volume, speed, syringe="right"))
 
 
 if __name__ == "__main__":
