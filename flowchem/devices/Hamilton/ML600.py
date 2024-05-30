@@ -187,7 +187,8 @@ class HamiltonPumpIO:
 
     def _hw_init(self):
         """ Send to all pumps the HW initialization command (i.e. homing) """
-        self._write(":XR\r")  # Broadcast: initialize + execute
+        self._write(":KR\r")
+        self._write(":VR\r")# Broadcast: initialize + execute
         # Note: no need to consume reply here because there is none (since we are using broadcast)
 
     def _write(self, command: str):
