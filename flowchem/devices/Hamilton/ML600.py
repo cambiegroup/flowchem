@@ -692,7 +692,10 @@ class ML600:
         self.to_volume(to_vol, speed, syringe=syringe)
 
     def switch_valve_by_angle(self, angle, syringe="left"):
+        # this wait until idle if the valve switches. It needs to be figured out if this is good, since the
+        # thread will be blocked even though the other channel could receive a command
         self.send_command_and_read_reply(ML600Commands.VALVE_BY_ANGLE_CW, command_value=angle, syringe=syringe)
+        self.wait_until_idle(syringe=syringe)
 
     def home_single_syringe(self, speed, syringe="left", valve_angle = 180):
         """
