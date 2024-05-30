@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.sensors.photo_sensor import PhotoSensor
 
 if TYPE_CHECKING:
@@ -7,9 +7,10 @@ if TYPE_CHECKING:
 
 
 class GeneralSensor(PhotoSensor):
-    hw_device: FlameOptical
+    # fixme: to aviod circular import
+    # hw_device: FlameOptical
 
-    def __init__(self, name: str, hw_device: FlameOptical) -> None:
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """Create a DADControl object."""
         super().__init__(name, hw_device)
 
