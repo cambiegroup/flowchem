@@ -20,7 +20,6 @@ import seabreeze
 # use the pyseabreeze backend (pyusb)
 seabreeze.use("pyseabreeze")
 
-from seabreeze.spectrometers import Spectrometer
 from loguru import logger
 import asyncio
 
@@ -44,6 +43,7 @@ class FlameOptical(FlowchemDevice):
         self.device_info.package = "python-seabreeze"
 
         # use the
+        from seabreeze.spectrometers import Spectrometer
         if self.serial_n is None:
             self.spectrometer = Spectrometer.from_first_available()
         else:
