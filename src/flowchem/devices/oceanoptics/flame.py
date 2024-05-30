@@ -76,7 +76,7 @@ class FlameOptical(FlowchemDevice):
 
     async def get_intensity(self, absolute: bool = False):
         if absolute:
-            return self.spectrometer.intensities()
+            return self.spectrometer.intensities().tolist()
         else:
             i_list = self.spectrometer.intensities().tolist()
             return [i / self.max_intensity for i in i_list]
