@@ -30,10 +30,12 @@ from flowchem.utils.people import wei_hsin
 
 class FlameOptical(FlowchemDevice):
 
-    def __int__(self, name="", serial_number: str | None = None):
+    def __init__(
+        self,
+        serial_number: str | None = None,
+        name="",
+    ) -> None:
         self.serial_n = serial_number
-        # self.idVendor = 0x2457
-        # self.idProduct = 0x1022
         super().__init__(name)
 
         # Metadata
@@ -138,9 +140,12 @@ def all_usb_devices_by_usb():
     #     # match the first IN endpoint
     #     custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN)
 
+
 async def main():
-    flame = FlameOptical()
-    await flame.power_off()
+    flame =FlameOptical(serial_number="FLMT00079")
+
+    i = await flame.get_intensity()
+    print(i)
 
 if __name__ == "__main__":
     # all_usb_devices_by_usb()
