@@ -40,7 +40,7 @@ class FlameOptical(FlowchemDevice):
         # Metadata
         self.device_info.authors = [wei_hsin]
         self.device_info.manufacturer = "oceanoptics"
-        self.device_info.package = "python-seabreeze"
+        self.device_info.model = "python-seabreeze"
 
         # use the
         from seabreeze.spectrometers import Spectrometer
