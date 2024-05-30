@@ -493,7 +493,7 @@ class ML600:
         """
         return self.send_command_and_read_reply(ML600Commands.INIT_VALVE_ONLY, syringe=syringe)
 
-    def initialize_syringe(self, flowrate: int, syringe=None):
+    def initialize_syringe(self, flowrate: int, syringe="left"):
         """
         Initialize syringe on specified side only
         speed: 2-3692 is in seconds/stroke
