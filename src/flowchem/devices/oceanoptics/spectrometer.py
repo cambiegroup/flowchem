@@ -17,9 +17,9 @@ class GeneralSensor(PhotoSensor):
         self.add_api_route("/get-wavelength", self.get_wavelength, methods=["GET"])
         self.add_api_route("/set-integration-time", self.set_integration_time, methods=["PUT"])
 
-    async def acquire_signal(self) -> list:
+    async def acquire_signal(self, absolute: bool = True) -> list:
         """Read from sensor, result to be expressed in % (optional)."""
-        return await self.hw_device.get_intensity(absolute=True)
+        return await self.hw_device.get_intensity(absolute=absolute)
 
     async def get_wavelength(self, wavelength: int) -> list:
         """Set acquisition wavelength (nm) in the range of 0-999 nm."""

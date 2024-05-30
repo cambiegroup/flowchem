@@ -69,10 +69,15 @@ class FlameOptical(FlowchemDevice):
         self.spectrometer.close()
 
     async def get_spectrum(self):
+        # keep the function for reference
         return self.spectrometer.spectrum()
 
-    async def get_intensity(self):
-        return self.spectrometer.intensities()
+    async def get_intensity(self, absolute: bool = False):
+        if absolute:
+            return self.spectrometer.intensities()
+        else:
+            i_list = self.spectrometer.intensities().tolist()
+            return [i / self.max_intensity for i in i_list]
 
     async def get_wavelength(self):
         return self.wavelengths
