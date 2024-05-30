@@ -77,6 +77,24 @@ class FlameOptical(FlowchemDevice):
     async def get_wavelength(self):
         return self.wavelengths
 
+    async def integration_time(self, int_time: int):
+        """
+        integration time in microseconds
+        """
+        # change into to micros
+        # get the limitation of lowest and hightest integration time
+        l, h = self.integration_time_micros_limits
+        # check in the range
+        if l <= int_time <= h:
+            self.spectrometer.integration_time_micros(int_time)
+        elif int_time < l:
+            logger.warning("the input integration time lower than the limit. set the lowest integration time int")
+            self.spectrometer.integration_time_micros(l)
+        else:
+            logger.warning("the input integration time higher than the limit. set the highest integration time int")
+            self.spectrometer.integration_time_micros(h)
+
+
 def all_usb_devices_by_usb():
     import usb
     from usb import backend
