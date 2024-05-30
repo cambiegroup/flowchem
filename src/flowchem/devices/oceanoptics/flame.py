@@ -21,12 +21,11 @@ import seabreeze
 seabreeze.use("pyseabreeze")
 
 from seabreeze.spectrometers import Spectrometer
-
 from loguru import logger
 import asyncio
 
-
 from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.oceanoptics.spectrometer import GeneralSensor
 from flowchem.utils.people import wei_hsin
 
 class FlameOptical(FlowchemDevice):
@@ -39,7 +38,7 @@ class FlameOptical(FlowchemDevice):
 
         # Metadata
         self.device_info.authors = [wei_hsin]
-        self.device_info.manufacturer = "OceanOptics"
+        self.device_info.manufacturer = "oceanoptics"
         self.device_info.package = "python-seabreeze"
 
         # use the
@@ -57,14 +56,9 @@ class FlameOptical(FlowchemDevice):
 
         self.wavelengths = self.spectrometer.wavelengths()  # numpy.ndarray (3840,) in (nm)
 
-        # Note: the pump requires "\n\r" as EOL, the valves "\r\n"! So this is set by the subclasses
-        self.eol = b""
-
-        # Lock communication between write and read reply
-        self._lock = asyncio.Lock()
-
     async def initialize(self):
-        pass
+        # await self.power_on()
+        self.components.append(GeneralSensor("spectrometer", self))
 
     async def power_on(self):
         # open the connection to SeaBreezeDevice
