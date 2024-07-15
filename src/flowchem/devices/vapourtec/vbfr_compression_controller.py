@@ -219,7 +219,7 @@ class VBFRController(FlowchemDevice):
         await self.write_and_read_reply(self.cmd.SET_POSITION_LIMITS.format(up=s_up, down=s_down))
 
     async def power_on(self):
-        """Turn on channel."""
+        """Turn on position sensor."""
         await self.write_and_read_reply(self.cmd.POWER_ON)
 
     async def power_off(self):

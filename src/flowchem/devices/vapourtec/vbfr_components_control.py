@@ -10,12 +10,15 @@ from flowchem.components.sensors.body_position_seneor import BodySensor
 if TYPE_CHECKING:
     from .vbfr_compression_controller import VBFRController
 
+
 class VbfrPressureControl(PressureControl):
     hw_device: VBFRController
+
     def __init__(self, name: str, hw_device: VBFRController) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/deadband", self.set_deadband, methods=["PUT"])
         self.add_api_route("/deadband", self.get_deadband, methods=["GET"])
+
     async def set_pressure(self, pressure: str) -> bool:
         """set pressure differnence in bar"""
         await self.hw_device.set_pressure_difference(pressure)
@@ -28,12 +31,12 @@ class VbfrPressureControl(PressureControl):
     # async def get_target_pressure(self) -> float:
         # return await self.hw_device.get_target_pressure_difference()
 
-    async def set_deadband(self,up: int = None, down: int = None) -> bool:
+    async def set_deadband(self, up: int = None, down: int = None) -> bool:
         await self.hw_device.set_deadband(up, down)
         return True
-    async def get_deadband(self):
-         return await self.hw_device.get_deadband()
 
+    async def get_deadband(self):
+        return await self.hw_device.get_deadband()
 
 
 class VbfrBodySensor(BodySensor):
@@ -53,6 +56,6 @@ class VbfrBodySensor(BodySensor):
     async def get_position_limit(self):
         return await self.hw_device.get_position_limit()
 
-    async def set_position_limit(self, upper:float = None, lower: float = None) -> bool:
+    async def set_position_limit(self, upper: float = None, lower: float = None) -> bool:
         await self.hw_device.set_position_limit(upper, lower)
         return True
