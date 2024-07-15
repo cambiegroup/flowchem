@@ -1,3 +1,3 @@
 # Examples
 
-Example of use.
+Example of use!
