@@ -46,6 +46,7 @@ class VBFRController(FlowchemDevice):
     def __init__(
             self,
             name: str = "",
+            column: str = "6.6 mm",
             **config,
     ) -> None:
         super().__init__(name)
@@ -56,7 +57,14 @@ class VBFRController(FlowchemDevice):
         self.upperPoslimit = None
         self.lowerDblimit = None
         self.upperDblimit = None
+        self.column_size = column
 
+        self.column_dic = {
+            "0": "6.6 mm",
+            "1": "10 mm",
+            "2": "15 mm",
+            "3": "35 mm"
+        }
         if not HAS_VAPOURTEC_COMMANDS:
             msg = (
                 "You tried to use a Vapourtec device but the relevant commands are missing!"
@@ -84,18 +92,13 @@ class VBFRController(FlowchemDevice):
             manufacturer="Vapourtec",
             model="vbfr reactor module",
         )
-        self.column_dic = {
-            "0": "6.6 mm",
-            "1": "10 mm",
-            "2": "15 mm",
-            "3": "35 mm"
-        }
 
     async def initialize(self):
         """Ensure connection."""
         self.device_info.version = await self.version()
         logger.info(f"Connected with variable bed flow reacter version {self.device_info.version}")
 
+        await self.set_column_size("6.6 mm")
         await self.get_position_limit()
         await self.get_deadband()
 
@@ -170,13 +173,13 @@ class VBFRController(FlowchemDevice):
         state = await self.get_status()
         return self.column_dic[state.ColumnSize]
 
-    async def set_column_size(self, inner_diameter: str = "6.6 mm"):
+    async def set_column_size(self, column_size: str = "6.6 mm"):
         """Acceptable column size: ['6.6 mm', '10 mm', '15 mm', '35 mm']"""
         rev_col_dic = {v: k for k, v in self.column_dic.items()}
-        if not inner_diameter in rev_col_dic:
-            raise DeviceError(f"{inner_diameter} column cannot be used on VBFR."
+        if not column_size in rev_col_dic:
+            raise DeviceError(f"{column_size} column cannot be used on VBFR."
                               f"Please change to one of the following: {list(rev_col_dic.keys())}")
-        await self.write_and_read_reply(self.cmd.SET_COLUMN_SIZE.format(column_number=rev_col_dic[inner_diameter]))
+        await self.write_and_read_reply(self.cmd.SET_COLUMN_SIZE.format(column_number=rev_col_dic[column_size]))
 
     async def get_target_pressure_difference(self):
         """Get set pressure difference (in mbar) of VBFR column"""
