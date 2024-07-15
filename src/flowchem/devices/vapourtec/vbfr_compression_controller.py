@@ -18,6 +18,8 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 from flowchem.utils.people import wei_hsin
 
+from flowchem.devices.vapourtec.vbfr_components_control import VbfrPressureControl,VbfrBodySensor
+
 try:
     # noinspection PyUnresolvedReferences
     from flowchem_vapourtec import VapourtecVBFRCommands
@@ -101,8 +103,8 @@ class VBFRController(FlowchemDevice):
         await self.set_column_size("6.6 mm")
         await self.get_position_limit()
         await self.get_deadband()
-
-        # todo add compound
+        self.components.extend([VbfrPressureControl("PressureControl", self),
+                                VbfrBodySensor("BodySensor", self)])
 
     async def _write(self, command: str):
         """Write a command to the pump."""
