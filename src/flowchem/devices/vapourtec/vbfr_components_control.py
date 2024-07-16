@@ -47,7 +47,7 @@ class VbfrBodySensor(BodySensor):
         self.add_api_route("/position", self.get_position, methods=["GET"])
         self.add_api_route("/position_limits", self.get_position_limit, methods=["GET"])
         self.add_api_route("/position_limits", self.set_position_limit, methods=["POST"])
-        self.add_api_route("/get-run-state", self.get_run_state, methods=["GET"])
+        self.add_api_route("/calibration", self.calibration, methods=["POST"])
 
     async def get_position(self) -> float:
         """Read body position."""
@@ -59,3 +59,7 @@ class VbfrBodySensor(BodySensor):
     async def set_position_limit(self, upper: float = None, lower: float = None) -> bool:
         await self.hw_device.set_position_limit(upper, lower)
         return True
+
+    async def calibration(self) -> bool:
+        """Set current position to zero"""
+        return await self.hw_device.calibrate_position()
