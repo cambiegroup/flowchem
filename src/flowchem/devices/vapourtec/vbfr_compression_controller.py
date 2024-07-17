@@ -55,10 +55,13 @@ class VBFRController(FlowchemDevice):
 
         self.lowerPressDiff = 0.01  # in bar
         self.higherPressDiff = 9
+
+        # follows previous setting
         self.lowerPoslimit = None
         self.upperPoslimit = None
         self.lowerDblimit = None
         self.upperDblimit = None
+
         self.column_size = column
         self.column_dic = {"0": "6.6 mm", "1": "10 mm", "2": "15 mm", "3": "35 mm"}
 
@@ -154,15 +157,14 @@ class VBFRController(FlowchemDevice):
     async def get_position_limit(self):
         """Get upper and lower setting limit of position."""
         state = await self.get_status()
-        self.upperlimit = float(state.UpperLimitMm)
-        self.lowerlimit = float(state.LowerLimitMm)
-        logger.info(f"position limits: from {self.lowerlimit} to {self.upperlimit}")
-        return self.lowerlimit, self.upperlimit
+        self.upperPoslimit = float(state.UpperLimitMm)
+        self.lowerPoslimit = float(state.LowerLimitMm)
+        return self.upperPoslimit, self.lowerPoslimit
 
     async def set_position_limit(self, upper: float = None, lower: float = None):
         """Set the upper & lower limit of the position (in mm)"""
-        s_upper = self.upperlimit if upper is None else upper
-        s_lower = self.lowerlimit if lower is None else lower
+        s_upper = self.upperPoslimit if upper is None else upper
+        s_lower = self.lowerPoslimit if lower is None else lower
         cmd = self.cmd.SET_POSITION_LIMITS.format(lower=s_lower, upper=s_upper)
         await self.write_and_read_reply(cmd)
 
@@ -216,10 +218,8 @@ class VBFRController(FlowchemDevice):
         Deadband is the up & down acceptable offset from required pressure difference.
         Set upper & lower beadband in mbar
         """
-        if self.upperDblimit is None or self.lowerDblimit is None:
-            await self.get_deadband()
-        s_up = self.upperlimit if up is None else up
-        s_down = self.lowerlimit if down is None else down
+        s_up = self.upperDblimit if up is None else up
+        s_down = self.lowerDblimit if down is None else down
         await self.write_and_read_reply(self.cmd.SET_POSITION_LIMITS.format(up=s_up, down=s_down))
 
     async def power_on(self):
