@@ -18,7 +18,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.exceptions import InvalidConfigurationError, DeviceError
 from flowchem.utils.people import wei_hsin
 
-from flowchem.devices.vapourtec.vbfr_components_control import VbfrPressureControl,VbfrBodySensor
+from flowchem.devices.vapourtec.vbfr_components_control import VbfrPressureControl, VbfrBodySensor
 
 try:
     # noinspection PyUnresolvedReferences
@@ -30,7 +30,7 @@ except ImportError:
 
 
 class VBFRController(FlowchemDevice):
-    """column compression control class."""
+    """column compression control class from Vapourtec."""
 
     DEFAULT_CONFIG = {
         "timeout": 0.1,
@@ -60,13 +60,8 @@ class VBFRController(FlowchemDevice):
         self.lowerDblimit = None
         self.upperDblimit = None
         self.column_size = column
+        self.column_dic = {"0": "6.6 mm", "1": "10 mm", "2": "15 mm", "3": "35 mm"}
 
-        self.column_dic = {
-            "0": "6.6 mm",
-            "1": "10 mm",
-            "2": "15 mm",
-            "3": "35 mm"
-        }
         if not HAS_VAPOURTEC_COMMANDS:
             msg = (
                 "You tried to use a Vapourtec device but the relevant commands are missing!"
@@ -92,17 +87,21 @@ class VBFRController(FlowchemDevice):
         self.device_info = DeviceInfo(
             authors=[wei_hsin],
             manufacturer="Vapourtec",
-            model="vbfr reactor module",
+            model="variable bed flow reactor module",
         )
 
     async def initialize(self):
         """Ensure connection."""
         self.device_info.version = await self.version()
-        logger.info(f"Connected with variable bed flow reacter version {self.device_info.version}")
+        logger.info(f"Connected with variable bed flow reactor version {self.device_info.version}")
 
-        await self.set_column_size("6.6 mm")
+        await self.set_column_size(self.column_size)
+        logger.debug(f"{self.column_size} is set.")
         await self.get_position_limit()
+        logger.info(f"Position range: {self.lowerPoslimit} to {self.upperPoslimit} mm.")
         await self.get_deadband()
+        logger.info(f"Deadband range: lower {self.lowerDblimit} to upper {self.upperDblimit} mbar.")
+
         self.components.extend([VbfrPressureControl("PressureControl", self),
                                 VbfrBodySensor("BodySensor", self)])
 
@@ -126,7 +125,7 @@ class VBFRController(FlowchemDevice):
         response = await self._read_reply()
 
         if not response:
-            msg = "No response received from heating module!"
+            msg = "No response received from VBFR module!"
             raise InvalidConfigurationError(msg)
 
         logger.debug(f"Reply received: {response}")
@@ -153,6 +152,7 @@ class VBFRController(FlowchemDevice):
                     raise ex
 
     async def get_position_limit(self):
+        """Get upper and lower setting limit of position."""
         state = await self.get_status()
         self.upperlimit = float(state.UpperLimitMm)
         self.lowerlimit = float(state.LowerLimitMm)
@@ -170,25 +170,29 @@ class VBFRController(FlowchemDevice):
         """Get position (in mm) of variable bed flow reactor"""
         return float(await self.write_and_read_reply(self.cmd.GET_POSITION))
 
+    async def calibrate_position(self):
+        """set current position to zero"""
+        await self.write_and_read_reply(self.cmd.ZERO_CURRENT_POSITION)
+
     async def get_column_size(self) -> str:
         """Get inner diameter of VBFR column"""
         state = await self.get_status()
         return self.column_dic[state.ColumnSize]
 
     async def set_column_size(self, column_size: str = "6.6 mm"):
-        """Acceptable column size: ['6.6 mm', '10 mm', '15 mm', '35 mm']"""
+        """Acceptable column size: [6.6 mm, 10 mm, 15 mm, 35 mm]"""
         rev_col_dic = {v: k for k, v in self.column_dic.items()}
         if not column_size in rev_col_dic:
             raise DeviceError(f"{column_size} column cannot be used on VBFR."
                               f"Please change to one of the following: {list(rev_col_dic.keys())}")
         await self.write_and_read_reply(self.cmd.SET_COLUMN_SIZE.format(column_number=rev_col_dic[column_size]))
 
-    async def get_target_pressure_difference(self):
+    async def get_target_pressure_difference(self) -> int:
         """Get set pressure difference (in mbar) of VBFR column"""
         state = await self.get_status()
         return self.column_dic[state.RegDiffPressMbar]
 
-    async def get_current_pressure_difference(self):
+    async def get_current_pressure_difference(self) -> int:
         """Get current pressure difference (in mbar)"""
         state = await self.get_status()
         return self.column_dic[state.ColumnDiffPressureMbar]
