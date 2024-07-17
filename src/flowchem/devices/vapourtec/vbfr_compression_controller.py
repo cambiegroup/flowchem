@@ -239,16 +239,13 @@ if __name__ == "__main__":
     import asyncio
 
     vbfr_device = VBFRController(port="COM15")
-
-
-    async def main(heat):
+    async def main(device):
         """Test function."""
-        await heat.initialize()
-        # Get reactors
-        r1, r2, r3, r4 = heat.components()
-
-        await r1.set_temperature("30 °C")
-        print(f"Temperature is {await r1.get_temperature()}")
-
+        await device.initialize()
+        await device.calibrate_position()
+        print(f"target pressure difference: {await device.get_target_pressure_difference()} mbar")
+        print(f"current pressure difference: {await device.get_current_pressure_difference()} mm")
+        print(f"column size {await device.get_column_size()}")
 
     asyncio.run(main(vbfr_device))
+    asyncio.run(vbfr_device.power_on())
