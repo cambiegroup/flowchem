@@ -20,7 +20,8 @@ class VbfrPressureControl(PressureControl):
         self.add_api_route("/deadband", self.get_deadband, methods=["GET"])
 
     async def set_pressure(self, pressure: str) -> bool:
-        """set pressure differnence in bar"""
+        """Set pressure differnence (in bar)"""
+        # fixme: add pint
         await self.hw_device.set_pressure_difference(pressure)
         return True
 
@@ -32,10 +33,12 @@ class VbfrPressureControl(PressureControl):
         # return await self.hw_device.get_target_pressure_difference()
 
     async def set_deadband(self, up: int = None, down: int = None) -> bool:
+        """Set up & down acceptable offset (in mbar) from required pressure difference."""
         await self.hw_device.set_deadband(up, down)
         return True
 
     async def get_deadband(self):
+        """Get set pressure deadband (in mbar)"""
         return await self.hw_device.get_deadband()
 
 
@@ -50,13 +53,15 @@ class VbfrBodySensor(BodySensor):
         self.add_api_route("/calibration", self.calibration, methods=["POST"])
 
     async def get_position(self) -> float:
-        """Read body position."""
+        """Read body position ((in mm)."""
         return await self.hw_device.get_position()
 
     async def get_position_limit(self):
+        """Get working range (in mm)"""
         return await self.hw_device.get_position_limit()
 
     async def set_position_limit(self, upper: float = None, lower: float = None) -> bool:
+        """set working range (in mm)"""
         await self.hw_device.set_position_limit(upper, lower)
         return True
 
