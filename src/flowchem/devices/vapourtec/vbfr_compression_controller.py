@@ -29,7 +29,7 @@ except ImportError:
     HAS_VAPOURTEC_COMMANDS = False
 
 
-class VBFRController(FlowchemDevice):
+class VBFReactor(FlowchemDevice):
     """column compression control class from Vapourtec."""
 
     DEFAULT_CONFIG = {
@@ -79,7 +79,7 @@ class VBFRController(FlowchemDevice):
         self.cmd = VapourtecVBFRCommands()
 
         # Merge default settings, including serial, with provided ones.
-        configuration = VBFRController.DEFAULT_CONFIG | config
+        configuration = VBFReactor.DEFAULT_CONFIG | config
         try:
             self._serial = aioserial.AioSerial(**configuration)
         except aioserial.SerialException as ex:
@@ -149,7 +149,7 @@ class VBFRController(FlowchemDevice):
         while failure <= 3:
             try:
                 raw_status = await self.write_and_read_reply(self.cmd.GET_STATUS.format())
-                return VBFRController.Status._make(raw_status.split(","))
+                return VBFReactor.Status._make(raw_status.split(","))
             except InvalidConfigurationError as ex:
                 failure += 1
                 if failure > 3:
@@ -238,7 +238,7 @@ class VBFRController(FlowchemDevice):
 if __name__ == "__main__":
     import asyncio
 
-    vbfr_device = VBFRController(port="COM15")
+    vbfr_device = VBFReactor(port="COM15")
     async def main(device):
         """Test function."""
         await device.initialize()

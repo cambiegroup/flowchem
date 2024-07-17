@@ -8,13 +8,13 @@ from flowchem.components.technical.pressure import PressureControl
 from flowchem.components.sensors.body_position_seneor import BodySensor
 
 if TYPE_CHECKING:
-    from .vbfr_compression_controller import VBFRController
+    from .vbfr_compression_controller import VBFReactor
 
 
 class VbfrPressureControl(PressureControl):
-    hw_device: VBFRController
+    hw_device: VBFReactor
 
-    def __init__(self, name: str, hw_device: VBFRController) -> None:
+    def __init__(self, name: str, hw_device: VBFReactor) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/deadband", self.set_deadband, methods=["PUT"])
         self.add_api_route("/deadband", self.get_deadband, methods=["GET"])
@@ -43,9 +43,9 @@ class VbfrPressureControl(PressureControl):
 
 
 class VbfrBodySensor(BodySensor):
-    hw_device: VBFRController
+    hw_device: VBFReactor
 
-    def __init__(self, name: str, hw_device: VBFRController) -> None:
+    def __init__(self, name: str, hw_device: VBFReactor) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/position", self.get_position, methods=["GET"])
         self.add_api_route("/position_limits", self.get_position_limit, methods=["GET"])
