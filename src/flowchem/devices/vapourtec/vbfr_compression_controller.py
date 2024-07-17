@@ -53,6 +53,7 @@ class VBFRController(FlowchemDevice):
     ) -> None:
         super().__init__(name)
 
+        # physical operating limitation
         self.lowerPressDiff = 0.01  # in bar
         self.higherPressDiff = 9
 
@@ -203,8 +204,11 @@ class VBFRController(FlowchemDevice):
         """set pressure differnence in bar"""
         if self.lowerPressDiff <= pressure <= self.higherPressDiff:
             s_pressure = pressure
-
-        await self.write_and_read_reply(self.cmd.SET_DIFF_PRESSURE.format(pressure=pressure))
+        elif pressure <= self.lowerPressDiff:
+            s_pressure = self.lowerPressDiff
+        else:
+            s_pressure = self.higherPressDiff
+        await self.write_and_read_reply(self.cmd.SET_DIFF_PRESSURE.format(pressure=s_pressure))
 
     async def get_deadband(self):
         """get up and down deadband in mbar"""
