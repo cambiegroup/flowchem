@@ -193,12 +193,12 @@ class VBFRController(FlowchemDevice):
     async def get_target_pressure_difference(self) -> int:
         """Get set pressure difference (in mbar) of VBFR column"""
         state = await self.get_status()
-        return self.column_dic[state.RegDiffPressMbar]
+        return state.RegDiffPressMbar
 
     async def get_current_pressure_difference(self) -> int:
         """Get current pressure difference (in mbar)"""
         state = await self.get_status()
-        return self.column_dic[state.ColumnDiffPressureMbar]
+        return state.ColumnDiffPressureMbar
 
     async def set_pressure_difference(self, pressure: float):
         """set pressure differnence in bar"""
@@ -215,7 +215,7 @@ class VBFRController(FlowchemDevice):
         state = await self.get_status()
         self.lowerDblimit = int(state.RegDeadBandLower)
         self.upperDblimit = int(state.RegDeadBandUpper)
-        return self.lowerDblimit, self.upperDblimit
+        return self.upperDblimit, self.lowerDblimit
 
     async def set_deadband(self, up: int = None, down: int = None):
         """
