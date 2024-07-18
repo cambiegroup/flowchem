@@ -200,6 +200,11 @@ class VBFReactor(FlowchemDevice):
         state = await self.get_status()
         return state.ColumnDiffPressureMbar
 
+    async def calibrate_pressure(self) -> bool:
+        """Get current pressure to zero"""
+        await self.write_and_read_reply(self.cmd.CALIB_PRESSURE)
+        return True
+
     async def set_pressure_difference(self, pressure: float):
         """set pressure differnence in bar"""
         if self.lowerPressDiff <= pressure <= self.higherPressDiff:

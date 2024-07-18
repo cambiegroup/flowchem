@@ -18,6 +18,7 @@ class VbfrPressureControl(PressureControl):
         super().__init__(name, hw_device)
         self.add_api_route("/deadband", self.set_deadband, methods=["PUT"])
         self.add_api_route("/deadband", self.get_deadband, methods=["GET"])
+        self.add_api_route("/calibration", self.calibration, methods=["POST"])
 
     async def set_pressure(self, pressure: str) -> bool:
         """Set pressure differnence (in bar)"""
@@ -40,6 +41,10 @@ class VbfrPressureControl(PressureControl):
     async def get_deadband(self):
         """Get set pressure deadband (in mbar)"""
         return await self.hw_device.get_deadband()
+
+    async def calibration(self) -> bool:
+        """Set current position to zero"""
+        return await self.hw_device.calibrate_pressure()
 
 
 class VbfrBodySensor(BodySensor):
