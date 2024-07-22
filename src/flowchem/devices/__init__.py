@@ -10,6 +10,7 @@ from .knauer import *
 from .magritek import *
 from .manson import *
 from .mettlertoledo import *
+from .nationalinstruments import *
 from .oceanoptics import *
 from .phidgets import *
 from .vacuubrand import *

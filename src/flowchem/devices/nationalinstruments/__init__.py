@@ -1,4 +1,4 @@
 """national instrument devices."""
-from .thermocouples_sensor import Thermocouple
+from .thermocouples import Thermocouple
 
 __all__ = ["Thermocouple"]

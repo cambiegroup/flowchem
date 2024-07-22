@@ -31,8 +31,7 @@ except ImportError:
 
 
 class Thermocouple(FlowchemDevice):
-    """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
-
+    """current input to translate from -80 mV-80 mV to the corresponding temperature range by type of thermocouple."""
     def __init__(
         self,
         physical_channel: str | None = None,
