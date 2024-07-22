@@ -22,9 +22,9 @@ class GeneralSensor(PhotoSensor):
         """Read from sensor, result to be expressed in % (optional)."""
         return await self.hw_device.get_intensity(absolute=absolute)
 
-    async def get_wavelength(self, wavelength: int) -> list:
+    async def get_wavelength(self) -> list:
         """Set acquisition wavelength (nm) in the range of 0-999 nm."""
-        return await self.hw_device.wavelengths
+        return await self.hw_device.get_wavelength()
 
     async def set_integration_time(self, int_time: int):
         """Set integration time in ms."""

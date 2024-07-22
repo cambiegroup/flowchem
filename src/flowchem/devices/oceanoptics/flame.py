@@ -24,7 +24,7 @@ from loguru import logger
 import asyncio
 
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.oceanoptics.spectrometer import GeneralSensor
+from flowchem.devices.oceanoptics.flame_spectrometer import GeneralSensor
 from flowchem.utils.people import wei_hsin
 
 class FlameOptical(FlowchemDevice):

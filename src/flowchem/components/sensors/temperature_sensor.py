@@ -1,5 +1,6 @@
 """Temperature sensor."""
 from typing import TYPE_CHECKING, NamedTuple
+from flowchem.devices.flowchem_device import FlowchemDevice
 
 import pint
 
