@@ -18,6 +18,8 @@ from flowchem.utils.people import wei_hsin
 from flowchem import ureg
 from flowchem.utils.exceptions import InvalidConfigurationError
 
+from .thermocouples_component import NItemperatureSensor
+
 try:
     import nidaqmx
     from nidaqmx.constants import TemperatureUnits, ThermocoupleType, CJCSource
@@ -78,7 +80,10 @@ class Thermocouple(FlowchemDevice):
             units=TemperatureUnits.DEG_C,
             cjc_source=CJCSource.BUILT_IN)
 
-    async def read_temp(self) -> float:
+    async def initialize(self):
+        self.components.append((NItemperatureSensor("sensor", self)))
+
+    async def read_temperature(self) -> float:
         return self.task.read(number_of_samples_per_channel=1)[0]
 
     async def read_voltage(self) -> float:
@@ -123,10 +128,10 @@ class Thermocouple(FlowchemDevice):
 
 async def main(tempo):
     for i in range(10):
-        print(await tempo.read_temp())
+        print(await tempo.read_temperature())
         await asyncio.sleep(1)
 
 if __name__ == "__main__":
     tempo = Thermocouple("Dev1/ai0")
-    # asyncio.run(tempo.read_temp())
+    # asyncio.run(tempo.read_temperature())
     asyncio.run(main(tempo))
