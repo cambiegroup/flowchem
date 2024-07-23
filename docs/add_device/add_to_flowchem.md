@@ -11,7 +11,6 @@ Since this is the first device from _Weasley & Weasley_ in flowchem, we need to 
 ### Module name
 In this folder we will create a _module_ (i.e. a python file 🐍) called `extendable_ear.py` with an `ExtendeableEar`
 class to control our magic device.
-
 ```python
 class ExtendableEar:
     """Our virtual Extendable Ear!"""
@@ -29,7 +28,7 @@ For the first thing it is enough to change our class as follows:
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class ExtendeableEar(FlowchemDevice):
+class ExtendableEar(FlowchemDevice):
     """Our virtual Extendable Ear!"""
     ...
 ```
@@ -59,6 +58,10 @@ If some input/output operation is needed to initiate communication with the devi
 async calls, the `initialize()` coroutine can be used that is automatically called by flowchem after device
 initialization.
 ```python
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem import ureg
+from loguru import logger
+
 class ExtendableEar(FlowchemDevice):
     """Our virtual Extendable Ear!"""
 
@@ -66,8 +69,13 @@ class ExtendableEar(FlowchemDevice):
         ...
 
     async def initialize(self):
-        await self._acutator.write("DEPLOY EAR")
+        await self._acutator()
+
+    async def _acutator(self):
+        logger.info('ExtendableEar was successfully initialized!')
 ```
+Entering information points is recommended to detect possible errors during device initialization. You are advised to 
+use the loguru package. For more details, visit [Loguru doc](https://loguru.readthedocs.io/en/stable/).
 
 At this point we can create configuration file to initialize our new device type to check everything is ok so far.
 Let's create a minimal config file name `ear.toml` with this content:
@@ -83,7 +91,7 @@ flowchem -d ear.toml
 You might need to reinstall flowchem from the repository you have introduced changes to with `pip install .`.
 If you are developing new code, to avoid the need of re-installing the package after every change of the source code you
 can install flowchem in [development mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) with
-`pip install -e .` and every change o the source will be reflected immediately.
+`pip install -e .` and every change of the source will be reflected immediately.
 :::
 
 As you can see, in the console output, our device was initialized but there is still no component associated with it, so
@@ -133,11 +141,11 @@ class Microphone(Sensor):
     async def start(self):
         ...
 
-    async def stop(self) -> str:
+    async def stop(self):
         ...
 ```
 
-Now we need to creat an `ExtendableEarMicrophone` component, that is the specific object that will be returned by
+Now we need to create an `ExtendableEarMicrophone` component, that is the specific object that will be returned by
 `ExtendableEar.components()` and that specifies the API route for our device.
 
 Let's start by creating a stub of the `extendable_ear_microphone.py` in the `weasley` folder:
@@ -150,32 +158,27 @@ class ExtendableEarMicrophone(Microphone):
 ```
 
 Now we need to update the `ExtendableEar` code so to add a `component` method that returns a tuple with our
-`ExtendableEarMicrophone` (note the comma at the end of the return statement, is not a typo), a method to send
-commands to our device and some metadata about our device:
+`ExtendableEarMicrophone`. Note that self.components is an attribute inherited of the FlowchemDevice class. This attribute contains all components of one specific device that can be access in the API.
 
 ```python
 ...
 from flowchem.devices.weasley.extendable_ear_microphone import ExtendableEarMicrophone
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.components.device_info import DeviceInfo, Person
+from loguru import logger
 
 
 class ExtendableEar(FlowchemDevice):
     def __init__(self, name):
         super().__init__(name)
         self.device_info.manufacturer = "Weasley & Weasley",
-        self.device_info.authors = [Person(name="George Weasley", email="george.weasley@gmail.com"),
-                     Person(name="Fred Weasley", email="fred.weasley@gmail.com")]
         self.device_info.model = "Extendable Ear"
 
-    ...
+    async def initialize(self):
+        logger.info('ExtendableEar was succeccfully initialized!')
+        self.components.extend([ExtendableEarMicrophone("microphone",self)])
 
     def send_command(self, command):
-        print(command)  # This is in place of actual communication with the device
-
-
-def components(self):
-    return ExtendableEarMicrophone("microphone", self),
+        logger.info(command)  # This is in place of actual communication with the device
 ```
 
 Now if we run `flowchem ear.toml` again the server will start successfully and show the metadata info together with the
@@ -187,7 +190,6 @@ However, executing start and stop will not execute any code.
 For that we need to add some code in out `ExtendableEarMicrophone` to transform these calls into action.
 For example:
 ```python
-from flowchem import ureg
 from flowchem.components.sensors.microphone import Microphone
 
 
@@ -196,7 +198,7 @@ class ExtendableEarMicrophone(Microphone):
     def start(self):
         self.hw_device.send_command("START LISTENING")
 
-    def stop(self) -> int:
+    def stop(self):
         self.hw_device.send_command("STOP LISTENING")
 
 ```
@@ -218,15 +220,14 @@ To do so we can add the corresponding api route in the init method of the compon
 ```python
 from flowchem import ureg
 from flowchem.components.sensors.microphone import Microphone
+from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class ExtendableEarMicrophone(Microphone):
-    def __init__(self, name, hw_device):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/deploy", self.deploy, methods=["PUT"])
         self.add_api_route("/rewind", self.rewind, methods=["GET"])
-
-    ...
 
     def deploy(self, length: str = "1 m"):
         length_to_deploy = ureg(length)

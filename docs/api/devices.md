@@ -11,6 +11,7 @@ Select a device to open the relevant API reference:
 ./elite11/api
 ./huber_chiller/api
 ./icir/api
+./knauer_dad/api
 ./knauer_valve/api
 ./manson_power_supply/api
 ./ml600/api
@@ -18,4 +19,6 @@ Select a device to open the relevant API reference:
 ./r4_heater/api
 ./spinsolve/api
 ./vici_valve/api
+./bronkhorst_MFC/api
+./bronkhorst_EPC/api
 ```
