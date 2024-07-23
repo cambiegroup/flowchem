@@ -9,7 +9,7 @@ from loguru import logger
 from flowchem import ureg
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.knauer._common import KnauerEthernetDevice
+from flowchem.devices.knauer._common import KnauerDevice
 from flowchem.devices.knauer.azura_compact_pump import AzuraCompactPump
 from flowchem.devices.knauer.azura_compact_sensor import AzuraCompactSensor
 from flowchem.utils.exceptions import DeviceError
@@ -49,24 +49,28 @@ class AzuraPumpHeads(Enum):
 
 
 # noinspection DuplicatedCode
-class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
+class AzuraCompact(KnauerDevice, FlowchemDevice):
     """Control module for Knauer Azura Compact pumps."""
 
     def __init__(
         self,
+        serial_port=None,
         ip_address=None,
         mac_address=None,
+        name: str = "",
         max_pressure: str = "",
         min_pressure: str = "",
         **kwargs,
     ):
-        super().__init__(ip_address, mac_address, **kwargs)
+        KnauerDevice.__init__(self, serial_port, ip_address, mac_address, **kwargs)
+        FlowchemDevice.__init__(self, name)
+
         self.device_info = DeviceInfo(
             authors=[dario, jakob, wei_hsin],
             manufacturer="knauer",
             model="Azura Compact",
         )
-        self.eol = b"\n\r"
+        self.connection.eol = b"\n\r"  # serial both b"\r" and b"\n\r" work
 
         # All the following are set upon initialize()
         self.max_allowed_pressure = 0
@@ -81,6 +85,7 @@ class AzuraCompact(KnauerEthernetDevice, FlowchemDevice):
     async def initialize(self):
         """Initialize connection."""
         # Here the magic happens...
+        # initialization in FlowchemDevice
         await super().initialize()
 
         # Here it is checked that the device is a pump and not a valve
