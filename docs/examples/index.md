@@ -1,3 +1,12 @@
 # Examples
 
-Example of use.
+## Contents
+```{toctree}
+:maxdepth: 2
+:caption: User Guide
+
+reaction_optimization
+
+```
+
+
