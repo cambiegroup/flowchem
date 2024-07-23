@@ -5,6 +5,10 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Path setup --------------------------------------------------------------
+
+# Build the files to DocString reference
+# sphinx-apidoc -o code_structure ../src
+
 import datetime
 import os
 import sys
