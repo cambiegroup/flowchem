@@ -1,4 +1,9 @@
-"""Knauer pump control."""
+"""
+Knauer pump control.
+Communication by serial port or ethernet might need to change from the device screen.
+Please check manual for further information
+
+"""
 import asyncio
 import warnings
 from enum import Enum
@@ -428,7 +433,8 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    p = AzuraCompact(ip_address="192.168.1.119")
+    # p = AzuraCompact(mac_address="00:20:4A:D1:66:59", network="144.14.*.*")
+    p = AzuraCompact(serial_port="COM12")
 
     async def main(pump: AzuraCompact):
         """Test function."""
