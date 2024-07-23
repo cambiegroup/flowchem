@@ -23,7 +23,7 @@ ROOT_DIR = os.path.abspath(os.path.join(CONF_DIR, os.pardir))
 # -- Project information -----------------------------------------------------
 project = "flowchem"
 YEAR = datetime.date.today().strftime("%Y")
-author = "Dario Cambié"
+author = "Dario Cambié, Jakob Wolf, Wei-Hsin Hsu, Samuel Saraiva"
 copyright = f"{YEAR}, {author}"
 release = metadata.version("flowchem")
 
