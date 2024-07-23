@@ -64,7 +64,7 @@ class KnauerValve(KnauerDevice, FlowchemDevice):
         # initialization in FlowchemDevice
         await super().initialize()
         # The connection is established in KnauerEthernetDevice.initialize()
-        await super().initialize()
+        await self.connection.initialize()
 
         # Detect valve type
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()

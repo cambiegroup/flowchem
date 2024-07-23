@@ -87,6 +87,8 @@ class AzuraCompact(KnauerDevice, FlowchemDevice):
         # Here the magic happens...
         # initialization in FlowchemDevice
         await super().initialize()
+        # The connection is established in KnauerEthernetDevice.initialize()
+        await self.connection.initialize()
 
         # Here it is checked that the device is a pump and not a valve
         await self.get_headtype()
@@ -216,7 +218,6 @@ class AzuraCompact(KnauerDevice, FlowchemDevice):
                 "It seems you're trying instantiate an unknown device/unknown pump type as Knauer Pump.\n"
                 "Only Knauer Azura Compact is supported"
             ) from value_error
-        logger.debug(f"Head type of pump {self.ip_address} is {headtype}")
 
         return headtype
 
