@@ -11,8 +11,9 @@ Since this is the first device from _Weasley & Weasley_ in flowchem, we need to 
 ### Module name
 In this folder we will create a _module_ (i.e. a python file 🐍) called `extendable_ear.py` with an `ExtendeableEar`
 class to control our magic device.
+
 ```python
-class ExtendeableEar:
+class ExtendableEar:
     """Our virtual Extendable Ear!"""
     ...
 ```
