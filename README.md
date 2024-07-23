@@ -28,7 +28,7 @@ Currently, the following instruments are supported:
  - Pumps (Knauer P2.1, Harvard Apparatus Elite 11, Hamilton ML600)
  - Valves (ViciValco and Knauer)
  - Thermostat (Huber)
- - Analytical instruments (Magritek Spinsolve benchtop NMR and Mattler Toledo FlowIR)
+ - Analytical instruments (Magritek Spinsolve benchtop NMR and Mettler Toledo FlowIR)
  - General purpose sensors from Phidgets
  - ... and more!
 We are open to contributions!
