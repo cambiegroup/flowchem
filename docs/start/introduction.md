@@ -26,12 +26,12 @@ c++, HTML, and others).
 Flowchem also has a high level of abstraction concerning devices. This abstraction occurs through the use of class, 
 which represents components of a device, to build equipment. To explain better, look at the table below.
 
- Class of the system | Description         | Main function             | 
--------------------- |---------------------|---------------------------|
-Azura Compact Pump   | Device              | Communication Configure   |
-HPLC pump            | Component Specific  | Specific access commands  |
-Pump                 | Component Base      | Base access commands      |
-Flowchem Component   | Class Base          | Base Constructor          |
+| Class of the system | Description        | Main function            | 
+|---------------------|--------------------|--------------------------|
+| Azura Compact Pump  | Device             | Communication Configure  |
+| HPLC pump           | Component Specific | Specific access commands |
+| Pump                | Component Base     | Base access commands     |
+| Flowchem Component  | Class Base         | Base Constructor         |
 
 When constructing a class to represent a device, as in our case, ***Azura Compact Pump*** inherits the attributes and 
 methods of the class ***HPLC Pump***. This ***HPLC Pump*** class presents the specific standard commands for this pump 

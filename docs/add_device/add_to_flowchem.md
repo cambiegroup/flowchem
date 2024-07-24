@@ -4,9 +4,10 @@
 ### Folder hierarchy
 In the `flowchem.device` subpackage, the device modules are organized in folders by manufacturer.
 Since this is the first device from _Weasley & Weasley_ in flowchem, we need to create a new folder called
-`/flowchem/devices/weasley`.[^folder]
+`/flowchem/devices/weasley`.
 
-[^folder]: Folders and modules should have short, all-lowercase names. Underscores can be used in the module name if it improves readability, in line with [PEP8](https://peps.python.org/pep-0008/).
+Folders and modules should have short, all-lowercase names. Underscores can be used in the module name if it improves 
+readability, in line with [PEP8](https://peps.python.org/pep-0008/).
 
 ### Module name
 In this folder we will create a _module_ (i.e. a python file 🐍) called `extendable_ear.py` with an `ExtendeableEar`
@@ -155,7 +156,8 @@ class ExtendableEarMicrophone(Microphone):
 ```
 
 Now we need to update the `ExtendableEar` code so to add a `component` method that returns a tuple with our
-`ExtendableEarMicrophone`. Note that self.components is an attribute inherited of the FlowchemDevice class. This attribute contains all components of one specific device that can be access in the API.
+`ExtendableEarMicrophone`. Note that self.components is an attribute inherited of the FlowchemDevice class. This 
+attribute contains all components of one specific device that can be access in the API.
 
 ```python
 ...
