@@ -24,6 +24,14 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 :::{grid-item}
 :columns: auto
 
+```{button-ref} start/running
+:color: secondary
+:tooltip: Introductory tutorial - learning-oriented practical steps
+```
+:::
+:::{grid-item}
+:columns: auto
+
 ```{button-ref} start/using_api
 :color: secondary
 :tooltip: Introductory tutorial - task-oriented practical steps
@@ -47,6 +55,8 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 start/getting_started
 
 start/introduction
+
+start/running
 
 start/using_api
 
