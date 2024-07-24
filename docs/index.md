@@ -1,4 +1,4 @@
-# Flowchemgui
+# Flowchem
 
 Flowchem is an application to simplify the control of instruments and devices commonly found in chemistry labs.
 Flowchem acts as unifying layer exposing devices using different command syntax and protocols under a single API.
