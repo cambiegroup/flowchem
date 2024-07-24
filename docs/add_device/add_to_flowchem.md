@@ -173,8 +173,11 @@ class ExtendableEar(FlowchemDevice):
         self.device_info.model = "Extendable Ear"
 
     async def initialize(self):
-        logger.info('ExtendableEar was succeccfully initialized!')
+        # Here are the commands to initialize the device, checking its connectivity and setting it to 
+        # the default/initial configuration before use.
+        self.send_command('Verify connectivity')
         self.components.extend([ExtendableEarMicrophone("microphone",self)])
+        logger.info('ExtendableEar was successfully initialized!')
 
     def send_command(self, command):
         logger.info(command)  # This is in place of actual communication with the device
