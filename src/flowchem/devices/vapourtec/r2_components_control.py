@@ -132,7 +132,7 @@ class UV150PhotoReactor(Photoreactor):
 class R2InjectionValve(SixPortTwoPositionValve):
     """R2 reactor injection loop valve control class."""
 
-    #todo this needs to be adapted to new code
+    # todo this needs to be adapted to new code
 
     hw_device: R2  # for typing's sake
 
@@ -149,18 +149,19 @@ class R2InjectionValve(SixPortTwoPositionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
-        return raw_position
+        return raw_position # Check the return (raw_position is a int, right?)
 
     async def get_position(self) -> list[list]:
         """Get current valve position."""
         position = await self.hw_device.get_valve_position(self.valve_code)
+        # Check the return (raw_position is a int, right?)
         return self._positions[int(self._change_connections(position, reverse=True))]
 
     async def set_position(self, positions_to_connect):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(positions_to_connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
-        target_pos = self._connect_positions(position_to_connect)
+        target_pos = self._connect_positions(position_to_connect) # Check the return - expected a tuple[tuple]
         target_pos = self._change_connections(target_pos)
         await self.hw_device.trigger_key_press(
             str(self.valve_code * 2 + int(target_pos)),
@@ -204,10 +205,11 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
             translated = raw_position
         else:
             translated = raw_position
-        return translated
+        return translated # Check the return (translated is a int, right?)
 
     async def get_position(self) -> list[list]:
         """Get current valve position."""
+        # Check the return (position is a int, right?)
         position = await self.hw_device.get_valve_position(self.valve_code)
         return (self._positions[int(self._change_connections(position, reverse=True))])
 
@@ -215,7 +217,7 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(positions_to_connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
-        target_pos = self._connect_positions(position_to_connect)
+        target_pos = self._connect_positions(position_to_connect) # Check the return - expected a tuple[tuple]
         target_pos = self._change_connections(target_pos)
         await self.hw_device.trigger_key_press(
             str(self.valve_code * 2 + int(target_pos)),
