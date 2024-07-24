@@ -69,9 +69,6 @@ class ExtendableEar(FlowchemDevice):
         ...
 
     async def initialize(self):
-        await self._acutator()
-
-    async def _acutator(self):
         logger.info('ExtendableEar was successfully initialized!')
 ```
 Entering information points is recommended to detect possible errors during device initialization. You are advised to 
