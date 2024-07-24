@@ -9,7 +9,7 @@ described below. My plugin is a generic device of the flowchem with the class na
 type = "plugins"
 ```
 
-The flowchem needs be runnig as shown:
+The flowchem needs be running as shown:
 
 ```shell
 flowchem flowchem_config.toml
