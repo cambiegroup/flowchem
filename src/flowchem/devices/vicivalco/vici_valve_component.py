@@ -15,7 +15,8 @@ class ViciInjectionValve(SixPortTwoPositionValve):
     def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
         raise NotImplementedError("Check that provided mapping is correct")
         # TODO maybe needs addition of one, not sure
-        if not reverse:
+
+        if not reverse: # Is it right?
             translated = raw_position
         else:
             translated = raw_position

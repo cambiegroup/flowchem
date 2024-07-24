@@ -99,8 +99,8 @@ def get_mac_address(
     * localhost/127.0.0.1 will always return '00:00:00:00:00:00'
     Args:
         interface (str): Name of a local network interface (e.g "Ethernet 3", "eth0", "ens32")
-        ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g 192.168.0.1)
-        ip6 (str): Canonical shortened IPv6 address of a remote host (e.g ff02::1:ffe7:7f19)
+        ip (str): Canonical dotted decimal IPv4 address of a remote host (e.g. 192.168.0.1)
+        ip6 (str): Canonical shortened IPv6 address of a remote host (e.g. ff02::1:ffe7:7f19)
         hostname (str): DNS hostname of a remote host (e.g "router1.mycorp.com", "localhost")
         network_request (bool): Send a UDP packet to a remote host to populate
         the ARP/NDP tables for IPv4/IPv6. The port this packet is sent to can
@@ -185,7 +185,7 @@ def get_mac_address(
         # Fix cases where there are no colons
         if ":" not in mac and len(mac) == 12:
             log.debug(f"Adding colons to MAC {mac}")
-            mac = ":".join(mac[i : i + 2] for i in range(0, len(mac), 2))
+            mac = ":".join(mac[i: i + 2] for i in range(0, len(mac), 2))
 
         # Pad single-character octets with a leading zero (e.g. Darwin's ARP output)
         elif len(mac) < 17:

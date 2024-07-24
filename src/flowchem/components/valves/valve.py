@@ -190,6 +190,7 @@ class Valve(FlowchemComponent):
         # check if this is possible given the mapping
         for key, values in self._positions.items():
             if positions_not_to_connect:
+                # Check the type of the 'no_tuple_in_nested_tuple' Expected tuple[tuple[int, int], ...]
                 if all_tuples_in_nested_tuple(positions_to_connect, values) and no_tuple_in_nested_tuple(
                         positions_not_to_connect, values):
                     possible_positions.append(key)
@@ -217,8 +218,8 @@ class Valve(FlowchemComponent):
         else:
             pos = await self.hw_device.get_raw_position(self.identifier)
         pos = int(pos) if pos.isnumeric() else pos
+        # check the type (tuple[tuple, tuple]) -> return a tuple[Any,]
         return self._positions[int(self._change_connections(pos, reverse=True))]
-
 
     async def set_position(self, connect: str | tuple = "", disconnect: str | tuple = "",
                            ambiguous_switching: str | bool = False):
