@@ -75,10 +75,10 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         await self.bandwidth(8)
         logger.info("set channel 1 : WL = 254 nm, BW = 8nm ")
 
-        self.components = [
+        self.components.extend([
             KnauerDADLampControl("d2", self),
             KnauerDADLampControl("hal", self),
-        ]
+        ])
 
         self.components.extend(
             [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)]
