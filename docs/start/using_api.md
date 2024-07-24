@@ -1,12 +1,12 @@
 # Working with APIserver
 
 After running the flowchem with a specific configuration file, an API is available on the server and can be accessed 
-through the address: http://127.0.0.1:8000. Suppose we have a configuration file ***flowchem_config.toml*** as 
-described below. My plugin is a generic device of the flowchem with the class name plugin.
+through the address: http://127.0.0.1:8000. Suppose we have a configuration file `flowchem_config.toml` as 
+described below. My my-device is a generic device of the flowchem with the class name FakeDeive.
 
 ```toml
-[device.my-plugin-device]
-type = "plugins"
+[device.my-device]
+type = "FakeDeive"
 ```
 
 The flowchem needs be running as shown:
@@ -15,9 +15,19 @@ The flowchem needs be running as shown:
 flowchem flowchem_config.toml
 ```
 
+Another way to access this FakeDevice were implemented direct in the package commands. It can be access through:
+
+```shell
+flowchem example
+```
+
+These command access the `FakeDevice_configuration.toml` file that is available in the package folder in 
+`flowchem/examples`.
+
+
 The API available in the address will be:
 
-![](API_plugin.png)
+![](FakeDeviceAPI.JPG)
 
 Access to API can be done directly through the web browser or by clients written in different languages. Below, we 
 show how easy it is to access API, for example, through Python. Access to API commands through Python files can be done
@@ -31,26 +41,23 @@ from flowchem.client.client import get_all_flowchem_devices
 flowchem_devices = get_all_flowchem_devices()
 ```
 The variable ***flowchem_device*** in the code above is a dictionary with all devices connected through the API. With 
-this variable, it is possible to access all components available in the device. In this example, the my-plugin-device
-has four elements that can be accessed through the code below:
+this variable, it is possible to access all components available in the device. In this example, the my-device
+has one component that can be accessed through the code below:
 
 ```python
-pump1 = flowchem_devices['my-plugin-device'].Components['pump1']
-pump2 = flowchem_devices['my-plugin-device'].Components['pump2']
-pump3 = flowchem_devices['my-plugin-device'].Components['pump3']
-valve = flowchem_devices['my-plugin-device'].Components['valve']
+component_fake = flowchem_devices['my-device'].Components['FakeComponent']
 ```
 
-Each of these components represents one class. This class has methods that can be accessed through commands available 
-in the API. For example, if you want to infuse a liquid using pump1, you can use, according to API interface, a method 
-put as shown below:
+This component represents one class. This class has methods that can be accessed through commands available 
+in the API. For example, if you want to send a command to the component FakeComponent, you can use, according to API 
+interface, a method put as shown below:
 
-![](API_plugin_pump1.png)
+![](FakeComponent.JPG)
 
 The argument parameters to send these commands need to be specified in the method.
 
 ```python
-pump1.put('infuse', params={'rate': "5 ul/min", 'volume': '1 ml'})
+component_fake.put('fake_send_command', params={'parameter_1': "something", 'parameter_2': 'something'})
 ```
 
 Therefore, creating a list of structures based on these components makes it possible to make the platform work 
@@ -89,10 +96,7 @@ from flowchem.client.client import get_all_flowchem_devices
 
 flowchem_devices = get_all_flowchem_devices()
 
-pump1 = flowchem_devices['my-plugin-device'].components['pump1']
-pump2 = flowchem_devices['my-plugin-device'].components['pump2']
-pump3 = flowchem_devices['my-plugin-device'].components['pump3']
-valve = flowchem_devices['my-plugin-device'].components['valve']
+component_fake = flowchem_devices['my-device'].Components['FakeComponent']
 
 # Process protocols
 def calculate_flow_rates(*arg):
@@ -110,7 +114,7 @@ The user can also go through the request package to gain direct access to the co
 ```python
 import requests
 
-url = 'http://127.0.0.1:8000/my-plugin-device/pump1/'
+url = 'http://127.0.0.1:8000/my-device/FakeComponent/'
 data = response.json()
 response = requests.get(url)
 print(data)
@@ -123,8 +127,8 @@ Sub request()
     Dim LoginRequest As Object
     Set LoginRequest = CreateObject("WinHttp.WinHttpRequest.5.1")
     LoginRequest.Open "GET", "http://127.0.0.1:8000", False
-    LoginRequest.setRequestHeader "Content-type", "/my-plugin-device/"
-    LoginRequest.send ("pump1")
+    LoginRequest.setRequestHeader "Content-type", "/my-device/"
+    LoginRequest.send ("FakeComponent")
 End Sub
 ```
 
@@ -140,7 +144,7 @@ public class GetRequestExample {
     public static void main(String[] args) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI("http://127.0.0.1:8000/my-plugin-device/pump1/"))
+                .uri(new URI("http://127.0.0.1:8000/my-device/FakeComponent/"))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -156,7 +160,7 @@ library(httr)
 library(jsonlite)
 
 # Define the API endpoint
-url <- "http://127.0.0.1:8000/my-plugin-device/pump1/"
+url <- "http://127.0.0.1:8000/my-device/FakeComponent/"
 
 # Make the GET request
 response <- GET(url)
@@ -185,7 +189,7 @@ int main()
 
     curl = curl_easy_init();
     if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:8000/my-plugin-device/pump1/");
+        curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:8000/my-device/FakeComponent/");
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
         res = curl_easy_perform(curl);
