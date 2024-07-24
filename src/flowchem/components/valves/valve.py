@@ -44,7 +44,7 @@ class ValveInfo(BaseModel):
     """
     ports: an attribute representing the available ports on the stator
     positions: an attribute mapping implicit, tacit numbers as keys to the stator ports that are connected at this
-                position
+    position
     """
     ports: list[tuple]
     positions: dict[int, tuple[tuple[None | int, ...], ...]]
@@ -112,6 +112,26 @@ class Valve(FlowchemComponent):
                 radial ports       middle ports
             Ports should be equally distributed, with equally spaced angle in between. If this is not the case, add None
              for missing port
+
+            Exemple: 4 port 5 Position Valve
+            stator_ports=[(None, None, 1, None, 2, None, 3, None,), (0,)],
+            rotor_ports=[(None, 5, None, None, 4, None, 4, None), (5,)],
+
+                                 1
+                             * * * * *
+                           *     x     *
+                         *               *
+                     8  *  x            -x *  2
+                        *            -     *
+                     7  * o-      o-     o *  3
+                        *   -              *
+                        *  x -           x *  4
+                     6   *     -          *
+                           *    -o      *
+                             * * * * *
+                                 5
+
+        The connection is done between port 7 and 5 and 0 (central port) and 2
 
         """
         # a valve consists of a rotor and a stator. Solenoid valves Are special cases and can be decomposed into
