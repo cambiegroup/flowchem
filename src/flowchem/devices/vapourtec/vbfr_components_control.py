@@ -18,7 +18,7 @@ class VbfrPressureControl(PressureControl):
         super().__init__(name, hw_device)
         self.add_api_route("/deadband", self.set_deadband, methods=["PUT"])
         self.add_api_route("/deadband", self.get_deadband, methods=["GET"])
-        self.add_api_route("/calibration", self.calibration, methods=["POST"])
+        self.add_api_route("/calibration", self.calibration, methods=["PUT"])
 
     async def set_pressure(self, pressure: str) -> bool:
         """Set pressure differnence (in bar)"""
@@ -54,8 +54,8 @@ class VbfrBodySensor(BodySensor):
         super().__init__(name, hw_device)
         self.add_api_route("/position", self.get_position, methods=["GET"])
         self.add_api_route("/position_limits", self.get_position_limit, methods=["GET"])
-        self.add_api_route("/position_limits", self.set_position_limit, methods=["POST"])
-        self.add_api_route("/calibration", self.calibration, methods=["POST"])
+        self.add_api_route("/position_limits", self.set_position_limit, methods=["PUT"])
+        self.add_api_route("/calibration", self.calibration, methods=["PUT"])
 
     async def get_position(self) -> float:
         """Read body position ((in mm)."""
@@ -73,3 +73,10 @@ class VbfrBodySensor(BodySensor):
     async def calibration(self) -> bool:
         """Set current position to zero"""
         return await self.hw_device.calibrate_position()
+
+    async def power_on(self):
+        """start compress the reactor by set pressure"""
+        return await self.hw_device.power_on()
+    async def power_off(self):
+        """stop compress the reactor by set pressure"""
+        return await self.hw_device.power_off()
