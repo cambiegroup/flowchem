@@ -76,6 +76,8 @@ development/contribute
 
 development/learning
 
+development/valve_logic
+
 add_device/index
 
 development/faq
