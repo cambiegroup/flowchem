@@ -81,6 +81,7 @@ def main(device_config_file, logfile, host, debug):
             timeout_keep_alive=3600,
         )
         server = uvicorn.Server(config)
+        logger.info("Click on http://127.0.0.1:8000 to access device server.")
         await server.serve()
 
     asyncio.run(main_loop())
