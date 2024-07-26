@@ -3,10 +3,10 @@
 This example demonstrates how to set up a process using flowchem. The process involves the reaction of two reagents, 
 *hexyldecanoic acid*, and *thionyl chloride*, within a temperature-controlled reactor.
 
-This process utilizes four electronic devices. Two pumps are used to deliver the reagents. One pump is from [AzuraCompact](../devices/pumps/azura_compact.md), and the other is from 
-Elite11 [](../devices/pumps/elite11.md). A reactor with temperatur control is used. This reator is a component of 
-the platform R2 - [R4Heater](../devices/temperature/r4_heater.md). An infrared spectrometer from analytics is used to analyze the 
-product - [IcIR](../devices/analytics/icir.md).
+This process utilizes four electronic devices. Two pumps are used to deliver the reagents. One pump is from [AzuraCompact](../../reference/devices/pumps/azura_compact.md), and the other is from 
+Elite11 [](../../reference/devices/pumps/elite11.md). A reactor with temperatur control is used. This reator is a component of 
+the platform R2 - [R4Heater](../../reference/devices/temperature/r4_heater.md). An infrared spectrometer from analytics is used to analyze the 
+product - [IcIR](../../reference/devices/analytics/icir.md).
 
 ![](reaction.JPG)
 
@@ -53,7 +53,7 @@ flowir = flowchem_devices["flowir"]["ir-control"]
 Each component has its own GET and PUT methods. The commands are written based on the available methods. 
 When Flowchem is running, you can easily see each device's available methods through the address 
 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). You can also find the methods in the 
-[API documentation](../api/index.md).
+[API documentation](../../reference/api/index.md).
 
 The following is a description of the main `main.py` script by which controls the experiment.
 

@@ -5,8 +5,8 @@ Let's assume you got a new lab device, an _👂Extendable Ear👂_ manufactured 
 But how to control it via flowchem?
 
 You have two possibilities:
-* [add support directly into flowchem](./add_to_flowchem.md)
-* [add support via a plugin](./add_as_plugin.md)
+* [add support directly into flowchem](add_to_flowchem.md)
+* [add support via a plugin](add_as_plugin.md)
 
 In general, devices that need the addition of several new dependencies to flowchem are better packaged as
 plugins, while generally useful modules are ideally embedded with flowchem.
