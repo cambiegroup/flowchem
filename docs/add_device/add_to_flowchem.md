@@ -99,11 +99,12 @@ and let's run `flowchem` in debug mode with that configuration file:
 ```shell
 flowchem -d ear.toml
 ```
-### Note
-*You might need to reinstall flowchem from the repository you have introduced changes to with `pip install .`.
+:::{note}
+You might need to reinstall flowchem from the repository you have introduced changes to with `pip install .`.
 If you are developing new code, to avoid the need of re-installing the package after every change of the source code you
 can install flowchem in [development mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) with*
 `pip install -e .` *and every change of the source will be reflected immediately.*
+:::
 
 As you can see, in the console output, our device was initialized but there is still no component associated with it, so
 no commands are available through the server:
