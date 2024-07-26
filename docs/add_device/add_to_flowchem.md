@@ -34,7 +34,22 @@ class ExtendableEar(FlowchemDevice):
     ...
 ```
 For the second thing we need to update the `__init__.py` file in `/flowchem/devices` to import `ExtendeableEar` there,
-either directly or with an intermediate `/flowchem/devices/weasley/__init__.py` file.
+either directly like
+```
+from .weasley.extendable_ear.py import ExtendableEar
+```
+ or by making an intermediate `/flowchem/devices/weasley/__init__.py` file like
+```
+"""Weasley devices."""
+from .extendable_ear import ExtendableEar
+
+__all__ = ["ExtendableEar"]
+```
+and correspondingly in the `/flowchem/devices/__init__.py` file
+```
+from .weasley import *
+```
+.
 
 ### Device configuration
 Additional parameters needed for the device setup can be specified in the `__init__` method, if a default is provided
