@@ -28,7 +28,7 @@ Principles:
 Implementation design:
   - ideally all permanent device specific parameters (not changing during normal use) are received/set in a uniform way and advertised as such (to enabling dynamic graphs config via web interface, somehow similar to Magritek protocol options).
 - Don't force code-reuse, but allow for easy extension and leave device modules as independent as possible.
-- Each device has a name, unique per server, tha will be the endpoint path.
+- Each device has a name, unique per server, that will be the endpoint path.
 
 To provide the best possible experience for users, flowchem took inspiration from different aspects of packages with
 similar aims, including (in alphabetical order):
