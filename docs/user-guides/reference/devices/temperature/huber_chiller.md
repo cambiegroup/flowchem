@@ -2,7 +2,7 @@
 ## Introduction
 The majority of Huber chillers can be controlled via so-called `PB Commands` over serial communication.
 A variety of `PB Commands` are supported in `flowchem`, but some of them may be unavailable on specific models, see the
-[manufacturer documentation](./huber_chiller.pdf) for more details.
+[manufacturer documentation](huber_chiller.pdf) for more details.
 
 As for all `flowchem` devices, the virtual instrument can be instantiated via a configuration file that generates an
 openAPI endpoint.
@@ -40,7 +40,7 @@ After having installed flowchem, run `flowchem-autodiscover` to create a configu
 can be auto-detected on your PC.
 
 ## Further information
-For further information please refer to the [manufacturer manual](./huber_chiller.pdf)
+For further information please refer to the [manufacturer manual](huber_chiller.pdf)
 
 ```{note} Serial connection parameters
 Note, further parameters for the serial connections (i.e. those accepted by `serial.Serial`) such as `baudrate`,

@@ -8,7 +8,7 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 :::{grid-item}
 :columns: auto
 
-```{button-ref} start/getting_started
+```{button-ref} getting_started
 :color: primary
 :tooltip: Getting started guide
 ```
@@ -16,7 +16,7 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 :::{grid-item}
 :columns: auto
 
-```{button-ref} start/introduction
+```{button-ref} /user-guides/tutorials/index
 :color: secondary
 :tooltip: Introductory tutorial - learning-oriented practical steps
 ```
@@ -24,7 +24,7 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 :::{grid-item}
 :columns: auto
 
-```{button-ref} start/running
+```{button-ref} /user-guides/how-to-guides/index
 :color: secondary
 :tooltip: Introductory tutorial - learning-oriented practical steps
 ```
@@ -32,7 +32,7 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 :::{grid-item}
 :columns: auto
 
-```{button-ref} start/using_api
+```{button-ref} /user-guides/reference/index
 :color: secondary
 :tooltip: Introductory tutorial - task-oriented practical steps
 ```
@@ -40,7 +40,7 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 :::{grid-item}
 :columns: auto
 
-```{button-ref} examples/index
+```{button-ref} /user-guides/explanation/index
 :color: secondary
 :tooltip: API reference - information-oriented theoretical knowledge
 ```
@@ -52,19 +52,13 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 :maxdepth: 2
 :caption: User Guide
 
-start/getting_started
+./user-guides/tutorials/index
 
-start/introduction
+./user-guides/how-to-guides/index
 
-start/running
+./user-guides/reference/index
 
-start/using_api
-
-devices/supported_devices
-
-api/index
-
-examples/index
+./user-guides/explanation/index
 
 ```
 
@@ -72,16 +66,8 @@ examples/index
 :maxdepth: 2
 :caption: Development
 
-development/contribute
+./development/additional/index
 
-development/learning
-
-development/valve_logic
-
-add_device/index
-
-development/faq
-
-code_structure/modules
+./development/foundations/index
 
 ```

@@ -1,4 +1,4 @@
-# Learning
+# Understanding
 At its core, `flowchem` is a command line application that:
 1. parses a configuration file
 2. connects to the lab devices described and

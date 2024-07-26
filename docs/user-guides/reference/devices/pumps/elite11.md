@@ -44,4 +44,4 @@ can be auto-detected on your PC.
 
 ## Further information
 For further information about connection of the pump to the controlling PC, daisy-chaining via firmware cables etc.
-please refer to the [manufacturer manual](./elite11.pdf).
+please refer to the [manufacturer manual](elite11.pdf).

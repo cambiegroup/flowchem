@@ -48,4 +48,4 @@ Note that the actual type of valve cannot be detected automatically, so you will
 ```
 
 ## Further information
-For further information please refer to the [manufacturer manual](./vici_valve.pdf)
+For further information please refer to the [manufacturer manual](vici_valve.pdf)
