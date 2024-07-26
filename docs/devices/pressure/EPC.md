@@ -6,7 +6,7 @@ Bronkhorst El-Pressure controller controller (EPC) device driver.
 
 More information about the device can be found in the supplier platform [Bronkhorst](https://www.bronkhorst.com/en-gb/).
 
-## mass flow controller
+## electronic pressure controller
 
 
 
