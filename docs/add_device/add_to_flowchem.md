@@ -45,11 +45,10 @@ from .extendable_ear import ExtendableEar
 
 __all__ = ["ExtendableEar"]
 ```
-and correspondingly in the `/flowchem/devices/__init__.py` file
+and correspondingly in the `/flowchem/devices/__init__.py` file.
 ```python
 from .weasley import *
 ```
-.
 
 ### Device configuration
 Additional parameters needed for the device setup can be specified in the device classes `__init__` method, if a default is provided
@@ -90,7 +89,7 @@ class ExtendableEar(FlowchemDevice):
 Entering information points is recommended to detect possible errors during device initialization. You are advised to 
 use the loguru package. For more details, visit [Loguru doc](https://loguru.readthedocs.io/en/stable/).
 
-At this point we can create configuration file to initialize our new device type to check everything is ok so far.
+At this point we can create the configuration file to initialize our new device type. THis will check if everything is ok so far (it would not work otherwise).
 Let's create a minimal config file name `ear.toml` with this content:
 ```toml
 [device.my-magic-ear]
@@ -100,12 +99,11 @@ and let's run `flowchem` in debug mode with that configuration file:
 ```shell
 flowchem -d ear.toml
 ```
-:::{note}
-You might need to reinstall flowchem from the repository you have introduced changes to with `pip install .`.
+### Note
+*You might need to reinstall flowchem from the repository you have introduced changes to with `pip install .`.
 If you are developing new code, to avoid the need of re-installing the package after every change of the source code you
-can install flowchem in [development mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) with
-`pip install -e .` and every change of the source will be reflected immediately.
-:::
+can install flowchem in [development mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) with*
+`pip install -e .` *and every change of the source will be reflected immediately.*
 
 As you can see, in the console output, our device was initialized but there is still no component associated with it, so
 no commands are available through the server:
@@ -115,20 +113,20 @@ no commands are available through the server:
 ```
 
 ### Add a component
-While the object subclassing FlowchemDevice has the responsibility of communicating with the device, the command that
-are available for that device should be exposed through a list of components, that are subclasses of `FlowchemComponent`
-that represents specific and abstract functionalities.
-For example, a pump with integrated a pressure sensor serves two purposes: pumping and sensing therefore it will expose
-two components, one subclassing (directly or indirectly)  `BasePump` the other one subclassing `PressureSensor`.
-The components define the API for a class of capabilities and ensure a uniform API between different device with similar
+While the object subclassing FlowchemDevice has the responsibility of communicating with the device, the commands that
+are available for that device should be exposed through a list of components, that are subclasses of `FlowchemComponent`.
+`FlowchemComponent` represents specific and abstract functionalities.
+For example, a pump with an integrated pressure sensor serves two purposes: pumping and sensing; therefore it will expose
+two components, one subclassing `BasePump` (directly or indirectly, e.g. `HPLCPump`, which subclasses `BasePump`) the other one subclassing `PressureSensor`.
+The components define the API for a class of capabilities and ensure a uniform API between different devices with similar
 functions.
-This is a crucial aspect of flowchem that allows the abstraction of the device controlling code from the actual hardware
+This is a crucial aspect of flowchem, that allows the abstraction of the device controlling code from the actual hardware
 that implements such commands.
-For example, it should be possible to swap one model of syringe pump for another one without any change in the code but
+For example, it should be possible to swap one model of syringe pump for another one without any change in the code by
 simply updating the flowchem configuration file with the different device type.
 
-You can have a look in `flowchem.components` to check which component types are already existing and can be reused for
-the device you are adding support to.
+You can have a look in `flowchem.components` to check which component types already exist. These can be reused for
+the device you are adding support for.
 Alternatively, you can check the code of a device with similar function.
 
 In our case, the ExtendableEar is introducing a new capability that was not previously present in flowchem, so we will
@@ -170,9 +168,9 @@ class ExtendableEarMicrophone(Microphone):
     ...
 ```
 
-Now we need to update the `ExtendableEar` code so to add a `component` method that returns a tuple with our
-`ExtendableEarMicrophone`. Note that self.components is an attribute inherited of the FlowchemDevice class. This 
-attribute contains all components of one specific device that can be access in the API.
+Now we need to update the `ExtendableEar` code, so we add a `component` method that returns a tuple with our
+`ExtendableEarMicrophone`. Note that self.components is of type `list` and an attribute inherited of the FlowchemDevice class. This 
+attribute contains all components of one specific device that can be accessed in the API.
 
 ```python
 ...
@@ -198,13 +196,13 @@ class ExtendableEar(FlowchemDevice):
         logger.info(command)  # This is in place of actual communication with the device
 ```
 
-Now if we run `flowchem ear.toml` again the server will start successfully and show the metadata info together with the
+If we run `flowchem ear.toml` again, the server will start successfully and show the metadata info together with the
 `start` and `stop` methods.
 
 ![](extendable_ear1.png)
 
 However, executing start and stop will not execute any code.
-For that we need to add some code in out `ExtendableEarMicrophone` to transform these calls into action.
+For that we need to add some code in out `ExtendableEarMicrophone` to transform these calls into actions.
 For example:
 ```python
 from flowchem.components.sensors.microphone import Microphone
