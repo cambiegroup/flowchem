@@ -35,24 +35,24 @@ class ExtendableEar(FlowchemDevice):
 ```
 For the second thing we need to update the `__init__.py` file in `/flowchem/devices` to import `ExtendeableEar` there,
 either directly like
-```
+```python
 from .weasley.extendable_ear.py import ExtendableEar
 ```
  or by making an intermediate `/flowchem/devices/weasley/__init__.py` file like
-```
+```python
 """Weasley devices."""
 from .extendable_ear import ExtendableEar
 
 __all__ = ["ExtendableEar"]
 ```
 and correspondingly in the `/flowchem/devices/__init__.py` file
-```
+```python
 from .weasley import *
 ```
 .
 
 ### Device configuration
-Additional parameters needed for the device setup can be specified in the `__init__` method, if a default is provided
+Additional parameters needed for the device setup can be specified in the device classes `__init__` method, if a default is provided
 the parameter will also be optional in the device section in the configuration file.
 In our case, the ExtendableEar has an optional length parameter, with a default value of "10 cm".
 To prevent ambiguities, all amounts with units should be provided as strings and parsed by the pint UnitRegistry
