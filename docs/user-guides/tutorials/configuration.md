@@ -1,18 +1,28 @@
-# Flowchem configuration
+# Configuration File
 
-Flowchem needs a configuration file with the connection parameter of the device to be controlled.
-In its simplest form, the configuration file looks like this:
+The configuration file is the only input required by the package. It is built in an easily editable `.toml` format. 
+For more details about this file format, please visit [TOML](https://toml.io/en/). The configuration file should look 
+like this:
 ```toml
 [device.test-device]
 type = "FakeDevice"
 ```
-Where `test-device` is the device name and `FakeDevice` the device type.
+
+In this file, the term `device` indicates that the device is implemented in the package. The term `test-device` is the
+device name chosen by the user, and `FakeDevice` is the device type corresponding to the class implemented in the 
+package source code. Depending on the type of device specified in the file, additional attributes may be required. All 
+necessary attributes for each device type can be found in the 
+[Device configuration guides](../reference/devices/supported_devices.md).
 
 ## Running flowchem
-Now create a file with that content (or get it from the [examples folder](https://github.com/cambiegroup/flowchem/tree/main/examples))
-and run the `flowchem` command followed by the name of the file.
+
+After create a file as the example above (or get it from the [examples folder](https://github.
+com/cambiegroup/flowchem/tree/main/examples)) run the `flowchem` command followed by the name of the file.
 ```shell
 flowchem flowchem_config.toml
+```
+```{warning}
+Please note the correct file address and the name of the file you named.
 ```
 
 In your terminal, you will see some debug information, ending with a line like this one:
@@ -51,11 +61,9 @@ flowchem-autodiscover
 And reply to the prompts.
 If any device that supports autodiscovery is found, a `flowchem_config.toml` file will be created.
 
-
 ```{note}
 Some additional information is generally still necessary even for auto-detected devices.
 ```
-
 
 Complete the missing information (if any) in this file, and then you will be ready to use flowchem!
 

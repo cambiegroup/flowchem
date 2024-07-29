@@ -4,5 +4,7 @@
 :maxdepth: 1
 ./installation
 
-./introduction
+./configuration
+
+./using_api
 ```
