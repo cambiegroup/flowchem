@@ -122,6 +122,8 @@ print(data)
 
 Utilizing Visual Basic Applications, the API can be access, for example, using the ``WinHttp.WinHttpRequest.5.1``.
 
+### Using another code languages
+
 ```VBA
 Sub request()
     Dim LoginRequest As Object
