@@ -15,6 +15,7 @@ Configuration sample showing all possible parameters:
 
 ```toml
 [device.my-MFC]  # This is the MFC identifier
+type = "MFC"     # Class of the device
 port = "COM4"    # Access port (serial)
 channel = 1      
 address = 0x80

@@ -2,12 +2,16 @@
 ```shell
 pip install flowchem
 ```
-create config file like:
+create config file like `yourfile.toml`:
 ```shell
 [device.test-device]
 type = "FakeDevice"
 ```
 run it:
 ```shell
-flowchem example.toml
+flowchem yourfile.toml
+```
+or run the example:
+```shell
+flowchem example
 ```
