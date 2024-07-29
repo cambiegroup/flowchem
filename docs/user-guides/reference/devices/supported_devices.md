@@ -8,8 +8,7 @@ The following devices are currently supported in flowchem:
 analytics/index.md
 pumps/index.md
 valves/index.md
-temperature/index.md
-pressure/index.md
+technical/index.md
 sensors/index.md
 misc/index.md
 

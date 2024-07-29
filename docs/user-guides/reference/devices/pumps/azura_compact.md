@@ -33,4 +33,4 @@ After having installed flowchem, run `flowchem-autodiscover` to create a configu
 can be auto-detected on your PC.
 
 ## Further information
-For further information please refer to the [manufacturer manual](azura_compact.pdf)
+For further information please refer to the [manufacturer manual](./azura_compact.pdf)

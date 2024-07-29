@@ -1,4 +1,4 @@
-# Mettler Toledo iCIR
+# Mattler Toledo iCIR
 ```{admonition} Additional software needed!
 :class: attention
 
