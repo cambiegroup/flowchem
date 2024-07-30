@@ -8,106 +8,76 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.1.0a3
 paths:
-  /hplc/run:
+  /chiller-1/temperature:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Run
-      description: 'Run one analysis on the instrument. The sample name has to be
-        set in advance via sample-name.
-
-
-        Note that it takes at least 2 sec until the run actually starts (depending
-        on instrument configuration).
-
-        While the export of the chromatogram in e.g. ASCII format can be achieved
-        programmatically via the CLI, the best
-
-        solution is to enable automatic data export for all runs of the HPLC as the
-        chromatogram will be automatically
-
-        exported as soon as the run is finished.'
-      operationId: run_hplc_run_put
+      - chiller-1
+      - chiller-1
+      summary: Set Temperature
+      description: 'Set the target temperature to the given string in natural language.'
+      operationId: chiller-1
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema: {}
-  /hplc/method:
+  /chiller-1/power-on:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Method
-      description: 'Sets the HPLC method (i.e. a file with .MET extension) to the
-        instrument.
-
-
-        Make sure to select ''Send Method to Instrument'' option in Method Sending
-        Options dialog in System Configuration.'
-      operationId: set_method_hplc_method_put
-      parameters:
-      - required: true
-        schema:
-          title: Method Name
-          type: string
-        name: method_name
-        in: query
+      - chiller-1
+      - chiller-1
+      summary: Power On
+      description: "Turn on temperature control."
+      operationId: chiller-1
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/sample-name:
+  /chiller-1/power-off:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Sample Name
-      description: Sets the name of the sample for the next run.
-      operationId: set_sample_name_hplc_sample_name_put
-      parameters:
-      - required: true
-        schema:
-          title: Sample Name
-          type: string
-        name: sample_name
-        in: query
+      - chiller-1
+      - chiller-1
+      summary: Power off
+      description: "Turn off temperature control."
+      operationId: chiller-1
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/exit:
-    put:
+  /chiller-1/target-reached:
+    get:
       tags:
-      - hplc
-      - hplc
-      summary: Exit
-      description: Exit Clarity Chrom.
-      operationId: exit_hplc_exit_put
+        - chiller-1
+        - chiller-1
+      summary: Has the temperature reached
+      description: "Return True if the set temperature target has been reached."
+      operationId: chiller-1
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema: { }
+  /chiller-1/temperature/:
+    get:
+      tags:
+        - chiller-1
+        - chiller-1
+      summary: Get Temperature
+      description: "Return temperature in Celsius."
+      operationId: chiller-1
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
 components:
   schemas:
     HTTPValidationError:

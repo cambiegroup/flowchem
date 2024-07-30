@@ -8,106 +8,118 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.1.0a3
 paths:
-  /hplc/run:
+  /knauner-dad/set-wavelength:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Run
-      description: 'Run one analysis on the instrument. The sample name has to be
-        set in advance via sample-name.
-
-
-        Note that it takes at least 2 sec until the run actually starts (depending
-        on instrument configuration).
-
-        While the export of the chromatogram in e.g. ASCII format can be achieved
-        programmatically via the CLI, the best
-
-        solution is to enable automatic data export for all runs of the HPLC as the
-        chromatogram will be automatically
-
-        exported as soon as the run is finished.'
-      operationId: run_hplc_run_put
+      - knauer-dad
+      - knauer-dad
+      summary: Set Wavelength
+      description: "Set acquisition wavelength (nm) in the range of 0-999 nm."
+      operationId: run_knauer-dad_run_put
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema: {}
-  /hplc/method:
+  /knauer-dad/calibration:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Method
-      description: 'Sets the HPLC method (i.e. a file with .MET extension) to the
-        instrument.
-
-
-        Make sure to select ''Send Method to Instrument'' option in Method Sending
-        Options dialog in System Configuration.'
-      operationId: set_method_hplc_method_put
+      - knauer-dad
+      - knauer-dad
+      summary: Calibration
+      description: "re-calibrate the sensors to their factory zero points."
+      operationId: exit_knauer-dad_exit_put
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /knauer-dad/set-integration-time:
+    put:
+      tags:
+        - knauer-dad
+        - knauer-dad
+      summary: Set Integration Time
+      description: "Set integration time in the range of 10 - 2000 ms."
+      operationId: set_method_knauer-dad_method_put
       parameters:
-      - required: true
-        schema:
-          title: Method Name
-          type: string
-        name: method_name
-        in: query
+        - required: true
+          schema:
+            title: int_time
+            type: integer
+          name: int_time
+          in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/sample-name:
+              schema: { }
+  /knauer-dad/set-bandwidth:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Sample Name
-      description: Sets the name of the sample for the next run.
-      operationId: set_sample_name_hplc_sample_name_put
+        - knauer-dad
+        - knauer-dad
+      summary: Set Bandwidth
+      description: "Set bandwidth in the range of 4 to 25 nm."
+      operationId: set_sample_name_knauer-dad_sample_name_put
       parameters:
-      - required: true
-        schema:
-          title: Sample Name
-          type: string
-        name: sample_name
-        in: query
+        - required: true
+          schema:
+            title: bandwidth
+            type: integer
+          name: bandwidth
+          in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
-        '422':
-          description: Validation Error
+              schema: { }
+  /knauer-dad/acquire-signal:
+    get:
+      tags:
+        - knauer-dad
+        - knauer-dad
+      summary: Acquire the Signal
+      description: "Read from sensor, result to be expressed in % (optional)."
+      operationId: exit_knauer-dad_exit_put
+      responses:
+        '200':
+          description: Successful Response
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/exit:
+              schema: { }
+  /knauer-dad/power-on:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Exit
-      description: Exit Clarity Chrom.
-      operationId: exit_hplc_exit_put
+        - knauer-dad
+        - knauer-dad
+      summary: Put Temperature
+      description: "Check the lamp status."
+      operationId: chiller-1
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema: { }
+  /knauer-dad/power-off:
+    put:
+      tags:
+        - chiller-1
+        - chiller-1
+      summary: Power off
+      description: "Deactivate the measurement channel."
+      operationId: chiller-1
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
 components:
   schemas:
     HTTPValidationError:

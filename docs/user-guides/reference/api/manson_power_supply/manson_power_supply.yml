@@ -8,52 +8,48 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.1.0a3
 paths:
-  /hplc/run:
+  /manson-power/power-on:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Run
-      description: 'Run one analysis on the instrument. The sample name has to be
-        set in advance via sample-name.
-
-
-        Note that it takes at least 2 sec until the run actually starts (depending
-        on instrument configuration).
-
-        While the export of the chromatogram in e.g. ASCII format can be achieved
-        programmatically via the CLI, the best
-
-        solution is to enable automatic data export for all runs of the HPLC as the
-        chromatogram will be automatically
-
-        exported as soon as the run is finished.'
-      operationId: run_hplc_run_put
+      - manson-power
+      - manson-power
+      summary: Power on
+      description: "Turn on temperature control."
+      operationId: run_manson-power_run_put
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema: {}
-  /hplc/method:
+  /manson-power/power-off:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Method
-      description: 'Sets the HPLC method (i.e. a file with .MET extension) to the
-        instrument.
-
-
-        Make sure to select ''Send Method to Instrument'' option in Method Sending
-        Options dialog in System Configuration.'
-      operationId: set_method_hplc_method_put
+      - manson-power
+      - manson-power
+      summary: Power off
+      description: "Turn off temperature control."
+      operationId: set_method_manson-power_method_put
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /manson-power/current/:
+    put:
+      tags:
+      - manson-power
+      - manson-power
+      summary: Set Current
+      description: "Set the target current to the given string in natural language."
+      operationId: set_sample_name_manson-power_sample_name_put
       parameters:
       - required: true
         schema:
-          title: Method Name
+          title: current
           type: string
-        name: method_name
+        name: current
         in: query
       responses:
         '200':
@@ -61,26 +57,34 @@ paths:
           content:
             application/json:
               schema: {}
-        '422':
-          description: Validation Error
+  /manson-power/current:
+    get:
+      tags:
+        - manson-power
+        - manson-power
+      summary: Get Current
+      description: "Return current in Ampere."
+      operationId: set_sample_name_manson-power_sample_name_put
+      responses:
+        '200':
+          description: Successful Response
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/sample-name:
+              schema: { }
+  /manson-power/voltage/:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Sample Name
-      description: Sets the name of the sample for the next run.
-      operationId: set_sample_name_hplc_sample_name_put
+      - manson-power
+      - manson-power
+      summary: Set Voltage
+      description: "Set the target voltage to the given string in natural language."
+      operationId: set_sample_name_manson-power_sample_name_put
       parameters:
       - required: true
         schema:
-          title: Sample Name
+          title: voltage
           type: string
-        name: sample_name
+        name: voltage
         in: query
       responses:
         '200':
@@ -88,26 +92,20 @@ paths:
           content:
             application/json:
               schema: {}
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/exit:
-    put:
+  /manson-power/voltage:
+    get:
       tags:
-      - hplc
-      - hplc
-      summary: Exit
-      description: Exit Clarity Chrom.
-      operationId: exit_hplc_exit_put
+        - manson-power
+        - manson-power
+      summary: Get voltage
+      description: "Return current in Volt."
+      operationId: set_sample_name_manson-power_sample_name_put
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema: { }
 components:
   schemas:
     HTTPValidationError:
