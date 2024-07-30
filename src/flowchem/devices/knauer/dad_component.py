@@ -85,7 +85,7 @@ class DADChannelControl(PhotoSensor):
         """Set bandwidth in the range of 4 to 25 nm."""
         return await self.hw_device.bandwidth(bandwidth)
 
-    async def set_shutter(self, status: str):
+    async def set_shutter(self, status: str): # Todo: Not used
         """Set the shutter to "CLOSED" or "OPEN" or "FILTER"."""
         return await self.hw_device.shutter(status)
 
