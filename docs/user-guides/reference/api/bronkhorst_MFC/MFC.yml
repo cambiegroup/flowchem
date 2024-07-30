@@ -8,11 +8,11 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.1.0a3
 paths:
-  /MFC-1/MFC/get-flow-rate/:
+  /MFC-flowrate/MFC/get-flow-rate/:
     get:
       tags:
-      - MFC-1
-      - MFC-1
+      - MFC-flowrate
+      - MFC-flowrate
       summary: Get Metadata
       description: Get current flow rate in ml/min.
       operationId:
@@ -23,11 +23,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComponentInfo'
-  /MFC-1/MFC/set-flow-rate/:
+  /MFC-flowrate/MFC/set-flow-rate/:
     put:
       tags:
-      - MFC-1
-      - MFC-1
+      - MFC-flowrate
+      - MFC-flowrate
       summary: Set flow rate
       description: Set flow rate to the instrument; default unit ml/min.
       operationId: set_pressure_cvc_1_pressure_control_pressure_put
@@ -50,11 +50,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /MFC-1/MFC/stop:
+  /MFC-flowrate/MFC/stop:
     put:
       tags:
-      - MFC-1
-      - MFC-1
+      - MFC-flowrate
+      - MFC-flowrate
       summary: Power off
       description: Stop mass flow controller.
       operationId:

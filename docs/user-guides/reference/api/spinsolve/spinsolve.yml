@@ -8,106 +8,213 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.1.0a3
 paths:
-  /hplc/run:
-    put:
+  /spinsolve-1/nmr-control/solvent:
+    get:
       tags:
-      - hplc
-      - hplc
-      summary: Run
-      description: 'Run one analysis on the instrument. The sample name has to be
-        set in advance via sample-name.
-
-
-        Note that it takes at least 2 sec until the run actually starts (depending
-        on instrument configuration).
-
-        While the export of the chromatogram in e.g. ASCII format can be achieved
-        programmatically via the CLI, the best
-
-        solution is to enable automatic data export for all runs of the HPLC as the
-        chromatogram will be automatically
-
-        exported as soon as the run is finished.'
-      operationId: run_hplc_run_put
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get solvent
+      description: "Get current solvent."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
-  /hplc/method:
+              schema: { }
+  /spinsolve-1/nmr-control/solvent/:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Method
-      description: 'Sets the HPLC method (i.e. a file with .MET extension) to the
-        instrument.
-
-
-        Make sure to select ''Send Method to Instrument'' option in Method Sending
-        Options dialog in System Configuration.'
-      operationId: set_method_hplc_method_put
+      - spinsolve-1
+      - spinsolve-1
+      summary: Set solvent
+      description: "Set solvent."
+      operationId: run_spinsolve-1_nmr-control_run_put
       parameters:
-      - required: true
-        schema:
-          title: Method Name
-          type: string
-        name: method_name
-        in: query
+        - required: true
+          schema:
+            title: Solvent name
+            type: string
+          name: solvent
+          in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
               schema: {}
-        '422':
-          description: Validation Error
+  /spinsolve-1/nmr-control/sample-name:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get sample
+      description: "Get current sample."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/sample-name:
+              schema: { }
+  /spinsolve-1/nmr-control/sample-name/:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Set Sample Name
-      description: Sets the name of the sample for the next run.
-      operationId: set_sample_name_hplc_sample_name_put
+        - spinsolve-1
+        - spinsolve-1
+      summary: Set sample
+      description: "Set the sample name (it will appear in `acqu.par`)."
+      operationId: run_spinsolve-1_nmr-control_run_put
       parameters:
-      - required: true
-        schema:
-          title: Sample Name
-          type: string
-        name: sample_name
-        in: query
+        - required: true
+          schema:
+            title: Sample name
+            type: string
+          name: sample
+          in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
-        '422':
-          description: Validation Error
+              schema: { }
+  /spinsolve-1/nmr-control/user-data:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get user data
+      description: "Get user data. These will appear in `acqu.par`."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-  /hplc/exit:
+              schema: { }
+  /spinsolve-1/nmr-control/user-data/:
     put:
       tags:
-      - hplc
-      - hplc
-      summary: Exit
-      description: Exit Clarity Chrom.
-      operationId: exit_hplc_exit_put
+        - spinsolve-1
+        - spinsolve-1
+      summary: Set user data
+      description: "Set user data. The items provide will appear in `acqu.par`."
+      operationId: run_spinsolve-1_nmr-control_run_put
+      parameters:
+        - required: true
+          schema:
+            title: User data
+            type: string
+          name: data
+          in: query
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema: { }
+  /spinsolve-1/nmr-control/protocol-list:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get protocols list
+      description: "Return known protocol names."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/spectrum-folder:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Get result folder
+      description: "Get the result folder with the given ID or the last one if no ID is specified. Empty str if 
+      not existing."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/is-busy:
+    get:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Is running
+      description: "Return True if a protocol is running, otherwise False."
+      operationId: set_method_spinsolve-1_nmr-control_method_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/acquire-spectrum/:
+    put:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Acquire Spectrum
+      description: "Acquire an NMR spectrum.
+
+        Return an ID to be passed to get_result_folder, it will return the result folder after acquisition end.
+        "
+      operationId: run_spinsolve-1_nmr-control_run_put
+      parameters:
+        - required: true
+          schema:
+            title: Background tasks - from FastAPI
+            type: string
+          name: background_tasks
+          in: query
+        - required: false
+          schema:
+            title: Protocol
+            type: string
+            default: H
+          name: protocol
+          in: query
+        - required: false
+          schema:
+            title: User data
+            type: string
+            default: None
+          name: options
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
+  /spinsolve-1/nmr-control/stop/:
+    put:
+      tags:
+        - spinsolve-1
+        - spinsolve-1
+      summary: Set user data
+      description: "Set user data. The items provide will appear in `acqu.par`."
+      operationId: run_spinsolve-1_nmr-control_run_put
+      parameters:
+        - required: true
+          schema:
+            title: User data
+            type: string
+          name: data
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: { }
 components:
   schemas:
     HTTPValidationError:

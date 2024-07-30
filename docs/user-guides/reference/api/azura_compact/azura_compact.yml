@@ -8,11 +8,11 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.1.0a3
 paths:
-  /pump-b90e33/pump/:
+  /azura-pump/pump/:
     get:
       tags:
-      - pump-b90e33
-      - pump-b90e33
+      - azura-pump
+      - azura-pump
       summary: Get Metadata
       description: Return metadata.
       operationId: get_metadata_pump_b90e33_pump__get
@@ -23,11 +23,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComponentInfo'
-  /pump-b90e33/pump/infuse:
+  /azura-pump/pump/infuse:
     put:
       tags:
-      - pump-b90e33
-      - pump-b90e33
+      - azura-pump
+      - azura-pump
       summary: Infuse
       description: Start infusion.
       operationId: infuse_pump_b90e33_pump_infuse_put
@@ -58,11 +58,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /pump-b90e33/pump/stop:
+  /azura-pump/pump/stop:
     put:
       tags:
-      - pump-b90e33
-      - pump-b90e33
+      - azura-pump
+      - azura-pump
       summary: Stop
       description: Stop pumping.
       operationId: stop_pump_b90e33_pump_stop_put
@@ -72,11 +72,11 @@ paths:
           content:
             application/json:
               schema: {}
-  /pump-b90e33/pump/is-pumping:
+  /azura-pump/pump/is-pumping:
     get:
       tags:
-      - pump-b90e33
-      - pump-b90e33
+      - azura-pump
+      - azura-pump
       summary: Is Pumping
       description: Is pump running?
       operationId: is_pumping_pump_b90e33_pump_is_pumping_get
@@ -86,11 +86,11 @@ paths:
           content:
             application/json:
               schema: {}
-  /pump-b90e33/pressure/:
+  /azura-pump/pressure/:
     get:
       tags:
-      - pump-b90e33
-      - pump-b90e33
+      - azura-pump
+      - azura-pump
       summary: Get Metadata
       description: Return metadata.
       operationId: get_metadata_pump_b90e33_pressure__get
@@ -101,11 +101,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComponentInfo'
-  /pump-b90e33/pressure/read-pressure:
+  /azura-pump/pressure/read-pressure:
     get:
       tags:
-      - pump-b90e33
-      - pump-b90e33
+      - azura-pump
+      - azura-pump
       summary: Read Pressure
       description: Read from sensor, result to be expressed in units (optional).
       operationId: read_pressure_pump_b90e33_pressure_read_pressure_get

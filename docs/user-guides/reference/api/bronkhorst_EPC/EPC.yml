@@ -8,11 +8,11 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 0.1.0a3
 paths:
-  /EPC-1/EPC/:
+  /EPC-sensor/EPC/:
     get:
       tags:
-      - EPC-1
-      - EPC-1
+      - EPC-sensor
+      - EPC-sensor
       summary: Get Metadata
       description: Return metadata.
       operationId:
@@ -23,11 +23,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComponentInfo'
-  /EPC-1/EPC/get-pressure:
+  /EPC-sensor/EPC/get-pressure:
     get:
       tags:
-      - EPC-1
-      - EPC-1
+      - EPC-sensor
+      - EPC-sensor
       summary: Get Pressure
       description: get current system pressure in bar.
       operationId:
@@ -37,11 +37,11 @@ paths:
           content:
             application/json:
               schema: {}
-  /EPC-1/EPC/set-pressure:
+  /EPC-sensor/EPC/set-pressure:
     put:
       tags:
-      - EPC-1
-      - EPC-1
+      - EPC-sensor
+      - EPC-sensor
       summary: Set Pressure
       description: Set controlled pressure to the instrument; default unit bar.
       operationId:
@@ -64,7 +64,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /EPC-1/EPC/stop:
+  /EPC-sensor/EPC/stop:
     put:
       tags:
       - cvc-1
@@ -78,11 +78,11 @@ paths:
           content:
             application/json:
               schema: {}
-  /EPC-1/EPC/read-pressure:
+  /EPC-sensor/EPC/read-pressure:
     get:
       tags:
-        - EPC-1
-        - EPC-1
+        - EPC-sensor
+        - EPC-sensor
       summary: Set Pressure
       description: Read from sensor, result to be expressed in units (optional).
       operationId:
