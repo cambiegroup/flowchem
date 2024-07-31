@@ -10,10 +10,10 @@
         "version": "1.0.0a3"
     },
     "paths": {
-        "/my-icir/": {
+        "/my-elite11/": {
             "get": {
                 "tags": [
-                    "my-icir"
+                    "my-elite11"
                 ],
                 "summary": "Get Device Info",
                 "operationId": "get_device_info_fake_device__get",
@@ -31,15 +31,15 @@
                 }
             }
         },
-        "/my-icir/ir-control/": {
+        "/my-elite11/pump/": {
             "get": {
                 "tags": [
-                    "my-icir",
-                    "my-icir"
+                    "my-elite11",
+                    "my-elite11"
                 ],
                 "summary": "Get Component Info",
                 "description": "Retrieve the component's metadata.\n\nThis endpoint provides information about the component, such as its name and associated hardware device.\n\nReturns:\n--------\nComponentInfo\n    Metadata about the component.",
-                "operationId": "get_component_info_fake_device_ir_control__get",
+                "operationId": "get_component_info_fake_device_pump__get",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -54,24 +54,34 @@
                 }
             }
         },
-        "/my-icir/ir-control/acquire-spectrum": {
+        "/my-elite11/pump/infuse": {
             "put": {
                 "tags": [
-                    "my-icir",
-                    "my-icir"
+                    "my-elite11",
+                    "my-elite11"
                 ],
-                "summary": "Acquire Spectrum",
-                "description": "Acquire an IR spectrum.\n\nArgs:\n    treated (bool): If True, perform background subtraction. If False, return a raw scan.\n\nReturns:\n    IRSpectrum: The acquired IR spectrum.",
-                "operationId": "acquire_spectrum_fake_device_ir_control_acquire_spectrum_put",
+                "summary": "Infuse",
+                "description": "Infuse at the specified rate and volume.\n\nArgs:\n    rate (str): The flow rate for infusion. If not specified, the previous rate will be used.\n    volume (str): The target volume for infusion. Defaults to \"0 ml\".\n\nReturns:\n    bool: True if infusion starts successfully, False otherwise.",
+                "operationId": "infuse_fake_device_pump_infuse_put",
                 "parameters": [
                     {
-                        "name": "treated",
+                        "name": "rate",
                         "in": "query",
                         "required": false,
                         "schema": {
-                            "type": "boolean",
-                            "default": true,
-                            "title": "Treated"
+                            "type": "string",
+                            "default": "",
+                            "title": "Rate"
+                        }
+                    },
+                    {
+                        "name": "volume",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "0 ml",
+                            "title": "Volume"
                         }
                     }
                 ],
@@ -81,7 +91,8 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/IRSpectrum"
+                                    "type": "boolean",
+                                    "title": "Response Infuse Fake Device Pump Infuse Put"
                                 }
                             }
                         }
@@ -99,15 +110,15 @@
                 }
             }
         },
-        "/my-icir/ir-control/stop": {
+        "/my-elite11/pump/stop": {
             "put": {
                 "tags": [
-                    "my-icir",
-                    "my-icir"
+                    "my-elite11",
+                    "my-elite11"
                 ],
                 "summary": "Stop",
-                "description": "Stop the ongoing IR experiment.\n\nReturns:\n    bool: True if the experiment was successfully stopped, False otherwise.",
-                "operationId": "stop_fake_device_ir_control_stop_put",
+                "description": "Stop pump.",
+                "operationId": "stop_fake_device_pump_stop_put",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -120,23 +131,85 @@
                 }
             }
         },
-        "/my-icir/ir-control/spectrum-count": {
+        "/my-elite11/pump/is-pumping": {
             "get": {
                 "tags": [
-                    "my-icir",
-                    "my-icir"
+                    "my-elite11",
+                    "my-elite11"
                 ],
-                "summary": "Spectrum Count",
-                "description": "Get the count of acquired spectra.\n\nReturns:\n    int: The number of spectra acquired. Returns -1 if the count is None.",
-                "operationId": "spectrum_count_fake_device_ir_control_spectrum_count_get",
+                "summary": "Is Pumping",
+                "description": "Check if the pump is currently moving.\n\nReturns:\n    bool: True if the pump is moving, False otherwise.",
+                "operationId": "is_pumping_fake_device_pump_is_pumping_get",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "title": "Response Spectrum Count Fake Device Ir Control Spectrum Count Get"
+                                    "type": "boolean",
+                                    "title": "Response Is Pumping Fake Device Pump Is Pumping Get"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-elite11/pump/withdraw": {
+            "put": {
+                "tags": [
+                    "my-elite11",
+                    "my-elite11"
+                ],
+                "summary": "Withdraw",
+                "description": "Withdraw at the specified rate and volume.\n\nArgs:\n    rate (str): The flow rate for withdrawing. Defaults to \"1 ml/min\".\n    volume (str | None): The target volume for withdrawing. If not specified, the previous volume will be used.\n\nReturns:\n    bool: True if withdrawal starts successfully, False otherwise.",
+                "operationId": "withdraw_fake_device_pump_withdraw_put",
+                "parameters": [
+                    {
+                        "name": "rate",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "1 ml/min",
+                            "title": "Rate"
+                        }
+                    },
+                    {
+                        "name": "volume",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Volume"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "boolean",
+                                    "title": "Response Withdraw Fake Device Pump Withdraw Put"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
                                 }
                             }
                         }
@@ -254,31 +327,6 @@
                 },
                 "type": "object",
                 "title": "HTTPValidationError"
-            },
-            "IRSpectrum": {
-                "properties": {
-                    "wavenumber": {
-                        "items": {
-                            "type": "number"
-                        },
-                        "type": "array",
-                        "title": "Wavenumber"
-                    },
-                    "intensity": {
-                        "items": {
-                            "type": "number"
-                        },
-                        "type": "array",
-                        "title": "Intensity"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "wavenumber",
-                    "intensity"
-                ],
-                "title": "IRSpectrum",
-                "description": "IR spectrum class.\n\nConsider rampy for advance features (baseline fit, etc.)\nSee e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb"
             },
             "ValidationError": {
                 "properties": {

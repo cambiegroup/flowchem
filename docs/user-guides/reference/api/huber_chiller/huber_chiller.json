@@ -10,10 +10,10 @@
         "version": "1.0.0a3"
     },
     "paths": {
-        "/my-icir/": {
+        "/my-chiller/": {
             "get": {
                 "tags": [
-                    "my-icir"
+                    "my-chiller"
                 ],
                 "summary": "Get Device Info",
                 "operationId": "get_device_info_fake_device__get",
@@ -31,15 +31,15 @@
                 }
             }
         },
-        "/my-icir/ir-control/": {
+        "/my-chiller/temperature-control/": {
             "get": {
                 "tags": [
-                    "my-icir",
-                    "my-icir"
+                    "my-chiller",
+                    "my-chiller"
                 ],
                 "summary": "Get Component Info",
                 "description": "Retrieve the component's metadata.\n\nThis endpoint provides information about the component, such as its name and associated hardware device.\n\nReturns:\n--------\nComponentInfo\n    Metadata about the component.",
-                "operationId": "get_component_info_fake_device_ir_control__get",
+                "operationId": "get_component_info_fake_device_temperature_control__get",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -54,24 +54,23 @@
                 }
             }
         },
-        "/my-icir/ir-control/acquire-spectrum": {
+        "/my-chiller/temperature-control/temperature": {
             "put": {
                 "tags": [
-                    "my-icir",
-                    "my-icir"
+                    "my-chiller",
+                    "my-chiller"
                 ],
-                "summary": "Acquire Spectrum",
-                "description": "Acquire an IR spectrum.\n\nArgs:\n    treated (bool): If True, perform background subtraction. If False, return a raw scan.\n\nReturns:\n    IRSpectrum: The acquired IR spectrum.",
-                "operationId": "acquire_spectrum_fake_device_ir_control_acquire_spectrum_put",
+                "summary": "Set Temperature",
+                "description": "Set the target temperature to the given value.\n\nArgs:\n    temp (str): The desired temperature as a string in natural language.\n\nReturns:\n    bool: True if the temperature was successfully set, False otherwise.",
+                "operationId": "set_temperature_fake_device_temperature_control_temperature_put",
                 "parameters": [
                     {
-                        "name": "treated",
+                        "name": "temp",
                         "in": "query",
-                        "required": false,
+                        "required": true,
                         "schema": {
-                            "type": "boolean",
-                            "default": true,
-                            "title": "Treated"
+                            "type": "string",
+                            "title": "Temp"
                         }
                     }
                 ],
@@ -80,9 +79,7 @@
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/IRSpectrum"
-                                }
+                                "schema": {}
                             }
                         }
                     },
@@ -97,17 +94,39 @@
                         }
                     }
                 }
+            },
+            "get": {
+                "tags": [
+                    "my-chiller",
+                    "my-chiller"
+                ],
+                "summary": "Get Temperature",
+                "description": "Get the current temperature.\n\nReturns:\n    float: The current temperature in Celsius.",
+                "operationId": "get_temperature_fake_device_temperature_control_temperature_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "number",
+                                    "title": "Response Get Temperature Fake Device Temperature Control Temperature Get"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
-        "/my-icir/ir-control/stop": {
+        "/my-chiller/temperature-control/power-on": {
             "put": {
                 "tags": [
-                    "my-icir",
-                    "my-icir"
+                    "my-chiller",
+                    "my-chiller"
                 ],
-                "summary": "Stop",
-                "description": "Stop the ongoing IR experiment.\n\nReturns:\n    bool: True if the experiment was successfully stopped, False otherwise.",
-                "operationId": "stop_fake_device_ir_control_stop_put",
+                "summary": "Power On",
+                "description": "Turn on the temperature control.\n\nReturns:\n    bool: True if the command was successfully sent, False otherwise.",
+                "operationId": "power_on_fake_device_temperature_control_power_on_put",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
@@ -120,23 +139,44 @@
                 }
             }
         },
-        "/my-icir/ir-control/spectrum-count": {
+        "/my-chiller/temperature-control/power-off": {
+            "put": {
+                "tags": [
+                    "my-chiller",
+                    "my-chiller"
+                ],
+                "summary": "Power Off",
+                "description": "Turn off the temperature control.\n\nReturns:\n    bool: True if the command was successfully sent, False otherwise.",
+                "operationId": "power_off_fake_device_temperature_control_power_off_put",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/my-chiller/temperature-control/target-reached": {
             "get": {
                 "tags": [
-                    "my-icir",
-                    "my-icir"
+                    "my-chiller",
+                    "my-chiller"
                 ],
-                "summary": "Spectrum Count",
-                "description": "Get the count of acquired spectra.\n\nReturns:\n    int: The number of spectra acquired. Returns -1 if the count is None.",
-                "operationId": "spectrum_count_fake_device_ir_control_spectrum_count_get",
+                "summary": "Is Target Reached",
+                "description": "Check if the set temperature target has been reached.\n\nReturns:\n    bool: True if the target temperature has been reached, False otherwise.",
+                "operationId": "is_target_reached_fake_device_temperature_control_target_reached_get",
                 "responses": {
                     "200": {
                         "description": "Successful Response",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "integer",
-                                    "title": "Response Spectrum Count Fake Device Ir Control Spectrum Count Get"
+                                    "type": "boolean",
+                                    "title": "Response Is Target Reached Fake Device Temperature Control Target Reached Get"
                                 }
                             }
                         }
@@ -254,31 +294,6 @@
                 },
                 "type": "object",
                 "title": "HTTPValidationError"
-            },
-            "IRSpectrum": {
-                "properties": {
-                    "wavenumber": {
-                        "items": {
-                            "type": "number"
-                        },
-                        "type": "array",
-                        "title": "Wavenumber"
-                    },
-                    "intensity": {
-                        "items": {
-                            "type": "number"
-                        },
-                        "type": "array",
-                        "title": "Intensity"
-                    }
-                },
-                "type": "object",
-                "required": [
-                    "wavenumber",
-                    "intensity"
-                ],
-                "title": "IRSpectrum",
-                "description": "IR spectrum class.\n\nConsider rampy for advance features (baseline fit, etc.)\nSee e.g. https://github.com/charlesll/rampy/blob/master/examples/baseline_fit.ipynb"
             },
             "ValidationError": {
                 "properties": {
