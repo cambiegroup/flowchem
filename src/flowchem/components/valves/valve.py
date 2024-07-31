@@ -42,9 +42,11 @@ def return_bool_from_input(str_or_bool):
 
 class ValveInfo(BaseModel):
     """
-    ports: an attribute representing the available ports on the stator
-    positions: an attribute mapping implicit, tacit numbers as keys to the stator ports that are connected at this
-    position
+    Model representing valve information.
+
+    Attributes:
+        ports: A list of tuples representing the available ports on the stator.
+        positions: A dictionary mapping position numbers to the stator ports that are connected at this position.
     """
     ports: list[tuple]
     positions: dict[int, tuple[tuple[None | int, ...], ...]]
@@ -52,7 +54,16 @@ class ValveInfo(BaseModel):
 
 def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
                                tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
-    """Check if all requested tuples are in a tuple of tuples"""
+    """
+    Checks if all requested tuples are in a tuple of tuples.
+
+    Args:
+        tuple_in: The tuples to check for.
+        tuple_contains: The nested tuples to check within.
+
+    Returns:
+        bool: True if all requested tuples are found, False otherwise.
+    """
     all_contained = []
     for subtuple in tuple_in:
         for supertuple in tuple_contains:
@@ -67,7 +78,16 @@ def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
 
 def no_tuple_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
                              tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
-    """Check if none of requested tuples are in a tuple of tuples"""
+    """
+    Checks if none of the requested tuples are in a tuple of tuples.
+
+    Args:
+        tuple_in: The tuples to check for.
+        tuple_contains: The nested tuples to check within.
+
+    Returns:
+        bool: True if none of the requested tuples are found, False otherwise.
+    """
     contains_tuple = False
     for subtuple in tuple_in:
         for supertuple in tuple_contains:
@@ -77,19 +97,22 @@ def no_tuple_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
 
 
 class Valve(FlowchemComponent):
-    """An abstract class for devices of type valve.
+    """
+    An abstract class for devices of type valve.
 
-    .. warning::
+    Warning:
         Device objects should not directly generate components with this object but rather a more specific valve type,
         such as `SixPortTwoPositionValve` or `SixPortPositionValve`.
 
     All valves are characterized by:
+    - a `connections()` method, which returns an Instance of the ValveInfo class.
+    - a `set_position()` method.
+    - a `get_position()` method.
 
-    - a connections() method, which returns an Instance of the ValveInfo class
-    - a `set_position()` method
-    - a `get_position()` method
-
-    This is explicit and informative in itself and requires no further intermittant helper mappings
+    Attributes:
+        _rotor_ports: The rotor ports configuration.
+        _stator_ports: The stator ports configuration.
+        _positions: The possible positions and their connections.
     """
 
     def __init__(
@@ -101,37 +124,42 @@ class Valve(FlowchemComponent):
     ) -> None:
         """Create a valve object.
 
-        Args:
-        ----
-            name: device name, passed to FlowchemComponent.
-            hw_device: the object that controls the hardware.
-            stator_ports
-            rotor_ports
-            rotor and stator are both represented like:
-            (   (1,2,3,4,5,6),          (0))
-                radial ports       middle ports
-            Ports should be equally distributed, with equally spaced angle in between. If this is not the case, add None
-             for missing port
 
-            Exemple: 4 port 5 Position Valve
-            stator_ports=[(None, None, 1, None, 2, None, 3, None,), (0,)],
-            rotor_ports=[(None, 5, None, None, 4, None, 4, None), (5,)],
+        Rotor and stator are both represented like:
+        ((1,2,3,4,5,6),          (0))
+            radial ports       middle ports
+        Ports should be equally distributed, with equally spaced angle in between. If this is not the case, add None
+         for missing port
 
-                                 1
-                             * * * * *
-                           *     x     *
-                         *               *
-                     8  *  x            -x *  2
-                        *            -     *
-                     7  * o-      o-     o *  3
-                        *   -              *
-                        *  x -           x *  4
-                     6   *     -          *
-                           *    -o      *
-                             * * * * *
-                                 5
+        Exemple: 4 port 5 Position Valve
+        stator_ports=[(None, None, 1, None, 2, None, 3, None,), (0,)],
+        rotor_ports=[(None, 5, None, None, 4, None, 4, None), (5,)],
+
+                             1
+                         * * * * *
+                       *     x     *
+                     *               *
+                 8  *  x            -x *  2
+                    *            -     *
+                 7  * o-      o-     o *  3
+                    *   -              *
+                    *  x -           x *  4
+                 6   *     -          *
+                       *    -o      *
+                         * * * * *
+                             5
 
         The connection is done between port 7 and 5 and 0 (central port) and 2
+
+
+        Args:
+        ----
+            name: Device name, passed to FlowchemComponent.
+            hw_device: The object that controls the hardware.
+            stator_ports: Configuration of stator ports.
+            rotor_ports: Configuration of rotor ports.
+
+
 
         """
         # a valve consists of a rotor and a stator. Solenoid valves Are special cases and can be decomposed into
@@ -149,8 +177,14 @@ class Valve(FlowchemComponent):
 
     def _create_connections(self, stator_ports, rotor_ports):
         """
-        Create possible switching states from a stator and rotor representation. Position names are integers. Going to
-        the next position in clockwise direction increases position name by one
+        Create possible switching states from a stator and rotor representation.
+
+        Args:
+            stator_ports: Configuration of stator ports.
+            rotor_ports: Configuration of rotor ports.
+
+        Returns:
+            dict: A dictionary representing possible connections for each position.
         """
         connections = {}
         if len(rotor_ports) != len(stator_ports):
@@ -193,6 +227,16 @@ class Valve(FlowchemComponent):
         return connections
 
     def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
+        """
+        Translate the raw position to the corresponding device-specific position naming.
+
+        Args:
+            raw_position: The raw position value to be translated.
+            reverse: If True, performs the reverse translation (default is False).
+
+        Returns:
+            str: The translated position.
+        """
         # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
         # device level since this is device communication protocol specific
@@ -203,8 +247,19 @@ class Valve(FlowchemComponent):
                            positions_not_to_connect: tuple[tuple] = None,
                            arbitrary_switching: bool = True) -> int:
         """
-        This is the heart of valve switching logic: select the suitable position (so actually the key in
-        self._positions) to create desired connections
+        Select the suitable position to create desired connections.
+
+        Args:
+            positions_to_connect: The positions to connect.
+            positions_not_to_connect: The positions not to connect.
+            arbitrary_switching: If True, allows arbitrary switching.
+
+        Returns:
+            int: The suitable position to create the desired connections.
+
+        Raises:
+            DeviceError: If multiple positions are found and arbitrary switching is not allowed,
+                         or if no connections are possible.
         """
         possible_positions = []
         # check if this is possible given the mapping
@@ -232,7 +287,12 @@ class Valve(FlowchemComponent):
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
     async def get_position(self) -> tuple[tuple, tuple]:
-        """Get current valve position."""
+        """
+        Get the current valve position.
+
+        Returns:
+            tuple: The current position of the valve.
+        """
         if not hasattr(self, "identifier"):
             pos = await self.hw_device.get_raw_position()
         else:
@@ -243,7 +303,14 @@ class Valve(FlowchemComponent):
 
     async def set_position(self, connect: str | tuple = "", disconnect: str | tuple = "",
                            ambiguous_switching: str | bool = False):
-        """Move valve to position, which connects named ports"""
+        """
+        Move the valve to the position that connects the specified ports.
+
+        Args:
+            connect: Ports to connect.
+            disconnect: Ports to disconnect.
+            ambiguous_switching: If True, allows ambiguous switching.
+        """
         connect=return_tuple_from_input(connect)
         disconnect=return_tuple_from_input(disconnect)
         ambiguous_switching=return_bool_from_input(ambiguous_switching)
@@ -257,8 +324,11 @@ class Valve(FlowchemComponent):
 
 
     def connections(self) -> ValveInfo:
-        """Get the list of all available positions for this valve.
-        This mainly has informative purpose
+        """
+        Get the list of all available positions for this valve.
+
+        Returns:
+            ValveInfo: The ValveInfo object containing ports and positions.
         """
         return ValveInfo(ports=self._stator_ports, positions=self._positions)
 
