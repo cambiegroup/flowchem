@@ -21,4 +21,5 @@ Select a device to open the relevant API reference:
 ./vici_valve/api
 ./bronkhorst_MFC/api
 ./bronkhorst_EPC/api
+./FakeDevice/api
 ```
