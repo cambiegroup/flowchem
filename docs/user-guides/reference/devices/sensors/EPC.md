@@ -6,7 +6,7 @@ Bronkhorst El-Pressure controller controller (EPC) device driver.
 
 More information about the device can be found in the supplier platform [Bronkhorst](https://www.bronkhorst.com/en-gb/).
 
-## electronic pressure controller
+## Electronic pressure controller
 
 
 
@@ -16,9 +16,9 @@ Configuration sample showing all possible parameters:
 ```toml
 [device.my-EPC]  # This is the MFC identifier
 port = "COM4"    # Access port (serial)
-channel = 1      
-address = 0x80
-max_pressure = 9
+channel = 1      # The communication channel of the EPC device.
+address = 0x80   # The address of the EPC device.  
+max_pressure = 9 # The maximum pressure of the EPC device in bar.
 ```
 
 The class was built base on the package of the 
