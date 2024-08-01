@@ -6,7 +6,7 @@ This example demonstrates how to set up a process using flowchem. The process in
 In this process, four electronic devices. Two pumps were used to promote the mixing the reagent and the flow within 
 the reactor. One pump is from [AzuraCompact](../../reference/devices/pumps/azura_compact.md), and the other is from 
 Elite11 [](../../reference/devices/pumps/elite11.md). A reactor with controlled temperature was used. This reator is a component of 
-the platform R2 - [R4Heater](../../reference/devices/temperature/r4_heater.md). An infrared sensor from IR was used to analyze the 
+the platform R2 - [R4Heater](../../reference/devices/technical/r4_heater.md). An infrared sensor from IR was used to analyze the 
 product - [IcIR](../../reference/devices/analytics/icir.md).
 
 ![](reaction.JPG)
