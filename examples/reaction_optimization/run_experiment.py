@@ -49,8 +49,8 @@ def calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):
 
 def set_parameters(rates: dict, temperature: float):
     """Set flow rates and temperature to the reaction setup."""
-    socl2.put("flow-rate", {"rate": f"{rates['socl2']} ml/min"})
-    hexyldecanoic.put("flow-rate", {"rate": f"{rates['hexyldecanoic']} ml/min"})
+    socl2.put("infuse", {"rate": f"{rates['socl2']} ml/min"})
+    hexyldecanoic.put("infuse", {"rate": f"{rates['hexyldecanoic']} ml/min"})
     reactor.put("temperature", {"temperature": f"{temperature:.2f} °C"})
 
 
@@ -130,11 +130,7 @@ def integrate_peaks(ir_spectrum):
     return {k: v / sum(peaks.values()) for k, v in peaks.items()}
 
 
-def run_experiment(
-    SOCl2_equiv: float,
-    temperature: float,
-    residence_time: float,
-) -> float:
+def run_experiment(SOCl2_equiv: float, temperature: float, residence_time: float) -> float:
     """Run one experiment with the provided conditions.
 
     Args:

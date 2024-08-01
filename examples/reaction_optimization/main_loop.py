@@ -11,7 +11,7 @@ config = {
     "parameters": [
         {"name": "SOCl2_equivalent", "type": "continuous", "low": 1.0, "high": 1.5},
         {"name": "temperature", "type": "continuous", "low": 30, "high": 65},
-        {"name": "residence_time", "type": "continuous", "low": 2, "high": 20},
+        {"name": "residence_time", "type": "continuo1`us", "low": 2, "high": 20},
     ],
     "objectives": [
         {"name": "product_ratio_IR", "goal": "max"},
@@ -25,15 +25,12 @@ observations = []
 
 # Initialize hardware
 # Heater to r.t.
-reactor.put("temperature", params={"temperature": "21"})
+reactor.put("temperature", params={"temperature": "21 °C"})
 reactor.put("power-on")
 
 # Start pumps with low flow rate
-socl2.put("flow-rate", params={"rate": "5 ul/min"})
-socl2.put("infuse")
-
-hexyldecanoic.put("flow-rate", params={"rate": "50 ul/min"})
-hexyldecanoic.put("infuse")
+socl2.put("infuse", params={"rate": "5 ul/min"})
+hexyldecanoic.put("infuse", params={"rate": "50 ul/min"})
 
 # Ensure iCIR is running
 assert (
