@@ -724,9 +724,9 @@ class ML600:
         self.wait_until_idle(syringe=None)
         self.send_multiple_commands([
             self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value="0"),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value="0"),
             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value="0"),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value="0"),
         ])
         self.wait_until_idle(syringe=None)
         # actuate syringes
@@ -752,9 +752,9 @@ class ML600:
         self.wait_until_idle(syringe=None)
         self.send_multiple_commands([
             self.create_single_command(ML600Commands.SELECT_LEFT_SYRINGE),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value=135),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=135),
             self.create_single_command(ML600Commands.SELECT_RIGHT_SYRINGE),
-            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CCW, command_value=135),
+            self.create_single_command(ML600Commands.VALVE_BY_ANGLE_CW, command_value=135),
         ])
         # actuate syringes
         self.wait_until_idle(syringe=None)
