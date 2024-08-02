@@ -2,5 +2,5 @@
 See the [how-to guide](../../devices/sensors/EPC.md) to configure a EPC object.
 
 ```{eval-rst}
-.. openapi:: ./EPC_yml.yml
+.. openapi:: ./EPC.yml
 ```

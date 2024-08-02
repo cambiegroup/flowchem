@@ -2,5 +2,5 @@
 See the [how-to guide](../../devices/technical/r4_heater.md) to configure an R4Heater object.
 
 ```{eval-rst}
-.. openapi:: ./r4_heater_yml.yml
+.. openapi:: ./r4_heater.yml
 ```

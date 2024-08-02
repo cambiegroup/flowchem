@@ -1,21 +1,34 @@
-openapi: 3.0.2
+openapi: 3.1.0
 info:
-  title: Flowchem - flowchem_config
-  description: Flowchem is a python library to control a variety of instruments commonly
-    found in chemistry labs.
+  title: 'Flowchem - '
+  description: Flowchem is a library to control instruments and devices commonly found
+    in chemistry labs via an interoperable web API.
   license:
     name: MIT License
     url: https://opensource.org/licenses/MIT
-  version: 0.1.0a3
+  version: 1.0.0a3
 paths:
-  /MFC-flowrate/MFC/get-flow-rate/:
+  /my-MFC/:
     get:
       tags:
-      - MFC-flowrate
-      - MFC-flowrate
-      summary: Get Metadata
-      description: Get current flow rate in ml/min.
-      operationId:
+      - my-MFC
+      summary: Get Device Info
+      operationId: get_device_info_fake_device__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceInfo'
+  /my-MFC/MFC/:
+    get:
+      tags:
+      - my-MFC
+      - my-MFC
+      summary: Get Component Info
+      description: Return metadata.
+      operationId: get_component_info_fake_device_MFC__get
       responses:
         '200':
           description: Successful Response
@@ -23,194 +36,170 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComponentInfo'
-  /MFC-flowrate/MFC/set-flow-rate/:
-    put:
+  /my-MFC/MFC/get-flow-rate:
+    get:
       tags:
-      - MFC-flowrate
-      - MFC-flowrate
-      summary: Set flow rate
-      description: Set flow rate to the instrument; default unit ml/min.
-      operationId: set_pressure_cvc_1_pressure_control_pressure_put
-      parameters:
-      - required: true
-        schema:
-          title: set-flow-rate
-          type: string
-        name: flowrate
-        in: query
+      - my-MFC
+      - my-MFC
+      summary: Get Flow Setpoint
+      description: "Get the current flow rate in ml/min.\n\nReturns:\n--------\nfloat\n\
+        \    The current flow rate in ml/min."
+      operationId: get_flow_setpoint_fake_device_MFC_get_flow_rate_get
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                type: number
+                title: Response Get Flow Setpoint Fake Device Mfc Get Flow Rate Get
+  /my-MFC/MFC/set-flow-rate:
+    put:
+      tags:
+      - my-MFC
+      - my-MFC
+      summary: Set Flow Setpoint
+      description: "Set the flow rate to the instrument; default unit is ml/min.\n\
+        \nParameters:\n-----------\nflowrate : str\n    The desired flow rate to set.\n\
+        \nReturns:\n--------\nbool\n    True if the flow rate setpoint was set successfully."
+      operationId: set_flow_setpoint_fake_device_MFC_set_flow_rate_put
+      parameters:
+      - name: flowrate
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Flowrate
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: boolean
+                title: Response Set Flow Setpoint Fake Device Mfc Set Flow Rate Put
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /MFC-flowrate/MFC/stop:
+  /my-MFC/MFC/stop:
     put:
       tags:
-      - MFC-flowrate
-      - MFC-flowrate
-      summary: Power off
-      description: Stop mass flow controller.
-      operationId:
+      - my-MFC
+      - my-MFC
+      summary: Stop
+      description: "Stop the mass flow controller.\n\nReturns:\n--------\nbool\n \
+        \   True if the mass flow controller was stopped successfully."
+      operationId: stop_fake_device_MFC_stop_put
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                type: boolean
+                title: Response Stop Fake Device Mfc Stop Put
 components:
   schemas:
     ComponentInfo:
-      title: ComponentInfo
-      required:
-      - hw_device
-      type: object
       properties:
-        hw_device:
-          $ref: '#/components/schemas/DeviceInfo'
         name:
-          title: Name
           type: string
+          title: Name
+          default: ''
+        parent_device:
+          type: string
+          title: Parent Device
+          default: ''
+        type:
+          type: string
+          title: Type
           default: ''
         owl_subclass_of:
+          items:
+            type: string
+          type: array
           title: Owl Subclass Of
-          type: string
-          default: http://purl.obolibrary.org/obo/OBI_0000968
+          default:
+          - http://purl.obolibrary.org/obo/OBI_0000968
+      type: object
+      title: ComponentInfo
       description: Metadata associated with flowchem components.
     DeviceInfo:
-      title: DeviceInfo
-      required:
-      - authors
-      - maintainers
-      - manufacturer
-      - model
-      type: object
       properties:
-        authors:
-          title: Authors
-          type: array
-          items:
-            $ref: '#/components/schemas/Person'
-        maintainers:
-          title: Maintainers
-          type: array
-          items:
-            $ref: '#/components/schemas/Person'
         manufacturer:
+          type: string
           title: Manufacturer
-          type: string
+          default: ''
         model:
-          title: Model
           type: string
-        additional_info:
-          title: Additional Info
+          title: Model
+          default: ''
+        version:
+          type: string
+          title: Version
+          default: ''
+        serial_number:
+          anyOf:
+          - type: string
+          - type: integer
+          title: Serial Number
+          default: unknown
+        components:
+          additionalProperties:
+            type: string
+            minLength: 1
+            format: uri
           type: object
+          title: Components
           default: {}
         backend:
+          type: string
           title: Backend
-          type: string
-          default: flowchem v. 0.1.0a3
-        serial_number:
-          title: Serial Number
-          type: string
-          default: unknown
-        version:
-          title: Version
-          type: string
-          default: ''
+          default: flowchem v. 1.0.0a3
+        authors:
+          items:
+            type: string
+            format: name-email
+          type: array
+          title: Authors
+          default: []
+        additional_info:
+          type: object
+          title: Additional Info
+          default: {}
+      type: object
+      title: DeviceInfo
       description: Metadata associated with hardware devices.
     HTTPValidationError:
-      title: HTTPValidationError
-      type: object
       properties:
         detail:
-          title: Detail
-          type: array
           items:
             $ref: '#/components/schemas/ValidationError'
-    Person:
-      title: Person
-      required:
-      - name
-      - email
+          type: array
+          title: Detail
       type: object
-      properties:
-        name:
-          title: Name
-          type: string
-        email:
-          title: Email
-          type: string
-    ProcessStatus:
-      title: ProcessStatus
-      required:
-      - is_pump_on
-      - is_inline_valve_open
-      - is_coolant_valve_open
-      - is_venting_valve_open
-      - control
-      - state
-      type: object
-      properties:
-        is_pump_on:
-          title: Is Pump On
-          type: boolean
-        is_inline_valve_open:
-          title: Is Inline Valve Open
-          type: boolean
-        is_coolant_valve_open:
-          title: Is Coolant Valve Open
-          type: boolean
-        is_venting_valve_open:
-          title: Is Venting Valve Open
-          type: boolean
-        control:
-          $ref: '#/components/schemas/PumpControlMode'
-        state:
-          $ref: '#/components/schemas/PumpState'
-    PumpControlMode:
-      title: PumpControlMode
-      enum:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      type: integer
-      description: An enumeration.
-    PumpState:
-      title: PumpState
-      enum:
-      - 0
-      - 1
-      - 2
-      - 3
-      type: integer
-      description: An enumeration.
+      title: HTTPValidationError
     ValidationError:
-      title: ValidationError
-      required:
-      - loc
-      - msg
-      - type
-      type: object
       properties:
         loc:
-          title: Location
-          type: array
           items:
             anyOf:
             - type: string
             - type: integer
+          type: array
+          title: Location
         msg:
+          type: string
           title: Message
-          type: string
         type:
-          title: Error Type
           type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
