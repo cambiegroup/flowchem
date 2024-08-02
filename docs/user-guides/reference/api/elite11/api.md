@@ -4,11 +4,11 @@ See the [how-to guide](../../devices/pumps/elite11.md) to configure an Elite11 o
 ## Without withdraw
 
 ```{eval-rst}
-.. openapi:: ./elite11_yml.yml
+.. openapi:: ./elite11.yml
 ```
 
 ## With withdraw
 
 ```{eval-rst}
-.. openapi:: ./elite11_withdraw_yml.yml
+.. openapi:: ./elite11_withdraw.yml
 ```

@@ -8,10 +8,10 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 1.0.0a3
 paths:
-  /my-cvc3000/:
+  /my-EPC/:
     get:
       tags:
-      - my-cvc3000
+      - my-EPC
       summary: Get Device Info
       operationId: get_device_info_fake_device__get
       responses:
@@ -21,16 +21,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeviceInfo'
-  /my-cvc3000/FakeComponent/:
+  /my-EPC/EPC/:
     get:
       tags:
-      - my-cvc3000
-      - my-cvc3000
+      - my-EPC
+      - my-EPC
       summary: Get Component Info
-      description: "Retrieve the component's metadata.\n\nThis endpoint provides information\
-        \ about the component, such as its name and associated hardware device.\n\n\
-        Returns:\n--------\nComponentInfo\n    Metadata about the component."
-      operationId: get_component_info_fake_device_FakeComponent__get
+      description: Return metadata.
+      operationId: get_component_info_fake_device_EPC__get
       responses:
         '200':
           description: Successful Response
@@ -38,74 +36,88 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComponentInfo'
-  /my-cvc3000/FakeComponent/fake_send_command:
+  /my-EPC/EPC/power-on:
     put:
       tags:
-      - my-cvc3000
-      - my-cvc3000
-      summary: Fake Send Command
-      description: "Send a specific command to the some - FakeDevice.\n\nThis function\
-        \ demonstrates how the commands can be sent through the API build\n\n    \
-        \    Parameters:\n                parameter_1 (str): Some string\n       \
-        \         parameter_2 (str): Some string\n\n        Returns:\n           \
-        \     status (bool): If everything works appropriately the function will return\
-        \ a True\n\n\n\nThis is related to the FakeComponent_FakeDevice from FakeDevice:\n\
-        \n        Parameters:\n                parameter_1 (str): in a specific unit\
-        \ (e.g. 3 ml). The value must be within (0 to 40 ml)\n                parameter_2\
-        \ (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32\
-        \ min)"
-      operationId: fake_send_command_fake_device_FakeComponent_fake_send_command_put
-      parameters:
-      - name: parameter_1
-        in: query
-        required: false
-        schema:
-          type: string
-          default: ''
-          title: Parameter 1
-      - name: parameter_2
-        in: query
-        required: false
-        schema:
-          type: string
-          default: ''
-          title: Parameter 2
+      - my-EPC
+      - my-EPC
+      summary: Power On
+      description: 'Power on the sensor.
+
+
+        Returns:
+
+        --------
+
+        None'
+      operationId: power_on_fake_device_EPC_power_on_put
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema:
-                type: boolean
-                title: Response Fake Send Command Fake Device Fakecomponent Fake Send
-                  Command Put
+              schema: {}
+  /my-EPC/EPC/power-off:
+    put:
+      tags:
+      - my-EPC
+      - my-EPC
+      summary: Power Off
+      description: 'Power off the sensor.
+
+
+        Returns:
+
+        --------
+
+        None'
+      operationId: power_off_fake_device_EPC_power_off_put
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+  /my-EPC/EPC/read-pressure:
+    get:
+      tags:
+      - my-EPC
+      - my-EPC
+      summary: Read Pressure
+      description: "Read the current pressure from the sensor and return it in the\
+        \ specified units.\n\nParameters:\n-----------\nunits : str, optional\n  \
+        \  The units in which to return the pressure (default is bar).\n\nReturns:\n\
+        --------\nfloat\n    The current pressure in the specified units."
+      operationId: read_pressure_fake_device_EPC_read_pressure_get
+      parameters:
+      - name: units
+        in: query
+        required: false
+        schema:
+          type: string
+          default: bar
+          title: Units
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /my-cvc3000/FakeComponent/fake_receive_data:
+  /my-EPC/EPC/get-pressure:
     get:
       tags:
-      - my-cvc3000
-      - my-cvc3000
-      summary: Fake Receive Data
-      description: 'Receive specific data from the FakeDevice.
-
-
-        This function demonstrates how the commands request of data can be sent through
-        the API build
-
-
-
-
-        Receive specific data from the FakeDevice.
-
-
-        This function demonstrates how the commands request of data can be sent through
-        the API build'
-      operationId: fake_receive_data_fake_device_FakeComponent_fake_receive_data_get
+      - my-EPC
+      - my-EPC
+      summary: Get Pressure
+      description: "Get the current system pressure in bar.\n\nReturns:\n--------\n\
+        float\n    The current pressure in bar."
+      operationId: get_pressure_fake_device_EPC_get_pressure_get
       responses:
         '200':
           description: Successful Response
@@ -113,8 +125,58 @@ paths:
             application/json:
               schema:
                 type: number
-                title: Response Fake Receive Data Fake Device Fakecomponent Fake Receive
-                  Data Get
+                title: Response Get Pressure Fake Device Epc Get Pressure Get
+  /my-EPC/EPC/set-pressure:
+    put:
+      tags:
+      - my-EPC
+      - my-EPC
+      summary: Set Pressure Setpoint
+      description: "Set the controlled pressure to the instrument; default unit is\
+        \ bar.\n\nParameters:\n-----------\npressure : str\n    The desired pressure\
+        \ to set.\n\nReturns:\n--------\nbool\n    True if the pressure setpoint was\
+        \ set successfully."
+      operationId: set_pressure_setpoint_fake_device_EPC_set_pressure_put
+      parameters:
+      - name: pressure
+        in: query
+        required: true
+        schema:
+          type: string
+          title: Pressure
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: boolean
+                title: Response Set Pressure Setpoint Fake Device Epc Set Pressure
+                  Put
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /my-EPC/EPC/stop:
+    put:
+      tags:
+      - my-EPC
+      - my-EPC
+      summary: Stop
+      description: "Stop the pressure controller by setting pressure to 0 bar.\n\n\
+        Returns:\n--------\nbool\n    True if the pressure controller was stopped\
+        \ successfully."
+      operationId: stop_fake_device_EPC_stop_put
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: boolean
+                title: Response Stop Fake Device Epc Stop Put
 components:
   schemas:
     ComponentInfo:
