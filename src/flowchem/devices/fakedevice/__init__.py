@@ -1,3 +1,3 @@
-from .fakedevice import FakeDevice
+from .fakedevice import FakeDeviceExample
 
-__all__ = ['FakeDevice']
+__all__ = ['FakeDeviceExample']

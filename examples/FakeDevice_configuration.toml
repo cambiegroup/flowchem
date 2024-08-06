@@ -1,2 +1,2 @@
 [device.fake-device]
-type = "FakeDevice"
+type = "FakeDeviceExample"
