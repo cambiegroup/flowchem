@@ -15,13 +15,14 @@ class FakeDeviceExample(FlowchemDevice):
         version="v1.0",
     )
 
-    def __init__(self, name):
+    def __init__(self, name, another_attribute: str = "some_attribute"):
         super().__init__(name)
         self.device_info = DeviceInfo(
             authors=[Samuel_Saraiva],
             manufacturer="FakeDeviceExample",
             model="Universal testing Actuator",
         )
+        self.another_attribute = another_attribute
 
     async def initialize(self):
         logger.info('FakeDevice devices was succeccfully initialized!')
