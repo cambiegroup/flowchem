@@ -101,7 +101,7 @@ To install them run:
 ```shell
 pip install flowchem[test]
 ```
-If possible, new code should be accompanied by relevant unit tests.
+If possible, new code should be accompanied by relevant unit tests, see more details in [testing](testing.md).
 
 ## Documentation
 The documentation is written in [Markdown](https://www.markdownguide.org/) and a new version of it is automatically

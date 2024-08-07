@@ -7,4 +7,6 @@
 ./add_device/index
 
 ./faq
+
+./testing
 ```
