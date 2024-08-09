@@ -1,21 +1,67 @@
-def test_infuse():
-    ...
-    # test without parameters
-    # test with only rate
-    # test with only volume
-    # test with both
-    # test with too large volume
+import sys
+from pathlib import Path
+from xprocess import ProcessStarter
+from flowchem.client.client import get_all_flowchem_devices
+import pytest
+import time
+
+# pytest tests/devices/Fake_group/test_elite11.py -s
+# pytest ./tests -m HApump -s
+
+@pytest.fixture(scope="module")
+def api_dev(xprocess):
+
+    config_file = Path(__file__).parent.resolve() / "elite11.toml"
+    main = Path(__file__).parent.resolve() / ".." / ".." / ".." / "src" / "flowchem" / "__main__.py"
+
+    class Starter(ProcessStarter):
+        # Process startup ends with this text in stdout (timeout is long cause some GA runners are slow)
+        pattern = "Uvicorn running"
+        timeout = 30
+
+        # execute flowchem with current venv
+        args = [sys.executable, main, config_file]
+
+    xprocess.ensure("flowchem_instance", Starter)
+    yield get_all_flowchem_devices()
+    xprocess.getinfo("flowchem_instance").terminate()
+
+@pytest.mark.ml600
+async def infuse(api_dev):
+    pump = api_dev['test']['pump']
+    assert pump.put("infuse", params={"rate": "1 ml/min", "volume": "2 ml"})
+    time.sleep(5)
+    assert pump.get("is-pumping")
+    time.sleep(5)
+    pump.put("stop")
+    msg = ("Two commands was sent to the pump in order to infuse 2 ml of fluid at 1 ml/min. "
+           "Is it observed by you? Does the device behaviour as expected, i.e., does it present "
+           "some movement? (yes, no):")
+    response = input(msg)
+    assert response.lower() == 'yes', "The user indicated that device worked."
+
+@pytest.mark.ml600
+def test_withdraw(api_dev):
+    pump = api_dev['test']['pump']
+    assert pump.put("withdraw", params={"rate": "1 ml/min", "volume": "2 ml"})
+    time.sleep(5)
+    assert pump.get("is-pumping")
+    time.sleep(5)
+    pump.put("stop")
+    msg = ("Two commands was sent to the pump in order to withdraw 2 ml of fluid at 1 ml/min. "
+           "Is it observed by you? Does the device behaviour as expected, i.e., does it present "
+           "some movement and back to it initial state? (yes, no):")
+    response = input(msg)
+    assert response.lower() == 'yes', "The user indicated that device worked."
+
+@pytest.mark.ml600
+def test_valve(api_dev):
+    valve = api_dev['test']['valve']
+    init = valve.get("position")
+    valve.put("set_position", params={"connect": (1, 2)})
+    time.sleep(1)
+    assert valve.get("position") != init
+    time.sleep(1)
+    valve.put("set_position", params={"connect": (1, 2)})
 
 
-def test_stop():
-    ...
-    # run, stop, is-pumping is False
-
-
-def test_withdraw():
-    ...
-    # test without parameters
-    # test with only rate
-    # test with only volume
-    # test with both
-    # test with too large volume

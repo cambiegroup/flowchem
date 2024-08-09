@@ -1,0 +1,5 @@
+[device.test]
+type = "ML600"
+adress = 1
+port="COM12"
+syringe_diameter="5 mm"

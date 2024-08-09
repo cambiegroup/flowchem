@@ -111,7 +111,8 @@ markers = [
     "Spinsolve: tests requiring a connection to Spinsolve.",
     "FlowIR: tests requiring a connection to a FlowIR.",
     "KPump: tests for Azura compact.",
-    "FakeDevice: tests for FakeDevice"
+    "FakeDevice: tests for FakeDevice",
+    "ml600: test for ML600 pump"
 ]
 
 [tool.ruff]
