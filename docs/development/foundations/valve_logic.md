@@ -63,7 +63,7 @@ stator_ports=[(1, 2, 3, 4, 5, 6), (None,)],
 rotor_ports=[(7, 7, 8, 8, 9, 9), (None,)]
 ```
 
-
+The `determine_valve.py` [script](determine_valve.py) may help the user build the valve parameters.
 
 ## Philosophy
 
