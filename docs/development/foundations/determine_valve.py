@@ -133,7 +133,10 @@ def shorten_valve(stator, rotor):
 def main():
     """Main function to run the valve configuration."""
     try:
-        sym = input("Is your stator symmetric? Type yes or no: ").lower()
+        msg = ("Before using this script, it is recommended that the user read the documentation about valve logic \n"
+               "to become familiar with the terms: stator, routes, rotor, and symmetric. With this in mind, \n"
+               "let's continue. Is your stator symmetric? Type yes or no: ")
+        sym = input(msg).lower()
         central = input("Is there a central port on your valve? Type yes or no: ").lower()
         central = central == "yes"
 
