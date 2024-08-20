@@ -33,9 +33,6 @@ class VbfrPressureControl(PressureControl):
     async def get_target_pressure(self) -> float:
         return await self.hw_device.get_target_pressure_difference()
 
-    # async def get_target_pressure(self) -> float:
-        # return await self.hw_device.get_target_pressure_difference()
-
     async def set_deadband(self, up: int = None, down: int = None) -> bool:
         """Set up & down acceptable offset (in mbar) from required pressure difference."""
         await self.hw_device.set_deadband(up, down)
