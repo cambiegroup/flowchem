@@ -4,7 +4,7 @@ from flowchem.utils.people import Samuel_Saraiva, miguel
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 
 from flowchem.devices.knauer.knauer_autosampler_component import (
-    KnauerCNC,
+    AutosamplerCNC,
     AutosamplerPump,
     AutosamplerSyringeValve,
     AutosamplerInjectionValve,
@@ -34,7 +34,7 @@ class KnauerAutosampler(FlowchemDevice):
     async def initialize(self):
         logger.info('KnauerAutosampler device was successfully initialized!')
         self.components.extend([
-            KnauerCNC("cnc", self),
+            AutosamplerCNC("cnc", self),
             AutosamplerPump("pump", self),
             AutosamplerSyringeValve("syringe_valve", self),
             AutosamplerInjectionValve("injection_valve", self),
