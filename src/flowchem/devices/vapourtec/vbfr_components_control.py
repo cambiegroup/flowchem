@@ -28,6 +28,9 @@ class VbfrPressureControl(PressureControl):
 
     async def get_pressure(self) -> float:
         """Get current pressure difference (in mbar)"""
+        return await self.hw_device.get_current_pressure_difference()
+
+    async def get_target_pressure(self) -> float:
         return await self.hw_device.get_target_pressure_difference()
 
     # async def get_target_pressure(self) -> float:
