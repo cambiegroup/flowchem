@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from flowchem import ureg
 from flowchem.components.technical.pressure import PressureControl
 from flowchem.components.sensors.body_position_seneor import BodySensor
 
@@ -22,8 +23,14 @@ class VbfrPressureControl(PressureControl):
 
     async def set_pressure(self, pressure: str) -> bool:
         """Set pressure differnence (in bar)"""
-        # fixme: add pint
-        await self.hw_device.set_pressure_difference(pressure)
+        try:
+            digit_p = float(pressure)
+            logger.warning("only digit was provided. Assume the unit is in bar")
+            set_p = digit_p * ureg.bar
+        except:
+            set_p = ureg.parse_expression(pressure)
+
+        await self.hw_device.set_pressure_difference(set_p.to("bar").magnitude)
         return True
 
     async def get_pressure(self) -> float:
