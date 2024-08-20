@@ -229,7 +229,7 @@ class VBFReactor(FlowchemDevice):
         """
         s_up = self.upperDblimit if up is None else up
         s_down = self.lowerDblimit if down is None else down
-        await self.write_and_read_reply(self.cmd.SET_POSITION_LIMITS.format(up=s_up, down=s_down))
+        await self.write_and_read_reply(self.cmd.SET_DEADBAND.format(up=s_up, down=s_down))
 
     async def power_on(self):
         """Turn on position sensor."""
