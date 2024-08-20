@@ -6,9 +6,11 @@ from enum import Enum
 from flowchem.components.pumps.syringe_pump import SyringePump
 from flowchem.components.valves.distribution_valves import FourPortDistributionValve
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
+from flowchem.components.flowchem_component import FlowchemComponent
+
 if TYPE_CHECKING:
     from .knauer_valve import KnauerValve
-class AutosamplerCNC():
+class AutosamplerCNC(FlowchemComponent):
     """
     Control a Knauer CNC .
 
