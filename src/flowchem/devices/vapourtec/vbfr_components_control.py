@@ -46,6 +46,12 @@ class VbfrPressureControl(PressureControl):
         """Set current position to zero"""
         return await self.hw_device.calibrate_pressure()
 
+    async def power_on(self):
+        return await self.hw_device.power_on()
+
+    async def power_off(self):
+        return await self.hw_device.power_off()
+
 
 class VbfrBodySensor(BodySensor):
     hw_device: VBFReactor
