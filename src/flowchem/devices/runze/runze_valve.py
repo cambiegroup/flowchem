@@ -14,6 +14,7 @@ from flowchem.devices.runze.runze_valve_component import (
     Runze10PortDistributionValve,
     Runze12PortDistributionValve,
     Runze16PortDistributionValve,
+    RunzeInjectionValve,
 )
 from flowchem.utils.exceptions import DeviceError
 from flowchem.utils.people import miguel
