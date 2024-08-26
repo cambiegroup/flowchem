@@ -32,6 +32,9 @@ class KnauerAutosampler(FlowchemDevice):
         self.another_attribute = another_attribute
 
     async def initialize(self):
+        ...
+
+
         logger.info('KnauerAutosampler device was successfully initialized!')
         self.components.extend([
             AutosamplerCNC("cnc", self),
@@ -39,19 +42,5 @@ class KnauerAutosampler(FlowchemDevice):
             AutosamplerSyringeValve("syringe_valve", self),
             AutosamplerInjectionValve("injection_valve", self),
         ])
-        #"""Initialize connection."""
-        # The connection is established in KnauerEthernetDevice.initialize()
-        #await super().initialize()
-
-    async def send_command(self, command):
-        logger.info(command)
-
-
-if __name__ == '__main__':
-    import asyncio
-
-    device = KnauerAutosampler(name='knauer_as')
-    asyncio.run(device.initialize())
-
 
 
