@@ -26,8 +26,7 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
     async def set_position(self, position: str):
         """Move valve to position."""
         await super().set_position(position)
-        return await self.hw_device.set_raw_position(position=position)
-
+        return await self.hw_device.set_raw_position(position)
 
 class Runze8PortDistributionValve(EightPortDistributionValve):
     """RunzeValve of type SIX_PORT_SIX_POSITION."""
@@ -43,7 +42,6 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
         await super().set_position(position)
         return await self.hw_device.set_raw_position(position)
 
-
 class Runze10PortDistributionValve(TenPortDistributionValve):
     """RunzeValve of type SIX_PORT_SIX_POSITION."""
 
@@ -57,7 +55,6 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
         """Move valve to position."""
         await super().set_position(position)
         return await self.hw_device.set_raw_position(position)
-
 
 class Runze12PortDistributionValve(TwelvePortDistributionValve):
     """RunzeValve of type SIX_PORT_SIX_POSITION."""
