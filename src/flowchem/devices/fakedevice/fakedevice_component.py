@@ -6,8 +6,10 @@ import time
 class FakeComponent_FakeDevice(FakeComponent):
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+
         super().__init__(name, hw_device)
-        self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
+
+        self.insertAPI_automatically(api_class=FakeComponent_FakeDevice, obj=self, include_parent_method=True)
 
 
     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
@@ -42,3 +44,5 @@ class FakeComponent_FakeDevice(FakeComponent):
         """
         self.hw_device.send_command(f'Set a specific command')
         return True # If everything works appropriately the function will return a True
+
+
