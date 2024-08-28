@@ -88,26 +88,28 @@ class EightPortDistributionValve(Valve):
             ports=["pump", "1", "2", "3", "4", "5", "6", "7", "8"],
         )
 
-        class TenPortDistributionValve(Valve):
-            def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-                positions = {
-                    "1": [("pump", "1")],
-                    "2": [("pump", "2")],
-                    "3": [("pump", "3")],
-                    "4": [("pump", "4")],
-                    "5": [("pump", "5")],
-                    "6": [("pump", "6")],
-                    "7": [("pump", "7")],
-                    "8": [("pump", "8")],
-                    "9": [("pump", "9")],
-                    "10": [("pump", "10")],
-                }
-                super().__init__(
-                    name,
-                    hw_device,
-                    positions,
-                    ports=["pump", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
-                )
+
+class TenPortDistributionValve(Valve):
+    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+        positions = {
+            "1": [("pump", "1")],
+            "2": [("pump", "2")],
+            "3": [("pump", "3")],
+            "4": [("pump", "4")],
+            "5": [("pump", "5")],
+            "6": [("pump", "6")],
+            "7": [("pump", "7")],
+            "8": [("pump", "8")],
+            "9": [("pump", "9")],
+            "10": [("pump", "10")],
+        }
+        super().__init__(
+            name,
+            hw_device,
+            positions,
+            ports=["pump", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+        )
+
 
 class TwelvePortDistributionValve(Valve):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
