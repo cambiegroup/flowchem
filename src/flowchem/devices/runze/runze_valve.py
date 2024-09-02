@@ -40,9 +40,9 @@ class SV06Command:
     address: int  # Slave address
     function_code: str  # Function code based on the command type
     parameter: int = 0  # Parameters corresponding to the function code (2 bytes)
-    additional_params: str = ""  # Additional parameters for factory commands
     is_factory_command: bool = False  # Flag to indicate if this is a factory command
 
+    password: str = "FFEEBBAA"
     FRAME_HEADER: str = "CC"
     FRAME_END: str = "DD"
 
@@ -68,8 +68,9 @@ class SV06Command:
             base_command = (
                 f"{self.FRAME_HEADER}"
                 f"{self.address:02X}"
-                f"{self.function_code:02X}"
-                f"{self.additional_params}"               
+                f"{self.function_code}"
+                f"{self.password}"
+                f"{self.parameter:02X}000000"               
                 f"{self.FRAME_END}"
             )
             checksum = sum(int(base_command[i:i+2], 16) for i in range(0, len(base_command), 2)) & 0xFFFF
@@ -86,8 +87,8 @@ class RunzeValveIO:
     """Setup with serial parameters, low-level IO for SV-06 Multiport Selector Valve."""
 
     DEFAULT_CONFIG = {
-        "timeout": 1,
-        "baudrate": 9600,  # Default baudrate
+        "timeout": 2,
+        "baudrate": 57600,  # Default baudrate
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
         "bytesize": aioserial.EIGHTBITS,
@@ -100,7 +101,7 @@ class RunzeValveIO:
     @classmethod
     def from_config(cls, config):
         """Create RunzeValveIO from config."""
-        # Combine the default configuration with the user-provided configuration
+        # Combine the default configuration with the user provided configuration
         configuration = RunzeValveIO.DEFAULT_CONFIG | config
 
         try:
@@ -112,32 +113,55 @@ class RunzeValveIO:
 
         return cls(serial_object)
 
-
     async def _write_async(self, command: bytes):
-        """Write a command to the pump."""
+        """Write a command to the valve."""
         await self._serial.write_async(command)
-        logger.info(f"Command {command!r} sent!")
+        #logger.info(f"Command {command.hex()!r} sent!")
 
     async def _read_reply_async(self) -> str:
-        """Read the pump reply from serial communication."""
+        """Read the valve reply from serial communication."""
         reply_string = await self._serial.readline_async()
-        logger.info(f"Reply received: {reply_string}")
-        logger.info(f"decode: {reply_string.decode('utf-8')}")
-        return reply_string.decode("ascii")
+        #logger.info(f"Reply received: {reply_string.hex()}")
+        return reply_string.hex()
 
-    async def write_and_read_reply_async(self, command: SV06Command) -> str:
-        """Send a command to the pump, read the replies and returns it, optionally parsed."""
+    async def write_and_read_reply_async(self, command: SV06Command, raise_errors: bool = True) -> tuple[str,str]:
+        """Send a command to the valve, read the replies and returns it, optionally parsed."""
         self._serial.reset_input_buffer()
-        await self._write_async(f"{command.compile()}\r".encode("ascii"))
+        await self._write_async(bytes.fromhex(f"{command.compile()}\r"))
         response = await self._read_reply_async()
         if not response:
-            logger.warning("No response received from the valve!")
+            raise InvalidConfigurationError(
+                f"No response received from valve! "
+                f"Maybe wrong valve address? (Set to {command.address})"
+            )
+        return self.parse_response(response=response, raise_errors=raise_errors)
 
-        return self.parse_response(response)
+    @staticmethod
+    def parse_response(response: str, raise_errors: bool = True) -> tuple[str,str]:
+        """Split a received line in its components: status, reply."""
+        status, parameters = response[4:6], response[6:8]
 
-    def parse_response(self, response: str) -> str:
-        ...
-        return response
+        status_strings = {
+            "00": "Normal status",
+            "01": "Frame error",
+            "02": "Parameter error",
+            "03": "Optocoupler error",
+            "04": "Motor busy",
+            "05": "Motor stalled",
+            "06": "Unknown location",
+            "fe": "Task being executed",
+            "ff": "Unknown error"
+        }
+
+        status_string = status_strings.get(status, "Unknown status code")
+        # Check if the status indicates an error
+        if status in ("01", "02", "03","04", "05", "06", "fe", "ff"):
+            if raise_errors:
+                logger.error(f"{status_string} (Status code: {status})")
+                raise DeviceError(
+                    f"{status_string} - Check command syntax or device status!"
+                )
+        return status, parameters
 
 
 class RunzeValve(FlowchemDevice):
@@ -200,6 +224,62 @@ class RunzeValve(FlowchemDevice):
                 raise RuntimeError("Unknown valve type")
         self.components.append(valve_component)
 
+    async def get_valve_type(self):
+        """Get valve type by testing possible port values."""
+
+        possible_ports = [6, 8, 10, 12, 16]
+        valve_type = None
+
+        for value in possible_ports:
+            success = await self.set_raw_position(str(value), raise_errors=False)
+
+            if success:
+                # Update the last successful value if the command succeeded
+                valve_type = value
+            else:
+                if valve_type is None:
+                    logger.error("Failed to recognize the valve type: no successful port value.")
+                    raise ValueError("Unable to recognize the valve type. All port values failed.")
+                break
+
+        return RunzeValveHeads(str(valve_type))
+
+    async def _send_command_and_read_reply(
+            self,
+            command: str,
+            parameter: int = 0,
+            raise_errors: bool = True,
+            is_factory_command: bool =False,
+    ):
+        command = SV06Command(
+            function_code=command,
+            address=self.address,
+            parameter=parameter,
+            is_factory_command=is_factory_command,
+        )
+        status, parameters = await self.valve_io.write_and_read_reply_async(command, raise_errors)
+        return status, parameters
+
+    async def get_raw_position(self, raise_errors: bool = False) -> str:
+        """Return current valve position, following valve nomenclature."""
+        status, parameters = await self._send_command_and_read_reply(command="3e", raise_errors=raise_errors)
+        return parameters
+
+    async def set_raw_position(self, position: str, raise_errors: bool = True) -> bool:
+        """Set valve position, following valve nomenclature."""
+        status, parameters = await self._send_command_and_read_reply(
+            command="44",
+            parameter=int(position),
+            raise_errors=raise_errors)
+        return status == "00"
+
+    async def set_address(self, address: int) -> str:
+        """Return current valve position, following valve nomenclature."""
+        status, parameters = await self._send_command_and_read_reply(command="00", parameter=address, is_factory_command=True)
+        if status == "00":
+            self.address = address
+        return status
+
     @classmethod
     def from_config(cls, **config):
         """Create instances via config file."""
@@ -243,22 +323,7 @@ if __name__ == "__main__":
 
     async def main(valve):
         """Test function."""
-        command = SV06Command(
-            address=1,
-            function_code="44",
-            parameter=2,
-        )
-        logger.info(f"Raw Command {command.compile()!r} !")
-        await valve.valve_io.write_and_read_reply_async(command)
+        await valve.initialize()
+        #response = await valve.get_current_address()
 
     asyncio.run(main(v))
-
-    # logger.info(f"Raw Command {command.compile().encode("ascii")!r} !")
-    # await valve.valve_io.write_and_read_reply_async(command)
-    # valve.valve_io._serial.reset_input_buffer()
-    # command = "CC013F0000DDE901"
-    # logger.info(f"{command.compile()}\r".encode("ascii"))
-    # await valve.valve_io._write_async(f"{command.compile()}\r".encode("ascii"))
-    # await valve.valve_io._read_reply_async()
-    # reply_string = await valve.valve_io._serial.readline_async()
-    # logger.info(f"Reply received: {reply_string}")
