@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from enum import Enum
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
     from .knauer_autosampler import KnauerAutosampler
 
@@ -13,6 +14,13 @@ from flowchem.components.valves.distribution_valves import FourPortDistributionV
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 if TYPE_CHECKING:
     from .knauer_valve import KnauerValve
+
+import pint
+# Unit registry
+ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
+ureg.define("step = []")
+ureg.define("stroke = 48000 * step")
+
 class AutosamplerCNC(CNC):
     """
     Control a Knauer CNC component .
@@ -27,27 +35,15 @@ class AutosamplerCNC(CNC):
         """Initialize component."""
         super().__init__(name, hw_device)
 
-        async def move_to(self, x: float, y: float, z: float) -> None:
+        async def set_xy_position(self, row: int = 0, column: int = 0) -> None:
             """
-            Move the CNC device to the specified (x, y, z) coordinates.
-            """
-            ...
-
-        async def move_x(self, distance: float) -> None:
-            """
-            Move the CNC device along the X axis
+            Move the CNC device to the specified (x, y) coordinate.
             """
             ...
 
-        async def move_y(self, distance: float) -> None:
+        async def set_z_position(self, direction: str = "") -> None:
             """
-            Move the CNC device along the Y axis
-            """
-            ...
-
-        async def move_z(self, distance: float) -> None:
-            """
-            Move the CNC device along the Z axis
+            Connect to a specific sample along the Z axis.
             """
             ...
 
@@ -60,6 +56,7 @@ class AutosamplerCNC(CNC):
         async def get_position(self) -> tuple:
             """
             Get the current position of the CNC device.
+            A tuple (x, y, z) representing the current position.
             """
             ...
 
@@ -79,7 +76,10 @@ class AutosamplerPump(SyringePump):
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:  # type: ignore
         """Start infusion."""
-        await self.hw_device.dispense(volume = volume, flow_rate = rate)
+        parsed_rate = ureg.Quantity(rate)
+        parsed_volume = ureg.Quantity(volume)
+
+        await self.hw_device.dispense(volume=parsed_volume.m_as("mL"), flow_rate=parsed_rate.m_as("mL/min"))
 
     async def stop(self):  # type: ignore
         """Stop pumping."""
