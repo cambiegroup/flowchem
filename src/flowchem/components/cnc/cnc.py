@@ -10,41 +10,21 @@ class CNC(FlowchemComponent):
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/move_to", self.move_to, methods=["PUT"])
-        self.add_api_route("/move_x", self.stop, methods=["PUT"])
-        self.add_api_route("/move_y", self.is_pumping, methods=["PUT"])
-        self.add_api_route("/move_z", self.is_pumping, methods=["PUT"])
-        self.add_api_route("/home", self.is_pumping, methods=["PUT"])
-        self.add_api_route("/get_position", self.is_pumping, methods=["GET"])
+        self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
+        self.add_api_route("/set_z_position", self.set_z_position, methods=["PUT"])
+        self.add_api_route("/get_position", self.get_position, methods=["GET"])
+        self.add_api_route("/home", self.home, methods=["PUT"])
         self.component_info.type = "cnc"
 
-    async def move_to(self, x: float, y: float, z: float) -> None:
+    async def set_xy_position(self, row: int = 0, column: int = 0) -> None:
         """
-        Move the CNC device to the specified (x, y, z) coordinates.
-        :param x: X-coordinate to move to.
-        :param y: Y-coordinate to move to.
-        :param z: Z-coordinate to move to.
+        Move the CNC device to the specified (x, y) coordinate.
         """
         ...
 
-    async def move_x(self, distance: float) -> None:
+    async def set_z_position(self, direction: str = "") -> None:
         """
-        Move the CNC device along the X axis by a specified distance.
-        distance: Distance to move along the X axis.
-        """
-        ...
-
-    async def move_y(self, distance: float) -> None:
-        """
-        Move the CNC device along the Y axis by a specified distance.
-        distance: Distance to move along the Y axis.
-        """
-        ...
-
-    async def move_z(self, distance: float) -> None:
-        """
-        Move the CNC device along the Z axis by a specified distance.
-        distance: Distance to move along the Z axis.
+        Connect to a specific sample along the Z axis.
         """
         ...
 
