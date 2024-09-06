@@ -12,14 +12,15 @@ from flowchem.components.cnc.cnc import CNC
 from flowchem.components.pumps.syringe_pump import SyringePump
 from flowchem.components.valves.distribution_valves import FourPortDistributionValve
 from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
-if TYPE_CHECKING:
-    from .knauer_valve import KnauerValve
 
-import pint
-# Unit registry
-ureg = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
-ureg.define("step = []")
-ureg.define("stroke = 48000 * step")
+from flowchem.utils.exceptions import DeviceError
+try:
+    # noinspection PyUnresolvedReferences
+    from NDA_knauer_AS.knauer_AS import *
+
+    HAS_AS_COMMANDS = True
+except ImportError:
+    HAS_AS_COMMANDS = False
 
 class AutosamplerCNC(CNC):
     """
@@ -31,34 +32,74 @@ class AutosamplerCNC(CNC):
 
     hw_device: KnauerAutosampler  # for typing's sake
 
-    def __init__(self, name: str, hw_device) -> None:
+    def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         """Initialize component."""
         super().__init__(name, hw_device)
+        self.add_api_route("/needle_position", self.needle_position, methods=["PUT"])
 
-        async def set_xy_position(self, row: int = 0, column: int = 0) -> None:
-            """
-            Move the CNC device to the specified (x, y) coordinate.
-            """
-            ...
 
-        async def set_z_position(self, direction: str = "") -> None:
-            """
-            Connect to a specific sample along the Z axis.
-            """
-            ...
+    async def needle_position(self, position: str = "",
+                              plate: str = None,
+                              column: int = None,
+                              row: int = None) -> None:
+        """
+        Move the needle to one of the predefined positions. If Position is "PLATE" a plate,
+        row and column have to be specified.
 
-        async def home(self) -> None:
-            """
-            Return the CNC device to the home position
-            """
-            ...
+        Argument:
+            position (str):
+                        WASH
+                        WASTE
+                        EXCHANGE
+                        TRANSPORT
+            if position = PLATE:
+            plate (str):
+                        NO_PLATE = 0
+                        LEFT_PLATE = 1
+                        RIGHT_PLATE = 2
+                        SINGLE_PLATE = 3
 
-        async def get_position(self) -> tuple:
-            """
-            Get the current position of the CNC device.
-            A tuple (x, y, z) representing the current position.
-            """
-            ...
+            column (int): starting from 1.
+            row (int) starting from 1.
+        """
+        if position != "PLATE":
+            await self.hw_device._move_needle_horizontal(needle_position=position, plate=None, well=None)
+        else:
+            traytype = self.hw_device.tray_type.upper()
+            if traytype in PlateTypes.__dict__.keys():
+                try:
+                    if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
+                        raise NotImplementedError
+                except KeyError as e:
+                    raise Exception(
+                        f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
+                # now check if that works for selected tray:
+                assert PlateTypes[traytype].value[0] >= column and PlateTypes[traytype].value[1] >= row
+                self.hw_device._move_tray(plate, row)
+                self.hw_device._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=plate, well=column)
+            elif traytype in NeedleHorizontalPosition.__dict__.keys():
+                self.hw_device._move_needle_horizontal(NeedleHorizontalPosition[traytype].name)
+            else:
+                raise NotImplementedError
+
+    async def set_z_position(self, direction: str = "") -> None:
+        """
+        Move the CNC device along the Z axis.
+
+        Argument:
+            direction (str):
+            DOWN
+            UP
+        """
+        await self.hw_device._move_needle_vertical(move_to=direction)
+
+
+    async def get_position(self) -> tuple:
+        """
+        Get the current position of the CNC device.
+        A tuple (x, y, z) representing the current position.
+        """
+        ...
 
 class AutosamplerPump(SyringePump):
     """
@@ -96,7 +137,10 @@ class AutosamplerPump(SyringePump):
 
     async def withdraw(self, rate: str = "", volume: str = "") -> bool:  # type: ignore
         """Pump in the opposite direction of infuse."""
-        await self.hw_device.aspirate(volume=volume, flow_rate=rate)
+
+        parsed_rate = ureg.Quantity(rate)
+        parsed_volume = ureg.Quantity(volume)
+        await self.hw_device.aspirate(volume=parsed_volume.m_as("mL"), flow_rate=parsed_rate.m_as("mL/min"))
 
 class AutosamplerSyringeValve(FourPortDistributionValve):
     """
@@ -108,21 +152,37 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
 
     hw_device: KnauerAutosampler  # for typing's sake
 
-    def __init__(self, name: str, hw_device: KnauerValve) -> None:
-        """Initialize component."""
+    def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         super().__init__(name, hw_device)
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route("/syringe_valve_position", self.get_syringe_valve_position, methods=["GET"])
+        self.add_api_route("/syringe_valve_position", self.set_syringe_valve_position, methods=["PUT"])
 
+    async def get_syringe_valve_position(self) -> str:
+        """
+        Gets the current valve position.
 
-    async def get_monitor_position(self) -> str:
-        """Get the current valve position."""
-        ...
+        Returns:
+            position (str): The current position:
+            WASH
+            NEEDLE
+            WASTE
+            WASH_PORT2.
+        """
+        await self.hw_device.syringe_valve_position(port=None)
 
-    async def set_monitor_position(self, position: str):
-        """Set the valve to a specified position."""
-        await self.hw_device.syringe_valve_position(self, port = position)
+    async def set_syringe_valve_position(self, position: str):
+        """
+        Set the valve to a specified position.
+
+        Args:
+            position (str): The desired position:
+            WASH
+            NEEDLE
+            WASTE
+            WASH_PORT2.
+        """
+        await self.hw_device.syringe_valve_position(port=position)
 
 class AutosamplerInjectionValve(SixPortTwoPositionValve):
     """
@@ -131,54 +191,31 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
     Attributes:
         hw_device (KnauerValve): The hardware device for the Knauer valve.
     """
-    hw_device: KnauerValve  # for typing's sake
+    hw_device: KnauerAutosampler  # for typing's sake
 
-    def __init__(self, name: str, hw_device: KnauerValve) -> None:
-        """
-        Initialize the Knauer6PortDistributionValve component.
-
-        Args:
-            name (str): The name of the component.
-            hw_device (KnauerValve): The hardware device instance for controlling the Knauer valve.
-        """
+    def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         super().__init__(name, hw_device)
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        self.add_api_route("/injection_valve_position", self.get_injection_valve_position, methods=["GET"])
+        self.add_api_route("/injection_valve_position", self.set_injection_valve_position, methods=["PUT"])
 
-    def _change_connections(self, raw_position: int, reverse: bool = False):
+    async def get_injection_valve_position(self) -> str:
         """
-        Change connections based on the valve's raw position.
-
-        Args:
-            raw_position (int): The raw position of the valve.
-            reverse (bool): Whether to reverse the mapping.
+        Gets the current valve position.
 
         Returns:
-            int: The mapped position.
-        """
-        if reverse:
-            return raw_position - 1
-        else:
-            return raw_position + 1
+            position (str): The current position:
 
-    async def get_monitor_position(self) -> str:
         """
-        Get the current valve position.
+        await self.hw_device.injector_valve_position(port=None)
 
-        Returns:
-            str: The current position.
-        """
-        return await self.hw_device.get_raw_position()
-
-    async def set_monitor_position(self, position: str):
+    async def set_injection_valve_position(self, position: str):
         """
         Set the valve to a specified position.
 
         Args:
-            position (str): The desired position.
-
-        Returns:
-            str: The response from the hardware device.
+            port (str): The desired position:
+            LOAD
+            INJECT
         """
-        return await self.hw_device.set_raw_position(position)
+        await self.hw_device.injector_valve_position(port=position)
