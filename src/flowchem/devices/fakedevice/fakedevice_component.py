@@ -9,9 +9,6 @@ class FakeComponent_FakeDevice(FakeComponent):
 
         super().__init__(name, hw_device)
 
-        self.insertAPI_automatically(api_class=FakeComponent_FakeDevice, obj=self, include_parent_method=True)
-
-
     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
         """
         This is related to the FakeComponent_FakeDevice from FakeDevice:
@@ -22,7 +19,7 @@ class FakeComponent_FakeDevice(FakeComponent):
         """
         time.sleep(2) # Simulated the delay to run a actuator, for example!
 
-        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
+        await self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
                                     f'parameter_2: {parameter_2}')
         return True # If everything works appropriately the function will return a True
 
@@ -32,7 +29,7 @@ class FakeComponent_FakeDevice(FakeComponent):
 
         This function demonstrates how the commands request of data can be sent through the API build
         """
-        self.hw_device.send_command(f'Request a data from the FakeDevice')
+        await self.hw_device.send_command(f'Request a data from the FakeDevice')
         return 0.5 # Generic data to show how it works
 
     async def set_specif_command(self) -> bool:

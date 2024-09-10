@@ -70,6 +70,11 @@ class FlowchemComponent:
             response_model=ComponentInfo,
         )
 
+        # Include the parent methods in the API server, including methods that were not overwritten.
+        self.include_parent_method = False
+
+        self.insertAPI_automatically()
+
     @property
     def router(self):
         """
@@ -115,50 +120,31 @@ class FlowchemComponent:
         """
         return self.component_info
 
-    def insertAPI_automatically(self, api_class, obj, include_parent_method=False):
+    def insertAPI_automatically(self):
         """
-        Automatically insert API routes into the possibles_component's router based on methods in an API class.
+        Automatically insert API routes for the component's methods.
 
-        This method adds routes for methods defined in `api_class` that are not overridden
-        in the instance `obj`. It also updates the documentation of these methods to reflect
-        potential challenges in switching to a different device supplier.
+        This method scans the component and its parent classes for methods that can be exposed as API routes.
+        It includes methods from the parent classes if `include_parent_method` is set to True. If a method is not
+        overwritten, a warning is added to its documentation to inform the user about potential challenges when
+        transitioning to different hardware.
 
-        Parameters:
-        -----------
-        api_class : type
-            The class containing methods that should be exposed as API routes. These methods
-            should be defined in the class and not be `__init__`.
-        obj : object
-            The instance of the class being checked for method overrides. This instance's
-            method resolution order (MRO) is inspected to determine if the methods from
-            `api_class` are overridden.
-
-        Notes:
-        ------
-        - Methods from `api_class` that are not present in `obj`'s MRO are considered as
-          not overridden and are added to the API router.
-        - The inserted routes will use GET or PUT methods based on the number of arguments
-          required by the API methods.
-
-        Example:
-        --------
-        If `api_class` defines a method `do_something`, and `obj` does not override this method,
-        a route will be added to the possibles_component's API router to handle requests to `/do_something`.
+        Methods with no arguments are exposed as GET routes, while methods with arguments are exposed as PUT routes.
         """
 
-        api_class_methods = [x for x, y in api_class.__dict__.items() if
+        api_class_methods = [x for x, y in self.__class__.__dict__.items() if
                              type(y) == FunctionType and y.__name__ != "__init__"]
 
         obj_methods = []
-        for p in obj.__class__.__mro__:
+        for p in self.__class__.__mro__:
             classname = p.__name__
-            if classname != api_class.__name__ and classname != "FlowchemComponent":
+            if classname != self.__class__.__name__ and classname != "FlowchemComponent":
                 obj_methods = obj_methods + [x for x, y in p.__dict__.items() if
                                              type(y) == FunctionType and y.__name__ != "__init__"]
 
         # check and insert
         for api_method in api_class_methods + obj_methods:
-            if (api_method in obj_methods) and (api_method not in api_class_methods) and not include_parent_method:
+            if (api_method in obj_methods) and (api_method not in api_class_methods) and not self.include_parent_method:
                 # This means that the method was not overwritten and belong only to the parent class, however the user
                 # does not want to nclude it in the API
                 continue
@@ -170,14 +156,14 @@ class FlowchemComponent:
                     f"This method/function is tailored specifically for the {api_method}. If you choose to use it in your "
                     "automation, transitioning to a different device from another supplier may become more "
                     "challenging.")
-                api_class.__dict__[api_method].__doc__ += f"\n\nWarning:\n{msg}"
+                self.__class__.__dict__[api_method].__doc__ += f"\n\nWarning:\n{msg}"
 
             # do insertion here
-            method = getattr(obj, api_method)
+            method = getattr(self, api_method)
             argumentsdesc = inspect.getfullargspec(method)
             argsnum = len(argumentsdesc.args)
 
-            bound_method = method.__get__(obj)
+            bound_method = method.__get__(self)
 
             if argsnum == 1:
                 self.add_api_route(f"/{api_method}", bound_method, methods=["GET"])
