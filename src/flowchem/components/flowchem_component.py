@@ -40,7 +40,7 @@ class FlowchemComponent:
     get_component_info() -> ComponentInfo:
         Retrieve the component's metadata.
     """
-    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+    def __init__(self, name: str, hw_device: FlowchemDevice, api_parent_method=False) -> None:
         """
         Initialize the FlowchemComponent with a name and associated hardware device.
 
@@ -71,7 +71,7 @@ class FlowchemComponent:
         )
 
         # Include the parent methods in the API server, including methods that were not overwritten.
-        self.include_parent_method = False
+        self.include_parent_method = api_parent_method
 
         self.insertAPI_automatically()
 
@@ -146,7 +146,7 @@ class FlowchemComponent:
         for api_method in api_class_methods + obj_methods:
             if (api_method in obj_methods) and (api_method not in api_class_methods) and not self.include_parent_method:
                 # This means that the method was not overwritten and belong only to the parent class, however the user
-                # does not want to nclude it in the API
+                # does not want to include it in the API
                 continue
 
             if (api_method in api_class_methods) and (api_method not in obj_methods):

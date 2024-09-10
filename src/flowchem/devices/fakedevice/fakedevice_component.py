@@ -7,7 +7,7 @@ class FakeComponent_FakeDevice(FakeComponent):
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
 
-        super().__init__(name, hw_device)
+        super().__init__(name, hw_device, api_parent_method=False)
 
     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
         """

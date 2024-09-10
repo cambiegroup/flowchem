@@ -4,9 +4,9 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class FakeComponent(FlowchemComponent):
-    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+    def __init__(self, name: str, hw_device: FlowchemDevice, api_parent_method) -> None:
         """A generic FakeComponent."""
-        super().__init__(name, hw_device)
+        super().__init__(name, hw_device, api_parent_method=api_parent_method)
 
         #self.add_api_route("/fake_send_command", self.fake_send_command, methods=["PUT"])
         #self.add_api_route("/fake_receive_data", self.fake_receive_data, methods=["GET"])
