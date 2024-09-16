@@ -1,2 +1,5 @@
 [device.AS]
 type = "KnauerAutosampler"
+ip_address = "192.168.10.114"
+autosampler_id = 61
+tray_type = "TRAY_48_VIAL"
