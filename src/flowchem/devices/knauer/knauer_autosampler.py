@@ -286,6 +286,10 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
 
     async def initialize(self):
         """Sets initial positions."""
+        errors = await self.get_errors()
+        if errors:
+            logger.info(f"On init Error: {errors} was present")
+        await self.reset_errors()
         # Sets initial positions of needle and valve
         await self._move_needle_vertical(NeedleVerticalPositions.UP.name)
         await self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
@@ -359,6 +363,22 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
     async def _move_tray(self, tray_type: str, sample_position: str or int):
         command_string = self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)
         return await self._set(command_string)
+
+    async def get_errors(self):
+        command_string = self._construct_communication_string(GetErrorsCommand, CommandModus.GET_ACTUAL.name)
+        reply = str(await self._query(command_string))
+        return ErrorCodes[f"ERROR_{reply}"].value
+
+    async def reset_errors(self):
+        command_string = self._construct_communication_string(ResetErrorsCommand, CommandModus.SET.name)
+        await self._set(command_string)
+
+    async def get_status(self):
+        command_string = self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
+        reply = str(await self._query(command_string))
+        reply = (3-len(reply))*'0'+reply
+        return ASStatus(reply).name
+
 
 
 if __name__ == "__main__":
