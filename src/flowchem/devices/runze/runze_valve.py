@@ -257,7 +257,9 @@ class RunzeValve(FlowchemDevice):
     async def get_raw_position(self, raise_errors: bool = False) -> str:
         """Return current valve position, following valve nomenclature."""
         status, parameters = await self._send_command_and_read_reply(command="3e", raise_errors=raise_errors)
-        return parameters
+        if status == "00":
+            logger.info(f"Current valve position is: {parameters}")
+            return parameters
 
     async def set_raw_position(self, position: str, raise_errors: bool = True) -> bool:
         """Set valve position, following valve nomenclature."""
@@ -265,7 +267,9 @@ class RunzeValve(FlowchemDevice):
             command="44",
             parameter=int(position),
             raise_errors=raise_errors)
-        return status == "00"
+        if status == "00":
+            logger.info(f"Valve position set to: {parameters}")
+            return True
 
     async def set_address(self, address: int) -> str:
         """Return current valve position, following valve nomenclature."""
