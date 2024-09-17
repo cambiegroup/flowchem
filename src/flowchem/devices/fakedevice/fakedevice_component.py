@@ -2,13 +2,11 @@ from flowchem.components.fakecomponentclass.fakecomponent import FakeComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 import time
 
-
 class FakeComponent_FakeDevice(FakeComponent):
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
-
 
     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
         """
@@ -20,7 +18,7 @@ class FakeComponent_FakeDevice(FakeComponent):
         """
         time.sleep(2) # Simulated the delay to run a actuator, for example!
 
-        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
+        await self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
                                     f'parameter_2: {parameter_2}')
         return True # If everything works appropriately the function will return a True
 
