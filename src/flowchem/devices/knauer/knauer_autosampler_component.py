@@ -50,36 +50,12 @@ class AutosamplerCNC(CNC):
                         WASTE
                         EXCHANGE
                         TRANSPORT
-            if position = PLATE:
-            plate (str):
-                        NO_PLATE = 0
-                        LEFT_PLATE = 1
-                        RIGHT_PLATE = 2
-                        SINGLE_PLATE = 3
-
-            column (int): starting from 1.
-            row (int) starting from 1.
         """
         if position != "PLATE":
             await self.hw_device._move_needle_vertical(NeedleVerticalPositions.UP.name)
             await self.hw_device._move_needle_horizontal(needle_position=position)
         else:
-            traytype = self.hw_device.tray_type.upper()
-            if traytype in PlateTypes.__dict__.keys():
-                try:
-                    if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
-                        raise NotImplementedError
-                except KeyError as e:
-                    raise Exception(
-                        f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
-                # now check if that works for selected tray:
-                assert PlateTypes[traytype].value[0] >= column and PlateTypes[traytype].value[1] >= row
-                self.hw_device._move_tray(plate, row)
-                self.hw_device._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=plate, well=column)
-            elif traytype in NeedleHorizontalPosition.__dict__.keys():
-                self.hw_device._move_needle_horizontal(NeedleHorizontalPosition[traytype].name)
-            else:
-                raise NotImplementedError
+            raise NotImplementedError
 
     async def set_xy_position(self, plate: str = "", row: int = 0, column: int = 0) -> None:
         """
