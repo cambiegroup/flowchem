@@ -162,6 +162,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
                  name: str = None,
                  ip_address: str = "",
                  autosampler_id: int = 0,
+                 syringe_volume: str = "0.99 ml",
                  tray_type: str = "TRAY_48_VIAL",
                  **kwargs,
                  ):
@@ -170,6 +171,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         self.autosampler_id = autosampler_id
         self.name = f"AutoSampler ID: {self.autosampler_id}" if name is None else name
         self.tray_type = tray_type
+        self.syringe_volume = syringe_volume
         self.device_info = DeviceInfo(
             authors=[jakob, miguel, Samuel_Saraiva],
             maintainers=[jakob, miguel, Samuel_Saraiva],
