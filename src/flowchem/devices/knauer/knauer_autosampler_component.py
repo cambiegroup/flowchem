@@ -36,7 +36,7 @@ class AutosamplerCNC(CNC):
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         """Initialize component."""
         super().__init__(name, hw_device)
-        self.add_api_route("/needle_position", self.needle_position, methods=["PUT"])
+        self.add_api_route("/set_needle_position", self.set_needle_position, methods=["PUT"])
 
 
     async def needle_position(self, position: str = "",
