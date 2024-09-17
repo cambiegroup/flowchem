@@ -1,2 +1,5 @@
 [device.fake-device]
 type = "FakeDeviceExample"
+
+[device.recording]
+type = "Chronology"
