@@ -3,6 +3,7 @@ from flowchem import ureg
 from typing import TYPE_CHECKING
 from enum import Enum
 from typing import TYPE_CHECKING
+from loguru import logger
 
 
 if TYPE_CHECKING:
@@ -86,6 +87,9 @@ class AutosamplerCNC(CNC):
         """
         Move the CNC device to the specified (x, y) coordinate.
         """
+        if await self.hw_device.get_status() == "NEEDLE_RUNNING":
+            logger.warning("Needle already moving!")
+
         traytype = self.hw_device.tray_type.upper()
         if traytype in PlateTypes.__dict__.keys():
             try:
@@ -96,10 +100,11 @@ class AutosamplerCNC(CNC):
                     f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
             # now check if that works for selected tray:
             assert PlateTypes[traytype].value[0] >= column and PlateTypes[traytype].value[1] >= row
-            self.hw_device._move_tray(plate, row)
-            self.hw_device._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=plate, well=column)
-        elif traytype in NeedleHorizontalPosition.__dict__.keys():
-            self.hw_device._move_needle_horizontal(NeedleHorizontalPosition[traytype].name)
+            await self.hw_device._move_tray(plate, row)
+            success = await self.hw_device._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=plate, well=column)
+            if success:
+                logger.info("Needle moved successfully to row: {row}, column: {column} on plate: {plate}")
+            return
         else:
             raise NotImplementedError
 
@@ -113,7 +118,12 @@ class AutosamplerCNC(CNC):
             DOWN
             UP
         """
-        await self.hw_device._move_needle_vertical(move_to=direction)
+        if await self.hw_device.get_status() == "NEEDLE_RUNNING":
+            logger.warning("Needle already moving!")
+
+        success = await self.hw_device._move_needle_vertical(move_to=direction)
+        if success:
+            logger.info("Needle moved successfully to {direction} direction.")
 
 
     async def get_position(self) -> tuple:
@@ -137,10 +147,21 @@ class AutosamplerPump(SyringePump):
         """Initialize component."""
         super().__init__(name, hw_device)
 
-    async def infuse(self, rate: str = "", volume: str = "") -> bool:  # type: ignore
-        """Start infusion."""
-        parsed_rate = ureg.Quantity(rate)
+    async def infuse(self, rate: str = None, volume: str = None) -> bool:  # type: ignore
+        """
+        Dispense with built in syringe.
+        Args:
+            volume: volume to dispense in mL
+
+        Returns: None
+        """
+        if volume is None:
+            volume = "0 mL"
+            logger.warning(f"the volume to infuse is not provided. set to 0 ml")
         parsed_volume = ureg.Quantity(volume)
+        success = await self.hw_device.dispense(volume=parsed_volume.m_as("mL"))
+        if success:
+            logger.info(f"Syringe pump successfully infused {volume} ml")
 
         await self.hw_device.dispense(volume=parsed_volume.m_as("mL"), flow_rate=parsed_rate.m_as("mL/min"))
 
@@ -191,7 +212,10 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
             WASTE
             WASH_PORT2.
         """
-        await self.hw_device.syringe_valve_position(port=None)
+        position = await self.hw_device.syringe_valve_position(port=None)
+        if position:
+            logger.info(f"Syringe valve is in position: {position}")
+        return position
 
     async def set_syringe_valve_position(self, position: str):
         """
@@ -204,7 +228,9 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
             WASTE
             WASH_PORT2.
         """
-        await self.hw_device.syringe_valve_position(port=position)
+        success = await self.hw_device.syringe_valve_position(port=position)
+        if success:
+            logger.info(f"Syringe valve moved successfully to position: {position}")
 
 class AutosamplerInjectionValve(SixPortTwoPositionValve):
     """
@@ -229,7 +255,10 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
             position (str): The current position:
 
         """
-        await self.hw_device.injector_valve_position(port=None)
+        position = await self.hw_device.injector_valve_position(port=None)
+        if position:
+            logger.info(f"Injection valve is in position: {position}")
+        return position
 
     async def set_injection_valve_position(self, position: str):
         """
@@ -240,4 +269,6 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
             LOAD
             INJECT
         """
-        await self.hw_device.injector_valve_position(port=position)
+        success = await self.hw_device.injector_valve_position(port=position)
+        if success:
+            logger.info(f"Injection valve moved successfully to position: {position}")
