@@ -84,7 +84,7 @@ class CommandModus(Enum):
     GET_ACTUAL = auto()
 
 
-def send_until_acknowledged(max_reaction_time=10, time_between=0.01):
+def send_until_acknowledged(max_reaction_time=15):
     def decorator(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
