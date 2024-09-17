@@ -121,12 +121,12 @@ class ASEthernetDevice:
 
     async def _send_and_receive(self, message: str):
         try:
-            # Open a connection using asyncio's open_connection
+            # Open a connection
             reader, writer = await asyncio.open_connection(self.ip_address, self.port)
 
             # Send the message
             writer.write(message.encode())
-            await writer.drain()  # Ensure all data is sent
+            await writer.drain()
 
             # Receive the reply in chunks
             reply = b""
@@ -136,7 +136,7 @@ class ASEthernetDevice:
                     break
                 reply += chunk
                 try:
-                    CommunicationFlags(chunk)  # Validate chunk
+                    CommunicationFlags(chunk)
                     break
                 except ValueError:
                     pass
@@ -144,12 +144,12 @@ class ASEthernetDevice:
                     break
 
             writer.close()
-            await writer.wait_closed()  # Properly close the connection
+            await writer.wait_closed() # Close the connection
 
             return reply
 
         except asyncio.TimeoutError:
-            logging.error(f"No connection possible to device with IP {self.ip_address}")
+            logger.error(f"No connection possible to device with IP {self.ip_address}")
             raise ConnectionError(
                 f"No Connection possible to device with IP address {self.ip_address}"
             )
@@ -258,14 +258,14 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
             # check if reply from requested device
             if int(as_id.decode()) != self.autosampler_id:
                 raise ASError(f"ID of used AS is {self.autosampler_id}, but ID in reply is as_id")
-            # if reply is only zeros, which can be, give back one 0 for interpretion
+            # if reply is only zeros, which can be, give back one 0 for interpretation
             if len(as_val.decode().lstrip("0")) > 0:
                 return int(as_val.decode().lstrip("0"))
             else:
                 return int(as_val.decode()[-1:])
             # check the device ID against current device id
         else:
-            raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
+            raise ASError(f"AutoSampler reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
     async def _set_get_value(self, command: Type[CommandStructure], parameter: int or None = None,
                              reply_mapping: None or Type[Enum] = None, get_actual=False):
@@ -274,8 +274,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
             command_string = self._construct_communication_string(command, CommandModus.SET.name, parameter)
             return await self._set(command_string)
         else:
-            command_string = self._construct_communication_string(command,
-                                                                        CommandModus.GET_PROGRAMMED.name if not get_actual else CommandModus.GET_ACTUAL.name)
+            command_string = self._construct_communication_string(command, CommandModus.GET_PROGRAMMED.name if not get_actual else CommandModus.GET_ACTUAL.name)
             reply = await self._query(command_string)
             if reply_mapping:
                 return reply_mapping(reply).name
@@ -290,7 +289,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         await self.syringe_valve_position(SyringeValvePositions.WASTE.name)
         await self.injector_valve_position(InjectorValvePositions.LOAD.name)
 
-        logger.info('KnauerAutosampler device was successfully initialized!')
+        logger.info('Knauer AutoSampler device was successfully initialized!')
         self.components.extend([
             AutosamplerCNC("cnc", self),
             AutosamplerPump("pump", self),
@@ -299,24 +298,20 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         ])
 
     async def _move_needle_horizontal(self, needle_position: str, plate: str = None, well: int = None):
-        command_string = self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name,
-                                                                    needle_position, plate, well)
+        command_string = self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)
         return await self._set(command_string)
 
     async def _move_needle_vertical(self, move_to: str):
-        command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name,
-                                                                    move_to)
+        command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
         return await self._set(command_string)
 
     async def syringe_valve_position(self, port: str = None):
         # TODO check if this mapping offset can be fixed elegantly
         if port:
-            command_string = self._construct_communication_string(SwitchSyringeValveCommand,
-                                                                        CommandModus.SET.name, port)
+            command_string = self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.SET.name, port)
             return await self._set(command_string)
         else:
-            command_string = self._construct_communication_string(SwitchSyringeValveCommand,
-                                                                        CommandModus.GET_ACTUAL.name)
+            command_string = self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.GET_ACTUAL.name)
             raw_reply = await self._query(command_string) - 1
             return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name
 
@@ -326,41 +321,40 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
 
     async def aspirate(self, volume: float, flow_rate: float or int = None):
         """
-        aspirate with buildt in syringe if no external syringe is set to autosampler.
-        Else use extrernal syringe
+        aspirate with built in syringe if no external syringe is set to AutoSampler.
+        Else use external syringe
         Args:
             volume: volume to aspirate in mL
-            flow_rate: flowrate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
+            flow_rate: flow rate in mL/min. Only works on external syringe. If built-in syringe is used, use default value
 
         Returns: None
 
         """
         if flow_rate is not None:
-            raise NotImplementedError("Buildt in syringe does not allow to control flowrate")
+            raise NotImplementedError("Built in syringe does not allow to control flow rate")
         volume = int(round(volume, 3) * 1000)
         command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
         return await self._set(command_string)
 
     async def dispense(self, volume, flow_rate=None):
         """
-        dispense with buildt in syringe if no external syringe is set to autosampler.
+        dispense with built in syringe if no external syringe is set to AutoSampler.
         Else use external syringe
         Args:
             volume: volume to dispense in mL
-            flow_rate: flowrate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
+            flow_rate: flow rate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
 
         Returns: None
 
         """
         if flow_rate is not None:
-            raise NotImplementedError("Buildt in syringe does not allow to control flowrate")
+            raise NotImplementedError("Built in syringe does not allow to control flow rate")
         volume = int(round(volume, 3) * 1000)
         command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
         return await self._set(command_string)
 
     async def _move_tray(self, tray_type: str, sample_position: str or int):
-        command_string = self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name,
-                                                                    tray_type, sample_position)
+        command_string = self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)
         return await self._set(command_string)
 
 
@@ -375,8 +369,13 @@ if __name__ == "__main__":
     )
 
     async def execute_tasks(A_S):
-        await A_S._move_needle_vertical(NeedleVerticalPositions.UP.name)
-        await A_S._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
-        await A_S.syringe_valve_position(SyringeValvePositions.WASTE.name)
-        await A_S.injector_valve_position(InjectorValvePositions.LOAD.name)
+        print(await A_S.get_errors())
+        await A_S.reset_errors()
     asyncio.run(execute_tasks(AS))
+
+    # async def execute_tasks(A_S):
+    #     await A_S._move_needle_vertical(NeedleVerticalPositions.UP.name)
+    #     await A_S._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+    #     await A_S.syringe_valve_position(SyringeValvePositions.WASTE.name)
+    #     await A_S.injector_valve_position(InjectorValvePositions.LOAD.name)
+    # asyncio.run(execute_tasks(AS))
