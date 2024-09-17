@@ -61,7 +61,8 @@ class AutosamplerCNC(CNC):
             row (int) starting from 1.
         """
         if position != "PLATE":
-            await self.hw_device._move_needle_horizontal(needle_position=position, plate=None, well=None)
+            await self.hw_device._move_needle_vertical(NeedleVerticalPositions.UP.name)
+            await self.hw_device._move_needle_horizontal(needle_position=position)
         else:
             traytype = self.hw_device.tray_type.upper()
             if traytype in PlateTypes.__dict__.keys():
@@ -97,6 +98,7 @@ class AutosamplerCNC(CNC):
             logger.warning("Needle already moving!")
 
         traytype = self.hw_device.tray_type.upper()
+        await self.hw_device._move_needle_vertical(NeedleVerticalPositions.UP.name)
         if traytype in PlateTypes.__dict__.keys():
             try:
                 if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
