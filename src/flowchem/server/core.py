@@ -88,6 +88,10 @@ class Flowchem:
         await asyncio.gather(*[dev.initialize() for dev in self.devices])
         logger.info("Device(s) connected")
 
+        for dev in self.devices:
+            if dev.__class__.__name__ == "Chronology":
+                dev.get_flowchem_infor(self, config)
+
         # Create entities for the configured devices.
         for device in self.devices:
             # Advertise devices as services via mDNS
@@ -103,7 +107,7 @@ if __name__ == "__main__":
     async def main():
         flowchem = Flowchem()
         await flowchem.setup(
-            BytesIO(b"""[device.test-device]\ntype = "FakeDevice"\n""")
+            BytesIO(b"""[device.test-device]\ntype = "FakeDeviceExample"\n\n[device.recording]\ntype = "Chronology"\n""")
         )
 
         config = uvicorn.Config(
