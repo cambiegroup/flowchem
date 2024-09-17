@@ -204,7 +204,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
                f"{ADDITIONAL_INFO}{communication_string}" \
                f"{CommunicationFlags.MESSAGE_END.value.decode()}"
 
-    @send_until_acknowledged
+    @send_until_acknowledged(max_reaction_time=10)
     async def _set(self, message: str or int):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
@@ -216,8 +216,9 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         reply = await self._send_and_receive(message)
         # this only checks that it was acknowledged
         self._parse_setting_reply(reply)
+        return True
 
-    @send_until_acknowledged
+    @send_until_acknowledged(max_reaction_time=10)
     async def _query(self, message: str or int):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
