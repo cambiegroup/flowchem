@@ -92,7 +92,6 @@ class AutosamplerCNC(CNC):
         else:
             raise NotImplementedError
 
-
     async def set_z_position(self, direction: str = "") -> None:
         """
         Move the 3D gantry along the Z axis.
@@ -110,6 +109,7 @@ class AutosamplerCNC(CNC):
             logger.info("Needle moved successfully to {direction} direction.")
 
 
+    #ToDo
     async def get_position(self) -> tuple:
         """
         Get the current position of the 3D gantry.
@@ -156,7 +156,21 @@ class AutosamplerPump(SyringePump):
         if success:
             logger.info(f"Syringe pump successfully infused {volume} ml")
 
-        await self.hw_device.dispense(volume=parsed_volume.m_as("mL"), flow_rate=parsed_rate.m_as("mL/min"))
+    async def withdraw(self, rate: str = None, volume: str = None) -> bool:  # type: ignore
+        """
+        Aspirate with built in syringe.
+        Args:
+            volume: volume to aspirate in mL
+
+        Returns: None
+        """
+        if volume is None:
+            volume = self.hw_device.syringe_volume
+            logger.warning(f"the volume to withdraw is not provided. set to {self.hw_device.syringe_volume}")
+        parsed_volume = ureg.Quantity(volume)
+        success = await self.hw_device.aspirate(volume=parsed_volume.m_as("mL"))
+        if success:
+            logger.info(f"Syringe pump successfully withdrew {volume} ml")
 
     async def stop(self):  # type: ignore
         """Stop pumping."""
@@ -171,12 +185,6 @@ class AutosamplerPump(SyringePump):
         """Can the pump reverse its normal flow direction?"""
         return True
 
-    async def withdraw(self, rate: str = "", volume: str = "") -> bool:  # type: ignore
-        """Pump in the opposite direction of infuse."""
-
-        parsed_rate = ureg.Quantity(rate)
-        parsed_volume = ureg.Quantity(volume)
-        await self.hw_device.aspirate(volume=parsed_volume.m_as("mL"), flow_rate=parsed_rate.m_as("mL/min"))
 
 class AutosamplerSyringeValve(FourPortDistributionValve):
     """
