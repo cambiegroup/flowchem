@@ -39,10 +39,7 @@ class AutosamplerCNC(CNC):
         self.add_api_route("/set_needle_position", self.set_needle_position, methods=["PUT"])
 
 
-    async def needle_position(self, position: str = "",
-                              plate: str = None,
-                              column: int = None,
-                              row: int = None) -> None:
+    async def set_needle_position(self, position: str = "") -> None:
         """
         Move the needle to one of the predefined positions. If Position is "PLATE" a plate,
         row and column have to be specified.
@@ -83,9 +80,18 @@ class AutosamplerCNC(CNC):
             else:
                 raise NotImplementedError
 
-    async def set_xy_position(self, tray: int = 0, row: int = 0, column: int = 0) -> None:
+    async def set_xy_position(self, plate: str = "", row: int = 0, column: int = 0) -> None:
         """
-        Move the CNC device to the specified (x, y) coordinate.
+        Move the 3D gantry to the specified (x, y) coordinate of a specific plate.
+
+        plate (str):
+                    NO_PLATE
+                    LEFT_PLATE
+                    RIGHT_PLATE
+                    SINGLE_PLATE 
+
+        column (int): starting from 1.
+        row (int) starting from 1.
         """
         if await self.hw_device.get_status() == "NEEDLE_RUNNING":
             logger.warning("Needle already moving!")
@@ -111,7 +117,7 @@ class AutosamplerCNC(CNC):
 
     async def set_z_position(self, direction: str = "") -> None:
         """
-        Move the CNC device along the Z axis.
+        Move the 3D gantry along the Z axis.
 
         Argument:
             direction (str):
@@ -128,10 +134,19 @@ class AutosamplerCNC(CNC):
 
     async def get_position(self) -> tuple:
         """
-        Get the current position of the CNC device.
-        A tuple (x, y, z) representing the current position.
+        Get the current position of the 3D gantry.
+        If needle is above the plates:
+            Returns a tuple (row, column, UP/DOWN).
+        Else:
+            Returns a string representing one of the predefined positions:
+            position (str):
+                        WASH
+                        WASTE
+                        EXCHANGE
+                        TRANSPORT
         """
         ...
+
 
 class AutosamplerPump(SyringePump):
     """
@@ -198,10 +213,7 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         super().__init__(name, hw_device)
 
-        self.add_api_route("/syringe_valve_position", self.get_syringe_valve_position, methods=["GET"])
-        self.add_api_route("/syringe_valve_position", self.set_syringe_valve_position, methods=["PUT"])
-
-    async def get_syringe_valve_position(self) -> str:
+    async def get_position(self) -> str:
         """
         Gets the current valve position.
 
@@ -217,7 +229,7 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
             logger.info(f"Syringe valve is in position: {position}")
         return position
 
-    async def set_syringe_valve_position(self, position: str):
+    async def set_position(self, position: str):
         """
         Set the valve to a specified position.
 
@@ -244,28 +256,26 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         super().__init__(name, hw_device)
 
-        self.add_api_route("/injection_valve_position", self.get_injection_valve_position, methods=["GET"])
-        self.add_api_route("/injection_valve_position", self.set_injection_valve_position, methods=["PUT"])
-
-    async def get_injection_valve_position(self) -> str:
+    async def get_position(self) -> str:
         """
         Gets the current valve position.
 
         Returns:
-            position (str): The current position:
-
+            position (str):
+                LOAD
+                INJECT
         """
         position = await self.hw_device.injector_valve_position(port=None)
         if position:
             logger.info(f"Injection valve is in position: {position}")
         return position
 
-    async def set_injection_valve_position(self, position: str):
+    async def set_position(self, position: str):
         """
         Set the valve to a specified position.
 
         Args:
-            port (str): The desired position:
+            position (str):
             LOAD
             INJECT
         """
