@@ -1,10 +1,8 @@
 from __future__ import annotations
-
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from types import FunctionType
-import inspect
+from typing import Callable
+from functools import wraps
 
 from fastapi import APIRouter
 from loguru import logger
@@ -13,6 +11,17 @@ from flowchem.components.component_info import ComponentInfo
 
 if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
+
+
+# Define a decorator that logs without altering the endpoint's function signature
+def log_usage(func: Callable):
+    @wraps(func)  # This ensures FastAPI can introspect the function correctly
+    async def wrapper(*args, **kwargs):
+        logger.info(f"Endpoint {func.__name__} called with args: {args}, kwargs: {kwargs}")
+        result = await func(*args, **kwargs)
+        logger.info(f"Endpoint {func.__name__} returned: {result}")
+        return result
+    return wrapper
 
 
 class FlowchemComponent:
@@ -40,6 +49,12 @@ class FlowchemComponent:
     get_component_info() -> ComponentInfo:
         Retrieve the component's metadata.
     """
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        for attr_name, attr_value in cls.__dict__.items():
+            if callable(attr_value) and attr_name != "__init__":
+                setattr(cls, attr_name, log_usage(attr_value))
+
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """
         Initialize the FlowchemComponent with a name and associated hardware device.
