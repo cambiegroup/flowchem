@@ -1,8 +1,5 @@
-"""Runze valve control."""
-import sys
-sys.path.append('W:\\BS-Automated\\Miguel\\github\\flowchem\\flowchem_fork\\src')
+"""Runze SV-06 multiposition distribution valve control."""
 
-import warnings
 from enum import Enum
 from dataclasses import dataclass
 from loguru import logger
@@ -39,7 +36,7 @@ class SV06Command:
 
     address: int  # Slave address
     function_code: str  # Function code based on the command type
-    parameter: int = 0  # Parameters corresponding to the function code (2 bytes)
+    parameter: int = 0  # Parameters corresponding to the function code
     is_factory_command: bool = False  # Flag to indicate if this is a factory command
 
     password: str = "FFEEBBAA"
@@ -50,9 +47,9 @@ class SV06Command:
         if not self.is_factory_command:
             # Standard command format: 8 bytes
             base_command = (
-                f"{self.FRAME_HEADER}"                     # Frame Header
-                f"{self.address:02X}"                      # Address in hexadecimal (2 digits)
-                f"{self.function_code}"                # Function code in hexadecimal (2 digits)
+                f"{self.FRAME_HEADER}"                     
+                f"{self.address:02X}"                      
+                f"{self.function_code}"                
                 f"{self.parameter & 0xFF:02X}"             # Low byte of parameter
                 f"{(self.parameter >> 8) & 0xFF:02X}"      # High byte of parameter
                 f"{self.FRAME_END}"                        # Frame End
@@ -87,8 +84,8 @@ class RunzeValveIO:
     """Setup with serial parameters, low-level IO for SV-06 Multiport Selector Valve."""
 
     DEFAULT_CONFIG = {
-        "timeout": 2,
-        "baudrate": 57600,  # Default baudrate
+        "timeout": 1,
+        "baudrate": 57600,  #The corresponding baudrate can be set through a factory command
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
         "bytesize": aioserial.EIGHTBITS,
@@ -116,12 +113,10 @@ class RunzeValveIO:
     async def _write_async(self, command: bytes):
         """Write a command to the valve."""
         await self._serial.write_async(command)
-        #logger.info(f"Command {command.hex()!r} sent!")
 
     async def _read_reply_async(self) -> str:
         """Read the valve reply from serial communication."""
         reply_string = await self._serial.readline_async()
-        #logger.info(f"Reply received: {reply_string.hex()}")
         return reply_string.hex()
 
     async def write_and_read_reply_async(self, command: SV06Command, raise_errors: bool = True) -> tuple[str,str]:
@@ -175,7 +170,6 @@ class RunzeValve(FlowchemDevice):
         valve_io: RunzeValveIO,
         name: str,
         address: int = 1,
-        **config,
     ) -> None:
         super().__init__(name)
 
@@ -225,7 +219,7 @@ class RunzeValve(FlowchemDevice):
         self.components.append(valve_component)
 
     async def get_valve_type(self):
-        """Get valve type by testing possible port values."""
+        """Get valve type by testing possible port values."""  # There was no command for this
 
         possible_ports = [6, 8, 10, 12, 16]
         valve_type = None
@@ -283,10 +277,6 @@ class RunzeValve(FlowchemDevice):
     @classmethod
     def from_config(cls, **config):
         """Create instances via config file."""
-        # Many pump can be present on the same serial port with different addresses.
-        # This shared list of HamiltonPumpIO objects allow shared state in a borg-inspired way, avoiding singletons
-        # This is only relevant to programmatic instantiation, i.e. when from_config() is called per each pump from a
-        # config file, as it is the case in the HTTP server.
         valveio = None
         for obj in RunzeValve._io_instances:
             # noinspection PyProtectedMember
@@ -296,7 +286,7 @@ class RunzeValve(FlowchemDevice):
 
         # If not existing serial object are available for the port provided, create a new one
         if valveio is None:
-            # Remove ML600-specific keys to only have HamiltonPumpIO's kwargs
+            # Remove RunzeValve-specific keys to only have RunzeValveIO's configs
             config_for_valveio = {
                 k: v
                 for k, v in config.items()
