@@ -31,12 +31,12 @@ class FakeComponent_FakeDevice(FakeComponent):
         self.hw_device.send_command(f'Request a data from the FakeDevice')
         return 0.5 # Generic data to show how it works
 
-    async def set_specif_command(self) -> bool:
+    async def set_specif_command(self, command: str = "random") -> bool:
         """
         This is an example of a specific command that only this device has!
 
         Returns:
             None
         """
-        self.hw_device.send_command(f'Set a specific command')
+        self.hw_device.send_command(f'Set a specific command: {command}')
         return True # If everything works appropriately the function will return a True
