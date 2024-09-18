@@ -326,6 +326,25 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         return await self._set_get_value(SwitchInjectorValveCommand, port, SwitchInjectorValveCommand.allowed_position,
                                          get_actual=True)
 
+    async def set_raw_position(self, identifier: str = None, position: str = None):
+        match identifier:
+            case "injection_valve":
+                return await self.injector_valve_position(port=position)
+            case "syringe_valve":
+                return await self.syringe_valve_position(port=position)
+            case _:
+                raise RuntimeError("Unknown valve type")
+
+    async def get_raw_position(self, identifier: str = None):
+        match identifier:
+            case "injection_valve":
+                return await self.injector_valve_position(port=None)
+            case "syringe_valve":
+                return await self.syringe_valve_position(port=None)
+            case _:
+                raise RuntimeError("Unknown valve type")
+
+
     async def aspirate(self, volume: float, flow_rate: float or int = None):
         """
         aspirate with built in syringe if no external syringe is set to AutoSampler.

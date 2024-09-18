@@ -195,11 +195,31 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
     """
 
     hw_device: KnauerAutosampler  # for typing's sake
+    identifier = "syringe_valve"
 
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         super().__init__(name, hw_device)
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
-    async def get_position(self) -> str:
+    def _change_connections(self, raw_position: str | int, reverse: bool = False):
+        """
+        Change connections based on the valve's raw position.
+
+        Args:
+            raw_position (int): The raw position of the valve.
+            reverse (bool): Whether to reverse the mapping.
+
+        Returns:
+            int: The mapped position.
+        """
+        position_mapping = {0: "NEEDLE", 1: "WASH", 2: "WASH_PORT2", 3: "WASTE"}
+        if reverse:
+            return str([key for key, value in position_mapping.items() if value == raw_position][0])
+        else:
+            return position_mapping[raw_position]
+
+    async def get_monitor_position(self) -> str:
         """
         Gets the current valve position.
 
@@ -215,7 +235,7 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
             logger.info(f"Syringe valve is in position: {position}")
         return position
 
-    async def set_position(self, position: str):
+    async def set_monitor_position(self, position: str):
         """
         Set the valve to a specified position.
 
@@ -238,11 +258,31 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
         hw_device (KnauerValve): The hardware device for the Knauer valve.
     """
     hw_device: KnauerAutosampler  # for typing's sake
+    identifier = "injection_valve"
 
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         super().__init__(name, hw_device)
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
-    async def get_position(self) -> str:
+    def _change_connections(self, raw_position: str | int, reverse: bool = False):
+        """
+        Change connections based on the valve's raw position.
+
+        Args:
+            raw_position (str | int): The raw position of the valve.
+            reverse (bool): Whether to reverse the mapping.
+
+        Returns:
+            str | int: The mapped position.
+        """
+        position_mapping = {0: "LOAD", 1: "INJECT"}
+        if reverse:
+            return str([key for key, value in position_mapping.items() if value == raw_position][0])
+        else:
+            return position_mapping[raw_position]
+
+    async def get_monitor_position(self) -> str:
         """
         Gets the current valve position.
 
@@ -256,7 +296,7 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
             logger.info(f"Injection valve is in position: {position}")
         return position
 
-    async def set_position(self, position: str):
+    async def set_monitor_position(self, position: str):
         """
         Set the valve to a specified position.
 
@@ -265,6 +305,9 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
             LOAD
             INJECT
         """
-        success = await self.hw_device.injector_valve_position(port=position)
-        if success:
-            logger.info(f"Injection valve moved successfully to position: {position}")
+        try:
+            success = await self.hw_device.injector_valve_position(port=position)
+            if success:
+                logger.info(f"Injection valve moved successfully to position: {position}")
+        except KeyError as e:
+            raise Exception(f"Please give allowed positions {[pos.name for pos in InjectorValvePositions]}") from e
