@@ -5,15 +5,19 @@ import csv
 import os
 from loguru import logger
 import threading
+import toml
+import inspect
 
 
 class Watch:
 
-    def __init__(self, experimental_id: int, address: str, discrete_time: float = 1):
+    def __init__(self,
+                 experimental_id: int | str,
+                 address: str,
+                 discrete_time: float = 1,
+                 add_info: dict | None = None):
 
         self.devices = get_all_flowchem_devices(IP_machine="local")
-
-        self.address = address
 
         self.files = dict()
 
@@ -23,13 +27,33 @@ class Watch:
 
         self.discrete_time = discrete_time
 
+        self.address = address+f"_experiment_id_{self.experimental_id}"
+
+        self.add_info = add_info
+
+        self.inspect = dict()
+
     def setup(self):
 
-        os.mkdir(self.address)
+        try:
+            os.mkdir(self.address)
+        except:
+            logger.info(f"Recording folder {self.address} already exist. The supervisor will overwrite it")
+
+        logger.add(self.address+"/log.log", level="INFO")
+
+        if self.add_info is not None:
+
+            file = open(self.address+f"/Information_id_{self.experimental_id}.toml", "w")
+            toml.dump(self.add_info, file)
+            file.close()
 
         for device_name, device in self.devices.items():
 
-            os.mkdir(self.address + "/" + device_name)
+            try:
+                os.mkdir(self.address + "/" + device_name)
+            except:
+                logger.info(f"Recording device folder {device_name} already exist. The supervisor will overwrite it")
 
             logger.info(f"Recording folder from device: {device_name} was created")
 
@@ -51,9 +75,9 @@ class Watch:
 
     def run(self):
 
-        threading.Thread(target=self.run_loop).start()
+        threading.Thread(target=self.__run_loop).start()
 
-    def run_loop(self):
+    def __run_loop(self):
 
         toc = time.perf_counter()
 
@@ -71,7 +95,7 @@ class Watch:
 
             if time.perf_counter() - toc >= self.discrete_time:
 
-                logger.info(f"Reading time: {year}-{month:02d}-{day:02d}-{hour:02d}:{minute:02d}:{second:02d}")
+                #logger.info(f"Reading time: {year}-{month:02d}-{day:02d}-{hour:02d}:{minute:02d}:{second:02d}")
 
                 for device_name, device in self.devices.items():
 
@@ -85,6 +109,21 @@ class Watch:
                                    "value": value}
 
                             self.files[device_name][component_name][method][0].writerow(row)
+
+                            if device_name in self.inspect.keys():
+
+                                if component_name in self.inspect[device_name].keys():
+
+                                    if method in self.inspect[device_name][component_name].keys():
+
+                                        rule = self.inspect[device_name][component_name][method]
+
+                                        if not self.__rule_tranlate(value, rule):
+
+                                            logger.error(f"The {method} of the component/device: {component_name}"
+                                                         f"/{device_name} should obey the rule:"
+                                                         f" {inspect.getsource(rule)}, however it return:"
+                                                         f" {value}")
 
                 toc = time.perf_counter()
 
@@ -101,3 +140,24 @@ class Watch:
                 for method in component.component_info.get_methods.keys():
 
                     self.files[device_name][component_name][method][1].close()
+
+    def inset_inspect(self, device: str, component: str, command: str, condition):
+
+        self.inspect[device] = {component: {command: condition}}
+
+    def __rule_tranlate(self, value, rule)->bool:
+
+        try:
+            return rule(value)
+        except:
+            try:
+                x = float(value)
+                return rule(x)
+            except:
+                 try:
+                    x = float(value.split()[0])
+                    return rule(x)
+                 except:
+                     logger.error(f"It was not possible to verify the received value {value} with the rule:"
+                                  f" {inspect.getsource(rule)}")
+                     return True
