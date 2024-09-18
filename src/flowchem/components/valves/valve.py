@@ -169,11 +169,11 @@ class Valve(FlowchemComponent):
         self._positions = self._create_connections(self._stator_ports, self._rotor_ports)
 
         # bwe can infer
-        super().__init__(name, hw_device)
+        super().__init__(name, hw_device, api_parent_method=True)
 
-        self.add_api_route("/position", self.get_position, methods=["GET"])
-        self.add_api_route("/position", self.set_position, methods=["PUT"])
-        self.add_api_route("/connections", self.connections, methods=["GET"])
+        #self.add_api_route("/position", self.get_position, methods=["GET"])
+        #self.add_api_route("/position", self.set_position, methods=["PUT"])
+        #self.add_api_route("/connections", self.connections, methods=["GET"])
 
     def _create_connections(self, stator_ports, rotor_ports):
         """
