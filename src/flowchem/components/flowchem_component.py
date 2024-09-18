@@ -149,6 +149,11 @@ class FlowchemComponent:
                 # does not want to include it in the API
                 continue
 
+            if api_method[0] == "_":
+                # This means that the method is internally used and its access should not be provide in the API to the
+                # user
+                continue
+
             if (api_method in api_class_methods) and (api_method not in obj_methods):
                 # This means that the method was not overwritten
                 # The documentation must be changed to clarify it to the user
