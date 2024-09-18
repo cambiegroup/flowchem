@@ -225,10 +225,10 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
 
         Returns:
             position (str): The current position:
-            WASH
-            NEEDLE
-            WASTE
-            WASH_PORT2.
+            NEEDLE (position 0).
+            WASH (position 1).
+            WASH_PORT2 (position 2).
+            WASTE (position 3).
         """
         position = await self.hw_device.syringe_valve_position(port=None)
         if position:
@@ -241,10 +241,10 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
 
         Args:
             position (str): The desired position:
-            WASH
-            NEEDLE
-            WASTE
-            WASH_PORT2.
+            NEEDLE (position 0).
+            WASH (position 1).
+            WASH_PORT2 (position 2).
+            WASTE (position 3).
         """
         success = await self.hw_device.syringe_valve_position(port=position)
         if success:
@@ -288,8 +288,8 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
 
         Returns:
             position (str):
-                LOAD
-                INJECT
+                LOAD (position 0)
+                INJECT (position 1)
         """
         position = await self.hw_device.injector_valve_position(port=None)
         if position:
@@ -302,8 +302,8 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
 
         Args:
             position (str):
-            LOAD
-            INJECT
+            LOAD (position 0)
+            INJECT (position 1)
         """
         try:
             success = await self.hw_device.injector_valve_position(port=position)
