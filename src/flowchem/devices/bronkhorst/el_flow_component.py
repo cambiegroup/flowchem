@@ -45,9 +45,9 @@ class EPCComponent(PressureSensor):
             The hardware device (EPC) this component interfaces with.
         """
         super().__init__(name, hw_device)
-        self.add_api_route("/get-pressure", self.get_pressure, methods=["GET"])
-        self.add_api_route("/set-pressure", self.set_pressure_setpoint, methods=["PUT"])
-        self.add_api_route("/stop", self.stop, methods=["PUT"])
+        #self.add_api_route("/get-pressure", self.get_pressure, methods=["GET"])
+        #self.add_api_route("/set-pressure", self.set_pressure_setpoint, methods=["PUT"])
+        #self.add_api_route("/stop", self.stop, methods=["PUT"])
 
     async def set_pressure_setpoint(self, pressure: str) -> bool:
         """
@@ -139,9 +139,9 @@ class MFCComponent(FlowchemComponent):
             The hardware device (MFC) this component interfaces with.
         """
         super().__init__(name, hw_device)
-        self.add_api_route("/get-flow-rate", self.get_flow_setpoint, methods=["GET"])
-        self.add_api_route("/set-flow-rate", self.set_flow_setpoint, methods=["PUT"])
-        self.add_api_route("/stop", self.stop, methods=["PUT"])
+        #self.add_api_route("/get-flow-rate", self.get_flow_setpoint, methods=["GET"])
+        #self.add_api_route("/set-flow-rate", self.set_flow_setpoint, methods=["PUT"])
+        #self.add_api_route("/stop", self.stop, methods=["PUT"])
 
     async def set_flow_setpoint(self, flowrate: str) -> bool:
         """

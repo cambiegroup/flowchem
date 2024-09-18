@@ -37,8 +37,8 @@ class HPLCControl(FlowchemComponent):
             The hardware device (HPLC) this component interfaces with.
         """
         super().__init__(name, hw_device)
-        self.add_api_route("/run-sample", self.run_sample, methods=["PUT"])
-        self.add_api_route("/send-method", self.send_method, methods=["PUT"])
+        #self.add_api_route("/run-sample", self.run_sample, methods=["PUT"])
+        #self.add_api_route("/send-method", self.send_method, methods=["PUT"])
 
         # Ontology: high performance liquid chromatography instrument
         self.component_info.owl_subclass_of.append(

@@ -7,11 +7,11 @@ class Pump(FlowchemComponent):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """A generic pump."""
         super().__init__(name, hw_device)
-        self.add_api_route("/infuse", self.infuse, methods=["PUT"])
-        self.add_api_route("/stop", self.stop, methods=["PUT"])
-        self.add_api_route("/is-pumping", self.is_pumping, methods=["GET"])
-        if self.is_withdrawing_capable():
-            self.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
+        #self.add_api_route("/infuse", self.infuse, methods=["PUT"])
+        #self.add_api_route("/stop", self.stop, methods=["PUT"])
+        #self.add_api_route("/is-pumping", self.is_pumping, methods=["GET"])
+        #if self.is_withdrawing_capable():
+            #self.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
         self.component_info.type = "Pump"
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:  # type: ignore

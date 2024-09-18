@@ -26,7 +26,7 @@ class IcIRControl(IRControl):
             hw_device (IcIR): The hardware device instance for controlling the IR spectrometer.
         """
         super().__init__(name, hw_device)
-        self.add_api_route("/spectrum-count", self.spectrum_count, methods=["GET"])
+        #self.add_api_route("/spectrum-count", self.spectrum_count, methods=["GET"])
 
     async def acquire_spectrum(self, treated: bool = True) -> IRSpectrum:
         """

@@ -9,8 +9,8 @@ class NMRControl(FlowchemComponent):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """NMR Control component."""
         super().__init__(name, hw_device)
-        self.add_api_route("/acquire-spectrum", self.acquire_spectrum, methods=["PUT"])
-        self.add_api_route("/stop", self.stop, methods=["PUT"])
+        #self.add_api_route("/acquire-spectrum", self.acquire_spectrum, methods=["PUT"])
+        #self.add_api_route("/stop", self.stop, methods=["PUT"])
 
         # Ontology: fourier transformation NMR instrument
         self.component_info.owl_subclass_of.append(

@@ -29,8 +29,8 @@ class KnauerDADLampControl(PowerSwitch):
         """
         super().__init__(name, hw_device)
         self.lamp = name
-        self.add_api_route("/lamp_status", self.get_lamp_status, methods=["GET"])
-        self.add_api_route("/status", self.get_status, methods=["GET"])
+        #self.add_api_route("/lamp_status", self.get_lamp_status, methods=["GET"])
+        #self.add_api_route("/status", self.get_status, methods=["GET"])
 
     async def get_status(self) -> str:
         """
@@ -112,13 +112,13 @@ class DADChannelControl(PhotoSensor):
         self.channel = channel
 
         # additional parameters
-        self.add_api_route("/set-wavelength", self.set_wavelength, methods=["PUT"])
-        self.add_api_route(
-            "/set-integration-time",
-            self.set_integration_time,
-            methods=["PUT"],
-        )
-        self.add_api_route("/set-bandwidth", self.set_bandwidth, methods=["PUT"])
+        #self.add_api_route("/set-wavelength", self.set_wavelength, methods=["PUT"])
+        #self.add_api_route(
+        #    "/set-integration-time",
+        #    self.set_integration_time,
+        #    methods=["PUT"],
+        #)
+        #self.add_api_route("/set-bandwidth", self.set_bandwidth, methods=["PUT"])
 
         # Ontology: diode array detector
         self.component_info.owl_subclass_of.append(

@@ -27,13 +27,13 @@ class TemperatureControl(FlowchemComponent):
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device)
 
-        self.add_api_route("/temperature", self.set_temperature, methods=["PUT"])
-        self.add_api_route("/temperature", self.get_temperature, methods=["GET"])
+        #self.add_api_route("/temperature", self.set_temperature, methods=["PUT"])
+        #self.add_api_route("/temperature", self.get_temperature, methods=["GET"])
 
-        self.add_api_route("/power-on", self.power_on, methods=["PUT"])
-        self.add_api_route("/power-off", self.power_off, methods=["PUT"])
+        #self.add_api_route("/power-on", self.power_on, methods=["PUT"])
+        #self.add_api_route("/power-off", self.power_off, methods=["PUT"])
 
-        self.add_api_route("/target-reached", self.is_target_reached, methods=["GET"])
+        #self.add_api_route("/target-reached", self.is_target_reached, methods=["GET"])
         # self.add_api_route("/limits", self.temperature_limits, methods=["GET"])
 
         self._limits = temp_limits

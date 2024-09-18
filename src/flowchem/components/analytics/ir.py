@@ -20,8 +20,8 @@ class IRControl(FlowchemComponent):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
-        self.add_api_route("/acquire-spectrum", self.acquire_spectrum, methods=["PUT"])
-        self.add_api_route("/stop", self.stop, methods=["PUT"])
+        #self.add_api_route("/acquire-spectrum", self.acquire_spectrum, methods=["PUT"])
+        #self.add_api_route("/stop", self.stop, methods=["PUT"])
 
         # Ontology: high performance liquid chromatography instrument
         self.component_info.owl_subclass_of.append(

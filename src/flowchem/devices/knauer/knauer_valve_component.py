@@ -33,8 +33,8 @@ class KnauerInjectionValve(SixPortTwoPositionValve):
         """
         super().__init__(name, hw_device)
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        #self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        #self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     class LoadInject(Enum):
         LOAD = "L"
@@ -103,8 +103,8 @@ class Knauer6PortDistributionValve(SixPortDistributionValve):
         """
         super().__init__(name, hw_device)
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        #self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        #self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: int, reverse: bool = False):
         """
@@ -164,8 +164,8 @@ class Knauer12PortDistributionValve(TwelvePortDistributionValve):
         """
         super().__init__(name, hw_device)
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        #self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        #self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: int, reverse: bool = False):
         """
@@ -225,8 +225,8 @@ class Knauer16PortDistributionValve(SixteenPortDistributionValve):
         """
         super().__init__(name, hw_device)
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        #self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        #self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: int, reverse: bool = False):
         """

@@ -17,30 +17,30 @@ class SpinsolveControl(NMRControl):
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
         # Solvent
-        self.add_api_route("/solvent", self.get_solvent, methods=["GET"])
-        self.add_api_route("/solvent", self.set_solvent, methods=["PUT"])
+        #self.add_api_route("/solvent", self.get_solvent, methods=["GET"])
+        #self.add_api_route("/solvent", self.set_solvent, methods=["PUT"])
         # Sample name
-        self.add_api_route("/sample-name", self.get_sample, methods=["GET"])
-        self.add_api_route("/sample-name", self.set_sample, methods=["PUT"])
+        #self.add_api_route("/sample-name", self.get_sample, methods=["GET"])
+        #self.add_api_route("/sample-name", self.set_sample, methods=["PUT"])
         # User data
-        self.add_api_route("/user-data", self.get_user_data, methods=["GET"])
-        self.add_api_route("/user-data", self.set_user_data, methods=["PUT"])
+        #self.add_api_route("/user-data", self.get_user_data, methods=["GET"])
+        #self.add_api_route("/user-data", self.set_user_data, methods=["PUT"])
         # Protocols
-        self.add_api_route(
-            "/protocol-list",
-            self.list_protocols,
-            methods=["GET"],
-        )
-        self.add_api_route(
-            "/spectrum-folder",
-            self.get_result_folder,
-            methods=["GET"],
-        )
-        self.add_api_route(
-            "/is-busy",
-            self.is_protocol_running,
-            methods=["GET"],
-        )
+        #self.add_api_route(
+        #    "/protocol-list",
+        #    self.list_protocols,
+        #    methods=["GET"],
+        #)
+        #self.add_api_route(
+        #    "/spectrum-folder",
+        #    self.get_result_folder,
+        #    methods=["GET"],
+        #)
+        #self.add_api_route(
+        #    "/is-busy",
+        #    self.is_protocol_running,
+        #    methods=["GET"],
+        #)
 
     async def acquire_spectrum(
         self,

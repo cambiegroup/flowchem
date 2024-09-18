@@ -17,8 +17,8 @@ class PhidgetBubbleSensorComponent(Sensor):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
         # self.add_api_route("/set-data-Interval", self.set_dataInterval, methods=["PUT"])
-        self.add_api_route("/read-voltage", self.read_voltage, methods=["GET"])
-        self.add_api_route("/acquire-signal", self.acquire_signal, methods=["GET"])
+        #self.add_api_route("/read-voltage", self.read_voltage, methods=["GET"])
+        #self.add_api_route("/acquire-signal", self.acquire_signal, methods=["GET"])
 
     async def power_on(self) -> bool:
         self.hw_device.power_on()

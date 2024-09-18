@@ -46,7 +46,7 @@ class ClarityComponent(HPLCControl):
         """
         super().__init__(name, hw_device)
         # Clarity-specific command
-        self.add_api_route("/exit", self.exit, methods=["PUT"])
+        #self.add_api_route("/exit", self.exit, methods=["PUT"])
 
     async def exit(self) -> bool:
         """

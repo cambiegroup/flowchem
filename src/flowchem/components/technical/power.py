@@ -16,8 +16,8 @@ class PowerSwitch(FlowchemComponent):
         """Create a TemperatureControl object."""
         super().__init__(name, hw_device)
 
-        self.add_api_route("/power-on", self.power_on, methods=["PUT"])
-        self.add_api_route("/power-off", self.power_off, methods=["PUT"])
+        #self.add_api_route("/power-on", self.power_on, methods=["PUT"])
+        #self.add_api_route("/power-off", self.power_off, methods=["PUT"])
 
     async def power_on(self):
         """Turn power on."""
@@ -39,16 +39,16 @@ class PowerControl(PowerSwitch):
         """Create a PowerSwitch object."""
         super().__init__(name, hw_device)
 
-        self.add_api_route("/power-on", self.power_on, methods=["PUT"])     # Todo remove Repetitive!
-        self.add_api_route("/power-off", self.power_off, methods=["PUT"])
+        #self.add_api_route("/power-on", self.power_on, methods=["PUT"])     # Todo remove Repetitive!
+        #self.add_api_route("/power-off", self.power_off, methods=["PUT"])
 
         # Current
-        self.add_api_route("/current", self.get_current, methods=["GET"])
-        self.add_api_route("/current", self.set_current, methods=["PUT"])
+        #self.add_api_route("/current", self.get_current, methods=["GET"])
+        #self.add_api_route("/current", self.set_current, methods=["PUT"])
 
         # Voltage
-        self.add_api_route("/voltage", self.get_voltage, methods=["GET"])
-        self.add_api_route("/voltage", self.set_voltage, methods=["PUT"])
+        #self.add_api_route("/voltage", self.get_voltage, methods=["GET"])
+        #self.add_api_route("/voltage", self.set_voltage, methods=["PUT"])
 
     async def set_current(self, current: str):
         """Set the target current to the given string in natural language."""

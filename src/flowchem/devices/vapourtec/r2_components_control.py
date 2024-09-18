@@ -34,13 +34,13 @@ class R2GeneralSensor(Sensor):
 
     def __init__(self, name: str, hw_device: R2) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/monitor-system", self.monitor_sys, methods=["GET"])
-        self.add_api_route("/get-run-state", self.get_run_state, methods=["GET"])
-        self.add_api_route(
-            "/set-system-max-pressure",
-            self.set_sys_pressure_limit,
-            methods=["PUT"],
-        )
+        #self.add_api_route("/monitor-system", self.monitor_sys, methods=["GET"])
+        #self.add_api_route("/get-run-state", self.get_run_state, methods=["GET"])
+        #self.add_api_route(
+        #    "/set-system-max-pressure",
+        #    self.set_sys_pressure_limit,
+        #    methods=["PUT"],
+        #)
 
     async def monitor_sys(self) -> dict:
         """Monitor system performance."""
@@ -145,8 +145,8 @@ class R2InjectionValve(SixPortTwoPositionValve):
         super().__init__(name, hw_device)
         self.valve_code = valve_code
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        #self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        #self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         return raw_position # Check the return (raw_position is a int, right?)
@@ -197,8 +197,8 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         super().__init__(name, hw_device)
         self.valve_code = valve_code
         # raise NotImplementedError("Check that the mapping is correct")
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        #self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        #self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
         if not reverse:

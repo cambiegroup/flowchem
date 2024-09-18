@@ -52,13 +52,13 @@ class PressureControl(FlowchemComponent):
         """
         super().__init__(name, hw_device)
 
-        self.add_api_route("/pressure", self.set_pressure, methods=["PUT"])
-        self.add_api_route("/pressure", self.get_pressure, methods=["GET"])
+        #self.add_api_route("/pressure", self.set_pressure, methods=["PUT"])
+        #self.add_api_route("/pressure", self.get_pressure, methods=["GET"])
 
-        self.add_api_route("/power-on", self.power_on, methods=["PUT"])
-        self.add_api_route("/power-off", self.power_off, methods=["PUT"])
+        #self.add_api_route("/power-on", self.power_on, methods=["PUT"])
+        #self.add_api_route("/power-off", self.power_off, methods=["PUT"])
 
-        self.add_api_route("/target-reached", self.is_target_reached, methods=["GET"])
+        #self.add_api_route("/target-reached", self.is_target_reached, methods=["GET"])
 
     async def set_pressure(self, pressure: str) -> pint.Quantity:
         """

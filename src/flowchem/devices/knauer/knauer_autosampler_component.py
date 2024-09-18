@@ -70,8 +70,8 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
         """
         super().__init__(name, hw_device)
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        #self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        #self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: int, reverse: bool = False):
         """
@@ -128,8 +128,8 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
         """
         super().__init__(name, hw_device)
 
-        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
-        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+        #self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        #self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: int, reverse: bool = False):
         """

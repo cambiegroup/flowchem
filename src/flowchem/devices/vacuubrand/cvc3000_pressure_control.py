@@ -52,12 +52,12 @@ class CVC3000PressureControl(PressureControl):
         """
         super().__init__(name, hw_device)
 
-        self.add_api_route(
-            "/status",
-            self.hw_device.status,
-            response_model=ProcessStatus,
-            methods=["PUT"],
-        )
+        #self.add_api_route(
+        #    "/status",
+        #    self.hw_device.status,
+        #    response_model=ProcessStatus,
+        #    methods=["PUT"],
+        #)
 
     async def set_pressure(self, pressure: str):
         """
