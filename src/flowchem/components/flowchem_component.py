@@ -165,10 +165,35 @@ class FlowchemComponent:
 
             bound_method = method.__get__(self)
 
-            if argsnum == 1:
-                self.add_api_route(f"/{api_method}", bound_method, methods=["GET"])
-            else:
-                self.add_api_route(f"/{api_method}", bound_method, methods=["PUT"])
+            method_type, api_method = self.__criteria_get(argsnum, api_method)
+
+            self.add_api_route(f"/{api_method}", bound_method, methods=[method_type])
+
+
+    def __criteria_get(self, argsnum: int, api_method: str)->tuple[str, str]:
+
+        if argsnum == 1 and not ("stop" in api_method or "exit" in api_method):
+
+            remove_str = "get_ is_".split()
+
+            for old_str in remove_str:
+                api_method = api_method.replace(old_str, "")
+
+            api_method = api_method.replace("_", "-")
+
+            return "GET", api_method
+
+        else:
+
+            api_method = api_method.replace("set_", "")
+
+            api_method = api_method.replace("_", "-")
+
+            return "PUT", api_method
+
+
+
+
 
 
 
