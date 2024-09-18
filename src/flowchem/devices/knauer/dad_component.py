@@ -29,7 +29,7 @@ class KnauerDADLampControl(PowerSwitch):
         """
         super().__init__(name, hw_device)
         self.lamp = name
-        self.add_api_route("/lamp_status", self.get_lamp, methods=["GET"])
+        self.add_api_route("/lamp_status", self.get_lamp_status, methods=["GET"])
         self.add_api_route("/status", self.get_status, methods=["GET"])
 
     async def get_status(self) -> str:
@@ -41,7 +41,7 @@ class KnauerDADLampControl(PowerSwitch):
         """
         return await self.hw_device.status()
 
-    async def get_lamp(self):
+    async def get_lamp_status(self):
         """
         Get the status of the lamp.
 
