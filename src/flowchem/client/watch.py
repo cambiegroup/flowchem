@@ -7,6 +7,7 @@ from loguru import logger
 import threading
 import toml
 import inspect
+from typing import Callable
 
 
 class Watch:
