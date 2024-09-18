@@ -114,7 +114,13 @@ class FlowchemComponent:
         kwargs : dict
             Additional arguments to configure the route.
         """
+        if kwargs["methods"][0] == "PUT":
+            self.component_info.put_methods[path[1:]] = endpoint.__name__
+        if kwargs["methods"][0] == "GET" and path != "/":
+            self.component_info.get_methods[path[1:]] = endpoint.__name__
+
         logger.debug(f"Adding route {path} for router of {self.name}")
+
         self._router.add_api_route(path, endpoint, **kwargs)
 
     def get_component_info(self) -> ComponentInfo:
