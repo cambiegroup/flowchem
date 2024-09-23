@@ -9,4 +9,5 @@ __all__ = [
     "AzuraCompact",
     "KnauerDAD",
     "KnauerValve",
+    "KnauerAutosampler",
 ]
