@@ -89,7 +89,7 @@ class ExtendableEar(FlowchemDevice):
 Entering information points is recommended to detect possible errors during device initialization. You are advised to 
 use the loguru package. For more details, visit [Loguru doc](https://loguru.readthedocs.io/en/stable/). Before run the program, the device class 
 `ExtendableEar` must be initialized in the `__init__.py` of the device package for the flowchem to find it at the moment 
-of the inspection. In the device folder `floechem.device.weasley.__init__`, create a file as described below:
+of the inspection. In the device folder `flowchem.device.weasley.__init__`, create a file as described below:
 
 ```python
 from .extendable_ear import ExtendableEar
