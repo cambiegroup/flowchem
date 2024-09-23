@@ -145,9 +145,8 @@ class ML600Pump(SyringePump):
 ```
 
 ```{note}
-The `pump_code` is specific attribute of each device. It is used to identify a particular device connected to the 
-serial port. This allows us to send commands to the correct device, because it is possible to connect a serie of 
-ml600 in the same serial port.
+The `pump_code` attribute is specific for each device. It is used to identify a particular device, since to one serial port,
+multiple devices can be connected in form of a daisy chain. This allows us to send commands to the correct device
 ```
 The communication is established in the methods `get_pump_status`, `set_to_volume`, and `stop` of the `hw_device`. 
 Remember that the `hw_device` is the ML600 main class.
