@@ -186,7 +186,7 @@ class Protocol1Command:
         return compiled_command + self.execution_command
 ```
 
-Introducing another crucial dataclass, essential for effectively managing the commands sent to the device:
+The commands can be grouped in an Enum, effectively managing the commands sent to the device:
 
 ```python
 ...
@@ -243,7 +243,7 @@ class ML600Commands(Enum):
     ...
 ```
 
-And finally, a class to customize the serial communication, which is possible to control a series of devices 
+And finally, a class to setup up the serial connection, which can control a series of devices 
 through the same port:
 
 ```python
