@@ -184,7 +184,7 @@ class AutosamplerPump(SyringePump):
     @staticmethod
     def is_withdrawing_capable() -> bool:  # type: ignore
         """Can the pump reverse its normal flow direction?"""
-        return False
+        return True
 
 
 class AutosamplerSyringeValve(FourPortDistributionValve):
