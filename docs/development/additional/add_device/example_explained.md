@@ -42,7 +42,7 @@ class ML600(FlowchemDevice):
     async def initialize(self):
         """Initialize pump and its components."""
 
-        self.components.extend([ML600Pump("pump", self), ML600LeftValve("right_pump", self)])
+        self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
 ```
 
 We will write a new module in the same folder with the classes for each component. The pump component, for 
