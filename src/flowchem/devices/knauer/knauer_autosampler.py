@@ -1,24 +1,22 @@
-"""
-Module for communication with Autosampler.
-"""
-
-# For future: go through graph, acquire mac addresses, check which IPs these have and setup communication.
-# To initialise the appropriate device on the IP, use class name like on chemputer
-import inspect
-import json
-import logging
-import socket
 from enum import Enum, auto
+from loguru import logger
+import logging
+import asyncio
 from typing import Type, List
-from time import sleep
 import functools
-from threading import Thread
-import pandas
-from flowchem.constants import flowchem_ureg
-from rdkit.Chem import MolFromSmiles, MolToSmiles
-from pathlib import Path
+import time
 
-# TODO assert that writing to and reloading works reliably - so use old mapping if it exists, here ro from platform code
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.components.device_info import DeviceInfo
+from flowchem.utils.people import jakob, Samuel_Saraiva, miguel
+from flowchem.devices.knauer._common import KnauerEthernetDevice
+from flowchem.devices.knauer.knauer_autosampler_component import (
+    AutosamplerCNC,
+    AutosamplerPump,
+    AutosamplerSyringeValve,
+    AutosamplerInjectionValve,
+)
+
 try:
     # noinspection PyUnresolvedReferences
     from NDA_knauer_AS.knauer_AS import *
