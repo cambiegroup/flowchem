@@ -48,7 +48,7 @@ Since flowchem leverages web technologies, flowchem devices can be controlled di
 written in different languages and from almost any operative system, including Android and iOS.
 A set of python clients interfacing with the flowchem API are also provided and used in examples.
 
-We recommend the user have an straightforward immersion to the package to follow the following readings.
+We recommend the user to simply try the package and follow provided material.
 
 1. Follow the instruction to [install](user-guides/tutorials/installation.md) the package;
 2. Read the instructions to create the [configuration file](user-guides/tutorials/configuration.md);
