@@ -173,10 +173,12 @@ class AutosamplerPump(SyringePump):
         if success:
             logger.info(f"Syringe pump successfully withdrew {volume} ml")
 
+    #ToDo
     async def stop(self):  # type: ignore
         """Stop pumping."""
         ...
 
+    # ToDo
     async def is_pumping(self) -> bool:  # type: ignore
         """Is pump running?"""
         ...
