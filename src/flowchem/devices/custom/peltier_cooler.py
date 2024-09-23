@@ -1,18 +1,25 @@
+""" Control module for Peltier cooler via a TEC05-24 or TEC16-24 controller """
 from __future__ import annotations
 
-from time import sleep
-
-import logging
-import threading
-import warnings
-from flowchem.constants import flowchem_ureg
-from enum import Enum
-from typing import Union, List, Optional, Tuple
-from dataclasses import dataclass
-from time import sleep
-import serial
+import aioserial
+import pint
 import numpy as np
 
+from typing import Union, List, Tuple
+from dataclasses import dataclass
+from time import sleep
+
+from loguru import logger
+from asyncio import Lock
+from flowchem import ureg
+from flowchem.components.device_info import DeviceInfo
+from flowchem.components.technical.temperature import TempRange
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.custom.peltier_cooler_component import (
+    PeltierCoolerTemperatureControl,
+)
+from flowchem.utils.exceptions import InvalidConfigurationError
+from flowchem.utils.people import jakob, miguel
 
 """
 Controlling Peltier via a TEC05-24 or TEC16-24 controller
