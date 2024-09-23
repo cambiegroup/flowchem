@@ -7,11 +7,13 @@ same kind.
 The valve logic, or better specifically, the rotary valve logic, is based on the device's movement and degree of 
 freedom. The figure above illustrates an example of a valve. The rotary valve has 2 parts. 
 The first part, called stator, is fixed and contains the ports, where the tubes are connected. The second part, 
-called the rotor, is mobile. The rotor can rotate to a specific angle to eastablish a specific connection. 
+called the rotor, is mobile. The rotor can rotate to a specific angle to establish a specific connection through 
+the channels. 
 
 In the figure, the systematic numbering of the nine ports, from 0 to 8, ensures a clear understanding of their relation to 
 the central port. The first port, number 1, is always the highest, and the subsequent ports are numbered in a clockwise
-direction.
+direction. The rotor have two channels, called 9 and 10. The numbers used to represent the channels is always above 
+the number of ports in order to avoid misunderstand.
 
 ![](valve_logic.JPG)
 
