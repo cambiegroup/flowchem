@@ -2,35 +2,34 @@
 
 After running the flowchem with a specific configuration file, an API is available on the server and can be accessed 
 through the address: http://127.0.0.1:8000. Suppose we have a configuration file `flowchem_config.toml` as 
-described below. My my-device is a generic device of the flowchem with the class name FakeDeive.
+described below. The device my-device is a generic device of flowchem with the class name FakeDevice.
 
 ```toml
 [device.my-device]
-type = "FakeDeive"
+type = "FakeDevice"
 ```
 
-The flowchem needs be running as shown:
-
+Run flowchem:
 ```shell
 flowchem flowchem_config.toml
 ```
 
-Another way to access this FakeDevice were implemented direct in the package commands. It can be access through:
+Another way to access this FakeDevice was implemented directly in the package commands. It can be access through:
 
 ```shell
 flowchem example
 ```
 
-These command access the `FakeDevice_configuration.toml` file that is available in the package folder in 
+This command accesses the `FakeDevice_configuration.toml` file that is available in the package folder in 
 `flowchem/examples`.
 
 
-The API available in the address will be:
+The API available under the address will be:
 
 ![](FakeDeviceAPI.JPG)
 
 Access to API can be done directly through the web browser or by clients written in different languages. Below, we 
-show how easy it is to access API, for example, through Python. Access to API commands through Python files can be done
+show how easy it is to access the API, for example, through Python. Access to API commands through Python can be done
 using the flowchem class.
 
 ## Acess the API through Python
@@ -40,8 +39,8 @@ from flowchem.client.client import get_all_flowchem_devices
 # Flowchem devices
 flowchem_devices = get_all_flowchem_devices()
 ```
-The variable ***flowchem_device*** in the code above is a dictionary with all devices connected through the API. With 
-this variable, it is possible to access all components available in the device. In this example, the my-device
+The variable ***flowchem_devices*** in the code above is a dictionary with all devices connected through the API. With 
+this variable, it is possible to access all components available from the devices. In this example, the my-device
 has one component that can be accessed through the code below:
 
 ```python
@@ -54,7 +53,7 @@ interface, a method put as shown below:
 
 ![](FakeComponent.JPG)
 
-The argument parameters to send these commands need to be specified in the method.
+The argument parameters to send need to be specified in the method.
 
 ```python
 component_fake.put('fake_send_command', params={'parameter_1': "something", 'parameter_2': 'something'})
