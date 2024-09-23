@@ -87,10 +87,10 @@ components and build equipment efficiently. To illustrate, consider the table an
 
 | Class of the System   | Description        | Main Function            |
 |-----------------------|--------------------|--------------------------|
-| Azura Compact Pump    | Device             | Communication Configure  |
-| HPLC Pump             | Component Specific | Specific Access Commands |
-| Pump                  | Component Base     | Base Access Commands     |
-| FlowChem Component    | Class Base         | Base Constructor         |
+| Azura Compact Pump    | Specific Device    | Implement & run Commands |
+| HPLC Pump             | Specific Component | Define Specific Commands |
+| Pump                  | Base Component     | Define Base Commands     |
+| FlowChem Component    | Base Class         | Base Constructor         |
 
 ### How Inheritance Works in FlowChem
 
