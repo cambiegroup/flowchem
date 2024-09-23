@@ -405,4 +405,18 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
 
 
 if __name__ == "__main__":
-    pass
+    import asyncio
+
+    AS = KnauerAutosampler(
+        name="test-AS",
+        ip_address="192.168.10.114",
+        autosampler_id=61,
+        tray_type="TRAY_48_VIAL",
+    )
+
+    async def execute_tasks(A_S):
+        print(await A_S.get_errors())
+        await A_S.reset_errors()
+    asyncio.run(execute_tasks(AS))
+
+
