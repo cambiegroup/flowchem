@@ -20,7 +20,7 @@ is the list of the available connection ports. The `rotor_ports` is the list of 
 
 ```python
 stator_ports=[(1, 2, 3, 4, 5, 6, 7, 8), (0,)],
-rotor_ports=[(None, None, 10, None, 10, None, None, 9), (9,)]
+rotor_ports=[(None, 10, None, 10, None, None, 9, None), (9,)]
 ```
 
 Observe that the second tuple of both lists correlates with the central port, number zero. The 
@@ -30,20 +30,19 @@ Following the logic, with a rotation of +45 degrees in the rotor, only the `roto
 new configuration, or position B, as illustrated in the figure, will be:
 ```python
 stator_ports=[(1, 2, 3, 4, 5, 6, 7, 8), (0,)],
-rotor_ports=[(9, None, None, 10, None, 10, None, None), (9,)]
+rotor_ports=[(None, None, 10, None, 10, None, None, 9), (9,)]
 ```
-
 
 Position C will be:
 ```python
 stator_ports=[(1, 2, 3, 4, 5, 6, 7, 8), (0,)],
-rotor_ports=[(None, 9, None, None, 10, None, 10, None), (9,)]
+rotor_ports=[(9, None, None, 10, None, 10, None, None), (9,)]
 ```
 And position D is:
 
 ```python
 stator_ports=[(1, 2, 3, 4, 5, 6, 7, 8), (0,)],
-rotor_ports=[(None, None, 9, None, None, 10, None, None), (9,)]
+rotor_ports=[(None, 9, None, None, 10, None, 10, None), (9,)]
 ```
 Imagine if we have a injection valve with 2 positions and 6 ports, as shown above.
 
