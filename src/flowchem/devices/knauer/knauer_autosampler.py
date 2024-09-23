@@ -300,8 +300,13 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         await self.syringe_valve_position(SyringeValvePositions.WASTE.name)
         await self.injector_valve_position(InjectorValvePositions.LOAD.name)
 
-    def tubing_volume(self, volume: None or int = None):
-        return self._set_get_value(TubingVolumeCommand, volume)
+        logger.info('Knauer AutoSampler device was successfully initialized!')
+        self.components.extend([
+            AutosamplerCNC("cnc", self),
+            AutosamplerPump("pump", self),
+            AutosamplerSyringeValve("syringe_valve", self),
+            AutosamplerInjectionValve("injection_valve", self),
+        ])
 
     async def _move_needle_horizontal(self, needle_position: str, plate: str = None, well: int = None):
         command_string = self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)
