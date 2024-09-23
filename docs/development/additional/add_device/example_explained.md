@@ -475,20 +475,19 @@ class ML600(FlowchemDevice):
     ...
 ```
 
-The example above shows a draft of how flowchem devices can be implemented in the packaged. Another functionality 
-related to the ML600LeftValve was added in a similar manner.
+The example above shows how devices can be added to the flowchem package. Additional functionality 
+can be added by following provided outline.
 
 To better understand the information flow in this class, consider the scenario where an infuse command is sent to the 
 pump, as illustrated below.
 
 ![](command_flow.JPG)
 
-The command is then directed to the `set_to_volume` method in the `ML600` class. This command is translated into the 
-speed and position of the syringe pump, which in turn creates a protocol with the `Protocol1Command` class. This 
-protocol is then sent to the `HamiltonPumpIO`, where it is further translated according to the list of available 
-commands as per the manual. Once translated, the command is sent to the pump through the serial port.
+The infuse command is directed to the `set_to_volume` method in the `ML600` class. The volume and flowrate is translated to the 
+device and syringe size specific plunger speed and position. The command and parameters are packed in `Protocol1Command` class.
+The actual command string is constructed in `HamiltonPumpIO` by calling `Protocol1Command.compile` and written to the serial port.
 
-The all code implement to build the ml600 is seen [here](../../foundations/code_structure/flowchem.devices.hamilton.rst)
+The code for implementing the ml600 is provided [here](../../foundations/code_structure/flowchem.devices.hamilton.rst)
 
 
 
