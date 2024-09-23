@@ -87,6 +87,27 @@ class CommandModus(Enum):
     GET_PROGRAMMED = auto()
     GET_ACTUAL = auto()
 
+
+def send_until_acknowledged(max_reaction_time=15):
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs):
+            remaining_time = max_reaction_time
+            start_time = time.time()
+            while remaining_time > 0:
+                try:
+                    # Await the decorated async function
+                    result = await func(*args, **kwargs)
+                    return result
+                except ASBusyError:
+                    # If the device is busy, wait and retry
+                    elapsed_time = time.time() - start_time
+                    remaining_time = 10 - elapsed_time
+            raise ASError("Maximum reaction time exceeded")
+        return wrapper
+    return decorator
+
+
 class ASEthernetDevice:
     TCP_PORT = 2101
     BUFFER_SIZE = 1024
@@ -102,32 +123,44 @@ class ASEthernetDevice:
             level=logging.DEBUG,
         )
 
-    def _send_and_receive(self, message: str):
+    async def _send_and_receive(self, message: str):
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(5)
-                s.connect((self.ip_address, self.port))
+            # Open a connection
+            reader, writer = await asyncio.open_connection(self.ip_address, self.port)
 
-                s.send(message.encode())
-                reply = b""
-                while True:
-                    chunk = s.recv(ASEthernetDevice.BUFFER_SIZE)
-                    reply += chunk
-                    try:
-                        CommunicationFlags(chunk)
-                        break
-                    except ValueError:
-                        pass
-                    if CommunicationFlags.MESSAGE_END.value in chunk:
-                        break
+            # Send the message
+            writer.write(message.encode())
+            await writer.drain()
+
+            # Receive the reply in chunks
+            reply = b""
+            while True:
+                chunk = await reader.read(ASEthernetDevice.BUFFER_SIZE)
+                if not chunk:
+                    break
+                reply += chunk
+                try:
+                    CommunicationFlags(chunk)
+                    break
+                except ValueError:
+                    pass
+                if CommunicationFlags.MESSAGE_END.value in chunk:
+                    break
+
+            writer.close()
+            await writer.wait_closed() # Close the connection
+
             return reply
-        except socket.timeout:
-            logging.error(f"No connection possible to device with IP {self.ip_address}")
+
+        except asyncio.TimeoutError:
+            logger.error(f"No connection possible to device with IP {self.ip_address}")
             raise ConnectionError(
-                f"No Connection possible to device with ip_address {self.ip_address}"
+                f"No Connection possible to device with IP address {self.ip_address}"
             )
 
 
+class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
+    """AutoSampler control class."""
 
     def __init__(self,
                  name: str = None,
@@ -168,33 +201,36 @@ class ASEthernetDevice:
             communication_string = command_class.query_actual()
 
         else:
-            raise CommandOrValueError(f"You set {modus} as command modus, however modus should be {CommandModus.SET.name}, {CommandModus.GET_ACTUAL.name}, {CommandModus.GET_PROGRAMMED.name} ")
+            raise CommandOrValueError(
+                f"You set {modus} as command modus, however modus should be {CommandModus.SET.name},"
+                f" {CommandModus.GET_ACTUAL.name}, {CommandModus.GET_PROGRAMMED.name} ")
         return f"{CommunicationFlags.MESSAGE_START.value.decode()}{self.autosampler_id}" \
                f"{ADDITIONAL_INFO}{communication_string}" \
                f"{CommunicationFlags.MESSAGE_END.value.decode()}"
 
-    @send_until_acknowledged
-    def _set(self, message: str or int):
+    @send_until_acknowledged(max_reaction_time=10)
+    async def _set(self, message: str or int):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
         :param message:
         :return: reply: str
         """
-        reply = self._send_and_receive(message)
+
+        reply = await self._send_and_receive(message)
         # this only checks that it was acknowledged
         self._parse_setting_reply(reply)
+        return True
 
-    @send_until_acknowledged
-    def _query(self, message: str or int):
+    @send_until_acknowledged(max_reaction_time=10)
+    async def _query(self, message: str or int):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
         :param message:
         :return: reply: str
         """
-        reply = self._send_and_receive(message)
-
+        reply = await self._send_and_receive(message)
         query_reply = self._parse_query_reply(reply)
         return query_reply
 
@@ -205,19 +241,13 @@ class ASEthernetDevice:
             return True
         elif reply == CommunicationFlags.TRY_AGAIN.value:
             raise ASBusyError
-        elif len(reply) == 4 and int(reply[0]) == 1:
-            # this means the AS has error I think
-            error = self.get_errors()
-            # TODO access enum
-            self.reset_errors()
-            raise ASFailureError("Error in setting: ", error)
         elif reply == CommunicationFlags.NOT_ACKNOWLEDGE.value:
             raise CommandOrValueError
         # this is only the case with replies on queries
         else:
             raise ASError(f"The reply is {reply} and does not fit the expected reply for value setting")
 
-    def _parse_query_reply(self, reply)->int:
+    def _parse_query_reply(self, reply) -> int:
         reply_start_char, reply_stripped, reply_end_char = reply[:ReplyStructure.STX_END.value], \
                                                            reply[
                                                            ReplyStructure.STX_END.value:ReplyStructure.ETX_START.value], \
@@ -225,10 +255,9 @@ class ASEthernetDevice:
         if reply_start_char != CommunicationFlags.MESSAGE_START.value or reply_end_char != CommunicationFlags.MESSAGE_END.value:
             raise CommunicationError
 
-
         # basically, if the device gives an extended reply, length will be 14. This only matters for get commands
         if len(reply_stripped) == 14:
-        # decompose further
+            # decompose further
             as_id = reply[ReplyStructure.STX_END.value:ReplyStructure.ID_END.value]
             as_ai = reply[ReplyStructure.ID_END.value:ReplyStructure.AI_END.value]
             as_pfc = reply[ReplyStructure.AI_END.value:ReplyStructure.PFC_END.value]
@@ -236,23 +265,24 @@ class ASEthernetDevice:
             # check if reply from requested device
             if int(as_id.decode()) != self.autosampler_id:
                 raise ASError(f"ID of used AS is {self.autosampler_id}, but ID in reply is as_id")
-            # if reply is only zeros, which can be, give back one 0 for interpretion
+            # if reply is only zeros, which can be, give back one 0 for interpretation
             if len(as_val.decode().lstrip("0")) > 0:
                 return int(as_val.decode().lstrip("0"))
             else:
                 return int(as_val.decode()[-1:])
             # check the device ID against current device id
         else:
-            raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
+            raise ASError(f"AutoSampler reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
-    def _set_get_value(self, command:Type[CommandStructure], parameter:int or None=None, reply_mapping: None or Type[Enum] = None, get_actual = False):
+    async def _set_get_value(self, command: Type[CommandStructure], parameter: int or None = None,
+                             reply_mapping: None or Type[Enum] = None, get_actual=False):
         """If get actual is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
         if parameter:
             command_string = self._construct_communication_string(command, CommandModus.SET.name, parameter)
-            return self._set(command_string)
+            return await self._set(command_string)
         else:
             command_string = self._construct_communication_string(command, CommandModus.GET_PROGRAMMED.name if not get_actual else CommandModus.GET_ACTUAL.name)
-            reply = self._query(command_string)
+            reply = await self._query(command_string)
             if reply_mapping:
                 return reply_mapping(reply).name
             else:
