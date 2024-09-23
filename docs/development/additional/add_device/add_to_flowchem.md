@@ -87,7 +87,22 @@ class ExtendableEar(FlowchemDevice):
         logger.info('ExtendableEar was successfully initialized!')
 ```
 Entering information points is recommended to detect possible errors during device initialization. You are advised to 
-use the loguru package. For more details, visit [Loguru doc](https://loguru.readthedocs.io/en/stable/).
+use the loguru package. For more details, visit [Loguru doc](https://loguru.readthedocs.io/en/stable/). Before run the program, the device class 
+`ExtendableEar` must be initialized in the `__init__.py` of the device package for the flowchem to find it at the moment 
+of the inspection. In the device folder `floechem.device.weasley.__init__`, create a file as described below:
+
+```python
+from .extendable_ear import ExtendableEar
+
+__all__ = ["ExtendableEar"]
+```
+
+And at the __init__.py of the device package, include the initialization of the new one class:
+
+```python
+...
+from .weasley import *
+```
 
 At this point we can create the configuration file to initialize our new device type. THis will check if everything is ok so far (it would not work otherwise).
 Let's create a minimal config file name `ear.toml` with this content:
