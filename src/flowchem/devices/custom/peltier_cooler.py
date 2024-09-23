@@ -110,25 +110,41 @@ class PeltierCommand(PeltierCommandTemplate):
 class PeltierIO:
     """ Setup with serial parameters, low level IO"""
 
-    # noinspection PyPep8
-    def __init__(self, port: Union[int, str], baud_rate: int = 115200):
-        if baud_rate not in serial.serialutil.SerialBase.BAUDRATES:
-            raise InvalidConfiguration(f"Invalid baud rate provided {baud_rate}!")
+    DEFAULT_CONFIG = {
+        "timeout": 0.1,
+        "baudrate": 115200,
+        "parity": aioserial.PARITY_NONE,
+        "stopbits": aioserial.STOPBITS_ONE,
+        "bytesize": aioserial.EIGHTBITS,
+    }
 
-        if isinstance(port, int):
-            port = f"COM{port}"
-        self.logger = logging.getLogger(__name__).getChild(self.__class__.__name__)
-        self.lock = threading.Lock()
+    # noinspection PyPep8
+    def __init__(self, aio_port: aioserial.Serial):
+        """Initialize communication on the serial port where the cooler is connected.
+
+        Args:
+        ----
+            aio_port: aioserial.Serial() object
+        """
+        self.lock = Lock()
+        self._serial = aio_port
+
+    @classmethod
+    def from_config(cls, port, **serial_kwargs):
+        """Create PeltierIO from config."""
+        # Merge default serial settings with provided ones.
+        configuration = dict(PeltierIO.DEFAULT_CONFIG, **serial_kwargs)
 
         try:
-            # noinspection PyPep8
-            self._serial = serial.Serial(
-                port=port, baudrate=baud_rate, timeout=0.1, parity="N", stopbits=1, bytesize=8
-            )  # type: Union[serial.serialposix.Serial, serial.serialwin32.Serial]
-        except serial.serialutil.SerialException as e:
-            raise InvalidConfiguration from e
+            serial_object = aioserial.AioSerial(port, **configuration)
+        except aioserial.SerialException as serial_exception:
+            raise InvalidConfigurationError(
+                f"Could not open serial port {port} with configuration {configuration}"
+            ) from serial_exception
 
-    def _write(self, command: PeltierCommand):
+        return cls(serial_object)
+
+    async def _write(self, command: PeltierCommand):
         """ Writes a command to the peltier """
         command = command.compile()
         logger.debug(f"Sending {repr(command)}")
@@ -308,35 +324,61 @@ class PeltierLowCoolingDefaults(PeltierDefaults):
     T_MIN = -66
 
 
-class PeltierCooler:
+class PeltierCooler(FlowchemDevice):
+    """Peltier Cooler module class."""
 
-    def __init__(self,
-        peltier_io: PeltierIO,
-        peltier_defaults: PeltierDefaults,
-        address: int = 0
-    ):
+    def __init__(
+            self,
+            name: str = "",
+            address: int = 0,
+            peltier_io: PeltierIO = None,
+            peltier_defaults: str = None,
+    ) -> None:
+        super().__init__(name)
         self.peltier_io = peltier_io
-
         self.address: int = address
+        match peltier_defaults:
+            case None | "default":
+                self.peltier_defaults = PeltierDefaults()
+            case "low_cooling":
+                self.peltier_defaults = PeltierLowCoolingDefaults()
 
-        self.log = logging.getLogger(__name__).getChild(__class__.__name__)
+        # ToDo check info
+        self.device_info = DeviceInfo(
+            authors=[jakob, miguel],
+            manufacturer="Custom",
+            model="Custom",
+        )
 
-        # This command is used to test connection: failure handled by PumpIO
-        self.log.info(
-            f"Connected to peltier on port {self.peltier_io._serial.port}:{address}!")
-        self.peltier_defaults = peltier_defaults
-        self.set_default_values()
-        self.set_pid_parameters(*self.peltier_defaults.COOLING_PID)
+    @classmethod
+    def from_config(
+            cls,
+            port: str,
+            address: int,
+            name: str = "",
+            peltier_defaults: str = None,
+            **serial_kwargs,
+    ):
 
-    def set_default_values(self):
-        self._set_max_temperature(self.peltier_defaults.T_MAX)
-        self._set_min_temperature(self.peltier_defaults.T_MIN)
-        self._set_current_limit_heating(int(self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[-1::,2]))
-        self._set_current_limit_cooling(int(self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[:1:,1]))
-        self.disable_slope()
+        peltier_io = PeltierIO.from_config(port, **serial_kwargs)
 
-    def send_command_and_read_reply( self, command_template: PeltierCommandTemplate, parameter: int= "", parse=True
-    ) -> Union[str, List[str]]:
+        return cls(peltier_io=peltier_io, address=address, name=name, peltier_defaults=peltier_defaults)
+
+    async def initialize(self):
+        await self.set_default_values()
+        await self.set_pid_parameters(*self.peltier_defaults.COOLING_PID)
+
+        temp_range = TempRange(
+            min=ureg.Quantity(f"{self.peltier_defaults.T_MIN} °C"),
+            max=ureg.Quantity(f"{self.peltier_defaults.T_MAX} °C")
+        )
+        list_of_components = [
+            PeltierCoolerTemperatureControl("temperature_control", self, temp_limits=temp_range)
+        ]
+        self.components.extend(list_of_components)
+        logger.info(
+            f"Connected to peltier on port {self.peltier_io._serial.port}:{self.address}!")
+
     async def set_default_values(self):
         await self._set_max_temperature(self.peltier_defaults.T_MAX)
         await self._set_min_temperature(self.peltier_defaults.T_MIN)
