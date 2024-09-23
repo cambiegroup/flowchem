@@ -1,6 +1,6 @@
 # Tests
 
-The tests are meant to be run with `pytest`.
+The tests are meant to run with `pytest`.
 
 All tests that do *not* require access to any hardware devices are automatically run for every pull request against the main branch.
 
