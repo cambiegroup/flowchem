@@ -258,27 +258,17 @@ class ASEthernetDevice:
             else:
                 return reply
 
-    def initialize(self):
-        """
-        Sets initial positions of components to assure reproducible startup
-        Returns: None
-        """
-        # TODO home syringe, also external
-        self.get_errors()
-        # todo reset errors parsing not working fix
-        self.reset_errors()
-        self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
-        self.syringe_valve_position(SyringeValvePositions.WASTE.name)
-        self.injector_valve_position(InjectorValvePositions.LOAD.name)
-
-
-    def measure_tray_temperature(self):
-        command_string = self._construct_communication_string(TrayTemperatureCommand, CommandModus.GET_ACTUAL.name)
-        return int(self._query(command_string))
-
-    def set_tray_temperature(self, setpoint: int = None):
-        return self._set_get_value(TrayTemperatureCommand, setpoint)
+    async def initialize(self):
+        """Sets initial positions."""
+        errors = await self.get_errors()
+        if errors:
+            logger.info(f"On init Error: {errors} was present")
+        await self.reset_errors()
+        # Sets initial positions of needle and valve
+        await self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+        await self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+        await self.syringe_valve_position(SyringeValvePositions.WASTE.name)
+        await self.injector_valve_position(InjectorValvePositions.LOAD.name)
 
     def tubing_volume(self, volume: None or int = None):
         return self._set_get_value(TubingVolumeCommand, volume)
@@ -344,18 +334,13 @@ class ASEthernetDevice:
         Returns: None
 
         """
-        if not self.external_syringe_aspirate:
-            if flow_rate is not None:
-                raise NotImplementedError("Buildt in syringe does not allow to control flowrate")
-            volume = int(round(volume, 3) * 1000)
-            command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
-            return self._set(command_string)
-        else:
-            assert self.external_syringe_dispense is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
-            self.external_syringe_aspirate(volume, flow_rate)
-            
+        if flow_rate is not None:
+            raise NotImplementedError("Built in syringe does not allow to control flow rate")
+        volume = int(round(volume, 3) * 1000)
+        command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
+        return await self._set(command_string)
 
-    def dispense(self, volume, flow_rate=None):
+    async def dispense(self, volume, flow_rate=None):
         """
         dispense with buildt in syringe if no external syringe is set to autosampler.
         Else use external syringe
@@ -366,15 +351,11 @@ class ASEthernetDevice:
         Returns: None
 
         """
-        if not self.external_syringe_dispense:
-            if flow_rate is not None:
-                raise NotImplementedError("Buildt in syringe does not allow to control flowrate")
-            volume = int(round(volume, 3) * 1000)
-            command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
-            return self._set(command_string)
-        else:
-            assert self.external_syringe_aspirate is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
-            self.external_syringe_dispense(volume, flow_rate)
+        if flow_rate is not None:
+            raise NotImplementedError("Built in syringe does not allow to control flow rate")
+        volume = int(round(volume, 3) * 1000)
+        command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
+        return await self._set(command_string)
 
     def move_syringe(self, position):
         if self.external_syringe_aspirate or self.external_syringe_dispense:
@@ -408,226 +389,7 @@ class ASEthernetDevice:
                 raise ASFailureError(f"Error code {error_code} occured when checking for status")
         return ASStatus(reply).name
 
-    def fill_transport(self, repetitions:int):
-        # todo what does that do again? high level needle wash?
-        if self.external_syringe_aspirate or self.external_syringe_dispense:
-            raise NotImplementedError("Only works for buildt in syringe")
-        command_string = self._construct_communication_string(FillTransportCommand, CommandModus.SET.name, repetitions)
-        return self._set(command_string)
 
-    #tested, if on is set it immeadiatly washed, if off is set it does nothing but refuses to wash sth else afterwards
-    def initial_wash(self, port_to_wash:str, on_off: str):
-        if self.external_syringe_aspirate or self.external_syringe_dispense:
-            raise NotImplementedError("Only works for buildt in syringe")
-        command_string = self._construct_communication_string(InitialWashCommand, CommandModus.SET.name, port_to_wash, on_off)
-        return self._set(command_string)
-    # move to row, singleplate not working (yet)
-    # leftplate/rightplate does not have a function, at least if it is the same plates
-    def _move_tray(self, tray_type: str, sample_position: str or int):
-        command_string = self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)
-        return self._set(command_string)
-
-# plate
-    # , no_plate is not working
-    def _move_needle_horizontal(self, needle_position:str, plate: str = None, well: int = None):
-        command_string = self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)
-        return self._set(command_string)
-
-    def _move_needle_vertical(self, move_to: str):
-        command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
-        return self._set(command_string)
-
-    def wait_until_ready(self, wait_for_syringe = True):
-        """
-        Wait for AS to be done
-        Args:
-            wait_for_syringe: If True (default), also the external syringe will be waited for. 
-                            If False it can run in background 
-
-        Returns: None
-
-        """
-        # todo wait for external syringe ready as well
-        while True:
-            if self.get_status() == ASStatus.NOT_RUNNING.name:
-            # if theres external syringe, wait for it to get ready
-                if wait_for_syringe == True:
-                    if self.external_syringe_ready is not None:
-                        self.external_syringe_ready()
-                    break
-                else:
-                    break
-            # AS is rather fast so this sounds like a reasonable time
-            sleep(0.01)
-
-    def connect_chemical(self, chemical:str, volume_sample:str="0 mL", volume_buffer:str="0 mL", flow_rate=None):
-        # needs to take plate layout and basically the key, so smiles or special denomition
-        if not self.tray_mapping:
-            raise CommandOrValueError("You must provide a tray mapping to access substances by name")
-        else:
-            vial_index = self.tray_mapping.find_vial(chemical, min_volume=volume_sample)
-            if vial_index is None:
-                raise ValueError(f"No vial contains enough sample for the desired volume")
-            vial, position = self.tray_mapping.load_entry(vial_index)
-            self.connect_to_position(self.tray_mapping.tray_type, position.side, position.column, int(position.row))
-            # this waits for syringe to be ready as well per default
-            self.wait_until_ready(wait_for_syringe=True)
-            self.pick_up_sample(flowchem_ureg(volume_sample).m_as("mL"), volume_buffer=flowchem_ureg(volume_buffer).m_as("ml"), flow_rate=flow_rate if not flow_rate else flowchem_ureg(flow_rate).m_as("mL/min"))
-            if vial.substance != _SpecialVial.INERT_GAS.value:
-                vial.extract_from_vial(volume_sample)
-            self.tray_mapping.update_volume(vial_index, vial)
-            
-    def connect_to_position(self, traytype: str, side: str or None, column:str or None, row: int or None):
-        # TODO check why move tray needs parameter of side
-        traytype = traytype.upper()
-        if traytype in PlateTypes.__dict__.keys():
-            try:
-                if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
-                    raise NotImplementedError
-            except KeyError as e:
-                raise Exception(f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
-            # column is a letter, to convert to correct number use buildt-in, a gives 0 here
-            column_int = ord(column.upper()) - 64
-            print(f"You've selected the column {column_int}, counting starts at 1.")
-            # now check if that works for selected tray:
-            assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
-            self._move_tray(side, row)
-            self._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=side, well=column_int)
-        elif traytype in NeedleHorizontalPosition.__dict__.keys():
-            self._move_needle_horizontal(NeedleHorizontalPosition[traytype].name)
-        else:
-            raise NotImplementedError
-        # per default, also awaits external syringe
-        self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
-
-# it would be reaonable to get all from needle to loop, with piercing inert gas vial
-    def disconnect_sample(self, move_plate = False):
-        self.injector_valve_position(InjectorValvePositions.LOAD.name)
-        self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-        if move_plate:
-            self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
-            self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
-            
-    def fill_wash_reservoir(self, volume:float=0.2, flow_rate:float = None):
-        self.syringe_valve_position(SyringeValvePositions.WASH.name)
-        self.aspirate(volume, flow_rate)
-        self.connect_to_position("wash",None,None,None)
-        # aspirate does not await syringe execution, therefor explicit await is necessary
-        self.wait_until_ready()
-        # this is just used to connect the syringe to sample
-        self.pick_up_sample(volume_sample=0,flow_rate=flow_rate)
-        # empty syringe into reservoir
-        self.dispense(volume, flow_rate)
-        self.wait_until_ready()
-        self.disconnect_sample()
-        
-    def empty_wash_reservoir(self, volume:float=0.2, flow_rate:float = None):
-        # empty reservoir with syringe
-        self.connect_to_position("wash",None,None,None)
-        self.pick_up_sample(volume_sample=volume, flow_rate=flow_rate)
-        # go up and move to waste
-        self.disconnect_sample()
-
-    def wash_needle(self, volume:float=0.2, times:int=3, flow_rate:float = None):
-        """
-        Fill neelde with solvent and then wash it.
-        Args:
-            volume: 0.2 mL is a reasonable value
-            times:
-            flow_rate:
-
-        Returns: None
-
-        """
-
-        for i in range(times):
-            # do wash reservoir fill
-            #   fill syringe here and go to right position
-            self.fill_wash_reservoir(volume=volume, flow_rate=flow_rate)
-            self.empty_wash_reservoir(volume=volume, flow_rate=flow_rate)
-            self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
-            self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
-            # dispense to waste and go up
-            self.dispense(volume, flow_rate)
-            self.wait_until_ready()
-            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-        
-        # fill here, and eject, without needle wash!
-        self.syringe_valve_position(SyringeValvePositions.WASH.name)
-        self.aspirate(volume, flow_rate)
-        self.injector_valve_position(InjectorValvePositions.INJECT.name)
-        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
-        self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
-        self.wait_until_ready()
-        # eject directly to waste
-        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-        self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
-        self.wait_until_ready()
-        self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-
-
-    def pick_up_sample(self, volume_sample:float or int, volume_buffer=0, flow_rate=None):
-
-        if volume_buffer:
-            self.syringe_valve_position(SyringeValvePositions.WASH.name)
-            self.aspirate(volume_buffer, flow_rate)
-        self.injector_valve_position(InjectorValvePositions.INJECT.name)
-        # wait until buffer taken
-        self.wait_until_ready()
-        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-        self.aspirate(volume_sample, flow_rate)
-        # while picking up sample, there is no logical AS based background activity, so wait until ready
-        self.wait_until_ready()
-
-    def wash_system(self, times:int=3, flow_rate=None, volume:float = 0.250, dispense_to:str="needle"):
-        """
-
-        Args:
-            times: How often to wash
-            flow_rate: Which flowrate to wash with. Only works with external syringe, otherwise use default value
-            volume: washing volume in mL
-            dispense_to: Where to dispense the washing fluid to - so which path to clean. Options are needle, outside, waste
-
-        Returns: None
-
-        """
-        #washing loop, ejecting through needle!
-        legal_arguments = ["needle", "outside", "waste"]
-        if dispense_to not in legal_arguments:
-            raise NotImplementedError(f"Dispense to can only take following values {legal_arguments}.")
-        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
-        for i in range(times):
-            self.syringe_valve_position(SyringeValvePositions.WASH.name)
-            self.aspirate(volume, flow_rate)
-            self.wait_until_ready()
-            if dispense_to == legal_arguments[0]:
-                self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-                self.injector_valve_position(InjectorValvePositions.INJECT.name)
-                self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
-            elif dispense_to == legal_arguments[1]:
-                self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-                self.injector_valve_position(InjectorValvePositions.LOAD.name)
-            elif dispense_to == legal_arguments[2]:
-                self.syringe_valve_position(SyringeValvePositions.WASTE.name)
-            self.dispense(volume, flow_rate)
-            self.wait_until_ready()
-            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-
-    def dispense_sample(self, volume:float, dead_volume=0.050, flow_rate=None):
-        """
-        Dispense Sample in buffer tube to device connected to AS. This does not await end of dispensal.
-         You have to do that explicitly
-        Args:
-            volume: Volume to dispense in mL
-            dead_volume: Dead volume to dispense additionally
-            flow_rate: Flowrate, only works w external syringe
-            
-        Returns: None
-        
-        """
-        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
-        self.injector_valve_position(InjectorValvePositions.LOAD.name)
-        self.dispense(volume+dead_volume, flow_rate)
 
 if __name__ == "__main__":
     pass
