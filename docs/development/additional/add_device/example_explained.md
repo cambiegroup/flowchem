@@ -2,16 +2,16 @@
 
 This script guides the reader through the implementation of one of the device files in FlowChem.
 
-To better understand how the package works, let's select one of the most complex devices: the ML600.
+To better understand how the package works, let's select a device consisiting of multiple components: the ML600.
 
-The ML600 is a very precise pump from developed from 
+The ML600 is a syringe pump developed by 
 [Hamilton Company](https://www.hamiltoncompany.com/laboratory-products/microlab-600/stand-alone-syringe-pumps).
 
-There are two models of these pumps, one with a dual syringe and another with a single syringe, as shown in the figure above:
+There are two models of these pumps, one with a single channel and one with two channels, as shown in the figure above:
 
 ![](example.JPG)
 
-As we can see, this pump has a valve at the output of the syringe. It means that this device has more than one 
+As we can see, one channel consists of a valve connected to the outlet of the syringe. It means that this device has more than one 
 component, i.e, valve and pump.
 
 Let's start with the basics, as we learned in [add_new_device](add_to_flowchem.md).
@@ -42,7 +42,7 @@ class ML600(FlowchemDevice):
     async def initialize(self):
         """Initialize pump and its components."""
 
-        self.components.extend([ML600Pump("pump", self), ML600LeftValve("right_pump", self)])
+        self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
 ```
 
 We will write a new module in the same folder with the classes for each component. The pump component, for 
