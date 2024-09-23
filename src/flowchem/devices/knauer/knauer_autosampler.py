@@ -25,8 +25,6 @@ try:
 except ImportError:
     HAS_AS_COMMANDS = False
 
-# from pint import UnitRegistry
-# finding the AS is not trivial with autodiscover, it also only is one device
 
 class ErrorCodes(Enum):
     ERROR_0 = "No Error."
@@ -50,7 +48,7 @@ class ErrorCodes(Enum):
     ERROR_331 = "Syringe home sensor not de-activated."
     ERROR_334 = "Syringe position is unknown."
     ERROR_335 = "Syringe rotation error."
-    ERROR_340 = "Destination position not reached." #i
+    ERROR_340 = "Destination position not reached."
     ERROR_341 = "Wear-out limit reached."
     ERROR_342 = "Illegal sensor readout."
     ERROR_347 = "Temperature above 48°C at cooling ON."
@@ -82,51 +80,6 @@ class ASFailureError(ASError):
 class ASBusyError(ASError):
     """AS is currently busy but will accept your command at another point of time"""
     pass
-
-# wrapper that executes for a maximum amount of time until positive reply received
-def send_until_acknowledged(func, max_reaction_time = 10, time_between=0.01):
-    @functools.wraps(func)
-    def wrapper(*args, max_reaction_time=max_reaction_time, time_between=time_between, **kwargs, ):
-        while True:
-            try:
-                return func(*args, **kwargs)
-            except ASBusyError:
-                # AS is rather fast so this sounds like a reasonable time
-                sleep(time_between)
-                max_reaction_time -= time_between
-                if max_reaction_time <= 0:
-                    raise ASError
-    return wrapper
-
-
-def canonize_smiles(smiles:str):
-    return MolToSmiles(MolFromSmiles(smiles))
-
-
-def set_vial_content(substance, return_special_vial=False):
-    try:
-        return canonize_smiles(substance)
-    except Exception as e:
-        if not str(e).startswith("Python argument types in"):
-            raise e
-        else:
-            pass
-    try:
-        return _SpecialVial(substance.lower()).value
-    except ValueError as e:
-        e.args += ("Either  you did not provide a valid string, not a valid special position, or both",)
-        raise e
-    
-def check_special_vial(substance)-> bool:
-    try:
-        _SpecialVial(substance)
-        return True
-    except ValueError as e:
-        return False
-
-class _SpecialVial(Enum):
-    CARRIER = "carrier"
-    INERT_GAS = "gas"
 
 
 class CommandModus(Enum):
@@ -174,288 +127,31 @@ class ASEthernetDevice:
                 f"No Connection possible to device with ip_address {self.ip_address}"
             )
 
-class Vial:
-        
-    # TODO get the rounding issue of ureg right
-    def __init__(self, substance, solvent:str or None, concentration: str, contained_volume:str, remaining_volume:str):
-        self._remaining_volume = flowchem_ureg(remaining_volume)
-        self._contained_volume = flowchem_ureg(contained_volume)
-        self.substance = set_vial_content(substance) # todo get this canonical
-        if not check_special_vial(substance):
-            self.solvent = solvent
-            self.concentration = flowchem_ureg(concentration)
-        else:
-            self.solvent = None
-            self.concentration = None
-
-    def extract_from_vial(self, volume:str):
-        if type(volume) is str:
-            volume = flowchem_ureg(volume)
-        self._contained_volume -= volume
-    
-    @property
-    def available_volume(self)-> flowchem_ureg.Quantity:
-        return self._contained_volume-self._remaining_volume
 
 
-class TrayPosition:
-    def __init__(self, side, row, column):
-        self.side = side
-        self.row = row
-        self.column = column
-        self.valid_position()
-
-    def valid_position(self):
-        from numpy import int64
-        assert self.side.upper() == SelectPlatePosition.LEFT_PLATE.name or self.side.upper() == SelectPlatePosition.RIGHT_PLATE.name
-        assert type(self.row) in [int64, int]
-        assert type(self.column) == str and len(self.column) == 1
-
-
-    # basically, only acts a s container internally and to make substance access easy
-
-# TODO create a Tray class
-class Tray:
-    # needs to contain mapping of what is where
-    # needs to supply function of reading and writing how much is left where
-    def __init__(self, tray_type, persistant_storage:str):
-        #todo set a path for continuous storing of layout
+    def __init__(self,
+                 name: str = None,
+                 ip_address: str = "",
+                 autosampler_id: int = 0,
+                 syringe_volume: str = "0.99 ml",
+                 tray_type: str = "TRAY_48_VIAL",
+                 **kwargs,
+                 ):
+        ASEthernetDevice.__init__(self, ip_address, **kwargs)
+        FlowchemDevice.__init__(self, name=name)
+        self.autosampler_id = autosampler_id
+        self.name = f"AutoSampler ID: {self.autosampler_id}" if name is None else name
         self.tray_type = tray_type
-        self.persistant = persistant_storage
-        self._loaded_fresh:bool = None
-        self.available_vials:DataFrame = self.load_submitted()
-        self.check_validity_and_normalise()
-        self._layout=["Content", "Side", "Column", "Row", "Solvent", "Concentration", "ContainedVolume", "RemainingVolume"]
+        self.syringe_volume = syringe_volume
+        self.device_info = DeviceInfo(
+            authors=[jakob, miguel, Samuel_Saraiva],
+            maintainers=[jakob, miguel, Samuel_Saraiva],
+            manufacturer="Knauer",
+            model="Autosampler AS 6.1L"
+        )
 
-    def load_submitted(self):
-        # create the layout in excel -> makes usage easy
-        try:
-            path = self._old_loading()
-            return pandas.read_excel(path) if not "json" in path.name else pandas.read_json(path)
-        except FileNotFoundError as e:
-            e.args += (f"Fill out excel file under {self.persistant}.",)
-            self.create_blank(self.persistant)
-            raise e
-
-# todo if loading submitted, check if a out file exitsts with same name. if not, check if a json checkoint file exists.
-    #  if so, load thejson file and create the out file. Now, ask the user which should be used. if the out file is loaded, delete the old out file, directly write the json file (before deleting)
-    # with that procedure, it should always be the updatedfile used
-
-    def _old_loading(self)->Path:
-        output = self.create_output_path(extended_file_name="_out")
-        checkpoint = self.create_output_path(file_ending="json")
-
-        if Path(output).exists():
-            # if an output excel was written load that
-            to_load = output
-            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
-                       f"previously properly finished experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
-            self._loaded_fresh = False
-
-        elif Path(checkpoint).exists():
-            to_load = checkpoint
-            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
-                       f"previously intermittantly closed experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
-            self._loaded_fresh = False
-        else:
-            to_load = Path(self.persistant)
-            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
-                       f"absolutely fresh layout. Type 'YES' and hit enter to proceed, anything else will quit")
-            self._loaded_fresh = True
-        if user == "YES":
-            return to_load
-        else:
-            raise CommandOrValueError
-
-    def check_validity_and_normalise(self):
-        # normalize the dataframe
-        self.available_vials["Content"]=self.available_vials["Content"].apply(set_vial_content)
-        # make sure all unit ones are a unit
-        self.available_vials[["Concentration", "ContainedVolume", "RemainingVolume"]].map(flowchem_ureg, na_action="ignore") #
-        assert self.available_vials["Column"].apply(lambda x: x.lower() in list("abcdef")).all(), "Your column has wrong values"
-        assert self.available_vials["Side"].apply(lambda x: x.upper() in [SelectPlatePosition.RIGHT_PLATE.name, SelectPlatePosition.LEFT_PLATE.name]).all(), "Your sample side has wrong values"
-        assert self.available_vials["Row"].apply(lambda x: x<=8).all(), "Your row has wrong values"
-        self.save_current()
-        
-    def get_unique_chemicals(self) -> List[str]:
-        """
-        Get the unique SMILES strings from the available samples
-        Returns:
-            list:   List of unique SMILES strings
-        """
-        # drop duplicates
-        single_values=self.available_vials["Content"].drop_duplicates()
-        return [x for x in single_values if not check_special_vial(x)]
-
-        
-    def load_entry(self, index:int) -> [Vial, TrayPosition]:
-        # return vial for updating volume, return TrayPosiition to go there, via Tray update the json
-        # get position and substance from dataframe, do based on index
-        entry=self.available_vials.loc[index]
-        return Vial(entry["Content"], entry["Solvent"],entry["Concentration"],entry["ContainedVolume"],entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
-
-    def find_vial(self, contains:str, min_volume: str="0 mL")-> int or None:
-        min_volume = flowchem_ureg(min_volume) if type(min_volume) is str else min_volume
-        right_substance = self.available_vials["Content"] == contains
-        lowest_vol = self.available_vials.loc[right_substance]
-        new = lowest_vol["ContainedVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - lowest_vol["RemainingVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - (min_volume.m_as("mL"))
-        new = new[new>=0]
-        try:
-            return new.idxmin()
-        except ValueError:
-            return None
-            
-    
-    def find_lowest_volume_vial(self, identifier: List[str], min_volume = 0.07) -> int or None:
-        """
-        Find the vial with the lowest volume of a list of substances
-        Args:
-            identifier: list of smiles to check for
-            min_volume: minimum volume to be considered in mL
-
-        Returns:
-            index of the vial with the lowest volume. If all are the same, it simply returns some
-        """
-        # find the lowest volume over a list of substances
-        right_substances = self.available_vials.loc[self.available_vials["Content"].isin(identifier)]
-        new = right_substances["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - right_substances["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL"))
-        new=new.where(lambda x: x >= min_volume)
-        if new.isnull().all():
-            return None
-        else:
-            return new.idxmin(skipna=True)
-        
-
-    # this is mostly for updating volume
-    def update_volume(self, index, vial:Vial, save=True):
-        # modify entry, based on index
-        self.available_vials.at[index, "ContainedVolume"] = f"{round(vial._contained_volume.m_as('mL'),3)} mL"
-        if save:
-            self.save_current()
-
-    # constantly update the json file
-    def save_current(self):
-        write_to=self.create_output_path(file_ending="json")
-        # todo just overwrite? thats the current file
-        with open(write_to, "w") as f:
-            self.available_vials.to_json(f)
-            
-    def save_output(self):
-        write_to=self.create_output_path(extended_file_name="_out")
-        self.available_vials.to_excel(write_to)
-        
-    def create_output_path(self, extended_file_name = None, file_ending = None):
-        output_name, output_ending = Path(self.persistant).name.split(".")
-        write_to = Path(self.persistant).parent / Path(f"{output_name}{extended_file_name if extended_file_name else ''}.{file_ending if file_ending else output_ending}")
-        return write_to
-
-    def create_blank(self, path):
-        if Path(path).exists():
-            raise FileExistsError
-        pandas.DataFrame(columns=self._layout).to_excel(path)
-
-
-class KnauerAS(ASEthernetDevice):
-    """
-    Class to control Knauer or basically any Spark Holland AS.
-    """
-    AS_ID = 61
-    def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.TCP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE, tray_mapping:Tray=None):
-
-        super().__init__(ip_address, buffersize, port)
-        # get statuses, that is basically syringe syize, volumes, platetype
-
-        self.autosampler_id = autosampler_id if autosampler_id else KnauerAS.AS_ID
-        self.initialize()
-        self.tray_mapping:Tray = tray_mapping
-        self._external_aspirate = None
-        self._external_dispense = None
-        self._external_syringe_ready = None
-        self._external_syringe_home = None
-
-    @property
-    def external_syringe_aspirate(self):
-        """
-        Access external syringe aspirate function object
-        Returns: external syringe aspirate function object
-
-        """
-        return self._external_aspirate
-
-    @external_syringe_aspirate.setter
-    def external_syringe_aspirate(self, aspirate):
-        """
-        Set the command for external syringe aspiration use. This will make all syringe commands use external syringe
-        Args:
-            aspirate: the function object for external syringe aspirate
-
-        Returns: None
-
-        """
-        self._external_aspirate = aspirate
-
-    @property
-    def external_syringe_ready(self):
-        """
-        Access external syringe wait_until_ready function object. Needs to block until ready
-        Returns: external syringe wait_until_ready function object
-
-        """
-        return self._external_syringe_ready
-
-    @external_syringe_ready.setter
-    def external_syringe_ready(self, ready):
-        """
-        Set the command for external syringe wait_until_ready use. This will make all syringe commands use external syringe
-        Args:
-            aspirate: the function object for external wait_until_ready
-
-        Returns: None
-
-        """
-        self._external_syringe_ready = ready
-
-    @property
-    def external_syringe_dispense(self):
-        """
-        Access external syringe dispense function object
-        Returns: external dispense function object
-        """
-        return self._external_dispense
-
-    @external_syringe_dispense.setter
-    def external_syringe_dispense(self, dispense):
-        """
-        Set the command for external syringe dispense use. This will make all syringe commands use external syringe
-        Args:
-            aspirate: the function object for external syringe dispense
-
-        Returns: None
-
-        """
-        self._external_dispense = dispense
-
-    @property
-    def external_syringe_home(self):
-        """
-        Access external syringe home function object
-        Returns: external home function object
-        """
-        return self._external_syringe_home
-
-    @external_syringe_home.setter
-    def external_syringe_home(self, home):
-        """
-        Set the command for external syringe home use. This will make all syringe commands use external syringe
-        Args:
-            aspirate: the function object for external syringe home
-
-        Returns: None
-
-        """
-        self._external_syringe_home = home
-
-    def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str, **kwargs: str)->str:
+    def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str,
+                                        **kwargs: str) -> str:
         # input can be strings, is translated to enum internally -> enum no need to expsoe
         # if value cant be translated to enum, just through error with the available options
         command_class = command()
