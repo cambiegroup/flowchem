@@ -3,15 +3,15 @@
 This example demonstrates how to set up a process using flowchem. The process involves the reaction of two reagents, 
 *hexyldecanoic acid*, and *thionyl chloride*, within a temperature-controlled reactor.
 
-In this process, four electronic devices. Two pumps were used to promote the mixing the reagent and the flow within 
-the reactor. One pump is from [AzuraCompact](../../reference/devices/pumps/azura_compact.md), and the other is from 
+This process needs four electronic devices, two pumps were used to deliver the reagents. 
+One pump is from [AzuraCompact](../../reference/devices/pumps/azura_compact.md), and the other is from 
 Elite11 [](../../reference/devices/pumps/elite11.md). A reactor with controlled temperature was used. This reator is a component of 
-the platform R2 - [R4Heater](../../reference/devices/technical/r4_heater.md). An infrared sensor from IR was used to analyze the 
+the platform R2 - [R4Heater](../../reference/devices/technical/r4_heater.md). An infrared spectroscope from IR was used to analyze the 
 product - [IcIR](../../reference/devices/analytics/icir.md).
 
 ![](reaction.JPG)
 
-The configuration file is written according to the described below.
+The configuration file looks like that:
 
 ```toml
 [device.socl2]
@@ -38,7 +38,7 @@ template = "30sec_2days.iCIRTemplate"
 
 ## Access API
 
-The electronic components used in the process were easily accessed through a Python script.
+The electronic components used in the process can be accessed from a Python script.
 
 ```python
 from flowchem.client.client import get_all_flowchem_devices
@@ -51,31 +51,31 @@ reactor = flowchem_devices["r4-heater"]["reactor1"]
 flowir = flowchem_devices["flowir"]["ir-control"]
 ```
 
-Each component has its own GET and PUT methods. The commands were written based on the available methods. 
+Each component has its own GET and PUT methods. The commands are written based on available methods. 
 When Flowchem is running, you can easily see each device's available methods through the address 
 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). You can also find the methods in the 
 [API documentation](../../reference/api/index.md).
 
-The following is a description of the main `main.py` script by which the experiment has been programmed.
+The following is a description of the main `main.py` script which controls the experiment.
 
 ```python
 # This package is used to read the current time and work with time management.
 import time  
 
-#Package used to support the optimization, more details was found in https://gryffin.readthedocs.io/en/latest/index.html
+#Package used for optimization, more details: https://gryffin.readthedocs.io/en/latest/index.html
 from gryffin import Gryffin
 
-# This package monitored the process by logging in to the Python terminal.
-# It was advantageous to warn about errors, initialization, end, and stage of the experiment.
+# This package provides logging to the Python terminal.
+# and warns about errors, initialization, stage and end of the experiment.
 from loguru import logger
 
-# Here was imported the devices and the main function used in the experiment.
+# import devices and the main function used in the experiment.
 from run_experiment import run_experiment, reactor, flowir, hexyldecanoic, socl2
 
-# A file xp.log was added to record the logging of the experiment done by the loguru.
+# The logging of the experiment done by the loguru is saved to file xp.log
 logger.add("./xp.log", level="INFO")
 
-# load configuration before initialized the experiment
+# load configuration before initializing the experiment
 config = {
     "parameters": [
         {"name": "SOCl2_equivalent", "type": "continuous", "low": 1.0, "high": 1.5},
@@ -315,6 +315,5 @@ if __name__ == "__main__":
 
 ```
 
-With its two files, it's possible to carry out a series of experiments in order to optimize the conditions for the 
-production of a specific molecule. To see how this works in more detail, please go to 
+With these two files, it's possible to carry out a series of experiments in order to optimize the conditions. To see more detail on the synthesis, please go to 
 [Continuous flow synthesis of the ionizable lipid ALC-0315](https://doi.org/10.1039/D3RE00630A).
