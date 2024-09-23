@@ -303,45 +303,22 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
     def tubing_volume(self, volume: None or int = None):
         return self._set_get_value(TubingVolumeCommand, volume)
 
-    def set_tray_temperature_control(self, onoff: str = None):
-        return self._set_get_value(TrayCoolingCommand, onoff, TrayCoolingCommand.on_off)
+    async def _move_needle_horizontal(self, needle_position: str, plate: str = None, well: int = None):
+        command_string = self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)
+        return await self._set(command_string)
 
-    def compressor(self, onoff: str = None):
-        return self._set_get_value(SwitchCompressorCommand, onoff, SwitchCompressorCommand.on_off, get_actual=True)
+    async def _move_needle_vertical(self, move_to: str):
+        command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
+        return await self._set(command_string)
 
-    # does not do anything perceivable - hm
-    def headspace(self, onoff: str = None):
-        return self._set_get_value(HeadSpaceCommand, onoff, HeadSpaceCommand.on_off)
-
-    def syringe_volume(self, volume: None or int = None):
-        return self._set_get_value(SyringeVolumeCommand, volume)
-    
-    def loop_volume(self, volume: None or int = None):
-        return self._set_get_value(LoopVolumeCommand, volume)
-    #tested, find out what this does/means
-    def flush_volume(self, volume: None or int = None):
-        return self._set_get_value(FlushVolumeCommand, volume)
-    # tested, query works
-    # todo get setting to work
-    def injection_volume(self, volume: None or int = None):
-        return self._set_get_value(InjectionVolumeCommand, volume)
-        
-    def syringe_speed(self, speed: str = None):
-        """
-        LOW, NORMAL, HIGH
-        This does NOT work on all models
-        """
-        return self._set_get_value(SyringeSpeedCommand, speed, SyringeSpeedCommand.speed_enum)
-
-    #tested
-    def syringe_valve_position(self, port:str = None):
+    async def syringe_valve_position(self, port: str = None):
         # TODO check if this mapping offset can be fixed elegantly
         if port:
             command_string = self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.SET.name, port)
-            return self._set(command_string)
+            return await self._set(command_string)
         else:
             command_string = self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.GET_ACTUAL.name)
-            raw_reply = self._query(command_string) - 1
+            raw_reply = await self._query(command_string) - 1
             return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name
 
     # tested
@@ -351,15 +328,14 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
     def needle_vertical_offset(self, offset: float = None):
         return self._set_get_value(VerticalNeedleOffsetCommand, offset)
 
-    #tested
-    # this is additive, it moves syr relatively
-    def aspirate(self, volume:float, flow_rate:float or int=None):
+
+    async def aspirate(self, volume: float, flow_rate: float or int = None):
         """
-        aspirate with buildt in syringe if no external syringe is set to autosampler.
-        Else use extrernal syringe
+        aspirate with built in syringe if no external syringe is set to AutoSampler.
+        Else use external syringe
         Args:
             volume: volume to aspirate in mL
-            flow_rate: flowrate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
+            flow_rate: flow rate in mL/min. Only works on external syringe. If built-in syringe is used, use default value
 
         Returns: None
 
@@ -372,11 +348,11 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
 
     async def dispense(self, volume, flow_rate=None):
         """
-        dispense with buildt in syringe if no external syringe is set to autosampler.
+        dispense with built in syringe if no external syringe is set to AutoSampler.
         Else use external syringe
         Args:
             volume: volume to dispense in mL
-            flow_rate: flowrate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
+            flow_rate: flow rate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
 
         Returns: None
 
@@ -387,36 +363,23 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
         return await self._set(command_string)
 
-    def move_syringe(self, position):
-        if self.external_syringe_aspirate or self.external_syringe_dispense:
-            # todo
-            if position.upper() == "HOME":
-                self.external_syringe_home(2)
-            else:
-                raise NotImplementedError("Only works for buildt in syringe")
-        else:
-            command_string = self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)
-            return self._set(command_string)
+    async def _move_tray(self, tray_type: str, sample_position: str or int):
+        command_string = self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)
+        return await self._set(command_string)
 
-    def get_errors(self):
+    async def get_errors(self):
         command_string = self._construct_communication_string(GetErrorsCommand, CommandModus.GET_ACTUAL.name)
-        reply = str(self._query(command_string))
+        reply = str(await self._query(command_string))
         return ErrorCodes[f"ERROR_{reply}"].value
 
-    def reset_errors(self):
+    async def reset_errors(self):
         command_string = self._construct_communication_string(ResetErrorsCommand, CommandModus.SET.name)
-        self._set(command_string)
+        await self._set(command_string)
 
-    def get_status(self):
+    async def get_status(self):
         command_string = self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
-        reply = str(self._query(command_string))
-        reply = (3-len(reply))*'0'+reply # zero pad from left to length == 3
-        if len(reply) == 4:
-            if reply[0] == '1':
-                # this means there is an Error
-                error_code = self.get_errors()
-                self.reset_errors()
-                raise ASFailureError(f"Error code {error_code} occured when checking for status")
+        reply = str(await self._query(command_string))
+        reply = (3-len(reply))*'0'+reply
         return ASStatus(reply).name
 
 
