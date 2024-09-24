@@ -11,8 +11,4 @@ main features and concepts addressed by the package.
 ./conf_file
 
 ./abstraction
-
-./learning
-
-./examples/index
 ```

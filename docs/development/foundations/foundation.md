@@ -1,10 +1,9 @@
-# Understanding
+# Foundation
+
 At its core, `flowchem` is a command line application that:
 1. parses a configuration file
 2. connects to the lab devices described and
 3. offers access to them via a RESTful API.
-
-`flowchem-autodiscover` is a tool that helps to prepare the configuration files.
 
 ## flowchem command
 The `flowchem` command must be called with one parameter: the path to the device configuration file. Running
