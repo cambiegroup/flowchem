@@ -405,7 +405,7 @@ class PeltierCooler(FlowchemDevice):
         await self._set_current_limit_heating(0.5)
         await self._set_temperature(temperature.m_as("°C"))
         await self.start_control()
-        sleep(10)
+        await asyncio.sleep(10)
         # Now start with power
         await self.set_default_values()
         await self._set_state_dependant_parameters(temperature.m_as("°C"))
