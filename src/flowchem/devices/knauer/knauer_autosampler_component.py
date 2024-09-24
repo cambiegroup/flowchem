@@ -42,8 +42,7 @@ class AutosamplerCNC(CNC):
 
     async def set_needle_position(self, position: str = "") -> None:
         """
-        Move the needle to one of the predefined positions. If Position is "PLATE" a plate,
-        row and column have to be specified.
+        Move the needle to one of the predefined positions.
 
         Argument:
             position (str):
