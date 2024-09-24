@@ -50,10 +50,10 @@ A set of python clients interfacing with the flowchem API are also provided and 
 
 We recommend the user to simply try the package and follow provided material.
 
-1. Follow the instruction to [install](user-guides/tutorials/installation.md) the package;
-2. Read the instructions to create the [configuration file](user-guides/tutorials/configuration.md);
-3. Read how using the [API](user-guides/tutorials/using_api.md) built;
-4. Read an [exemple](user-guides/explanation/examples/index.md) case in which the package was applied. 
+1. Follow the instruction to [install](user-guides/How-ToGuide/installation.md) the package;
+2. Read the instructions to create the [configuration file](user-guides/How-ToGuide/configuration.md);
+3. Read how using the [API](user-guides/How-ToGuide/using_api.md) built;
+4. Read an [exemple](user-guides/tutorials/examples/index.md) case in which the package was applied. 
 
 The main concepts of the package and a detailed explanation of its key features are covered in the 
 [explanations](user-guides/explanation/index.md).

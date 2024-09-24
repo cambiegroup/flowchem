@@ -1,10 +1,10 @@
-# Tutorials
+# Tutorial
 
+## Contents
 ```{toctree}
-:maxdepth: 1
-./installation
+:maxdepth: 2
+:caption: Example
 
-./configuration
+examples/reaction_optimization
 
-./using_api
 ```
