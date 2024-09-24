@@ -8,16 +8,45 @@ https://www.waters.com/webassets/cms/support/docs/71500123505ra.pdf
 """
 from pathlib import Path
 import subprocess
+import asyncio
+from pathlib import Path
+from shutil import which
+
+from loguru import logger
+
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.utils.people import jakob, miguel
+
+from .waters_ms_component import WatersMSControl
 
 # autolynx queue file is also where the conversion should happen - just set duration and a bit after that issue the conversion command
-class AutoLynxQueueFile:
-    def __init__(self, path_to_AutoLynxQ = r"W:\BS-FlowChemistry\Equipment\Waters MS\AutoLynxQ",
-                 ms_exp_file = "15min_scan.exp", tune_file = "SampleTuneAndDev_ManOBz_MeOH_after_geom.ipr",
-                 inlet_method = "inlet_method"):
+class WatersMS(FlowchemDevice):
+    """
+    Control class for Waters Xevo MS via Autolynx.
+
+    While MS and Autolynx are running, running samples only requires putting a csv file with specific header into a specific (and installation dependent) folder.
+    """
+    def __init__(self,
+                 name: str = "Waters_MS",
+                 path_to_AutoLynxQ: str = r"W:\BS-FlowChemistry\Equipment\Waters MS\AutoLynxQ",
+                 ms_exp_file: str = "15min_scan.exp",
+                 tune_file: str = "SampleTuneAndDev_ManOBz_MeOH_after_geom.ipr",
+                 inlet_method: str = "inlet_method",
+                 ) -> None:
+        super().__init__(name=name)
+        # Metadata
+        self.device_info.authors = [jakob, miguel]
+        self.device_info.manufacturer = "Waters"
+        self.device_info.model = "Waters Mass Spectrometer"
+
         self.fields = "FILE_NAME\tMS_FILE\tMS_TUNE_FILE\tINLET_FILE\tSAMPLE_LOCATION\tIndex"
         self.rows = f"\t{ms_exp_file}\t{tune_file}\t{inlet_method}\t66\t1"
         self.queue_path = Path(path_to_AutoLynxQ)
         self.run_duration = None
+
+    async def initialize(self):
+        """Assign components."""
+        self.components.append(WatersMSControl(name="mass_spectrometer", hw_device=self))
 
     def record_mass_spec(self, sample_name: str, run_duration: int = 0, queue_name = "next.txt", do_conversion: bool = False):
         # Autolynx behaves weirdly, it expects a .txt file and that the fields are separated by tabs. A csv file
