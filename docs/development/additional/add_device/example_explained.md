@@ -1,6 +1,6 @@
 # Device Addition - Example Explained
 
-This script guides the reader through the implementation of one of the device files in FlowChem.
+This script guides the reader through the implementation of one of the device files in flowchem.
 
 To better understand how the package works, let's select a device consisiting of multiple components: the ML600.
 
