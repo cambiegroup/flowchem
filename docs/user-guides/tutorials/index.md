@@ -1,9 +1,8 @@
 # Tutorial
 
-## Contents
 ```{toctree}
-:maxdepth: 2
-:caption: Example
+
+start
 
 examples/reaction_optimization
 
