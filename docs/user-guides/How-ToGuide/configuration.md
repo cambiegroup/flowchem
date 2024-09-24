@@ -16,13 +16,16 @@ necessary attributes for each device type can be found in the
 
 ## Running flowchem
 
-After create a file as the example above (or get it from the [examples folder](https://github.
-com/cambiegroup/flowchem/tree/main/examples)) run the `flowchem` command followed by the name of the file.
+After create a file as the example above (or get it from the 
+[examples folder](https://github.com/cambiegroup/flowchem/tree/main/examples)) 
+run the `flowchem` command followed by the name of the file.
+
 ```shell
 flowchem flowchem_config.toml
 ```
 ```{warning}
-Please note the correct file address and the name of the file you named.
+Please note that when running this command in the terminal, the file must be in the same folder as the terminal. If the
+ terminal is in a different folder, please add the configuration address file after "flowchem".
 ```
 
 In your terminal, you will see some debug information, ending with a line like this one:
@@ -50,6 +53,7 @@ flowchem example
 ```
 
 ## Device autoconfiguration
+
 To be able to write a configuration file, you need to know the type of device you want to connect to and some connection
 parameters.
 
@@ -59,7 +63,8 @@ To find any device already connected to the PC where flowchem is installed, run 
 flowchem-autodiscover
 ```
 And reply to the prompts.
-If any device that supports autodiscovery is found, a `flowchem_config.toml` file will be created.
+If any device that supports autodiscovery is found, a `flowchem_config.toml` file will be created. See more details 
+in [tools](../tools.md).
 
 ```{note}
 Some additional information is generally still necessary even for auto-detected devices.

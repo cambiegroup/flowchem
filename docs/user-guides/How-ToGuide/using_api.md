@@ -119,10 +119,7 @@ response = requests.get(url)
 print(data)
 ```
 
-Utilizing Visual Basic Applications, the API can be access, for example, using the ``WinHttp.WinHttpRequest.5.1``.
+## Using another code languages
 
-### Using another code languages
-
-The devices can be accessed through Flowchem on a server for control, and it is possible to communicate with the 
-server using methods other than Python to send and receive data. This versatility allows the devices to be 
-controlled using multiple coding languages.
+Since the devices are available on a server, it is possible to access them using other means besides python.
+This versatility allows the devices to be controlled using multiple coding languages.
