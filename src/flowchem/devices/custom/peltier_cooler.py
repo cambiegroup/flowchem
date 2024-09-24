@@ -4,7 +4,7 @@ from __future__ import annotations
 import aioserial
 import pint
 import numpy as np
-
+import asyncio
 from typing import Union, List, Tuple
 from dataclasses import dataclass
 from time import sleep
@@ -444,7 +444,7 @@ class PeltierCooler(FlowchemDevice):
         # set to RT, wait 2 min, stop T-control: This is just a convenience and safety measure: if the Peltier is
         # shut off and the heating is directly shut off, the heating might freeze
         await self.set_temperature(25)
-        sleep(120)
+        await asyncio.sleep(120)
         await self.stop_control()
 
     async def get_power(self) -> int:
