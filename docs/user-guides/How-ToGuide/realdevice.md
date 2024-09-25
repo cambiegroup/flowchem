@@ -9,7 +9,7 @@ real device.
 
 For this tutorial, we have selected the Knauer Valve. The settings, as documented in the 
 [reference material](../reference/devices/valves/knauer_valve.md), are outlined in the following configuration file, 
-named config.toml. 
+named `config.toml`. 
 
 ```toml
 [device.my-knauer-valve]  # This is the valve identifier
@@ -35,7 +35,7 @@ type = "KnauerValve"
 mac_address = "00:80:A3:CE:7E:CB"
 ```
 
-After running Flowchem, the valve's functionalities will be accessible through the server. 
+After running flowchem, the valve's functionalities will be accessible through the server. 
 
 ![img_1.png](img_1.png)
 
