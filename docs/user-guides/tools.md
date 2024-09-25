@@ -34,18 +34,27 @@ from flowchem.client.client import get_all_flowchem_devices
 devices = get_all_flowchem_devices()
 ```
 
-This variable `devices` can be referred to as "client," as it is a client built on top of Flowchem that utilizes its 
+This variable `devices` can be referred to as "client," as it is a client built on top of flowchem that utilizes its 
 functionalities.
 
 In a similar way that you can access the functionalities of the devices through the API, you can use the client devices.
-For example, if you have an Elite11 pump running on Flowchem, you can send an infuse command to the pump with a volume 
+For example, if you have an Elite11 pump, called *pumpG*, running on flowchem, you can send an infuse command to the 
+pump 
+with a volume 
 of 10 ml and a flow rate of 1 ml/min through the API in the browser.
 
+![](img.png)
 
-
-With the client devices, this can be done in Python. Using the client devices, the construction of protocols directly 
-in Python is facilitated. The example shown in section X presents one way of how the protocols can be constructed.
+With the client `devices`, this can be done in Python. Using the client `devices`, the construction of protocols directly 
+in Python is facilitated.
 
 ```python
-devices["My-Pump"]["pump"].put("infuse", {"volume": "10 ml", "rate": "1 ml/min"})
+from flowchem.client.client import get_all_flowchem_devices
+
+devices = get_all_flowchem_devices()
+
+devices["PumpG"]["pump"].put("infuse", {"volume": "10 ml", "rate": "1 ml/min"})
 ```
+
+The example shown in section [example](tutorials/examples/reaction_optimization.md) presents one way of how the 
+protocols can be constructed.
