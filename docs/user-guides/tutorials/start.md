@@ -17,7 +17,11 @@ Diving into an example is the best way to understand the package's features. Let
 synthesize a molecule C, and to do so, two reagents, A and B, need to come into contact in a reactor. Take a look at 
 the figure below that schematizes the platform. 
 
-![](img.png)
+:::{figure-md} synthesis example
+<img src="img.png" alt="Suggestion of follow the documetation" class="bg-primary mb-1" width="100%">
+
+**Figure 1** Example of automatic synthesis
+:::
 
 You have three devices on this platform: two pumps and a sensor. To conduct the experiment, you need to activate the 
 pump at a specific flow rate for a set duration, and then activate the sensor to analyze the product. 
