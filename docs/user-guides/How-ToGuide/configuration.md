@@ -16,16 +16,16 @@ necessary attributes for each device type can be found in the
 
 ## Running flowchem
 
-After create a file as the example above (or get it from the 
+After creating a .toml configuration file as in the example above (or after getting it from the 
 [examples folder](https://github.com/cambiegroup/flowchem/tree/main/examples)) 
-run the `flowchem` command followed by the name of the file.
+run the `flowchem` command followed by the name of the configuration file.
 
 ```shell
 flowchem flowchem_config.toml
 ```
 ```{warning}
 Please note that when running this command in the terminal, the file must be in the same folder as the terminal. If the
- terminal is in a different folder, please add the configuration address file after "flowchem".
+ terminal is in a different folder, please add the configuration address file after "flowchem" or change the current folder in the terminal.
 ```
 
 In your terminal, you will see some debug information, ending with a line like this one:
