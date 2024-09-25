@@ -185,7 +185,6 @@ class RunzeValve(FlowchemDevice):
         )
 
     async def initialize(self):
-        await super().initialize()
 
         # Detect valve type
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()
@@ -220,22 +219,18 @@ class RunzeValve(FlowchemDevice):
     async def get_valve_type(self):
         """Get valve type by testing possible port values."""  # There was no command for this
 
-        possible_ports = [6, 8, 10, 12, 16]
+        possible_ports = [16, 12, 10, 8, 6]
         valve_type = None
 
         for value in possible_ports:
             success = await self.set_raw_position(str(value), raise_errors=False)
-
             if success:
-                # Update the last successful value if the command succeeded
                 valve_type = value
-            else:
-                if valve_type is None:
-                    logger.error("Failed to recognize the valve type: no successful port value.")
-                    raise ValueError("Unable to recognize the valve type. All port values failed.")
-                break
+                return RunzeValveHeads(str(valve_type))
 
-        return RunzeValveHeads(str(valve_type))
+        if valve_type is None:
+            logger.error("Failed to recognize the valve type: no successful port value.")
+            raise ValueError("Unable to recognize the valve type. All port values failed.")
 
     async def _send_command_and_read_reply(
             self,
