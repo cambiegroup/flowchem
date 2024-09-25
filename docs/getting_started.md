@@ -48,12 +48,35 @@ Since flowchem leverages web technologies, flowchem devices can be controlled di
 written in different languages and from almost any operative system, including Android and iOS.
 A set of python clients interfacing with the flowchem API are also provided and used in examples.
 
-We recommend the user to simply try the package and follow provided material.
+For direct immersion into the package, we recommend that the reader follow the flowchart presented below. The link to 
+the documentation cited in the flowchart is listed below.
 
-1. Follow the instruction to [install](user-guides/How-ToGuide/installation.md) the package;
-2. Read the instructions to create the [configuration file](user-guides/How-ToGuide/configuration.md);
-3. Read how using the [API](user-guides/How-ToGuide/using_api.md) built;
-4. Read an [exemple](user-guides/tutorials/examples/index.md) case in which the package was applied. 
+:::{figure-md} flowchart
+<img src="decision.JPG" alt="Suggestion of follow the documetation" class="bg-primary mb-1" width="100%">
 
-The main concepts of the package and a detailed explanation of its key features are covered in the 
-[explanations](user-guides/explanation/index.md).
+**Figure 2** Flowchart with a suggested reading of the documentation 
+:::
+
+[Kindly start](user-guides/tutorials/start.md);
+[Install flowchem](user-guides/How-ToGuide/installation.md);
+[Configure the file](user-guides/How-ToGuide/configuration.md);
+[Work with the API](user-guides/How-ToGuide/using_api.md);
+[Add new devices](development/additional/add_device/index.md);
+[Run flowchem with a real device](user-guides/How-ToGuide/realdevice.md);
+[See a real example of usage](user-guides/tutorials/examples/reaction_optimization.md).
+
+Questions in flowchart:
+
+1. **What is your background in Python?** To use this package, the user is not required to have a deep knowledge of 
+   code programming. However, basic concepts are fundamental. If your coding background is poor, we kindly ask you to 
+2. read and follow the instructions in the "[Kindly start](user-guides/tutorials/start.md)" section.
+2. **Do you have a device to test it now?** You can test the flowchem on your device if it is plugged into your 
+   computer. If you don't have a device to test, no worries. You can do it at another time.
+3. If you have a device to test, **is this device implemented in flowchem?**. You can inspect this documentation to see 
+   if your device is present in the [reference section](user-guides/reference/devices/supported_devices.md).
+4. If your device is not implemented, **do you want to do it?**, be aware of some key points:
+   - This documentation provides [guidance to implement new devices](development/additional/add_device/index.md), however, 
+     it requires a certain level of knowledge in Python.
+   - We recommend that before tackling this task, the user explores, reads, and understands the user guide section and 
+   the [foundation of the package](development/foundations/foundation.md). We recommend the user to simply try the 
+   package and follow provided material.
