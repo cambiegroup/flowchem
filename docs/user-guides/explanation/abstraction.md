@@ -11,6 +11,15 @@ components and build equipment efficiently. To illustrate, consider the table an
 | Pump                | Base Component     | Define Base Commands     |
 | Flowchem Component  | Base Class         | Base Constructor         |
 
+In the example addressed in the table we have the following hierarchy:
+
+![](inherit.JPG) 
+
+1. **Flowchem Component**: The base class for all devices.
+2. **Pump**: Inherits from flowchem Component, includes basic pump commands.
+3. **HPLC Pump**: Inherits from Pump, includes specific commands for HPLC pumps.
+4. **Azura Compact Pump**: Inherits from HPLC Pump, includes configuration for a specific device model.
+
 ## How Inheritance Works in flowchem
 
 When creating a class to represent a device, such as the ***Azura Compact Pump***, it inherits attributes and methods 
@@ -27,20 +36,6 @@ commands from the same parent class). This is possible even if the devices come 
 platform's automation. The only change needed is in the configuration file, which is easily editable.
 3. **Code Reusability**: By using inheritance, flowchem avoids code duplication. Methods and attributes defined in a 
 parent class are automatically available in all child classes, promoting the principle of "Don't Repeat Yourself" (DRY).
-
-## Example
-
-Consider the following hierarchy:
-
-![](inherit.JPG) 
-
-1. **Flowchem Component**: The base class for all devices.
-2. **Pump**: Inherits from flowchem Component, includes basic pump commands.
-3. **HPLC Pump**: Inherits from Pump, includes specific commands for HPLC pumps.
-4. **Azura Compact Pump**: Inherits from HPLC Pump, includes configuration for a specific device model.
-
-This structure allows the ***Azura Compact Pump*** to utilize all the commands and attributes defined in its 
-parent classes, ensuring consistent behavior and easy integration.
 
 ## Practical Impact
 
