@@ -9,7 +9,11 @@ Elite11 [](../../reference/devices/pumps/elite11.md). A reactor with controlled 
 the platform R2 - [R4Heater](../../reference/devices/technical/r4_heater.md). An infrared spectroscope from IR was used to analyze the 
 product - [IcIR](../../reference/devices/analytics/icir.md).
 
-![](reaction.JPG)
+:::{figure-md} Synthesis
+<img src="reaction.JPG" alt="Suggestion of follow the documetation" class="bg-primary mb-1" width="100%">
+
+**Figure 1** Automatic synthesis
+:::
 
 The configuration file looks like that:
 
