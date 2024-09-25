@@ -85,7 +85,7 @@ class RunzeValveIO:
 
     DEFAULT_CONFIG = {
         "timeout": 1,
-        "baudrate": 57600,  #The corresponding baudrate can be set through a factory command
+        "baudrate": 9600,  #The corresponding baudrate can be set through a factory command
         "parity": aioserial.PARITY_NONE,
         "stopbits": aioserial.STOPBITS_ONE,
         "bytesize": aioserial.EIGHTBITS,
@@ -135,7 +135,6 @@ class RunzeValveIO:
     def parse_response(response: str, raise_errors: bool = True) -> tuple[str,str]:
         """Split a received line in its components: status, reply."""
         status, parameters = response[4:6], response[6:8]
-
         status_strings = {
             "00": "Normal status",
             "01": "Frame error",
@@ -169,7 +168,7 @@ class RunzeValve(FlowchemDevice):
         self,
         valve_io: RunzeValveIO,
         name: str,
-        address: int = 1,
+        address: int = 0,
     ) -> None:
         super().__init__(name)
 
