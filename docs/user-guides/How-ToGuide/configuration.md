@@ -65,21 +65,3 @@ flowchem-autodiscover
 And reply to the prompts.
 If any device that supports autodiscovery is found, a `flowchem_config.toml` file will be created. See more details 
 in [tools](../tools.md).
-
-```{note}
-Some additional information is generally still necessary even for auto-detected devices.
-```
-
-Complete the missing information (if any) in this file, and then you will be ready to use flowchem!
-
-```{note}
-`flowchem_config.toml` is written in [TOML format](https://en.wikipedia.org/wiki/TOML),
-the syntax of this language is intuitive and designed to be human-editable.
-If you follow this guide you will not need to learn anything about the TOML syntax, but you can just copy and modify the
-examples provided.
-```
-
-:::{note}
-Not all the devices supported by flowchem can be auto discovered, so you might need to edit the configuration
-file manually for some device types.
-:::
