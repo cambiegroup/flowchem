@@ -1,4 +1,0 @@
-[device.runze-test]
-type = "RunzeValve"
-port = "COM5"
-address = 1
