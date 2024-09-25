@@ -261,12 +261,13 @@ class RunzeValve(FlowchemDevice):
             command="44",
             parameter=int(position),
             raise_errors=raise_errors)
+        if status == "00" and raise_errors is True:
+            logger.info(f"Valve position set to: {position}")
         if status == "00":
-            logger.info(f"Valve position set to: {parameters}")
             return True
 
     async def set_address(self, address: int) -> str:
-        """Return current valve position, following valve nomenclature."""
+        """Function to change valve's slave address."""
         status, parameters = await self._send_command_and_read_reply(command="00", parameter=address, is_factory_command=True)
         if status == "00":
             self.address = address
