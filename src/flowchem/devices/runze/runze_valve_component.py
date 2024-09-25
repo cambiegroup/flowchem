@@ -24,7 +24,8 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
-    def _change_connections(self, raw_position: int, reverse: bool = False):
+    def _change_connections(self, raw_position: str, reverse: bool = False):
+        raw_position = int(raw_position)
         if reverse:
             return raw_position - 1
         else:
@@ -32,11 +33,11 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
-        return await self.hw_device.get_valve_position()
+        return await self.hw_device.get_raw_position()
 
-    async def set_monitor_position(self, position: str):
+    async def set_monitor_position(self, position: str) -> bool:
         """Move valve to position."""
-        return await self.hw_device.set_valve_position(position=position)
+        return await self.hw_device.set_raw_position(position=position)
 
 
 class Runze8PortDistributionValve(EightPortDistributionValve):
@@ -44,7 +45,13 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
 
     hw_device: RunzeValve
 
-    def _change_connections(self, raw_position: int, reverse: bool = False):
+    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+        super().__init__(name, hw_device)
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+
+    def _change_connections(self, raw_position: str, reverse: bool = False):
+        raw_position = int(raw_position)
         if reverse:
             return raw_position - 1
         else:
@@ -52,11 +59,11 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
-        return await self.hw_device.get_valve_position()
+        return await self.hw_device.get_raw_position()
 
-    async def set_monitor_position(self, position: str):
+    async def set_monitor_position(self, position: str) -> bool:
         """Move valve to position."""
-        return await self.hw_device.set_valve_position(position=position)
+        return await self.hw_device.set_raw_position(position=position)
 
 
 class Runze10PortDistributionValve(TenPortDistributionValve):
@@ -64,7 +71,13 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
 
     hw_device: RunzeValve
 
-    def _change_connections(self, raw_position: int, reverse: bool = False):
+    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+        super().__init__(name, hw_device)
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+
+    def _change_connections(self, raw_position: str, reverse: bool = False):
+        raw_position = int(raw_position)
         if reverse:
             return raw_position - 1
         else:
@@ -72,11 +85,11 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
-        return await self.hw_device.get_valve_position()
+        return await self.hw_device.get_raw_position()
 
-    async def set_monitor_position(self, position: str):
+    async def set_monitor_position(self, position: str) -> bool:
         """Move valve to position."""
-        return await self.hw_device.set_valve_position(position=position)
+        return await self.hw_device.set_raw_position(position=position)
 
 
 class Runze12PortDistributionValve(TwelvePortDistributionValve):
@@ -84,7 +97,13 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
 
     hw_device: RunzeValve
 
-    def _change_connections(self, raw_position: int, reverse: bool = False):
+    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+        super().__init__(name, hw_device)
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+
+    def _change_connections(self, raw_position: str, reverse: bool = False):
+        raw_position = int(raw_position)
         if reverse:
             return raw_position - 1
         else:
@@ -92,11 +111,11 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
-        return await self.hw_device.get_valve_position()
+        return await self.hw_device.get_raw_position()
 
-    async def set_monitor_position(self, position: str):
+    async def set_monitor_position(self, position: str) -> bool:
         """Move valve to position."""
-        return await self.hw_device.set_valve_position(position=position)
+        return await self.hw_device.set_raw_position(position=position)
 
 
 class Runze16PortDistributionValve(SixteenPortDistributionValve):
@@ -104,7 +123,13 @@ class Runze16PortDistributionValve(SixteenPortDistributionValve):
 
     hw_device: RunzeValve
 
-    def _change_connections(self, raw_position: int, reverse: bool = False):
+    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+        super().__init__(name, hw_device)
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+
+    def _change_connections(self, raw_position: str, reverse: bool = False):
+        raw_position = int(raw_position)
         if reverse:
             return raw_position - 1
         else:
@@ -112,8 +137,8 @@ class Runze16PortDistributionValve(SixteenPortDistributionValve):
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
-        return await self.hw_device.get_valve_position()
+        return await self.hw_device.get_raw_position()
 
-    async def set_monitor_position(self, position: str):
+    async def set_monitor_position(self, position: str) -> bool:
         """Move valve to position."""
-        return await self.hw_device.set_valve_position(position=position)
+        return await self.hw_device.set_raw_position(position=position)
