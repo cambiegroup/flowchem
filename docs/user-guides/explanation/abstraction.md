@@ -34,7 +34,7 @@ Consider the following hierarchy:
 
 ![](inherit.JPG) 
 
-1. **Flowchm Component**: The base class for all devices.
+1. **Flowchem Component**: The base class for all devices.
 2. **Pump**: Inherits from flowchem Component, includes basic pump commands.
 3. **HPLC Pump**: Inherits from Pump, includes specific commands for HPLC pumps.
 4. **Azura Compact Pump**: Inherits from HPLC Pump, includes configuration for a specific device model.
