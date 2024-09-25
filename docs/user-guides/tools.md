@@ -20,8 +20,8 @@ The autodiscover include modules that involve communication over serial ports. T
 ```
 
 After the examination, a configuration file will be generated with the main characteristics of each identified device.
-It's important to note that additional parameters may require adjustments. However, this feature saves time when 
-creating the configuration file. The file named `flowchem_config.toml` created is placed in the flowchem package folder
+This feature saves time when creating the configuration file. The file named `flowchem_config.toml` created is placed 
+in the flowchem package folder
 
 ```{note}
 Some additional information is generally still necessary even for auto-detected devices.
