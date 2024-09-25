@@ -1,10 +1,10 @@
 # Tools
 
-There are additional tools in Flowchem to help users create the configuration file and utilize the API server.
+There are additional tools in flowchem to help users create the configuration file and utilize the API server.
 
 ## Autodiscover
 
-Some devices implemented in Flowchem can be discovered using the autodiscover function present in Flowchem. To activate
+Some devices implemented in flowchem can be discovered using the autodiscover function present in flowchem. To activate
 this function, simply type the command in the command window.
 
 ```shell
