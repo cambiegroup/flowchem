@@ -23,6 +23,24 @@ After the examination, a configuration file will be generated with the main char
 It's important to note that additional parameters may require adjustments. However, this feature saves time when 
 creating the configuration file. The file named `flowchem_config.toml` created is placed in the flowchem package folder
 
+```{note}
+Some additional information is generally still necessary even for auto-detected devices.
+```
+
+Complete the missing information (if any) in this file, and then you will be ready to use flowchem!
+
+```{note}
+`flowchem_config.toml` is written in [TOML format](https://en.wikipedia.org/wiki/TOML),
+the syntax of this language is intuitive and designed to be human-editable.
+If you follow this guide you will not need to learn anything about the TOML syntax, but you can just copy and modify the
+examples provided.
+```
+
+:::{note}
+Not all the devices supported by flowchem can be auto discovered, so you might need to edit the configuration
+file manually for some device types.
+:::
+
 ## Accessing API
 
 This function searches for flowchem devices on the network and returns a dictionary where the keys are device names
