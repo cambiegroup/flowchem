@@ -18,5 +18,27 @@ ip_address = "169.254.31.44"  # Onyl one of either ip_address or mac_address nee
 mac_address = "00:80:A3:B4:CE:77"  #  Onyl one of either ip_address or mac_address need to be provided
 ```
 
+As specified in the settings for each parameter, only the IP address or MAC address needs to be provided.
+The MAC address is provided on the device (see photo below). 
 
+:::{figure-md} Device
+<img src="img.png" alt="Knauer Valve" class="bg-primary mb-1" width="50%">
+
+**Figure 1** Knauer valve
+:::
+
+Therefore, simply configure the MAC address in the configuration.
+
+```toml
+[device.my-knauer-valve]
+type = "KnauerValve"
+mac_address = "00:80:A3:CE:7E:CB"
+```
+
+After running Flowchem, the valve's functionalities will be accessible through the server. 
+
+![img_1.png](img_1.png)
+
+To access the valve directly in Python, simply use the get_all_devices function as described in item 
+[tools](../tools.md).
 
