@@ -48,7 +48,9 @@ component_fake = flowchem_devices['my-device'].Components['FakeComponent']
 ```
 
 This component represents one class. This class has methods that can be accessed through commands available 
-in the API. For example, if you want to send a command to the component FakeComponent, you can use, according to API 
+in the API, see more details in [tools](../tools.md). For example, if you want to send a command to the component 
+FakeComponent, you 
+can use, according to API 
 interface, a method put as shown below:
 
 ![](FakeComponent.JPG)
