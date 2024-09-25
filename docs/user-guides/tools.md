@@ -10,9 +10,9 @@ this function, simply type the command in the command window.
 ```shell
 flowchem-autodiscover
 ```
-
-Autodiscover will examine the Ethernet input by sending and analyzing the data to identify the device connected to the
-computer. The user can choose whether to also examine the serial channel.
+Autodiscover will examine the local network using Zeroconf service discovery to verify if there are any devices 
+connected through Ethernet. Additionally, it will search for devices connected through serial connections based on 
+the user's preferences.
 
 ```{warning}
 The autodiscover include modules that involve communication over serial ports. These modules are *not* guaranteed to be
