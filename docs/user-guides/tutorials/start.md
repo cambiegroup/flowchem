@@ -38,11 +38,11 @@ This helps prevent issues with one device from affecting the entire platform.
 2 - Running on a server provides the platform with great versatility. For instance, the devices can be accessed by 
 another computer on the same network.
 
-In the previous example, to configure or inform Flowchem about the devices you want to access, you just need to write a 
+In the previous example, to configure or inform flowchem about the devices you want to access, you just need to write a 
 configuration file. The great thing is that this file is user-friendly, easily editable, and contains references to 
-several devices implemented in Flowchem. This means that the user only needs to consult the 
+several devices implemented in flowchem. This means that the user only needs to consult the 
 [reference documentation](../reference/devices/supported_devices.md)
-of the device in Flowchem to see how to configure it. In the example, we have two Elite11 pumps and one IcIR. 
+of the device in flowchem to see how to configure it. In the example, we have two Elite11 pumps and one IcIR. 
 According to the reference of the implemented devices, we can write the configuration file `configuration.toml` as follows:
 
 ```toml
