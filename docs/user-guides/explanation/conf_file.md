@@ -47,17 +47,19 @@ baudrate = 115200                # Additional configuration
 - It's connected via COM4 port.
 - It has specific syringe and communication settings.
 
-## Editing the File
+## Creating the File
 
-1. **Changing Device Names**: Simply edit the `[device.name]` line.
+1. **Editing Device Names**: Simply edit the `[device.name]` line.
 2. **Updating Settings**: Modify the values after the `=` sign.
 3. **Adding/Removing Devices**: Add or delete entire `[device.name]` blocks as needed.
 
-```{warning}
+```{important}
 When editing, ensure that:
 - The `type` parameter matches an implemented device class in flowchem.
 - The communication parameter (port, IP, URL) is correct for your setup.
 - Any additional parameters are appropriate for the device type.
+- For details of supported devices and their specific configuration options, refer to the 
+[device configuration guides](../reference/devices/supported_devices.md).
 ```
 
 ## File Usage
@@ -65,9 +67,6 @@ When editing, ensure that:
 1. Make your changes in the TOML file.
 2. Save the file with a `.toml` extension.
 3. Flowchem will use this configuration to connect to and manage the devices.
-
-For detailed information on supported devices and their specific configuration options, refer to the 
-[device configuration guides](../reference/devices/supported_devices.md).
 
 This user-friendly approach allows for quick adjustments to your flowchem setup, enabling efficient management of 
 various devices without the need for complex programming or system changes.
