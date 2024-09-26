@@ -1,4 +1,4 @@
-# tldr;
+# tldr (to long don`t read);
 ```shell
 pip install flowchem
 ```

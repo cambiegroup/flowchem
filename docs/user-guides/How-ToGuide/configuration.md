@@ -3,6 +3,7 @@
 The configuration file is the only input required by the package. It is built in an easily editable `.toml` format. 
 For more details about this file format, please visit [TOML](https://toml.io/en/). The configuration file should look 
 like this:
+
 ```toml
 [device.test-device]
 type = "FakeDevice"
@@ -18,7 +19,7 @@ necessary attributes for each device type can be found in the
 
 After creating a .toml configuration file as in the example above (or after getting it from the 
 [examples folder](https://github.com/cambiegroup/flowchem/tree/main/examples)) 
-run the `flowchem` command followed by the name of the configuration file.
+run the `flowchem` command in the terminal followed by the name of the configuration file.
 
 ```shell
 flowchem flowchem_config.toml
