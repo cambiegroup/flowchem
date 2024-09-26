@@ -7,7 +7,7 @@ understanding of the configuration file and how to interact with the API server.
 sections illustrate these concepts using fake devices, the underlying principles remain the same when working with a 
 real device.
 
-For this tutorial, we have selected the Knauer Valve. The settings, as documented in the 
+For this showcase, we have selected the Knauer Valve. The settings, as documented in the 
 [reference material](../reference/devices/valves/knauer_valve.md), are outlined in the following configuration file, 
 named `config.toml`. 
 

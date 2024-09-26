@@ -1,4 +1,4 @@
-# kindly start
+# Kindly start
 
 ## Fist steps
 
@@ -29,8 +29,8 @@ pump at a specific flow rate for a set duration, and then activate the sensor to
 And how do you do this? Well, the best approach is to have a drive to access the functionality of these devices in one 
 platform. This task can be accomplished through flowchem.
 
-Using flowchem, it is possible to access the devices' features asynchronously and on a server simply and directly. But 
-what do these terms mean in practice? 
+Using flowchem, it is possible to access the devices' features **asynchronously** and on a **server** simply and 
+directly. But what do these terms mean in practice? 
 
 1 - Asynchronous operation means that each device has its own thread, enabling them to run independently of one another.
 This helps prevent issues with one device from affecting the entire platform.
