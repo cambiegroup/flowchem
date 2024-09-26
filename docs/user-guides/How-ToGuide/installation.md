@@ -5,7 +5,8 @@
 Flowchem requires a Python version of 3.10 or later.
 You can get the latest version of Python from [python.org](https://www.python.org/downloads/).
 
-To get started with flowchem run (preferably in a dedicated [virtual environment](https://peps.python.org/pep-0405/)):
+To get started with flowchem run in the terminal (preferably in a dedicated 
+[virtual environment](https://peps.python.org/pep-0405/)):
 ```shell
 pip install flowchem
 ```
