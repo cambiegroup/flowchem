@@ -1,24 +1,26 @@
 # Foundation
 
 At its core, `flowchem` is a command line application that:
-1. parses a configuration file
-2. connects to the lab devices described and
-3. offers access to them via a RESTful API.
+1. parses a devices configuration file
+2. establishes communication with the devices
+3. provides a RESTful API to access the devices
 
 ## flowchem command
-The `flowchem` command must be called with one parameter: the path to the device configuration file. Running
+The `flowchem` command is called with device configuration file in terminal/console. Running
 ```shell
 flowchem devices.toml
 ```
-in the shell will start a flowchem server with the devices specified in the devices.toml file in the current working directory.
+in the shell will start a flowchem server with the devices provided in the devices.toml file.
+
 More information will be printed if the `--debug` option is provided, while the `--log` options can be used to specify
 the filename of the log file.
+
 A list with all the options is available via `flowchem --help`.
 
 ## Flowchem server startup
 When the CLI command `flowchem` is called, the following happens:
 1. The configuration file provided as argument is parsed, and the device objects are created in the order they appear in the file.
-2. Communication is established concurrently for all the devices via calls to each object's `initialize()` method.
+2. Communication is established concurrently for all the devices via calling to each object's `initialize()` method.
 3. The components of each hardware object are collected, their routes added to the API server and advertised via mDNS.
 4. Flowchem is ready to be used.
 
