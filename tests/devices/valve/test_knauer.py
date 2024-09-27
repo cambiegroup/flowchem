@@ -5,12 +5,12 @@ from flowchem.client.client import get_all_flowchem_devices
 import pytest
 import time
 
+
 # pytest tests/devices/valve/test_knauer.py -s
 # pytest ./tests -m Knauer_Distribution_Valve -s
 
 @pytest.fixture(scope="module")
 def api_dev(xprocess):
-
     config_file = Path(__file__).parent.resolve() / "knauer.toml"
     main = Path(__file__).parent.resolve() / ".." / ".." / ".." / "src" / "flowchem" / "__main__.py"
 
@@ -26,6 +26,7 @@ def api_dev(xprocess):
     yield get_all_flowchem_devices()
     xprocess.getinfo("flowchem_instance").terminate()
 
+
 @pytest.mark.Knauer_Distribution_Valve
 def test_set_get_monitor_position(api_dev):
     """Test the set_monitor_position method."""
@@ -36,8 +37,9 @@ def test_set_get_monitor_position(api_dev):
     time.sleep(1)
     assert position == "2", "The set position does not working"
 
+
 @pytest.mark.Knauer_Distribution_Valve
-def  test_set_get_position(api_dev):
+def test_set_get_position(api_dev):
     """Test the set_position method """
     valve = api_dev['test']['distribution-valve']
     valve.put("position", params={"connect": "[[1, 0]]"})
