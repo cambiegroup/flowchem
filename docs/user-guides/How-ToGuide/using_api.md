@@ -1,6 +1,6 @@
 # Working with API server
 
-After running the flowchem with a specific configuration file, an API is available on the server and can be accessed 
+After running the flowchem with a specific configuration file, a FastAPI server is available automatically and can be accessed 
 through the address: http://127.0.0.1:8000. Suppose we have a configuration file `flowchem_config.toml` as 
 described below. The device my-device is a generic device of flowchem with the class name FakeDevice.
 
