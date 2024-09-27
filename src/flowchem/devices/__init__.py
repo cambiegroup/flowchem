@@ -15,3 +15,4 @@ from .vacuubrand import *
 from .vapourtec import *
 from .vicivalco import *
 from .runze import *
+from .custom import *
