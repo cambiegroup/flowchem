@@ -1,30 +1,36 @@
-# Configuration File
+# Creating Configuration File
 
-The configuration file is the only input required by the package. It is built in an easily editable `.toml` format. 
-For more details about this file format, please visit [TOML](https://toml.io/en/). The configuration file should look 
-like this:
+The configuration file is where you store all the devices informatiom. To start flowchem API, configuration file is the only requirment. It is built in an easily editable `.toml` format. 
+For more details about this file format, please visit [TOML](https://toml.io/en/). 
 
+
+First of all, create a toml file save it as TOML formate. For instance, create a file call 'flowchem_config.toml'
+(or after getting it from the [examples folder](https://github.com/cambiegroup/flowchem/tree/main/examples)) 
+
+After creating the file, add all devices setting to the configuration file. For instance:
 ```toml
 [device.test-device]
 type = "FakeDevice"
 ```
-
 In this file, the term `device` indicates that the device is implemented in the package. The term `test-device` is the
 device name chosen by the user, and `FakeDevice` is the device type corresponding to the class implemented in the 
-package source code. Depending on the type of device specified in the file, additional attributes may be required. All 
-necessary attributes for each device type can be found in the 
+package source code. Depending on the type of device specified in the file, additional attributes may be required. 
+
+All necessary attributes for each device type can be found in the 
 [Device configuration guides](../reference/devices/supported_devices.md).
+
+More detailed explnation of flowchem Configuration file can be found in [flowchem Configuration File: 
+Simple, Flexible, and User-Friendly](../explanation/conf_file.md).
+
 
 ## Running flowchem
 
-After creating a .toml configuration file as in the example above (or after getting it from the 
-[examples folder](https://github.com/cambiegroup/flowchem/tree/main/examples)) 
-run the `flowchem` command in the terminal followed by the name of the configuration file.
+Run the `flowchem` command in the terminal followed by the name of the configuration file.
 
 ```shell
 flowchem flowchem_config.toml
 ```
-```{warning}
+```{important}
 Please note that when running this command in the terminal, the file must be in the same folder as the terminal. If the
  terminal is in a different folder, please add the configuration address file after "flowchem" or change the current folder in the terminal.
 ```
