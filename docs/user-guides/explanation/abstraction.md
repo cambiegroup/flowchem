@@ -38,11 +38,5 @@ platform's automation. The only change needed is in the configuration file, whic
 3. **Code Reusability**: By using inheritance, flowchem avoids code duplication. Methods and attributes defined in a 
 parent class are automatically available in all child classes, promoting the principle of "Don't Repeat Yourself" (DRY).
 
-## Practical Impact
-
-This level of abstraction ensures that users can manage and configure devices with minimal effort, focusing on 
-high-level functionality rather than low-level implementation details. The configuration file, written in a simple 
-and human-readable TOML format, allows users to make necessary changes quickly and efficiently.
-
 Citations:
 [1] https://pythonbasics.org/inheritance/
