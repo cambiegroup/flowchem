@@ -11,21 +11,19 @@ For this showcase, we have selected the Knauer Valve. The settings, as documente
 [reference material](../reference/devices/valves/knauer_valve.md), are outlined in the following configuration file, 
 named `config.toml`. 
 
-```toml
-[device.my-knauer-valve]  # This is the valve identifier
-type = "KnauerValve"  # The actual valve type will be detected automatically
-ip_address = "169.254.31.44"  # Onyl one of either ip_address or mac_address need to be provided
-mac_address = "00:80:A3:B4:CE:77"  #  Onyl one of either ip_address or mac_address need to be provided
-```
+* The actual valve *type* will be detected automatically.
+* Onyl one of either *ip_address* or *mac_address* need to be provided.
+* Informing the address of the *network* where the device is located will make it easier to 
+search for it.
 
 As specified in the settings for each parameter, only the IP address or MAC address needs to be provided.
-The MAC address is provided on the device (see photo below). 
+The MAC address is provided on the device: `00:80:A3:CE:7E:CB`. Additionally, the network to which the device is 
+connected is identified as `192.198.*.*`.
 
-:::{figure-md} Device
-<img src="img.png" alt="Knauer Valve" class="bg-primary mb-1" width="50%">
-
-**Figure 1** Knauer valve
-:::
+```{note}
+Knauer valves with an Ethernet connection have a MAC address registered, usually found next to the serial number 
+on the device.
+```
 
 Therefore, simply configure the MAC address in the configuration.
 
@@ -33,6 +31,7 @@ Therefore, simply configure the MAC address in the configuration.
 [device.my-knauer-valve]
 type = "KnauerValve"
 mac_address = "00:80:A3:CE:7E:CB"
+network = "192.198.*.*"
 ```
 
 After running flowchem, the valve's functionalities will be accessible through the server. 
