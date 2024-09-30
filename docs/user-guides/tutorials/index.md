@@ -2,6 +2,8 @@
 
 ```{toctree}
 
+installation
+
 start
 
 ```
