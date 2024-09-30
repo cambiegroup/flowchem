@@ -4,6 +4,4 @@
 
 start
 
-examples/reaction_optimization
-
 ```

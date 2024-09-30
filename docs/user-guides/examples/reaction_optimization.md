@@ -1,3 +1,4 @@
+# Flowchem application example
 # Autonomous reaction optimization
 
 This example demonstrated how to set up a process using flowchem. The process involved the reaction of two reagents, 
@@ -410,7 +411,6 @@ With these two files, it's possible to carry out a series of experiments in orde
 more detail on the synthesis, please go to 
 [Continuous flow synthesis of the ionizable lipid ALC-0315](https://doi.org/10.1039/D3RE00630A). The complete files 
 is available in [example folder](../../../examples/reaction_optimization).
-
 
 <script
   src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
