@@ -4,10 +4,10 @@ This example demonstrated how to set up a process using flowchem. The process in
 *hexyldecanoic acid* and *thionyl chloride*, inside a temperature-controlled reactor.
 
 Four electronic devices were required for the setup. Two pumps were used to deliver the reagents: one from 
-[AzuraCompact](../../reference/devices/pumps/azura_compact.md), and the other from 
-[Elite11](../../reference/devices/pumps/elite11.md). A reactor from the R2 platform, equipped with temperature control,
-was used; specifically, the [R4Heater](../../reference/devices/technical/r4_heater.md) component. An infrared 
-spectroscope from IR, [IcIR](../../reference/devices/analytics/icir.md), was employed to analyze the product.
+[AzuraCompact](../reference/devices/pumps/azura_compact.md), and the other from 
+[Elite11](../reference/devices/pumps/elite11.md). A reactor from the R2 platform, equipped with temperature control,
+was used; specifically, the [R4Heater](../reference/devices/technical/r4_heater.md) component. An infrared 
+spectroscope from IR, [IcIR](../reference/devices/analytics/icir.md), was employed to analyze the product.
 
 :::{figure-md} Synthesis
 <img src="reaction.JPG" alt="Suggestion of follow the documetation" class="bg-primary mb-1" width="100%">
@@ -55,7 +55,7 @@ template = "30sec_2days.iCIRTemplate"
 
 The electronic components used in the process were accessed from a Python script `run_experiment.py`. To access all 
 devices listed in the configuration file, the command "get_all_flowchem_devices" was utilized. More information on how
-this function operates can be found in the [tools section](../../tools.md).
+this function operates can be found in the [tools section](../tools.md).
 
 ```python
 import time
@@ -77,7 +77,7 @@ flowir = flowchem_devices["flowir"]["ir-control"]
 Each component has its own GET and PUT methods. The commands are written based on available methods. 
 When flowchem is running, you can easily see each device's available methods through the address 
 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). You can also find the methods in the 
-[API documentation](../../reference/api/index.md).
+[API documentation](../reference/api/index.md).
 
 The file `run_experiment.py` has also a series of functions that is crucial to the experiment execution. Beyond of 
 the `get_all_flowchem_devices` function, we needed to import some additional packages.
@@ -409,7 +409,7 @@ while time.monotonic() < (start_time + MAX_TIME):
 With these two files, it's possible to carry out a series of experiments in order to optimize the conditions. To see 
 more detail on the synthesis, please go to 
 [Continuous flow synthesis of the ionizable lipid ALC-0315](https://doi.org/10.1039/D3RE00630A). The complete files 
-is available in [example folder](../../../../examples/reaction_optimization).
+is available in [example folder](../../../examples/reaction_optimization).
 
 
 <script
