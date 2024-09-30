@@ -1,36 +1,36 @@
 # Working with API server
 
 After running the flowchem with a specific configuration file, a FastAPI server is available automatically and can be accessed 
-through the address: http://127.0.0.1:8000. Suppose we have a configuration file `flowchem_config.toml` as 
-described below. The device my-device is a generic device of flowchem with the class name FakeDevice.
+through the address: http://127.0.0.1:8000. 
 
-```toml
-[device.my-device]
-type = "FakeDevice"
-```
-
-Run flowchem:
-```shell
-flowchem flowchem_config.toml
-```
-
-Another way to access this FakeDevice was implemented directly in the package commands. It can be access through:
-
-```shell
-flowchem example
-```
-
-This command accesses the `FakeDevice_configuration.toml` file that is available in the package folder in 
-`flowchem/examples`.
-
-
-The API available under the address will be:
+ In the example provided in the section on [Creating Configuration File](configuration.md), 
+ the API accessible at the following address will be: 
 
 ![](FakeDeviceAPI.JPG)
 
 Access to API can be done directly through the web browser or by clients written in different languages. Below, we 
 show how easy it is to access the API, for example, through Python. Access to API commands through Python can be done
 using the flowchem class.
+
+## Send a command
+
+There are two classes of commands available in the API for the user: the PUT command 
+(generally used to send data/command to the device) and GET command (generally used to request data from the device). 
+In practice, both commands are accessed by the user in a similar way. 
+
+For example, if the user wants to request data from the device using the "fake_receive_data" command, 
+they must click the "try it out" button in the browser, and then click the execute button. 
+
+![img_2.png](img_2.png)
+
+![img_3.png](img_3.png)
+
+![img_4.png](img_4.png)
+
+After clicking the button, the command will be sent to the device, and feedback will be received to ensure that 
+everything went well during the data transfer. This feedback can be seen in the "responsive body" window. If everything
+goes well, the user can see a value for the requested variable. However, if there is an error in the data transmission,
+the result will be an error message.
 
 ## Access the API through Python
 
