@@ -32,7 +32,8 @@ flowchem flowchem_config.toml
 ```
 ```{important}
 Please note that when running this command in the terminal, the file must be in the same folder as the terminal. If the
- terminal is in a different folder, please add the configuration address file after "flowchem" or change the current folder in the terminal.
+ terminal is in a different folder, please add the configuration address file after "flowchem" or change the current 
+ folder in the terminal.
 ```
 
 In your terminal, you will see some debug information, ending with a line like this one:
@@ -58,6 +59,9 @@ requiring any connected device, simply execute:
 ```shell
 flowchem example
 ```
+
+This command will run flowchem directly with a configuration file in the 
+[package directory](../../../examples/FakeDevice_configuration.toml).
 
 ## Device autoconfiguration
 
