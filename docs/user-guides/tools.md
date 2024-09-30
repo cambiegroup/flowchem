@@ -74,5 +74,5 @@ devices = get_all_flowchem_devices()
 devices["PumpG"]["pump"].put("infuse", {"volume": "10 ml", "rate": "1 ml/min"})
 ```
 
-The example shown in section [example](tutorials/examples/reaction_optimization.md) presents one way of how the 
+The example shown in section [example](examples/reaction_optimization.md) presents one way of how the 
 protocols can be constructed.

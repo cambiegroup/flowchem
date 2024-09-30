@@ -59,7 +59,7 @@ the documentation cited in the flowchart is listed below.
 
 [Kindly start](user-guides/tutorials/start.md) - Friendly introduction to the flowchem;
 
-[Install flowchem](user-guides/How-ToGuide/installation.md) - How to install the flowchem;
+[Install flowchem](user-guides/tutorials/installation.md) - How to install the flowchem;
 
 [Configure the file](user-guides/How-ToGuide/configuration.md) - How to create a configuration file;
 
@@ -69,7 +69,7 @@ the documentation cited in the flowchart is listed below.
 
 [Run flowchem with a real device](user-guides/How-ToGuide/realdevice.md) - Showcase with a real device;
 
-[See a real example of usage](user-guides/tutorials/examples/reaction_optimization.md) - Example where flowchem was 
+[See a real example of usage](user-guides/examples/reaction_optimization.md) - Example where flowchem was 
 applied.
 
 Questions in flowchart:
