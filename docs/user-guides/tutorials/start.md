@@ -29,13 +29,10 @@ pump at a specific flow rate for a set duration, and then activate the sensor to
 And how do you do this? Well, the best approach is to have a drive to access the functionality of these devices in one 
 platform. This task can be accomplished through flowchem.
 
-Using flowchem, it is possible to access the devices' features **asynchronously** and on a **server** simply and 
-directly. But what do these terms mean in practice? 
+Using flowchem, it is possible to access the devices' features on a **server** simply and 
+directly. But what do this mean in practice?
 
-1 - Asynchronous operation means that each device has its own thread, enabling them to run independently of one another.
-This helps prevent issues with one device from affecting the entire platform.
-
-2 - Running on a server provides the platform with great versatility. For instance, the devices can be accessed by 
+Running on a server provides the platform with great versatility. For instance, the devices can be accessed by 
 another computer on the same network.
 
 In the previous example, to configure or inform flowchem about the devices you want to access, you just need to write a 
@@ -51,12 +48,12 @@ type = "Elite11"
 port = "COM4"
 syringe_diameter = "14.567 mm"
 syringe_volume = "10 ml"
-baudrate = 115200
 
 [device.pump2]
-type = "AzuraCompact"
-ip_address = "192.168.1.119"
-max_pressure = "10 bar"
+type = "Elite11"
+port = "COM1"
+syringe_diameter = "14.567 mm"
+syringe_volume = "10 ml"
 
 [device.analyzer]
 type = "IcIR"
