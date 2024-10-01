@@ -27,7 +27,7 @@ class FlowchemComponentClient:
     def put(self, url, data=None, **kwargs):
         """Send a PUT request. Returns :class:`Response` object."""
 
-        # Inspect the keyargs type to avoid ploblems with not str parameters        
+        # Inspect the keyword arguments type to avoid problems with not str parameters        
         for key, arg in kwargs.get("params", {}).items():
             if type(arg) is list:
                 kwargs["params"][key] = str(arg)
