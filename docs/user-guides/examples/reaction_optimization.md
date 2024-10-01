@@ -200,7 +200,7 @@ def _get_new_ir_spectrum(last_sample_id):
 
 * Monitors the IR
 
-This function continuously monitored the IR spectrum until changes between consecutive spectra were small enough  
+This function continuously monitored the IR spectrum until changes between consecutive spectra were small enough 
 (less than 0.2% difference). It integrated the peaks of the IR spectrum and compared them, looking for stability in 
 the reaction. At the end, it returned the integrated peaks when the spectrum stabilized.
 
