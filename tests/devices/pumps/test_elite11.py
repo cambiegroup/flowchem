@@ -5,8 +5,7 @@ from flowchem.client.client import get_all_flowchem_devices
 import pytest
 import time
 
-# pytest tests/devices/Fake_group/test_elite11.py -s
-# pytest ./tests -m HApump -s
+# pytest tests/devices/pump/test_elite11.py -s
 
 @pytest.fixture(scope="module")
 def api_dev(xprocess):
@@ -26,7 +25,7 @@ def api_dev(xprocess):
     yield get_all_flowchem_devices()
     xprocess.getinfo("flowchem_instance").terminate()
 
-async def infuse(api_dev):
+def test_infuse(api_dev):
     pump = api_dev['test']['pump']
     assert pump.put("infuse", params={"rate": "1 ml/min", "volume": "2 ml"})
     time.sleep(5)
