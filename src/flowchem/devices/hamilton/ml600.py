@@ -178,7 +178,7 @@ class HamiltonPumpIO:
             )
 
         return self._parse_response(response)
-        return self._parse_response(response)
+
 
 class ML600Commands(Enum):
     """ Just a collection of commands. Grouped here to ease future, unlikely, changes. """

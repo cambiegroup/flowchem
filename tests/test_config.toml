@@ -1,2 +1,2 @@
-[device.test-device]
+[device.some-device]
 type = "FakeDevice"

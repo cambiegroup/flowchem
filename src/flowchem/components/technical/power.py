@@ -1,4 +1,4 @@
-"""Power control, sets both voltage and current. (Could be split in two, unnecessarty for now)."""
+"""Power control, sets both voltage and current. (Could be split in two, unnecessary for now)."""
 from __future__ import annotations
 
 from flowchem.components.flowchem_component import FlowchemComponent
@@ -36,10 +36,10 @@ class PowerControl(PowerSwitch):
         name: str,
         hw_device: FlowchemDevice,
     ) -> None:
-        """Create a TemperatureControl object."""
+        """Create a PowerSwitch object."""
         super().__init__(name, hw_device)
 
-        self.add_api_route("/power-on", self.power_on, methods=["PUT"])
+        self.add_api_route("/power-on", self.power_on, methods=["PUT"])     # Todo remove Repetitive!
         self.add_api_route("/power-off", self.power_off, methods=["PUT"])
 
         # Current

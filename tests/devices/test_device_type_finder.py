@@ -15,6 +15,7 @@ def test_device_finder():
         "KnauerValve",
         "MFC",
         "ML600",
+        "FakeDeviceExample",
         "MansonPowerSupply",
         "PhidgetBubbleSensor",
         "PhidgetPowerSource5V",

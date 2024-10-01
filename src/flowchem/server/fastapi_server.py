@@ -40,6 +40,7 @@ class FastAPIServer:
     def add_background_tasks(self, repeated_tasks: Iterable[RepeatedTaskInfo]):
         """Schedule repeated tasks to run upon server startup."""
         seconds_delay, task = repeated_tasks
+
         @self.app.on_event("startup")
         @repeat_every(seconds=seconds_delay)
         async def my_task():
