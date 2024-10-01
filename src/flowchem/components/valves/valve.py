@@ -287,12 +287,7 @@ class Valve(FlowchemComponent):
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
     async def get_position(self) -> list[list[int]]:
-        """
-        Get the current valve position.
-
-        Returns:
-            tuple: The current position of the valve.
-        """
+        """Get current valve position."""
         if not hasattr(self, "identifier"):
             pos = await self.hw_device.get_raw_position()
         else:
