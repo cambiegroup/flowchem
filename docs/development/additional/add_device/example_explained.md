@@ -109,9 +109,9 @@ Observe that the pump component of the device is a syringe pump, which means tha
 of the SyringePump class. We just need to overwrite the methods according to our specific connectivity commands from 
 the device.
 
-We now have two modules to work on: `ml600.py` and `ml600_pump.py`. We will start by focusing on the less complicated module, X. To 
-avoid overwhelming the reader, we will choose a specific functionality of the device and follow how the data is carried out 
-through the modules. For example, let's focus on a specific function `is_pumping`.
+We now have two modules to work on: `ml600.py` and `ml600_pump.py`. We will start by focusing on the less complicated 
+module, `ml600_pump.py`. To avoid overwhelming the reader, we will choose a specific functionality of the device and follow how 
+the data is carried out through the modules. For example, let's focus on a specific function `is_pumping`.
 
 ## Component Module `ml600_pump.py`
 

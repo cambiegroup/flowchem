@@ -1,7 +1,6 @@
 # Add new device to flowchem
 
-## Code
-### Folder hierarchy
+## Folder hierarchy
 In the `flowchem.device` subpackage, the device modules are organized in folders by manufacturer.
 Since this is the first device from _Weasley & Weasley_ in flowchem, we need to create a new folder called
 `/flowchem/devices/weasley`.
@@ -9,7 +8,7 @@ Since this is the first device from _Weasley & Weasley_ in flowchem, we need to 
 Folders and modules should have short, all-lowercase names. Underscores can be used in the module name if it improves 
 readability, in line with [PEP8](https://peps.python.org/pep-0008/).
 
-### Module name
+## Module name
 In this folder we will create a _module_ (i.e. a python file 🐍) called `extendable_ear.py` with an `ExtendeableEar`
 class to control our magic device.
 ```python
@@ -18,7 +17,7 @@ class ExtendableEar:
     ...
 ```
 
-### FlowchemDevice subclass
+## FlowchemDevice subclass
 To signal flowchem that this class can be used to instantiate object specified in the device configuration we need to do
 two things:
 * inherit from `FlowchemDevice`
@@ -50,7 +49,7 @@ and correspondingly in the `/flowchem/devices/__init__.py` file.
 from .weasley import *
 ```
 
-### Device configuration
+## Device configuration
 Additional parameters needed for the device setup can be specified in the device classes `__init__` method, if a default is provided
 the parameter will also be optional in the device section in the configuration file.
 In our case, the ExtendableEar has an optional length parameter, with a default value of "10 cm".
@@ -116,7 +115,7 @@ no commands are available through the server:
 2022-11-25 09:40:58.930 | DEBUG    | flowchem.server.api_server:create_server_for_devices:78 - Got 0 components from my-magic-ear
 ```
 
-### Add a component
+## Add a component
 
 While the object subclassing FlowchemDevice has the responsibility of communicating with the device, the commands that
 are available for that device should be exposed through a list of components, that are subclasses of `FlowchemComponent`.
@@ -264,7 +263,7 @@ sending the command to our magic device.
 And that's it: congratulations! 🎉
 You have added support for the ExtendableEar👂 in flowchem!
 
-### Documentation and tests
+## Documentation and tests
 
 To let other people know that this device is also supported now it would be a good idea to add it to the documentation.
 Optionally, some tests for the device functions can be added to prevent regressions.
