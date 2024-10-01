@@ -1,7 +1,5 @@
 # Flowchem application example
 
-# Autonomous reaction optimization
-
 This example demonstrated how to set up a process using flowchem. The process involved the reaction of two reagents, 
 *hexyldecanoic acid* and *thionyl chloride*, inside a temperature-controlled reactor.
 
