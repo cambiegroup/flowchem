@@ -1,4 +1,5 @@
 # Flowchem application example
+
 # Autonomous reaction optimization
 
 This example demonstrated how to set up a process using flowchem. The process involved the reaction of two reagents, 
@@ -15,6 +16,17 @@ spectroscope from IR, [IcIR](../reference/devices/analytics/icir.md), was employ
 
 **Figure 1** Automatic synthesis
 :::
+
+This study aims to find the optimal operating conditions for three variables in order to maximize reaction yields. The 
+variables are the temperature of the reactor, the residence time, and the molar ratio of the reagents. These optimal 
+conditions were determined using a Bayesian optimization algorithm for continuous variables. The reaction yield was 
+analyzed by integrating the peaks of the infrared spectrum.
+
+```{note}
+Although it was a specific application of flow chemistry, the file structure and orchestration built here can be used 
+as a standard. This pattern can be used to build any process in the laboratory that includes the use of real-time 
+optimization algorithms.
+```
 
 To gain a better understanding of the example, let's examine three different files that enabled the automation of the 
 platform.
