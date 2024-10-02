@@ -1,4 +1,4 @@
-from .client import get_all_flowchem_devices
+from flowchem.client.client import get_all_flowchem_devices
 import time
 import asyncio
 import csv
@@ -107,7 +107,7 @@ class Watch:
         except:
             logger.info(f"Recording folder {self.address} already exists. The supervisor will overwrite it")
 
-        logger.add(self.address + "/log.log", level="INFO")
+        logger.add(self.address + "/Watchlog.log", level="INFO")
 
         if self.add_info is not None:
             with open(self.address + f"/Information_id_{self.experimental_id}.toml", "w") as file:
@@ -228,3 +228,25 @@ class Watch:
                     logger.error(f"It was not possible to verify the received value {value} with the rule: "
                                  f"{inspect.getsource(rule)}")
                     return True
+
+
+if __name__ == "__main__":
+
+    address = os.path.dirname(os.path.abspath(__file__))
+
+    inf = {"some_information": "oiiuasd4712", "id_io": 8587}
+
+    watch = Watch(experimental_id=1, address=address + "/recording", discrete_time=2, add_info=inf)
+
+    watch.setup()
+
+    watch.inset_inspect(device="fake-device",
+                        component="FakeComponent",
+                        command="fake_receive_data",
+                        condition=lambda x: x < 0.4)
+
+    watch.run()
+
+    time.sleep(10)
+
+    watch.close()
