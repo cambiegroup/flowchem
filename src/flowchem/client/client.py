@@ -40,7 +40,7 @@ class FlowchemDeviceListener(FlowchemCommonDeviceListener):
             logger.warning(f"No info for service {name}!")
 
 
-def get_all_flowchem_devices(timeout: float = 3000, IP_machine: str = "local") -> dict[str, FlowchemDeviceClient]:
+def get_all_flowchem_devices(timeout: float = 3000, IP_machine: str = "all") -> dict[str, FlowchemDeviceClient]:
     """
     Search for Flowchem devices using Zeroconf and return them as a dictionary.
 
@@ -74,10 +74,10 @@ def get_all_flowchem_devices(timeout: float = 3000, IP_machine: str = "local") -
 
     devices = flowchem_devices_from_url_dict(listener.flowchem_devices)
 
-    if IP_machine == "local":
+    if IP_machine == "all":
+        return devices
+    elif IP_machine == "local":
         ip_target = socket.gethostbyname(socket.gethostname())
-    elif IP_machine == "all":
-        ...
     else:
         ip_target = IP_machine
 
