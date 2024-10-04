@@ -6,6 +6,8 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any
 
+import shutil
+import os
 from loguru import logger
 
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -15,6 +17,7 @@ from flowchem.server.configuration_parser import (
 )
 from flowchem.server.fastapi_server import FastAPIServer
 from flowchem.server.zeroconf_server import ZeroconfServer
+import flowchem.client as logging_dir
 
 
 class _Flowchem(threading.local):
@@ -81,16 +84,19 @@ class Flowchem:
         self.config = parse_config(config)
         self.devices = instantiate_device_from_config(self.config)
 
+        """Inspect the logging folder to clear memory before create API endpoint"""
+        log_directory = os.path.join(os.path.dirname(logging_dir.__file__),"loggings")
+        if os.path.exists(log_directory):
+            shutil.rmtree(log_directory)
+        os.mkdir(log_directory)
+        logger.info(f"Cleaned logging memories in flowchem.client.loggings")
+
         """Initialize connection to devices and create API endpoints."""
         logger.info("Initializing device connection(s)...")
 
         # Run `initialize` async method of all hw devices in parallel
         await asyncio.gather(*[dev.initialize() for dev in self.devices])
         logger.info("Device(s) connected")
-
-        for dev in self.devices:
-            if dev.__class__.__name__ == "Chronology":
-                dev.get_flowchem_infor(self, config)
 
         # Create entities for the configured devices.
         for device in self.devices:
@@ -107,7 +113,7 @@ if __name__ == "__main__":
     async def main():
         flowchem = Flowchem()
         await flowchem.setup(
-            BytesIO(b"""[device.test-device]\ntype = "FakeDeviceExample"\n\n[device.recording]\ntype = "Chronology"\n""")
+            BytesIO(b"""[device.test-device]\ntype = "FakeDeviceExample"\n""")
         )
 
         config = uvicorn.Config(

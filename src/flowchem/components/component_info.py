@@ -14,3 +14,4 @@ class ComponentInfo(BaseModel):
     ]  # 'device'
     get_methods: dict[str, str] = dict()
     put_methods: dict[str, str] = dict()
+    inheritance: list[str] = [""]
