@@ -16,4 +16,3 @@ from .vapourtec import *
 from .vicivalco import *
 from .fakedevice import *
 from .fakedevice import *
-from .virtual import *
