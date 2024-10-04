@@ -25,9 +25,9 @@ class SY01B_6PortDistributionValve(SixPortDistributionValve):
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         anti_cc_stator = [4, 5, 6, 1, 2, 3]
         if reverse:
-            return anti_cc_stator[raw_position]
-        else:
             return anti_cc_stator.index(raw_position)
+        else:
+            return anti_cc_stator[raw_position]
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
@@ -51,9 +51,9 @@ class SY01B_9PortDistributionValve(NinePortDistributionValve):
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         anti_cc_stator = [5, 6, 7, 8, 9, 1, 2, 3, 4]
         if reverse:
-            return anti_cc_stator[raw_position]
-        else:
             return anti_cc_stator.index(raw_position)
+        else:
+            return anti_cc_stator[raw_position]
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
@@ -77,9 +77,9 @@ class SY01B_12PortDistributionValve(TwelvePortDistributionValve):
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         anti_cc_stator = [7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6]
         if reverse:
-            return anti_cc_stator[raw_position]
-        else:
             return anti_cc_stator.index(raw_position)
+        else:
+            return anti_cc_stator[raw_position]
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""

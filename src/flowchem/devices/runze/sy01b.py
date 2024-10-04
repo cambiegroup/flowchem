@@ -2,6 +2,7 @@
 
 import aioserial
 import math
+import asyncio
 
 from dataclasses import dataclass
 from loguru import logger
@@ -11,7 +12,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem import ureg
 from flowchem.devices.runze.sy01b_valve import (
     SY01B_6PortDistributionValve,
-    SY01B_8PortDistributionValve,
+    SY01B_9PortDistributionValve,
     SY01B_12PortDistributionValve,
 )
 from flowchem.devices.runze.sy01b_pump import SY01BPump
@@ -320,8 +321,9 @@ class SY01B(FlowchemDevice):
 
     async def reset_syringe_pump(self) -> str:
         """Resets the syringe to home position."""
-        status, parameters = await self._send_command_and_read_reply(command="4f")
-        if status == "Normal status":
+        status, parameters = await self._send_command_and_read_reply(command="4f", raise_errors=False)
+        current_volume = await self.get_current_volume()
+        if status == "Normal status" and current_volume == ureg.Quantity("0 ml"):
             logger.info(f"Syringe pump successfully ran to home position.")
             return parameters
 
@@ -365,7 +367,7 @@ class SY01B(FlowchemDevice):
         #print(f"target_volume {target_volume.m_as("ml")}")
         #print(f"current_volume {current_volume.m_as("ml")}")
         if current_volume == target_volume:
-            logger.info(f"Syringe pump successfully set to volume {target_volume}.")
+            logger.debug(f"Syringe pump successfully set to volume {target_volume}.")
             return status, parameters
 
     async def set_syringe_volume(self, target_volume: ureg.Quantity, rate: ureg.Quantity) :
@@ -385,9 +387,10 @@ class SY01B(FlowchemDevice):
     async def get_raw_position(self) -> str:
         """Resets the syringe to home position."""
         status, parameters = await self._send_command_and_read_reply(command="ae")
+        position = parameters[2:4]
         if status == "Normal status":
-            logger.info(f"Syringe valve set to position: {parameters[0:2]}.")
-            return parameters
+            logger.info(f"Syringe valve set to position: {position}.")
+            return position
 
     async def wait_until_system_idle(self):
         """Return when no more commands are present in the pump buffer."""
@@ -395,6 +398,7 @@ class SY01B(FlowchemDevice):
         while not await self.is_system_idle():
             await asyncio.sleep(0.1)
         logger.debug(f"...SY01B {self.name} idle now!")
+        return True
 
     async def is_system_idle(self) -> bool:
         """Check if the pump is idle (actually check if the last command has ended)."""
@@ -402,11 +406,11 @@ class SY01B(FlowchemDevice):
         if status == "Normal status":
             return True
 
-    async def get_current_version(self) -> bool:
+    async def get_current_version(self) -> str:
         """Check if the pump is idle (actually check if the last command has ended)."""
         status, parameters = await self._send_command_and_read_reply(command="3f", raise_errors=False)
         if status == "Normal status":
-            return True
+            return parameters
 
 
 if __name__ == "__main__":
