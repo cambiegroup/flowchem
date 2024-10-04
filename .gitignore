@@ -131,3 +131,6 @@ dmypy.json
 /flowchem/devices/Vapourtec/commands.py
 /src/flowchem/devices/knauer_hplc_nda.py
 .ruff_cache
+
+# Logging
+loggings/
