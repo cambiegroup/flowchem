@@ -193,6 +193,8 @@ class SY01B(FlowchemDevice):
         super().__init__(name)
 
         # Create communication
+        self.max_flowrate = None
+        self.max_speed = None
         self.runze_io = runze_io
         SY01B._io_instances.add(self.runze_io)
         self.config = SY01B.DEFAULT_CONFIG | config
@@ -207,7 +209,6 @@ class SY01B(FlowchemDevice):
         try:
             self.syringe_volume = ureg.Quantity(syringe_volume)
             self.syringe_diameter = ureg.Quantity(f"{SY01B.VALID_SYRINGES[self.syringe_volume.m_as("ml")]} mm")
-            self.max_flowrate = ureg.Quantity(f"{200 / ((self.max_count * self.syringe_volume.m_as("ml"))/10000)} ml/min")
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
             raise InvalidConfigurationError(
@@ -227,6 +228,9 @@ class SY01B(FlowchemDevice):
         """Initialize pump and its components."""
         await self.reset_valve()
         await self.reset_syringe_pump()
+        self.max_speed = await self.get_max_speed()
+        self.max_flowrate = ureg.Quantity(
+            f"{self.max_speed / ((self.max_count * self.syringe_volume.m_as("ml")) / 10000)} ml/min")
         # Test connectivity by querying the pump's firmware version
         self.device_info.version = await self.get_current_version()
         logger.info(
@@ -393,7 +397,7 @@ class SY01B(FlowchemDevice):
             )
             return "Parameter Error", ""
 
-        if speed > 200:
+        if speed > self.max_speed:
             logger.warning(
                      f"Desired rate ({rate}) is unachievable, please select a positive flowrate lower than {self.max_flowrate}!"
                  )
@@ -477,6 +481,14 @@ class SY01B(FlowchemDevice):
         status, parameters = await self._send_command_and_read_reply(command="3f", raise_errors=False)
         if status == "Normal status":
             return parameters
+
+    async def get_max_speed(self) -> int:
+        """Query max speed value"""
+        status, parameters = await self._send_command_and_read_reply(command="27", raise_errors=False)
+        if status == "Normal status":
+            return int(parameters, 16)
+
+    #ToDo: Write descriptions
 
 if __name__ == "__main__":
     import asyncio
