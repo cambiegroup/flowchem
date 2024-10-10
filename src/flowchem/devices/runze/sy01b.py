@@ -377,14 +377,14 @@ class SY01B(FlowchemDevice):
             return parameters
 
     async def force_stop(self) -> str:
-        """."""
+        """Strong stop (pump+valve)"""
         status, parameters = await self._send_command_and_read_reply(command="49")
         if status == "Normal status":
             logger.info(f"Syringe pump and valve stopped.")
             return parameters
 
     async def get_motor_status(self) -> str:
-        """."""
+        """Query current motor status"""
         status, parameters = await self._send_command_and_read_reply(command="4a", raise_errors=False)
         return status
 
@@ -408,7 +408,7 @@ class SY01B(FlowchemDevice):
             return status, parameters
 
     async def infuse(self, volume: ureg.Quantity) -> tuple[str,str]:
-        """."""
+        """Infuse a certain volume"""
         current_volume = await self.get_current_volume()
         target_vol = current_volume - volume
         if target_vol < 0:
@@ -428,7 +428,7 @@ class SY01B(FlowchemDevice):
             return status, parameters
 
     async def withdraw(self, volume: ureg.Quantity) -> tuple[str,str]:
-        """"""
+        """Withdraw a certain volume"""
         current_volume = await self.get_current_volume()
         target_vol = current_volume + volume
         if target_vol > self.syringe_volume:
@@ -448,7 +448,7 @@ class SY01B(FlowchemDevice):
             return status, parameters
 
     async def set_raw_position(self, position: str, raise_errors: bool = True) -> bool:
-        """"""
+        """Set the valve's position"""
         status, parameters = await self._send_command_and_read_reply(command="44", parameter=int(position), raise_errors=raise_errors)
         current_position = await self.get_raw_position()
         if status == "Normal status" and int(position) == int(current_position) and raise_errors is True:
@@ -456,14 +456,14 @@ class SY01B(FlowchemDevice):
             return True
 
     async def get_raw_position(self) -> str:
-        """."""
+        """Query the current valve's position"""
         status, parameters = await self._send_command_and_read_reply(command="ae")
         position = parameters[2:4]
         if status == "Normal status":
             return position
 
     async def wait_until_system_idle(self):
-        """Return when no more commands are present in the pump buffer."""
+        """Return True when no more commands are present in the pump buffer."""
         logger.debug(f"SY01B {self.name} wait until idle...")
         while not await self.is_system_idle():
             await asyncio.sleep(0.1)
@@ -471,28 +471,26 @@ class SY01B(FlowchemDevice):
         return True
 
     async def is_system_idle(self) -> bool:
-        """"""
+        """Checks if the motor is in normal status"""
         status, parameters = await self._send_command_and_read_reply(command="4a", raise_errors=False)
         if status == "Normal status":
             return True
 
     async def get_current_version(self) -> str:
-        """"""
+        """Gets current version"""
         status, parameters = await self._send_command_and_read_reply(command="3f", raise_errors=False)
         if status == "Normal status":
             return parameters
 
     async def get_max_speed(self) -> int:
-        """Query max speed value"""
+        """Query max speed value of pump"""
         status, parameters = await self._send_command_and_read_reply(command="27", raise_errors=False)
         if status == "Normal status":
             return int(parameters, 16)
 
-    #ToDo: Write descriptions
 
 if __name__ == "__main__":
     import asyncio
-
     conf = {
         "port": "COM7",
         "syringe_volume": "5 ml",
@@ -504,5 +502,6 @@ if __name__ == "__main__":
 
     async def main(pump):
         """Test function."""
-
+        s = await pump.get_max_speed()
+        print(s)
     asyncio.run(main(p))
