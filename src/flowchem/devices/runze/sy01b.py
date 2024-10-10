@@ -342,40 +342,62 @@ class SY01B(FlowchemDevice):
 
     async def set_flowrate(self, rate: ureg.Quantity) -> tuple[str,str]:
         """Sets the flowrate of the syringe."""
-        speed = rate.m_as("ml/s") * (1 / (math.pi * ((self.syringe_diameter.m_as("cm")/2) ** 2))) * 10 * (1000 / (15 - 0.0333)) # ml/s * cm/cm^3 (length to volume) * mm/cm * speed/(mm/s)
+        speed = rate.m_as("ml/min") * ((self.max_count * self.syringe_volume.m_as("ml"))/10000)
         if speed <= 0:
             logger.warning(
                 f"Desired rate ({rate}) is unachievable, please select a positive flowrate lower than {self.max_flowrate}!"
             )
             return "Parameter Error", ""
 
-        if speed > 1000:
+        if speed > 200:
             logger.warning(
                      f"Desired rate ({rate}) is unachievable, please select a positive flowrate lower than {self.max_flowrate}!"
                  )
             return "Parameter Error", ""
         status, parameters = await self._send_command_and_read_reply(command="4b", parameter=int(speed))
         if status == "Normal status":
-            logger.debug(f"Syringe pump speed set to {rate.m_as("ml/s")} ml/s.")
+            logger.debug(f"Syringe pump speed set to {rate.m_as("ml/min")} ml/min.")
             return status, parameters
 
-    async def set_absolute_volume(self, target_volume: ureg.Quantity) -> tuple[str,str]:
+    async def infuse(self, volume: ureg.Quantity) -> tuple[str,str]:
         """Absolute move to target volume provided by set step position and speed."""
-        steps = target_volume.m_as("ml") * self._steps_per_ml.m_as("step / milliliter")
-        status, parameters = await self._send_command_and_read_reply(command="4e", parameter=int(steps), raise_errors=False)
+        current_volume = await self.get_current_volume()
+        target_vol = current_volume - volume
+        if target_vol < 0:
+            logger.error(
+                f"Cannot infuse target volume {volume}! "
+                f"Only {current_volume} in the syringe!",
+            )
+            raise DeviceError(f"Cannot infuse target volume {volume}! "
+                              f"Only {current_volume} in the syringe!")
+
+        steps = volume.m_as("ml") * self._steps_per_ml.m_as("step / milliliter")
+        status, parameters = await self._send_command_and_read_reply(command="42", parameter=int(steps), raise_errors=False)
         await self.wait_until_system_idle()
         current_volume = await self.get_current_volume()
-        #print(f"target_volume {target_volume.m_as("ml")}")
-        #print(f"current_volume {current_volume.m_as("ml")}")
-        if current_volume == target_volume:
-            logger.debug(f"Syringe pump successfully set to volume {target_volume}.")
+        if current_volume == volume:
+            logger.debug(f"Syringe pump successfully set to volume {volume}.")
             return status, parameters
 
-    async def set_syringe_volume(self, target_volume: ureg.Quantity, rate: ureg.Quantity) :
+    async def withdraw(self, volume: ureg.Quantity) -> tuple[str,str]:
         """Absolute move to target volume provided by set step position and speed."""
-        status, parameters = await self.set_flowrate(rate)
-        if status == "Normal status":
-            await self.set_absolute_volume(target_volume)
+        current_volume = await self.get_current_volume()
+        target_vol = current_volume + volume
+        if target_vol > self.syringe_volume:
+            logger.error(
+                f"Cannot withdraw target volume {volume}! "
+                f"Max volume left is {self.syringe_volume - current_volume}!",
+            )
+            raise DeviceError(f"Cannot withdraw target volume {volume}! "
+                              f"Max volume left is {self.syringe_volume - current_volume}!")
+
+        steps = volume.m_as("ml") * self._steps_per_ml.m_as("step / milliliter")
+        status, parameters = await self._send_command_and_read_reply(command="43", parameter=int(steps), raise_errors=False)
+        await self.wait_until_system_idle()
+        current_volume = await self.get_current_volume()
+        if current_volume == volume:
+            logger.debug(f"Syringe pump successfully set to volume {volume}.")
+            return status, parameters
 
     async def set_raw_position(self, position: str) -> bool:
         """Resets the syringe to home position."""
@@ -413,7 +435,6 @@ class SY01B(FlowchemDevice):
         if status == "Normal status":
             return parameters
 
-
 if __name__ == "__main__":
     import asyncio
 
@@ -423,16 +444,10 @@ if __name__ == "__main__":
         "address": 1,
         "name": "runze_test",
     }
-    v = SY01B.from_config(**conf)
+    p = SY01B.from_config(**conf)
 
 
-    async def main(valve):
+    async def main(pump):
         """Test function."""
-        await v.set_syringe_volume(ureg.Quantity("4 ml"),ureg.Quantity("0.1 ml/s"))
-        # status, response = await v._send_command_and_read_reply(command="66", parameter=00)
-        # print(status)
-        # print(response)
-        #await v.set_absolute_volume(target_volume= ureg.Quantity("0 ml"))
-        # print(f"max flowrate {v.max_flowrate}")
 
-    asyncio.run(main(v))
+    asyncio.run(main(p))
