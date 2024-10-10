@@ -306,7 +306,7 @@ class SY01B(FlowchemDevice):
 
     async def set_device_address(self, address: int = None) -> str:
         """Sets current device address"""
-        status, parameters = await self._send_command_and_read_reply(command="00", parameter=address)
+        status, parameters = await self._send_command_and_read_reply(command="00", parameter=address, is_factory_command=True)
         if status == "Normal status":
             logger.info(f"Device address set to: {parameters}")
             self.address = address
@@ -321,7 +321,8 @@ class SY01B(FlowchemDevice):
 
     async def reset_syringe_pump(self) -> str:
         """Resets the syringe to home position."""
-        status, parameters = await self._send_command_and_read_reply(command="4f", raise_errors=False)
+        status, parameters = await self._send_command_and_read_reply(command="45", raise_errors=False)
+        await self._send_command_and_read_reply(command="67", raise_errors=False)
         current_volume = await self.get_current_volume()
         if status == "Normal status" and current_volume == ureg.Quantity("0 ml"):
             logger.info(f"Syringe pump successfully ran to home position.")
