@@ -291,6 +291,9 @@ class SY01B(FlowchemDevice):
     async def get_current_volume(self) -> ureg.Quantity:
         """Return current syringe position in ml."""
         status, steps = await self._send_command_and_read_reply(command="66")
+        if steps == "04fc":
+            await self._send_command_and_read_reply(command="67")
+            status, steps = await self._send_command_and_read_reply(command="66")
         vol = int(steps, 16) / self._steps_per_ml.m_as("step / milliliter")
         return ureg.Quantity(f"{vol} ml")
 
