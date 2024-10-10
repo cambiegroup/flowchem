@@ -1,4 +1,4 @@
 """Runze-based devices."""
-from .sy01b import SY01B
+from .sy01 import SY01
 
-__all__ = ["SY01B"]
+__all__ = ["SY01"]

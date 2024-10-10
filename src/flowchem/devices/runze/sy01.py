@@ -1,4 +1,4 @@
-"""Runze SY-01B Syringe Pump control."""
+"""Runze SY-01 Syringe Pump control."""
 
 import aioserial
 import asyncio
@@ -11,12 +11,12 @@ from flowchem.components.flowchem_component import FlowchemComponent
 
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem import ureg
-from flowchem.devices.runze.sy01b_valve import (
-    SY01B_6PortDistributionValve,
-    SY01B_9PortDistributionValve,
-    SY01B_12PortDistributionValve,
+from flowchem.devices.runze.sy01_valve import (
+    SY01_6PortDistributionValve,
+    SY01_9PortDistributionValve,
+    SY01_12PortDistributionValve,
 )
-from flowchem.devices.runze.sy01b_pump import SY01BPump
+from flowchem.devices.runze.sy01_pump import SY01Pump
 from flowchem.utils.exceptions import DeviceError
 from flowchem.utils.people import miguel
 from flowchem.utils.exceptions import InvalidConfigurationError
@@ -158,9 +158,9 @@ class RunzeIO:
         return status_string, parameters
 
 
-class SY01B(FlowchemDevice):
+class SY01(FlowchemDevice):
     """
-    Control Runze SY01B Syringe Pump.
+    Control Runze SY01 Syringe Pump.
     """
 
     DEFAULT_CONFIG = {
@@ -196,19 +196,19 @@ class SY01B(FlowchemDevice):
         self.max_flowrate = None
         self.max_speed = None
         self.runze_io = runze_io
-        SY01B._io_instances.add(self.runze_io)
-        self.config = SY01B.DEFAULT_CONFIG | config
+        SY01._io_instances.add(self.runze_io)
+        self.config = SY01.DEFAULT_CONFIG | config
         self.address = int(address)
         self.max_count = 12000
         self.device_info = DeviceInfo(
             authors=[miguel],
             manufacturer="Runze",
-            model="SY-01B Syringe Pump",
+            model="ZSB-SY01-30-MXX-1 Syringe Pumps",
         )
 
         try:
             self.syringe_volume = ureg.Quantity(syringe_volume)
-            self.syringe_diameter = ureg.Quantity(f"{SY01B.VALID_SYRINGES[self.syringe_volume.m_as("ml")]} mm")
+            self.syringe_diameter = ureg.Quantity(f"{SY01.VALID_SYRINGES[self.syringe_volume.m_as("ml")]} mm")
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
             raise InvalidConfigurationError(
@@ -216,10 +216,10 @@ class SY01B(FlowchemDevice):
                 "The syringe volume is a string with units! e.g. '5 ml'"
             ) from attribute_error
 
-        if self.syringe_volume.m_as("ml") not in SY01B.VALID_SYRINGES.keys():
+        if self.syringe_volume.m_as("ml") not in SY01.VALID_SYRINGES.keys():
             raise InvalidConfigurationError(
                 f"The specified syringe volume ({syringe_volume}) is invalid!\n"
-                f"The volume (in ml) has to be one of {SY01B.VALID_SYRINGES.keys()}"
+                f"The volume (in ml) has to be one of {SY01.VALID_SYRINGES.keys()}"
             )
 
         self._steps_per_ml = ureg.Quantity(f"{self.max_count / self.syringe_volume} steps")
@@ -234,7 +234,7 @@ class SY01B(FlowchemDevice):
         # Test connectivity by querying the pump's firmware version
         self.device_info.version = await self.get_current_version()
         logger.info(
-            f"Connected to Runze SY-01B {self.name} - FW version: {self.device_info.version}!",
+            f"Connected to Runze SY-01 {self.name} - FW version: {self.device_info.version}!",
         )
         # Detect valve type
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()
@@ -243,20 +243,20 @@ class SY01B(FlowchemDevice):
         valve_component: FlowchemComponent
         match self.device_info.additional_info["valve-type"]:
             case RunzeValveHeads.SIX_PORT_SIX_POSITION:
-                valve_component = SY01B_6PortDistributionValve(
+                valve_component = SY01_6PortDistributionValve(
                     "distribution-valve", self
                 )
             case RunzeValveHeads.NINE_PORT_EIGHT_POSITION:
-                valve_component = SY01B_9PortDistributionValve(
+                valve_component = SY01_9PortDistributionValve(
                     "distribution-valve", self
                 )
             case RunzeValveHeads.TWELVE_PORT_TEN_POSITION:
-                valve_component = SY01B_12PortDistributionValve(
+                valve_component = SY01_12PortDistributionValve(
                     "distribution-valve", self
                 )
             case _:
                 raise RuntimeError("Unknown valve type")
-        self.components.extend([SY01BPump("pump", self), valve_component])
+        self.components.extend([SY01Pump("pump", self), valve_component])
 
     async def _send_command_and_read_reply(
             self,
@@ -278,7 +278,7 @@ class SY01B(FlowchemDevice):
     def from_config(cls, **config):
         """Create instances via config file."""
         runzeio = None
-        for obj in SY01B._io_instances:
+        for obj in SY01._io_instances:
             # noinspection PyProtectedMember
             if obj._serial.port == config.get("port"):
                 runzeio = obj
@@ -302,7 +302,7 @@ class SY01B(FlowchemDevice):
         )
 
     async def get_valve_type(self):
-        """Get valve type by testing possible port values."""  # There was no command for this
+        """Get valve type by testing possible port values."""
 
         possible_ports = [12, 9, 6]
         valve_type = None
@@ -321,7 +321,7 @@ class SY01B(FlowchemDevice):
         """Convert flow rates to steps per seconds.
 
         To determine the volume dispensed per step the total syringe volume is divided by
-        6000 steps. All possible SY-01B Runze syringes are designed with a 30 mm stroke
+        6000 steps. All possible SY-01 Runze syringes are designed with a 30 mm stroke
         length designed to move 30 mm in 6,000 steps."""
         flowrate_in_steps_sec = flowrate * self._steps_per_ml
         return (1 / flowrate_in_steps_sec).to("second/stroke")
@@ -454,7 +454,8 @@ class SY01B(FlowchemDevice):
         if status == "Normal status" and int(position) == int(current_position) and raise_errors is True:
             logger.info(f"Syringe valve set to position: {current_position}.")
             return True
-
+        elif status == "Normal status" and int(position) == int(current_position):
+            return True
     async def get_raw_position(self) -> str:
         """Query the current valve's position"""
         status, parameters = await self._send_command_and_read_reply(command="ae")
@@ -464,10 +465,10 @@ class SY01B(FlowchemDevice):
 
     async def wait_until_system_idle(self):
         """Return True when no more commands are present in the pump buffer."""
-        logger.debug(f"SY01B {self.name} wait until idle...")
+        logger.debug(f"SY01 {self.name} wait until idle...")
         while not await self.is_system_idle():
             await asyncio.sleep(0.1)
-        logger.debug(f"...SY01B {self.name} idle now!")
+        logger.debug(f"...SY01 {self.name} idle now!")
         return True
 
     async def is_system_idle(self) -> bool:

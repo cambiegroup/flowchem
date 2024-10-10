@@ -11,14 +11,14 @@ from flowchem.components.pumps.syringe_pump import SyringePump
 from flowchem.utils.exceptions import DeviceError
 
 if TYPE_CHECKING:
-    from .sy01b import SY01B
+    from .sy01 import SY01
 
 
-class SY01BPump(SyringePump):
+class SY01Pump(SyringePump):
     pump_code: str
-    hw_device: SY01B  # for typing's sake
+    hw_device: SY01  # for typing's sake
 
-    def __init__(self, name: str, hw_device: SY01B, pump_code: str = "") -> None:
+    def __init__(self, name: str, hw_device: SY01, pump_code: str = "") -> None:
         """
         Create a Pump object.
         "" for single syringe pump. B or C  for dual syringe pump.

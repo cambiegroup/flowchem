@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .sy01b import SY01B
+    from .sy01 import SY01
 from flowchem.components.valves.distribution_valves import (
     SixPortDistributionValve,
     NinePortDistributionValve,
@@ -12,12 +12,12 @@ from flowchem.components.valves.distribution_valves import (
 )
 
 
-class SY01B_6PortDistributionValve(SixPortDistributionValve):
+class SY01_6PortDistributionValve(SixPortDistributionValve):
     """RunzeValve of type SIX_PORT_SIX_POSITION."""
 
-    hw_device: SY01B
+    hw_device: SY01
 
-    def __init__(self, name: str, hw_device: SY01B) -> None:
+    def __init__(self, name: str, hw_device: SY01) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
@@ -38,12 +38,12 @@ class SY01B_6PortDistributionValve(SixPortDistributionValve):
         return await self.hw_device.set_raw_position(position=position)
 
 
-class SY01B_9PortDistributionValve(NinePortDistributionValve):
+class SY01_9PortDistributionValve(NinePortDistributionValve):
     """RunzeValve of type SIX_PORT_SIX_POSITION."""
 
-    hw_device: SY01B
+    hw_device: SY01
 
-    def __init__(self, name: str, hw_device: SY01B) -> None:
+    def __init__(self, name: str, hw_device: SY01) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
@@ -64,12 +64,12 @@ class SY01B_9PortDistributionValve(NinePortDistributionValve):
         return await self.hw_device.set_raw_position(position=position)
 
 
-class SY01B_12PortDistributionValve(TwelvePortDistributionValve):
+class SY01_12PortDistributionValve(TwelvePortDistributionValve):
     """RunzeValve of type SIX_PORT_SIX_POSITION."""
 
-    hw_device: SY01B
+    hw_device: SY01
 
-    def __init__(self, name: str, hw_device: SY01B) -> None:
+    def __init__(self, name: str, hw_device: SY01) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
