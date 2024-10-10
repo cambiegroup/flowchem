@@ -2,11 +2,13 @@
 
 import aioserial
 import asyncio
-
+from enum import Enum
 from dataclasses import dataclass
 from loguru import logger
 
 from flowchem.components.device_info import DeviceInfo
+from flowchem.components.flowchem_component import FlowchemComponent
+
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem import ureg
 from flowchem.devices.runze.sy01b_valve import (
@@ -18,6 +20,13 @@ from flowchem.devices.runze.sy01b_pump import SY01BPump
 from flowchem.utils.exceptions import DeviceError
 from flowchem.utils.people import miguel
 from flowchem.utils.exceptions import InvalidConfigurationError
+
+class RunzeValveHeads(Enum):
+    """5 different valve types can be used. 6, 8, 10, 12, 16 multi-position valves."""
+
+    SIX_PORT_SIX_POSITION = "6"
+    NINE_PORT_EIGHT_POSITION = "9"
+    TWELVE_PORT_TEN_POSITION = "12"
 
 
 @dataclass
@@ -223,8 +232,27 @@ class SY01B(FlowchemDevice):
         logger.info(
             f"Connected to Runze SY-01B {self.name} - FW version: {self.device_info.version}!",
         )
-        # ToDo: Get_valve_type()
-        self.components.extend([SY01BPump("pump", self), SY01B_6PortDistributionValve("valve", self)])
+        # Detect valve type
+        self.device_info.additional_info["valve-type"] = await self.get_valve_type()
+
+        # Set components
+        valve_component: FlowchemComponent
+        match self.device_info.additional_info["valve-type"]:
+            case RunzeValveHeads.SIX_PORT_SIX_POSITION:
+                valve_component = SY01B_6PortDistributionValve(
+                    "distribution-valve", self
+                )
+            case RunzeValveHeads.NINE_PORT_EIGHT_POSITION:
+                valve_component = SY01B_9PortDistributionValve(
+                    "distribution-valve", self
+                )
+            case RunzeValveHeads.TWELVE_PORT_TEN_POSITION:
+                valve_component = SY01B_12PortDistributionValve(
+                    "distribution-valve", self
+                )
+            case _:
+                raise RuntimeError("Unknown valve type")
+        self.components.extend([SY01BPump("pump", self), valve_component])
 
     async def _send_command_and_read_reply(
             self,
@@ -269,6 +297,22 @@ class SY01B(FlowchemDevice):
             name=config.get("name", ""),
         )
 
+    async def get_valve_type(self):
+        """Get valve type by testing possible port values."""  # There was no command for this
+
+        possible_ports = [12, 9, 6]
+        valve_type = None
+
+        for value in possible_ports:
+            success = await self.set_raw_position(str(value), raise_errors=False)
+            if success:
+                valve_type = value
+                return RunzeValveHeads(str(valve_type))
+
+        if valve_type is None:
+            logger.error("Failed to recognize the valve type: no successful port value.")
+            raise ValueError("Unable to recognize the valve type. All port values failed.")
+
     def _flowrate_to_seconds_per_stroke(self, flowrate: ureg.Quantity):
         """Convert flow rates to steps per seconds.
 
@@ -291,7 +335,7 @@ class SY01B(FlowchemDevice):
     async def get_current_volume(self) -> ureg.Quantity:
         """Return current syringe position in ml."""
         status, steps = await self._send_command_and_read_reply(command="66")
-        if steps == "04fc":
+        if steps == "04fc": # When motor moves to home command 67 need to be excecuted to get the correct position afterwards
             await self._send_command_and_read_reply(command="67")
             status, steps = await self._send_command_and_read_reply(command="66")
         vol = int(steps, 16) / self._steps_per_ml.m_as("step / milliliter")
@@ -329,14 +373,14 @@ class SY01B(FlowchemDevice):
             return parameters
 
     async def force_stop(self) -> str:
-        """Resets the syringe to home position."""
+        """."""
         status, parameters = await self._send_command_and_read_reply(command="49")
         if status == "Normal status":
             logger.info(f"Syringe pump and valve stopped.")
             return parameters
 
     async def get_motor_status(self) -> str:
-        """Resets the syringe to home position."""
+        """."""
         status, parameters = await self._send_command_and_read_reply(command="4a", raise_errors=False)
         return status
 
@@ -360,7 +404,7 @@ class SY01B(FlowchemDevice):
             return status, parameters
 
     async def infuse(self, volume: ureg.Quantity) -> tuple[str,str]:
-        """Absolute move to target volume provided by set step position and speed."""
+        """."""
         current_volume = await self.get_current_volume()
         target_vol = current_volume - volume
         if target_vol < 0:
@@ -380,7 +424,7 @@ class SY01B(FlowchemDevice):
             return status, parameters
 
     async def withdraw(self, volume: ureg.Quantity) -> tuple[str,str]:
-        """Absolute move to target volume provided by set step position and speed."""
+        """"""
         current_volume = await self.get_current_volume()
         target_vol = current_volume + volume
         if target_vol > self.syringe_volume:
@@ -399,20 +443,19 @@ class SY01B(FlowchemDevice):
             logger.debug(f"Syringe pump successfully set to volume {volume}.")
             return status, parameters
 
-    async def set_raw_position(self, position: str) -> bool:
-        """Resets the syringe to home position."""
-        status, parameters = await self._send_command_and_read_reply(command="44", parameter=int(position))
+    async def set_raw_position(self, position: str, raise_errors: bool = True) -> bool:
+        """"""
+        status, parameters = await self._send_command_and_read_reply(command="44", parameter=int(position), raise_errors=raise_errors)
         current_position = await self.get_raw_position()
-        if status == "Normal status" and int(position) == int(current_position):
+        if status == "Normal status" and int(position) == int(current_position) and raise_errors is True:
             logger.info(f"Syringe valve set to position: {current_position}.")
             return True
 
     async def get_raw_position(self) -> str:
-        """Resets the syringe to home position."""
+        """."""
         status, parameters = await self._send_command_and_read_reply(command="ae")
         position = parameters[2:4]
         if status == "Normal status":
-            logger.info(f"Syringe valve set to position: {position}.")
             return position
 
     async def wait_until_system_idle(self):
@@ -424,13 +467,13 @@ class SY01B(FlowchemDevice):
         return True
 
     async def is_system_idle(self) -> bool:
-        """Check if the pump is idle (actually check if the last command has ended)."""
+        """"""
         status, parameters = await self._send_command_and_read_reply(command="4a", raise_errors=False)
         if status == "Normal status":
             return True
 
     async def get_current_version(self) -> str:
-        """Check if the pump is idle (actually check if the last command has ended)."""
+        """"""
         status, parameters = await self._send_command_and_read_reply(command="3f", raise_errors=False)
         if status == "Normal status":
             return parameters
