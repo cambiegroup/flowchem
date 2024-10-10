@@ -1,7 +1,6 @@
 """Runze SY-01B Syringe Pump control."""
 
 import aioserial
-import math
 import asyncio
 
 from dataclasses import dataclass
@@ -135,9 +134,7 @@ class RunzeIO:
             "04": "Motor busy",
             "05": "Motor stalled",
             "06": "Unknown location",
-            "07": "Command Rejected",
-            "08": "Illegal location",
-            "fe": "Task being executed",
+            "fe": "Task suspension",
             "ff": "Unknown error"
         }
 
@@ -191,7 +188,7 @@ class SY01B(FlowchemDevice):
         SY01B._io_instances.add(self.runze_io)
         self.config = SY01B.DEFAULT_CONFIG | config
         self.address = int(address)
-
+        self.max_count = 12000
         self.device_info = DeviceInfo(
             authors=[miguel],
             manufacturer="Runze",
@@ -201,7 +198,7 @@ class SY01B(FlowchemDevice):
         try:
             self.syringe_volume = ureg.Quantity(syringe_volume)
             self.syringe_diameter = ureg.Quantity(f"{SY01B.VALID_SYRINGES[self.syringe_volume.m_as("ml")]} mm")
-            self.max_flowrate = ureg.Quantity(f"{1000 / ((1 / (math.pi * ((self.syringe_diameter.m_as("cm")/2) ** 2))) * 10 * (1000 / (15 - 0.0333)))} ml/s")
+            self.max_flowrate = ureg.Quantity(f"{200 / ((self.max_count * self.syringe_volume.m_as("ml"))/10000)} ml/min")
         except AttributeError as attribute_error:
             logger.error(f"Invalid syringe volume {syringe_volume}!")
             raise InvalidConfigurationError(
@@ -215,7 +212,7 @@ class SY01B(FlowchemDevice):
                 f"The volume (in ml) has to be one of {SY01B.VALID_SYRINGES.keys()}"
             )
 
-        self._steps_per_ml = ureg.Quantity(f"{6000 / self.syringe_volume} steps")
+        self._steps_per_ml = ureg.Quantity(f"{self.max_count / self.syringe_volume} steps")
 
     async def initialize(self):
         """Initialize pump and its components."""
