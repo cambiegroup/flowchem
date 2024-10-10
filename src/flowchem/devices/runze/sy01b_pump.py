@@ -58,20 +58,12 @@ class SY01BPump(SyringePump):
             rate = self.hw_device.config.get("default_infuse_rate")
             logger.warning(f"the flow rate is not provided. set to the default {rate}")
         if not volume:
-            target_vol = ureg.Quantity("0 ml")
+            volume = ureg.Quantity("0 ml")
             logger.warning(f"the volume to infuse is not provided. set to 0 ml")
-        else:
-            current_volume = await self.hw_device.get_current_volume()
-            target_vol = current_volume - ureg.Quantity(volume)
-            if target_vol < 0:
-                logger.error(
-                    f"Cannot infuse target volume {volume}! "
-                    f"Only {current_volume} in the syringe!",
-                )
-                raise DeviceError(f"Cannot infuse target volume {volume}! "
-                                  f"Only {current_volume} in the syringe!")
 
-        await self.hw_device.set_syringe_volume(target_vol, ureg.Quantity(rate))
+        await self.hw_device.set_flowrate(ureg.Quantity(rate))
+        logger.info(f"the flow rate is {rate}")
+        await self.hw_device.infuse(ureg.Quantity(volume))
         logger.info(f"infusing is run. it will take {ureg.Quantity(volume) / ureg.Quantity(rate)} to finish.")
         return await self.hw_device.wait_until_system_idle()
 
@@ -90,18 +82,9 @@ class SY01BPump(SyringePump):
         if volume is None:
             target_vol = self.hw_device.syringe_volume
             logger.warning(f"the volume to withdraw is not provided. set to {self.hw_device.syringe_volume}")
-        else:
-            current_volume = await self.hw_device.get_current_volume()
-            target_vol = current_volume + ureg.Quantity(volume)
-            if target_vol > self.hw_device.syringe_volume:
-                logger.error(
-                    f"Cannot withdraw target volume {volume}! "
-                    f"Max volume left is {self.hw_device.syringe_volume - current_volume}!",
-                )
-                raise DeviceError(f"Cannot withdraw target volume {volume}! "
-                                  f"Max volume left is {self.hw_device.syringe_volume - current_volume}!")
-                # return False
 
-        await self.hw_device.set_syringe_volume(target_vol, ureg.Quantity(rate))
+        await self.hw_device.set_flowrate(ureg.Quantity(rate))
+        logger.info(f"the flow rate is {rate}")
+        await self.hw_device.withdraw(ureg.Quantity(volume))
         logger.info(f"withdrawing is run. it will take {ureg.Quantity(volume) / ureg.Quantity(rate)} to finish.")
         return await self.hw_device.wait_until_system_idle()
