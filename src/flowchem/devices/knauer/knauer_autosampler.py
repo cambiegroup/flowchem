@@ -160,7 +160,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
                  name: str = None,
                  ip_address: str = "",
                  autosampler_id: int = 0,
-                 syringe_volume: str = "0.99 ml",
+                 syringe_volume: str = "0.05 ml",
                  tray_type: str = "TRAY_48_VIAL",
                  **kwargs,
                  ):
