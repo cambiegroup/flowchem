@@ -1,6 +1,5 @@
 from enum import Enum, auto
 from loguru import logger
-import logging
 import asyncio
 from typing import Type, List
 import functools
@@ -117,11 +116,6 @@ class ASEthernetDevice:
         self.port = tcp_port if tcp_port else ASEthernetDevice.TCP_PORT
         self.buffersize = buffersize if buffersize else ASEthernetDevice.BUFFER_SIZE
 
-        logging.basicConfig(
-            format="%(asctime)s %(levelname)s %(message)s",
-            datefmt="%m/%d/%Y %I:%M:%S %p",
-            level=logging.DEBUG,
-        )
 
     async def _send_and_receive(self, message: str):
         try:
