@@ -177,7 +177,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
             model="Autosampler AS 6.1L"
         )
 
-    def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str,
+    async def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str,
                                         **kwargs: str) -> str:
         # input can be strings, is translated to enum internally -> enum no need to expsoe
         # if value cant be translated to enum, just through error with the available options
@@ -213,7 +213,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
 
         reply = await self._send_and_receive(message)
         # this only checks that it was acknowledged
-        self._parse_setting_reply(reply)
+        await self._parse_setting_reply(reply)
         return True
 
     @send_until_acknowledged(max_reaction_time=10)
@@ -225,10 +225,10 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         :return: reply: str
         """
         reply = await self._send_and_receive(message)
-        query_reply = self._parse_query_reply(reply)
+        query_reply = await self._parse_query_reply(reply)
         return query_reply
 
-    def _parse_setting_reply(self, reply):
+    async def _parse_setting_reply(self, reply):
         # reply needs to be binary string
 
         if reply == CommunicationFlags.ACKNOWLEDGE.value:
@@ -241,7 +241,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         else:
             raise ASError(f"The reply is {reply} and does not fit the expected reply for value setting")
 
-    def _parse_query_reply(self, reply) -> int:
+    async def _parse_query_reply(self, reply) -> int:
         reply_start_char, reply_stripped, reply_end_char = reply[:ReplyStructure.STX_END.value], \
                                                            reply[
                                                            ReplyStructure.STX_END.value:ReplyStructure.ETX_START.value], \
@@ -272,10 +272,10 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
                              reply_mapping: None or Type[Enum] = None, get_actual=False):
         """If get actual is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
         if parameter:
-            command_string = self._construct_communication_string(command, CommandModus.SET.name, parameter)
+            command_string = await self._construct_communication_string(command, CommandModus.SET.name, parameter)
             return await self._set(command_string)
         else:
-            command_string = self._construct_communication_string(command, CommandModus.GET_PROGRAMMED.name if not get_actual else CommandModus.GET_ACTUAL.name)
+            command_string = await self._construct_communication_string(command, CommandModus.GET_PROGRAMMED.name if not get_actual else CommandModus.GET_ACTUAL.name)
             reply = await self._query(command_string)
             if reply_mapping:
                 return reply_mapping(reply).name
@@ -303,20 +303,20 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         ])
 
     async def _move_needle_horizontal(self, needle_position: str, plate: str = None, well: int = None):
-        command_string = self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)
+        command_string = await self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)
         return await self._set(command_string)
 
     async def _move_needle_vertical(self, move_to: str):
-        command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
+        command_string = await self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
         return await self._set(command_string)
 
     async def syringe_valve_position(self, port: str = None):
         # TODO check if this mapping offset can be fixed elegantly
         if port:
-            command_string = self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.SET.name, port)
+            command_string = await self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.SET.name, port)
             return await self._set(command_string)
         else:
-            command_string = self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.GET_ACTUAL.name)
+            command_string = await self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.GET_ACTUAL.name)
             raw_reply = await self._query(command_string) - 1
             return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name
 
@@ -357,7 +357,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         if flow_rate is not None:
             raise NotImplementedError("Built in syringe does not allow to control flow rate")
         volume = int(round(volume, 3) * 1000)
-        command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
+        command_string = await self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
         return await self._set(command_string)
 
     async def dispense(self, volume, flow_rate=None):
@@ -374,24 +374,24 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         if flow_rate is not None:
             raise NotImplementedError("Built in syringe does not allow to control flow rate")
         volume = int(round(volume, 3) * 1000)
-        command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
+        command_string = await self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
         return await self._set(command_string)
 
     async def _move_tray(self, tray_type: str, sample_position: str or int):
-        command_string = self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)
+        command_string = await self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)
         return await self._set(command_string)
 
     async def get_errors(self):
-        command_string = self._construct_communication_string(GetErrorsCommand, CommandModus.GET_ACTUAL.name)
+        command_string = await self._construct_communication_string(GetErrorsCommand, CommandModus.GET_ACTUAL.name)
         reply = str(await self._query(command_string))
         return ErrorCodes[f"ERROR_{reply}"].value
 
     async def reset_errors(self):
-        command_string = self._construct_communication_string(ResetErrorsCommand, CommandModus.SET.name)
+        command_string = await self._construct_communication_string(ResetErrorsCommand, CommandModus.SET.name)
         await self._set(command_string)
 
     async def get_status(self):
-        command_string = self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
+        command_string = await self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
         reply = str(await self._query(command_string))
         reply = (3-len(reply))*'0'+reply
         return ASStatus(reply).name
