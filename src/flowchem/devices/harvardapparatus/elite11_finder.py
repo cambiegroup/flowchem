@@ -61,4 +61,6 @@ def elite11_finder(serial_port) -> set[str]:
                 syringe_volume = "YYY ml" # Specify syringe volume!\n\n""",
         ),
     )
+    logger.info(f"Close the serial port: <{serial_port}>")
+    link._serial.close()
     return cfg

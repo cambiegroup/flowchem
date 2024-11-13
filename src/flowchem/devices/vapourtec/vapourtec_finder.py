@@ -40,5 +40,6 @@ def r4_finder(serial_port) -> set[str]:
         )
     else:
         cfg = ""
-
+    logger.info(f"Close the serial port: <{serial_port}>")
+    r4._serial.close()
     return set(cfg)
