@@ -172,7 +172,7 @@ class Valve(FlowchemComponent):
 
         return connections
 
-    def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
+    def _change_connections(self, raw_position: int, reverse: bool = False) -> int:
         # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
         # device level since this is device communication protocol specific
