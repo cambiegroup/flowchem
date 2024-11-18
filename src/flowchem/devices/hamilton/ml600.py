@@ -654,7 +654,7 @@ class ML600(FlowchemDevice):
         self,
         target_position: str,
         wait_for_movement_end: bool = True,
-        valve: ML600Commands = None
+        valve: ML600Commands | None = None
     ):
         """Set valve position.
         Strongly encouraged to use switching by angle
