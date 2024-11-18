@@ -95,7 +95,7 @@ class Valve(FlowchemComponent):
     def __init__(
             self,
             name: str,
-            hw_device: FlowchemDevice,
+            hw_device: "FlowchemDevice",
             stator_ports: [(), ()],
             rotor_ports: [(), ()],
     ) -> None:
