@@ -557,7 +557,7 @@ class ML600(FlowchemDevice):
         logger.info(f"valve {valve} is busy: {status}")
         return status
 
-    async def system_status(self, component: int = -1) -> bool | dict[str: bool]:
+    async def system_status(self, component: int = -1) -> bool | dict[str, bool]:
         """
         Represent the status of specific component. True means busy; False meaens idle.
         Return status of all parts of instrument in dictionary.
@@ -578,7 +578,7 @@ class ML600(FlowchemDevice):
             status[value_map[key]] = all_status[key] == "0"
         return status
 
-    async def general_status_info(self, component: int = -1) -> bool | dict[str: bool]:
+    async def general_status_info(self, component: int = -1) -> bool | dict[str, bool]:
         # todo: this command will reset the error of syntax and instrument, use others error monitoring method
         reply = await self.send_command_and_read_reply(
             Protocol1Command(command="E1", execution_command=""))
