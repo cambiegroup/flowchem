@@ -33,7 +33,10 @@ class KnauerInjectionValve(SixPortTwoPositionValve):
         if reverse:
             return str([key for key, value in position_mapping.items() if value == raw_position][0])
         else:
-            return position_mapping[raw_position]
+            if type(raw_position) == int:
+                return position_mapping[raw_position]
+            else:
+                raise TypeError
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
