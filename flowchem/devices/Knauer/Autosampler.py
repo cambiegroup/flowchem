@@ -5,14 +5,21 @@ Module for communication with Autosampler.
 # For future: go through graph, acquire mac addresses, check which IPs these have and setup communication.
 # To initialise the appropriate device on the IP, use class name like on chemputer
 
-
+import inspect
+import json
 import logging
 import socket
 from enum import Enum, auto
-from typing import Type
+from typing import Type, List
 from time import sleep
 import functools
+from threading import Thread
+import pandas
+from flowchem.constants import flowchem_ureg
+from rdkit.Chem import MolFromSmiles, MolToSmiles
+from pathlib import Path
 
+# TODO assert that writing to and reloading works reliably - so use old mapping if it exists, here ro from platform code
 
 try:
     # noinspection PyUnresolvedReferences
@@ -24,6 +31,39 @@ except ImportError:
 
 # from pint import UnitRegistry
 # finding the AS is not trivial with autodiscover, it also only is one device
+
+class ErrorCodes(Enum):
+    ERROR_0 = "No Error."
+    ERROR_294 = "Home sensor not reached."
+    ERROR_295 = "Deviation of more than +/- 2 mm towards home."
+    ERROR_296 = "Home sensor not de-activated."
+    ERROR_297 = "Home sensor activated when not expected."
+    ERROR_298 = "Tray position is unknown."
+    ERROR_303 = "Horizontal: needle position is unknown."
+    ERROR_304 = "Horizontal: home sensor not reached."
+    ERROR_306 = "Horizontal: home sensor not de-activated."
+    ERROR_307 = "Horizontal: home sensor activated when not expected."
+    ERROR_312 = "Vertical: needle position is unknown."
+    ERROR_313 = "Vertical: home sensor not reached."
+    ERROR_315 = "Vertical: home sensor not de-activated."
+    ERROR_317 = "Vertical: stripper did not detect plate (or wash/waste)."
+    ERROR_318 = "Vertical: stripper stuck."
+    ERROR_319 = "Vertical: The sample needle arm is at an invalid position."
+    ERROR_324 = "Syringe valve did not find destination position."
+    ERROR_330 = "Syringe home sensor not reached."
+    ERROR_331 = "Syringe home sensor not de-activated."
+    ERROR_334 = "Syringe position is unknown."
+    ERROR_335 = "Syringe rotation error."
+    ERROR_340 = "Destination position not reached." #i
+    ERROR_341 = "Wear-out limit reached."
+    ERROR_342 = "Illegal sensor readout."
+    ERROR_347 = "Temperature above 48°C at cooling ON."
+    ERROR_280 = "EEPROM write error."
+    ERROR_282 = "EEPROM error in settings."
+    ERROR_283 = "EEPROM error in adjustments."
+    ERROR_284 = "EEPROM error in log counter."
+    ERROR_290 = "Error occurred during initialization, the Alias cannot start."
+
 
 
 class ASError(Exception):
@@ -39,6 +79,12 @@ class CommandOrValueError(ASError):
     """Command is unknown, value is unknown or out of range, transmission failed"""
     pass
 
+  
+class ASFailureError(ASError):
+    """AS failed to execute command"""
+    pass
+
+
 
 class ASBusyError(ASError):
     """AS is currently busy but will accept your command at another point of time"""
@@ -51,7 +97,7 @@ def send_until_acknowledged(func, max_reaction_time = 10, time_between=0.01):
         while True:
             try:
                 return func(*args, **kwargs)
-                break
+
             except ASBusyError:
                 # AS is rather fast so this sounds like a reasonable time
                 sleep(time_between)
@@ -59,6 +105,37 @@ def send_until_acknowledged(func, max_reaction_time = 10, time_between=0.01):
                 if max_reaction_time <= 0:
                     raise ASError
     return wrapper
+
+
+def canonize_smiles(smiles:str):
+    return MolToSmiles(MolFromSmiles(smiles))
+
+
+def set_vial_content(substance, return_special_vial=False):
+    try:
+        return canonize_smiles(substance)
+    except Exception as e:
+        if not str(e).startswith("Python argument types in"):
+            raise e
+        else:
+            pass
+    try:
+        return _SpecialVial(substance.lower()).value
+    except ValueError as e:
+        e.args += ("Either  you did not provide a valid string, not a valid special position, or both",)
+        raise e
+    
+def check_special_vial(substance)-> bool:
+    try:
+        _SpecialVial(substance)
+        return True
+    except ValueError as e:
+        return False
+
+class _SpecialVial(Enum):
+    CARRIER = "carrier"
+    INERT_GAS = "gas"
+
 
 class CommandModus(Enum):
     SET = auto()
@@ -89,7 +166,7 @@ class ASEthernetDevice:
                 s.send(message.encode())
                 reply = b""
                 while True:
-                    chunk = s.recv(1024)
+                    chunk = s.recv(ASEthernetDevice.BUFFER_SIZE)
                     reply += chunk
                     try:
                         CommunicationFlags(chunk)
@@ -105,18 +182,290 @@ class ASEthernetDevice:
                 f"No Connection possible to device with ip_address {self.ip_address}"
             )
 
+class Vial:
+        
+    # TODO get the rounding issue of ureg right
+    def __init__(self, substance, solvent:str or None, concentration: str, contained_volume:str, remaining_volume:str):
+        self._remaining_volume = flowchem_ureg(remaining_volume)
+        self._contained_volume = flowchem_ureg(contained_volume)
+        self.substance = set_vial_content(substance) # todo get this canonical
+        if not check_special_vial(substance):
+            self.solvent = solvent
+            self.concentration = flowchem_ureg(concentration)
+        else:
+            self.solvent = None
+            self.concentration = None
+
+    def extract_from_vial(self, volume:str):
+        if type(volume) is str:
+            volume = flowchem_ureg(volume)
+        self._contained_volume -= volume
+    
+    @property
+    def available_volume(self)-> flowchem_ureg.Quantity:
+        return self._contained_volume-self._remaining_volume
+
+
+class TrayPosition:
+    def __init__(self, side, row, column):
+        self.side = side
+        self.row = row
+        self.column = column
+        self.valid_position()
+
+    def valid_position(self):
+        from numpy import int64
+        assert self.side.upper() == SelectPlatePosition.LEFT_PLATE.name or self.side.upper() == SelectPlatePosition.RIGHT_PLATE.name
+        assert type(self.row) in [int64, int]
+        assert type(self.column) == str and len(self.column) == 1
+
+
+    # basically, only acts a s container internally and to make substance access easy
+
+# TODO create a Tray class
+class Tray:
+    # needs to contain mapping of what is where
+    # needs to supply function of reading and writing how much is left where
+    def __init__(self, tray_type, persistant_storage:str):
+        #todo set a path for continuous storing of layout
+        self.tray_type = tray_type
+        self.persistant = persistant_storage
+        self._loaded_fresh:bool = None
+        self.available_vials:DataFrame = self.load_submitted()
+        self.check_validity_and_normalise()
+        self._layout=["Content", "Side", "Column", "Row", "Solvent", "Concentration", "ContainedVolume", "RemainingVolume"]
+
+    def load_submitted(self):
+        # create the layout in excel -> makes usage easy
+        try:
+            path = self._old_loading()
+            return pandas.read_excel(path) if not "json" in path.name else pandas.read_json(path)
+        except FileNotFoundError as e:
+            e.args += (f"Fill out excel file under {self.persistant}.",)
+            self.create_blank(self.persistant)
+            raise e
+
+# todo if loading submitted, check if a out file exitsts with same name. if not, check if a json checkoint file exists.
+    #  if so, load thejson file and create the out file. Now, ask the user which should be used. if the out file is loaded, delete the old out file, directly write the json file (before deleting)
+    # with that procedure, it should always be the updatedfile used
+
+    def _old_loading(self)->Path:
+        output = self.create_output_path(extended_file_name="_out")
+        checkpoint = self.create_output_path(file_ending="json")
+
+        if Path(output).exists():
+            # if an output excel was written load that
+            to_load = output
+            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
+                       f"previously properly finished experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
+            self._loaded_fresh = False
+
+        elif Path(checkpoint).exists():
+            to_load = checkpoint
+            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
+                       f"previously intermittantly closed experiments layout. Type 'YES' and hit enter to proceed, anything else will quit")
+            self._loaded_fresh = False
+        else:
+            to_load = Path(self.persistant)
+            user=input(f"You are about to load the AutoSampler Tray layout from {to_load}. This means You are using a "
+                       f"absolutely fresh layout. Type 'YES' and hit enter to proceed, anything else will quit")
+            self._loaded_fresh = True
+        if user == "YES":
+            return to_load
+        else:
+            raise CommandOrValueError
+
+    def check_validity_and_normalise(self):
+        # normalize the dataframe
+        self.available_vials["Content"]=self.available_vials["Content"].apply(set_vial_content)
+        # make sure all unit ones are a unit
+        self.available_vials[["Concentration", "ContainedVolume", "RemainingVolume"]].map(flowchem_ureg, na_action="ignore") #
+        assert self.available_vials["Column"].apply(lambda x: x.lower() in list("abcdef")).all(), "Your column has wrong values"
+        assert self.available_vials["Side"].apply(lambda x: x.upper() in [SelectPlatePosition.RIGHT_PLATE.name, SelectPlatePosition.LEFT_PLATE.name]).all(), "Your sample side has wrong values"
+        assert self.available_vials["Row"].apply(lambda x: x<=8).all(), "Your row has wrong values"
+        self.save_current()
+        
+    def get_unique_chemicals(self) -> List[str]:
+        """
+        Get the unique SMILES strings from the available samples
+        Returns:
+            list:   List of unique SMILES strings
+        """
+        # drop duplicates
+        single_values=self.available_vials["Content"].drop_duplicates()
+        return [x for x in single_values if not check_special_vial(x)]
+
+        
+    def load_entry(self, index:int) -> [Vial, TrayPosition]:
+        # return vial for updating volume, return TrayPosiition to go there, via Tray update the json
+        # get position and substance from dataframe, do based on index
+        entry=self.available_vials.loc[index]
+        return Vial(entry["Content"], entry["Solvent"],entry["Concentration"],entry["ContainedVolume"],entry["RemainingVolume"]), TrayPosition(entry["Side"], entry["Row"], entry["Column"])
+
+    def find_vial(self, contains:str, min_volume: str="0 mL")-> int or None:
+        min_volume = flowchem_ureg(min_volume) if type(min_volume) is str else min_volume
+        right_substance = self.available_vials["Content"] == contains
+        lowest_vol = self.available_vials.loc[right_substance]
+        new = lowest_vol["ContainedVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - lowest_vol["RemainingVolume"].map(lambda x: flowchem_ureg(x).m_as("mL")) - (min_volume.m_as("mL"))
+        new = new[new>=0]
+        try:
+            return new.idxmin()
+        except ValueError:
+            return None
+            
+    
+    def find_lowest_volume_vial(self, identifier: List[str], min_volume = 0.07) -> int or None:
+        """
+        Find the vial with the lowest volume of a list of substances
+        Args:
+            identifier: list of smiles to check for
+            min_volume: minimum volume to be considered in mL
+
+        Returns:
+            index of the vial with the lowest volume. If all are the same, it simply returns some
+        """
+        # find the lowest volume over a list of substances
+        right_substances = self.available_vials.loc[self.available_vials["Content"].isin(identifier)]
+        new = right_substances["ContainedVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL")) - right_substances["RemainingVolume"].map(flowchem_ureg).map(lambda x: x.m_as("mL"))
+        new=new.where(lambda x: x >= min_volume)
+        if new.isnull().all():
+            return None
+        else:
+            return new.idxmin(skipna=True)
+        
+
+    # this is mostly for updating volume
+    def update_volume(self, index, vial:Vial, save=True):
+        # modify entry, based on index
+        self.available_vials.at[index, "ContainedVolume"] = f"{round(vial._contained_volume.m_as('mL'),3)} mL"
+        if save:
+            self.save_current()
+
+    # constantly update the json file
+    def save_current(self):
+        write_to=self.create_output_path(file_ending="json")
+        # todo just overwrite? thats the current file
+        with open(write_to, "w") as f:
+            self.available_vials.to_json(f)
+            
+    def save_output(self):
+        write_to=self.create_output_path(extended_file_name="_out")
+        self.available_vials.to_excel(write_to)
+        
+    def create_output_path(self, extended_file_name = None, file_ending = None):
+        output_name, output_ending = Path(self.persistant).name.split(".")
+        write_to = Path(self.persistant).parent / Path(f"{output_name}{extended_file_name if extended_file_name else ''}.{file_ending if file_ending else output_ending}")
+        return write_to
+
+    def create_blank(self, path):
+        if Path(path).exists():
+            raise FileExistsError
+        pandas.DataFrame(columns=self._layout).to_excel(path)
+
+
 
 class KnauerAS(ASEthernetDevice):
     """
     Class to control Knauer or basically any Spark Holland AS.
     """
     AS_ID = 61
-    def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.TCP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE):
+    
+    def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.TCP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE, tray_mapping:Tray=None):
+
 
         super().__init__(ip_address, buffersize, port)
         # get statuses, that is basically syringe syize, volumes, platetype
 
         self.autosampler_id = autosampler_id if autosampler_id else KnauerAS.AS_ID
+        self.initialize()
+        self.tray_mapping:Tray = tray_mapping
+        self._external_aspirate = None
+        self._external_dispense = None
+        self._external_syringe_ready = None
+        self._external_syringe_home = None
+
+    @property
+    def external_syringe_aspirate(self):
+        """
+        Access external syringe aspirate function object
+        Returns: external syringe aspirate function object
+
+        """
+        return self._external_aspirate
+
+    @external_syringe_aspirate.setter
+    def external_syringe_aspirate(self, aspirate):
+        """
+        Set the command for external syringe aspiration use. This will make all syringe commands use external syringe
+        Args:
+            aspirate: the function object for external syringe aspirate
+
+        Returns: None
+
+        """
+        self._external_aspirate = aspirate
+
+    @property
+    def external_syringe_ready(self):
+        """
+        Access external syringe wait_until_ready function object. Needs to block until ready
+        Returns: external syringe wait_until_ready function object
+
+        """
+        return self._external_syringe_ready
+
+    @external_syringe_ready.setter
+    def external_syringe_ready(self, ready):
+        """
+        Set the command for external syringe wait_until_ready use. This will make all syringe commands use external syringe
+        Args:
+            aspirate: the function object for external wait_until_ready
+
+        Returns: None
+
+        """
+        self._external_syringe_ready = ready
+
+    @property
+    def external_syringe_dispense(self):
+        """
+        Access external syringe dispense function object
+        Returns: external dispense function object
+        """
+        return self._external_dispense
+
+    @external_syringe_dispense.setter
+    def external_syringe_dispense(self, dispense):
+        """
+        Set the command for external syringe dispense use. This will make all syringe commands use external syringe
+        Args:
+            aspirate: the function object for external syringe dispense
+
+        Returns: None
+
+        """
+        self._external_dispense = dispense
+
+    @property
+    def external_syringe_home(self):
+        """
+        Access external syringe home function object
+        Returns: external home function object
+        """
+        return self._external_syringe_home
+
+    @external_syringe_home.setter
+    def external_syringe_home(self, home):
+        """
+        Set the command for external syringe home use. This will make all syringe commands use external syringe
+        Args:
+            aspirate: the function object for external syringe home
+
+        Returns: None
+
+        """
+        self._external_syringe_home = home
+
 
     def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str, **kwargs: str)->str:
         # input can be strings, is translated to enum internally -> enum no need to expsoe
@@ -172,6 +521,13 @@ class KnauerAS(ASEthernetDevice):
             return True
         elif reply == CommunicationFlags.TRY_AGAIN.value:
             raise ASBusyError
+        elif len(reply) == 4 and int(reply[0]) == 1:
+            # this means the AS has error I think
+            error = self.get_errors()
+            # TODO access enum
+            self.reset_errors()
+            raise ASFailureError("Error in setting: ", error)
+
         elif reply == CommunicationFlags.NOT_ACKNOWLEDGE.value:
             raise CommandOrValueError
         # this is only the case with replies on queries
@@ -207,7 +563,8 @@ class KnauerAS(ASEthernetDevice):
             raise ASError(f"AS reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
     def _set_get_value(self, command:Type[CommandStructure], parameter:int or None=None, reply_mapping: None or Type[Enum] = None, get_actual = False):
-        """If get actuakl is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
+        """If get actual is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
+
         if parameter:
             command_string = self._construct_communication_string(command, CommandModus.SET.name, parameter)
             return self._set(command_string)
@@ -218,6 +575,22 @@ class KnauerAS(ASEthernetDevice):
                 return reply_mapping(reply).name
             else:
                 return reply
+
+    def initialize(self):
+        """
+        Sets initial positions of components to assure reproducible startup
+        Returns: None
+        """
+        # TODO home syringe, also external
+        self.get_errors()
+        # todo reset errors parsing not working fix
+        self.reset_errors()
+        self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+        self.syringe_valve_position(SyringeValvePositions.WASTE.name)
+        self.injector_valve_position(InjectorValvePositions.LOAD.name)
+
+
 
     def measure_tray_temperature(self):
         command_string = self._construct_communication_string(TrayTemperatureCommand, CommandModus.GET_ACTUAL.name)
@@ -253,7 +626,11 @@ class KnauerAS(ASEthernetDevice):
         return self._set_get_value(InjectionVolumeCommand, volume)
         
     def syringe_speed(self, speed: str = None):
-        """LOW, NORMAL, HIGH"""
+        """
+        LOW, NORMAL, HIGH
+        This does NOT work on all models
+        """
+
         return self._set_get_value(SyringeSpeedCommand, speed, SyringeSpeedCommand.speed_enum)
 
     #tested
@@ -276,30 +653,95 @@ class KnauerAS(ASEthernetDevice):
 
     #tested
     # this is additive, it moves syr relatively
-    def aspirate(self, volume):
-        command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
-        return self._set(command_string)
+    def aspirate(self, volume:float, flow_rate:float or int=None):
+        """
+        aspirate with buildt in syringe if no external syringe is set to autosampler.
+        Else use extrernal syringe
+        Args:
+            volume: volume to aspirate in mL
+            flow_rate: flowrate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
 
-    def dispense(self, volume):
-        command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
-        return self._set(command_string)
+        Returns: None
+
+        """
+        if not self.external_syringe_aspirate:
+            if flow_rate is not None:
+                raise NotImplementedError("Buildt in syringe does not allow to control flowrate")
+            volume = int(round(volume, 3) * 1000)
+            command_string = self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
+            return self._set(command_string)
+        else:
+            assert self.external_syringe_dispense is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
+            self.external_syringe_aspirate(volume, flow_rate)
+            
+
+    def dispense(self, volume, flow_rate=None):
+        """
+        dispense with buildt in syringe if no external syringe is set to autosampler.
+        Else use external syringe
+        Args:
+            volume: volume to dispense in mL
+            flow_rate: flowrate in mL/min. Only works on external syringe. If buildt-in syringe is used, use default value
+
+        Returns: None
+
+        """
+        if not self.external_syringe_dispense:
+            if flow_rate is not None:
+                raise NotImplementedError("Buildt in syringe does not allow to control flowrate")
+            volume = int(round(volume, 3) * 1000)
+            command_string = self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
+            return self._set(command_string)
+        else:
+            assert self.external_syringe_aspirate is not None and self.external_syringe_ready is not None, "Make sure to set all necessary commands for external syringe"
+            self.external_syringe_dispense(volume, flow_rate)
 
     def move_syringe(self, position):
-        command_string = self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)
-        return self._set(command_string)
+        if self.external_syringe_aspirate or self.external_syringe_dispense:
+            # todo
+            if position.upper() == "HOME":
+                self.external_syringe_home(2)
+            else:
+                raise NotImplementedError("Only works for buildt in syringe")
+        else:
+            command_string = self._construct_communication_string(MoveSyringeCommand, CommandModus.SET.name, position)
+            return self._set(command_string)
+
+    def get_errors(self):
+        command_string = self._construct_communication_string(GetErrorsCommand, CommandModus.GET_ACTUAL.name)
+        reply = str(self._query(command_string))
+        return ErrorCodes[f"ERROR_{reply}"].value
+
+    def reset_errors(self):
+        command_string = self._construct_communication_string(ResetErrorsCommand, CommandModus.SET.name)
+        self._set(command_string)
 
     def get_status(self):
         command_string = self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
         reply = str(self._query(command_string))
         reply = (3-len(reply))*'0'+reply # zero pad from left to length == 3
+        if len(reply) == 4:
+            if reply[0] == '1':
+                # this means there is an Error
+                error_code = self.get_errors()
+                self.reset_errors()
+                raise ASFailureError(f"Error code {error_code} occured when checking for status")
         return ASStatus(reply).name
 
     def fill_transport(self, repetitions:int):
+        # todo what does that do again? high level needle wash?
+        if self.external_syringe_aspirate or self.external_syringe_dispense:
+            raise NotImplementedError("Only works for buildt in syringe")
+
         command_string = self._construct_communication_string(FillTransportCommand, CommandModus.SET.name, repetitions)
         return self._set(command_string)
 
     #tested, if on is set it immeadiatly washed, if off is set it does nothing but refuses to wash sth else afterwards
     def initial_wash(self, port_to_wash:str, on_off: str):
+
+        if self.external_syringe_aspirate or self.external_syringe_dispense:
+            raise NotImplementedError("Only works for buildt in syringe")
+
         command_string = self._construct_communication_string(InitialWashCommand, CommandModus.SET.name, port_to_wash, on_off)
         return self._set(command_string)
     # move to row, singleplate not working (yet)
@@ -318,66 +760,198 @@ class KnauerAS(ASEthernetDevice):
         command_string = self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
         return self._set(command_string)
 
-    # todo make this a decorator and just retry until acknowledge
-    def wait_until_ready(self):
+    def wait_until_ready(self, wait_for_syringe = True):
+        """
+        Wait for AS to be done
+        Args:
+            wait_for_syringe: If True (default), also the external syringe will be waited for. 
+                            If False it can run in background 
+
+        Returns: None
+
+        """
+        # todo wait for external syringe ready as well
         while True:
             if self.get_status() == ASStatus.NOT_RUNNING.name:
-                break
+            # if theres external syringe, wait for it to get ready
+                if wait_for_syringe == True:
+                    if self.external_syringe_ready is not None:
+                        self.external_syringe_ready()
+                    break
+                else:
+                    break
             # AS is rather fast so this sounds like a reasonable time
             sleep(0.01)
 
-
-
-    def connect_to_sample(self, traytype: str, side: str, column:str, row: int):
+    def connect_chemical(self, chemical:str, volume_sample:str="0 mL", volume_buffer:str="0 mL", flow_rate=None):
+        # needs to take plate layout and basically the key, so smiles or special denomition
+        if not self.tray_mapping:
+            raise CommandOrValueError("You must provide a tray mapping to access substances by name")
+        else:
+            vial_index = self.tray_mapping.find_vial(chemical, min_volume=volume_sample)
+            if vial_index is None:
+                raise ValueError(f"No vial contains enough sample for the desired volume")
+            vial, position = self.tray_mapping.load_entry(vial_index)
+            self.connect_to_position(self.tray_mapping.tray_type, position.side, position.column, int(position.row))
+            # this waits for syringe to be ready as well per default
+            self.wait_until_ready(wait_for_syringe=True)
+            self.pick_up_sample(flowchem_ureg(volume_sample).m_as("mL"), volume_buffer=flowchem_ureg(volume_buffer).m_as("ml"), flow_rate=flow_rate if not flow_rate else flowchem_ureg(flow_rate).m_as("mL/min"))
+            if vial.substance != _SpecialVial.INERT_GAS.value:
+                vial.extract_from_vial(volume_sample)
+            self.tray_mapping.update_volume(vial_index, vial)
+            
+    def connect_to_position(self, traytype: str, side: str or None, column:str or None, row: int or None):
         # TODO check why move tray needs parameter of side
         traytype = traytype.upper()
-        try:
-            if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
-                raise NotImplementedError
-        except KeyError as e:
-            raise Exception(f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
-        # column is a letter, to convert to correct number use buildt-in, a gives 0 here
-        column_int = ord(column.upper())-64
-        print(f"You've selected the column {column_int}, counting starts at 1.")
-        # now check if that works for selected tray:
-        assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
-
-        self._move_tray(side, row)
-        self._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=side, well=column_int)
+        if traytype in PlateTypes.__dict__.keys():
+            try:
+                if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
+                    raise NotImplementedError
+            except KeyError as e:
+                raise Exception(f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
+            # column is a letter, to convert to correct number use buildt-in, a gives 0 here
+            column_int = ord(column.upper()) - 64
+            print(f"You've selected the column {column_int}, counting starts at 1.")
+            # now check if that works for selected tray:
+            assert PlateTypes[traytype].value[0] >= column_int and PlateTypes[traytype].value[1] >= row
+            self._move_tray(side, row)
+            self._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=side, well=column_int)
+        elif traytype in NeedleHorizontalPosition.__dict__.keys():
+            self._move_needle_horizontal(NeedleHorizontalPosition[traytype].name)
+        else:
+            raise NotImplementedError
+        # per default, also awaits external syringe
         self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
 
 # it would be reaonable to get all from needle to loop, with piercing inert gas vial
-    def disconnect_sample(self):
-
+    def disconnect_sample(self, move_plate = False):
+        self.injector_valve_position(InjectorValvePositions.LOAD.name)
         self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-        self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
-        self._move_needle_horizontal(NeedleHorizontalPosition.WASH.name)
+        if move_plate:
+            self._move_tray(SelectPlatePosition.NO_PLATE.name, TrayPositions.HOME.name)
+            self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+            
+    def fill_wash_reservoir(self, volume:float=0.2, flow_rate:float = None):
+        self.syringe_valve_position(SyringeValvePositions.WASH.name)
+        self.aspirate(volume, flow_rate)
+        self.connect_to_position("wash",None,None,None)
+        # aspirate does not await syringe execution, therefor explicit await is necessary
+        self.wait_until_ready()
+        # this is just used to connect the syringe to sample
+        self.pick_up_sample(volume_sample=0,flow_rate=flow_rate)
+        # empty syringe into reservoir
+        self.dispense(volume, flow_rate)
+        self.wait_until_ready()
+        self.disconnect_sample()
+        
+    def empty_wash_reservoir(self, volume:float=0.2, flow_rate:float = None):
+        # empty reservoir with syringe
+        self.connect_to_position("wash",None,None,None)
+        self.pick_up_sample(volume_sample=volume, flow_rate=flow_rate)
+        # go up and move to waste
+        self.disconnect_sample()
 
-    def pick_up_sample(self, volume_sample, volume_buffer=0):
-        if volume_buffer:
-            self.syringe_valve_position("wash")
-            self.aspirate(volume_buffer)
-        self.injector_valve_position("inject")
-        self.syringe_valve_position("needle")
-        self.aspirate(volume_sample)
+    def wash_needle(self, volume:float=0.2, times:int=3, flow_rate:float = None):
+        """
+        Fill neelde with solvent and then wash it.
+        Args:
+            volume: 0.2 mL is a reasonable value
+            times:
+            flow_rate:
 
+        Returns: None
 
-    def wash_system(self, wash="needle", times:int=3):
-        #washing loop, ejecting through needle!
+        """
+
         for i in range(times):
-            self.syringe_valve_position("wash")
-            self.aspirate(250)
-            self.syringe_valve_position("needle")
-            if wash == "needle":
-                self.injector_valve_position("inject")
-            else:
-                self.injector_valve_position("load")
-            self.dispense(250)
+            # do wash reservoir fill
+            #   fill syringe here and go to right position
+            self.fill_wash_reservoir(volume=volume, flow_rate=flow_rate)
+            self.empty_wash_reservoir(volume=volume, flow_rate=flow_rate)
+            self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+            self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
+            # dispense to waste and go up
+            self.dispense(volume, flow_rate)
+            self.wait_until_ready()
+            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+        
+        # fill here, and eject, without needle wash!
+        self.syringe_valve_position(SyringeValvePositions.WASH.name)
+        self.aspirate(volume, flow_rate)
+        self.injector_valve_position(InjectorValvePositions.INJECT.name)
+        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+        self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
+        self.wait_until_ready()
+        # eject directly to waste
+        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+        self.dispense(volume, flow_rate*10 if flow_rate else flow_rate)
+        self.wait_until_ready()
+        self._move_needle_vertical(NeedleVerticalPositions.UP.name)
 
-    def dispense_sample(self, volume, dead_volume=50):
-        self.syringe_valve_position("needle")
-        self.injector_valve_position("load")
-        self.dispense(volume+dead_volume)
+
+    def pick_up_sample(self, volume_sample:float or int, volume_buffer=0, flow_rate=None):
+
+        if volume_buffer:
+            self.syringe_valve_position(SyringeValvePositions.WASH.name)
+            self.aspirate(volume_buffer, flow_rate)
+        self.injector_valve_position(InjectorValvePositions.INJECT.name)
+        # wait until buffer taken
+        self.wait_until_ready()
+        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+        self.aspirate(volume_sample, flow_rate)
+        # while picking up sample, there is no logical AS based background activity, so wait until ready
+        self.wait_until_ready()
+
+    def wash_system(self, times:int=3, flow_rate=None, volume:float = 0.250, dispense_to:str="needle"):
+        """
+
+        Args:
+            times: How often to wash
+            flow_rate: Which flowrate to wash with. Only works with external syringe, otherwise use default value
+            volume: washing volume in mL
+            dispense_to: Where to dispense the washing fluid to - so which path to clean. Options are needle, outside, waste
+
+        Returns: None
+
+        """
+        #washing loop, ejecting through needle!
+        legal_arguments = ["needle", "outside", "waste"]
+        if dispense_to not in legal_arguments:
+            raise NotImplementedError(f"Dispense to can only take following values {legal_arguments}.")
+        self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
+        for i in range(times):
+            self.syringe_valve_position(SyringeValvePositions.WASH.name)
+            self.aspirate(volume, flow_rate)
+            self.wait_until_ready()
+            if dispense_to == legal_arguments[0]:
+                self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+                self.injector_valve_position(InjectorValvePositions.INJECT.name)
+                self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
+            elif dispense_to == legal_arguments[1]:
+                self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+                self.injector_valve_position(InjectorValvePositions.LOAD.name)
+            elif dispense_to == legal_arguments[2]:
+                self.syringe_valve_position(SyringeValvePositions.WASTE.name)
+            self.dispense(volume, flow_rate)
+            self.wait_until_ready()
+            self._move_needle_vertical(NeedleVerticalPositions.UP.name)
+
+    def dispense_sample(self, volume:float, dead_volume=0.050, flow_rate=None):
+        """
+        Dispense Sample in buffer tube to device connected to AS. This does not await end of dispensal.
+         You have to do that explicitly
+        Args:
+            volume: Volume to dispense in mL
+            dead_volume: Dead volume to dispense additionally
+            flow_rate: Flowrate, only works w external syringe
+            
+        Returns: None
+        
+        """
+        self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
+        self.injector_valve_position(InjectorValvePositions.LOAD.name)
+        self.dispense(volume+dead_volume, flow_rate)
+
 
 if __name__ == "__main__":
     pass
