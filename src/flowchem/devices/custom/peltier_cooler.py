@@ -217,8 +217,8 @@ class PeltierIO:
             raise InvalidConfiguration from e
 
     async def write_and_read_reply(
-        self, command: PeltierCommand, return_parsed: bool = True
-    ) -> Union[List[str], str]:
+        self, command: PeltierCommand
+    ) -> str:
         """ Main PeltierIO method. Sends a command to the peltier, read the replies and returns it, optionally parsed """
         async with self.lock:
             self.reset_buffer()
@@ -239,7 +239,7 @@ class PeltierIO:
         # Ensures that all the replies came from the target peltier (this should always be the case)
         assert all(address == command.target_peltier_address for address in [peltier_address])
 
-        return parsed_response if return_parsed else response
+        return parsed_response
 
 
 # noinspection SpellCheckingInspection
@@ -329,9 +329,9 @@ class PeltierCooler(FlowchemDevice):
 
     def __init__(
             self,
+            peltier_io: PeltierIO,
             name: str = "",
             address: int = 0,
-            peltier_io: PeltierIO | None = None,
             peltier_defaults: str | None = None,
     ) -> None:
         super().__init__(name)
@@ -394,11 +394,9 @@ class PeltierCooler(FlowchemDevice):
     async def send_command_and_read_reply(self,
                                           command_template: PeltierCommandTemplate,
                                           parameter: int | str = "",
-                                          parse=True) -> Union[str, List[str]]:
+                                          ) -> str:
         """ Sends a command based on its template and return the corresponding reply as str """
-        return await self.peltier_io.write_and_read_reply(
-            command_template.to_peltier(self.address, str(parameter)), return_parsed=parse
-        )
+        return await self.peltier_io.write_and_read_reply(command_template.to_peltier(self.address, str(parameter)))
 
     async def set_temperature(self, temperature: pint.Quantity):
         await self.stop_control()
