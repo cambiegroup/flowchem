@@ -736,7 +736,7 @@ class ML600:
         )
 
 
-    def deliver_from_dual_syringes(self, to_volume:float, speed:float):
+    def deliver_from_dual_syringes(self, to_volume_left:float = None, speed_left:float = None, to_volume_right:float=None, speed_right:float=None):
         """
         Assumes Input on left of valve and output on the right
 
@@ -759,8 +759,8 @@ class ML600:
         # actuate syringes
         self.wait_until_idle(syringe=None)
         self.send_multiple_commands(
-            self._absolute_syringe_move(to_volume, speed, syringe="left")+
-            self._absolute_syringe_move(to_volume, speed, syringe="right"))
+            self._absolute_syringe_move(to_volume_left, speed_left, syringe="left")+
+            self._absolute_syringe_move(to_volume_right, speed_right, syringe="right"))
 
 
 if __name__ == "__main__":
