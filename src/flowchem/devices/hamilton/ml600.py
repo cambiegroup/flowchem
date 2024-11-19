@@ -545,7 +545,7 @@ class ML600(FlowchemDevice):
         """Ture means pump is busy. False means pump is idle."""
         checking_mapping = {"B": 1, "C": 3}
         pump = "B" if not pump else pump
-        status = await self.system_status(checking_mapping[pump])
+        status = await self.get_component_status(checking_mapping[pump])
         logger.info(f"pump {pump} is busy: {status}")
         return status
 
@@ -553,21 +553,15 @@ class ML600(FlowchemDevice):
         """Ture means valve is busy. False means valve is idle."""
         checking_mapping = {"B": 0, "C": 2}
         valve = "B" if not valve else valve
-        status:bool = await self.system_status(checking_mapping[valve])
+        status = await self.get_component_status(checking_mapping[valve])
         logger.info(f"valve {valve} is busy: {status}")
         return status
 
-    async def system_status(self, component: int = -1) -> bool | dict[str, bool]:
-        """
-        Represent the status of specific component. True means busy; False meaens idle.
-        Return status of all parts of instrument in dictionary.
-        """
+    async def get_all_component_status(self) -> dict[str, bool]:
+
         reply = await self.send_command_and_read_reply(
-                Protocol1Command(command="T1", execution_command=""))
+            Protocol1Command(command="T1", execution_command=""))
         all_status = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
-        # 1 is true and 0 is false according to the manual; but the real signal is opposite.
-        if -1 < component < 5:
-            return all_status[component] == "0"
 
         value_map = {0: "left_valve busy", 1: "left_pump busy",
                      2: "right_valve busy", 3: "right_pump busy",
@@ -577,6 +571,17 @@ class ML600(FlowchemDevice):
             logger.debug(f"{value_map[key]} : {all_status[key] == '0'}")
             status[value_map[key]] = all_status[key] == "0"
         return status
+
+    async def get_component_status(self, component: int = -1) -> bool:
+        """
+        Represent the status of specific component. True means busy; False meaens idle.
+        Return status of all parts of instrument in dictionary.
+        """
+        reply = await self.send_command_and_read_reply(
+                Protocol1Command(command="T1", execution_command=""))
+        all_status = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
+        # 1 is true and 0 is false according to the manual; but the real signal is opposite.
+        return all_status[component] == "0"
 
     async def general_status_info(self, component: int = -1) -> bool | dict[str, bool]:
         # todo: this command will reset the error of syntax and instrument, use others error monitoring method
