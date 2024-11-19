@@ -553,7 +553,7 @@ class ML600(FlowchemDevice):
         """Ture means valve is busy. False means valve is idle."""
         checking_mapping = {"B": 0, "C": 2}
         valve = "B" if not valve else valve
-        status = await self.system_status(checking_mapping[valve])
+        status:bool = await self.system_status(checking_mapping[valve])
         logger.info(f"valve {valve} is busy: {status}")
         return status
 
