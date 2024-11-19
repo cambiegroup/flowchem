@@ -57,7 +57,7 @@ class PeltierCommandTemplate:
     reply_lines: int  # Reply line without considering leading newline and tailing prompt!
     requires_argument: bool
 
-    def to_peltier(self, address: int, argument: int = "") -> PeltierCommand:
+    def to_peltier(self, address: int, argument: int | str = "") -> PeltierCommand:
         """ Returns a Command by adding to the template peltier address and command arguments """
         if self.requires_argument and not argument:
             raise InvalidArgument(
@@ -331,8 +331,8 @@ class PeltierCooler(FlowchemDevice):
             self,
             name: str = "",
             address: int = 0,
-            peltier_io: PeltierIO = None,
-            peltier_defaults: str = None,
+            peltier_io: PeltierIO | None = None,
+            peltier_defaults: str | None = None,
     ) -> None:
         super().__init__(name)
         self.peltier_io = peltier_io
@@ -356,7 +356,7 @@ class PeltierCooler(FlowchemDevice):
             port: str,
             address: int,
             name: str = "",
-            peltier_defaults: str = None,
+            peltier_defaults: str | None = None,
             **serial_kwargs,
     ):
 
@@ -391,8 +391,10 @@ class PeltierCooler(FlowchemDevice):
         await self._set_i_of_pid(integral)
         await self._set_d_of_pid(differential)
 
-    async def send_command_and_read_reply(self, command_template: PeltierCommandTemplate, parameter: int = "", parse=True
-                                    ) -> Union[str, List[str]]:
+    async def send_command_and_read_reply(self,
+                                          command_template: PeltierCommandTemplate,
+                                          parameter: int | str = "",
+                                          parse=True) -> Union[str, List[str]]:
         """ Sends a command based on its template and return the corresponding reply as str """
         return await self.peltier_io.write_and_read_reply(
             command_template.to_peltier(self.address, str(parameter)), return_parsed=parse
@@ -443,7 +445,7 @@ class PeltierCooler(FlowchemDevice):
     async def go_to_rt_and_switch_off(self):
         # set to RT, wait 2 min, stop T-control: This is just a convenience and safety measure: if the Peltier is
         # shut off and the heating is directly shut off, the heating might freeze
-        await self.set_temperature(25)
+        await self.set_temperature("25 °C")
         await asyncio.sleep(120)
         await self.stop_control()
 
