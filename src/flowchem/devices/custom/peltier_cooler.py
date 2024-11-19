@@ -177,7 +177,7 @@ class PeltierIO:
         return reply_string
 
     @staticmethod
-    def parse_response_line(line: str) -> Tuple[int, str, float or str]:
+    def parse_response_line(line: str) -> Tuple[int, str, float | str]:
         """ Split a received line in its components: address, prompt and reply body """
         assert len(line) > 0
 
