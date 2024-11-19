@@ -146,10 +146,10 @@ class PeltierIO:
 
     async def _write(self, command: PeltierCommand):
         """ Writes a command to the peltier """
-        command = command.compile()
-        logger.debug(f"Sending {repr(command)}")
+        command_compiled = command_compiled.compile()
+        logger.debug(f"Sending {repr(command_compiled)}")
         try:
-            await self._serial.write_async(command.encode("ascii"))
+            await self._serial.write_async(command_compiled.encode("ascii"))
         except aioserial.SerialException as e:
             raise InvalidConfiguration from e
 
