@@ -305,7 +305,8 @@ class PeltierDefaults:
     HEATING_PID = [0.64, 0.53, 0.13]
     COOLING_PID = [2.83, 2.36, 0.59]
     BASE_TEMP = -7.6
-    STATE_DEPENDANT_CURRENT_LIMITS = np.array([[-55, 50], [14, 14], [10, 10]]).transpose()
+    state_dependent_data: List[List[float]] = [[-55, 50], [14, 14], [10, 10]]
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array(state_dependent_data, dtype=float).transpose()
     T_MAX = 50
     T_MIN = -55
 
