@@ -450,7 +450,7 @@ class PeltierCooler(FlowchemDevice):
     async def get_current(self) -> int:
         # return power in W
         reply = await self.send_command_and_read_reply(PeltierCommands.GET_CURRENT)
-        return float(reply)
+        return int(reply)
 
     async def get_parameters(self) -> str:
         # return parameter list
