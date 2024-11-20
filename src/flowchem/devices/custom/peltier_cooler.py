@@ -146,7 +146,7 @@ class PeltierIO:
 
     async def _write(self, command: PeltierCommand):
         """ Writes a command to the peltier """
-        command_compiled = command_compiled.compile()
+        command_compiled = command.compile()
         logger.debug(f"Sending {repr(command_compiled)}")
         try:
             await self._serial.write_async(command_compiled.encode("ascii"))
@@ -177,17 +177,14 @@ class PeltierIO:
         return reply_string
 
     @staticmethod
-    def parse_response_line(line: str) -> Tuple[int, str, float | str]:
+    def parse_response_line(line: str) -> Tuple[int, str, str]:
         """ Split a received line in its components: address, prompt and reply body """
         assert len(line) > 0
 
         peltier_address = int(line.split(" ")[0])
         status = str(line.split(" ")[1].split("=")[0])
         reply = str(line.split(" ")[1].split("=")[1])
-        try:
-            return peltier_address, status, float(reply)
-        except ValueError:
-            return peltier_address, status, str(reply)
+        return peltier_address, status, str(reply)
 
     @staticmethod
     def check_for_errors(last_response_line, command_sent):
@@ -412,15 +409,15 @@ class PeltierCooler(FlowchemDevice):
 
     async def _set_temperature(self, temperature: float):
         reply = await self.send_command_and_read_reply(PeltierCommands.SET_TEMPERATURE, round(temperature * 100))
-        assert reply == temperature
+        assert float(reply) == temperature
 
     async def set_slope(self, slope: float):
         reply = await self.send_command_and_read_reply(PeltierCommands.SET_SLOPE, round(slope * 100))
-        assert reply == slope
+        assert float(reply) == slope
 
     async def disable_slope(self):
         reply = await self.send_command_and_read_reply(PeltierCommands.SET_SLOPE, 0)
-        assert reply == 0
+        assert int(reply) == 0
 
     async def start_control(self):
         reply = await self.send_command_and_read_reply(PeltierCommands.SWITCH_ON)
@@ -428,13 +425,11 @@ class PeltierCooler(FlowchemDevice):
 
     async def get_temperature(self) -> float:
         reply = await self.send_command_and_read_reply(PeltierCommands.GET_TEMPERATURE)
-        assert isinstance(reply, float)
-        return reply
+        return float(reply)
 
     async def get_sink_temperature(self) -> float:
         reply = await self.send_command_and_read_reply(PeltierCommands.GET_SINK_TEMPERATURE)
-        assert isinstance(reply, float)
-        return reply
+        return float(reply)
 
     async def stop_control(self):
         reply = await self.send_command_and_read_reply(PeltierCommands.SWITCH_OFF)
@@ -455,48 +450,47 @@ class PeltierCooler(FlowchemDevice):
     async def get_current(self) -> int:
         # return power in W
         reply = await self.send_command_and_read_reply(PeltierCommands.GET_CURRENT)
-        assert isinstance(reply, float)
-        return reply
+        return float(reply)
 
     async def get_parameters(self) -> str:
         # return parameter list
         reply = await self.send_command_and_read_reply(PeltierCommands.GET_SETTINGS)
         return reply
 
-    async def _set_current_limit_cooling(self, current_limit):
+    async def _set_current_limit_cooling(self, current_limit: float):
         # current in amp
         reply = await self.send_command_and_read_reply(PeltierCommands.COOLING_CURRENT_LIMIT, round(current_limit * 100))
-        assert reply == current_limit
+        assert float(reply) == current_limit
 
-    async def _set_current_limit_heating(self, current_limit):
+    async def _set_current_limit_heating(self, current_limit: float):
         # current in amp
         reply = await self.send_command_and_read_reply(PeltierCommands.HEATING_CURRENT_LIMIT, round(current_limit * 100))
-        assert reply == current_limit
+        assert float(reply) == current_limit
 
-    async def _set_d_of_pid(self, differential):
+    async def _set_d_of_pid(self, differential: float):
         # max 10
         reply = await self.send_command_and_read_reply(PeltierCommands.SET_DIFFERENTIAL_PID, round(differential * 100))
-        assert reply == differential
+        assert float(reply) == differential
 
     async def _set_i_of_pid(self, integral):
         # max 10
         reply = await self.send_command_and_read_reply(PeltierCommands.SET_INTEGRAL_PID, round(integral * 100))
-        assert reply == integral
+        assert float(reply) == integral
 
     async def _set_p_of_pid(self, proportional):
         # max 10
         reply = await self.send_command_and_read_reply(PeltierCommands.SET_PROPORTIONAL_PID, round(proportional * 100))
-        assert reply == proportional
+        assert float(reply) == proportional
 
     async def _set_max_temperature(self, t_max):
         # max 10
         reply = await self.send_command_and_read_reply(PeltierCommands.SET_T_MAX, round(t_max * 100))
-        assert reply == t_max
+        assert float(reply) == t_max
 
     async def _set_min_temperature(self, t_min):
         # max 10
         reply = await self.send_command_and_read_reply(PeltierCommands.SET_T_MIN, round(t_min * 100))
-        assert reply == t_min
+        assert float(reply) == t_min
 
     async def _set_state_dependant_parameters(self, new_T_setpoint):
         if self.peltier_defaults.BASE_TEMP < new_T_setpoint:
