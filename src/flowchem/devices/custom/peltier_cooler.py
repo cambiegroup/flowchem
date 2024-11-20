@@ -438,7 +438,7 @@ class PeltierCooler(FlowchemDevice):
     async def go_to_rt_and_switch_off(self):
         # set to RT, wait 2 min, stop T-control: This is just a convenience and safety measure: if the Peltier is
         # shut off and the heating is directly shut off, the heating might freeze
-        await self.set_temperature("25 °C")
+        await self.set_temperature(ureg.Quantity("25 °C"))
         await asyncio.sleep(120)
         await self.stop_control()
 
