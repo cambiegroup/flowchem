@@ -505,12 +505,12 @@ class PeltierCooler(FlowchemDevice):
         if new_T_setpoint > self.peltier_defaults.BASE_TEMP:
             # set current limit for heating
             n = np.where((self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[::, 0] >= new_T_setpoint))[0][0]
-            settings = self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[n]
+            settings = self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[n, ].tolist()
 
         else:
             # set to cooling
             n = np.where((self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[::, 0] <= new_T_setpoint))[0][-1]
-            settings = self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[n]
+            settings = self.peltier_defaults.STATE_DEPENDANT_CURRENT_LIMITS[n, ].tolist()
         await self._set_current_limit_cooling(settings[1])
         await self._set_current_limit_heating(settings[2])
 
