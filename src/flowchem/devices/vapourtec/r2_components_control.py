@@ -156,9 +156,12 @@ class R2InjectionValve(SixPortTwoPositionValve):
         position = await self.hw_device.get_valve_position(self.valve_code)
         return self._positions[int(self._change_connections(position, reverse=True))]
 
-    async def set_position(self, positions_to_connect):
+    async def set_position(self,
+                           connect: str = "",
+                           disconnect: str = "",
+                           ambiguous_switching: str | bool = False):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
-        positions_to_connect_l = json.loads(positions_to_connect)
+        positions_to_connect_l = json.loads(connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
         target_pos = self._connect_positions(position_to_connect)
         target_pos = self._change_connections(target_pos)
@@ -211,9 +214,12 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         position = await self.hw_device.get_valve_position(self.valve_code)
         return (self._positions[int(self._change_connections(position, reverse=True))])
 
-    async def set_position(self, positions_to_connect):
+    async def set_position(self,
+                           connect: str = "",
+                           disconnect: str = "",
+                           ambiguous_switching: str | bool = False):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
-        positions_to_connect_l = json.loads(positions_to_connect)
+        positions_to_connect_l = json.loads(connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
         target_pos = self._connect_positions(position_to_connect)
         target_pos = self._change_connections(target_pos)
@@ -221,6 +227,7 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
             str(self.valve_code * 2 + int(target_pos)),
         )
         return True
+
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
         position = await self.hw_device.get_valve_position(self.valve_code)
