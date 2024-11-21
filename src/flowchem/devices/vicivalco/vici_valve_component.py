@@ -12,11 +12,10 @@ class ViciInjectionValve(SixPortTwoPositionValve):
     hw_device: ViciValve  # for typing's sake
 
     # todo this needs to be adapted to new code
-    def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
-        raise NotImplementedError("Check that provided mapping is correct")
+    def _change_connections(self, raw_position: int | str, reverse: bool = False) -> str:
         # TODO maybe needs addition of one, not sure
         if not reverse:
-            translated = raw_position
+            translated = str(raw_position)
         else:
-            translated = raw_position
+            translated = str(raw_position)
         return translated
