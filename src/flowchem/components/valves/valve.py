@@ -47,11 +47,11 @@ class ValveInfo(BaseModel):
                 position
     """
     ports: list[tuple]
-    positions: dict[int, tuple[tuple[None | int, ...], ...]]
+    positions: dict[int, tuple[tuple]]
 
 
-def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
-                               tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
+def all_tuples_in_nested_tuple(tuple_in: tuple[tuple],
+                               tuple_contains: tuple[tuple]) -> bool:
     """Check if all requested tuples are in a tuple of tuples"""
     all_contained = []
     for subtuple in tuple_in:
@@ -65,8 +65,8 @@ def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
         return False
 
 
-def no_tuple_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
-                             tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
+def no_tuple_in_nested_tuple(tuple_in: tuple[tuple],
+                             tuple_contains: tuple[tuple]) -> bool:
     """Check if none of requested tuples are in a tuple of tuples"""
     contains_tuple = False
     for subtuple in tuple_in:
@@ -96,8 +96,8 @@ class Valve(FlowchemComponent):
             self,
             name: str,
             hw_device: "FlowchemDevice",
-            stator_ports: [(), ()],
-            rotor_ports: [(), ()],
+            stator_ports: tuple[tuple],
+            rotor_ports: tuple[tuple],
     ) -> None:
         """Create a valve object.
 
