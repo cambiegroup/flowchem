@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 import json
+from typing import Tuple, Union
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -46,12 +47,12 @@ class ValveInfo(BaseModel):
     positions: an attribute mapping implicit, tacit numbers as keys to the stator ports that are connected at this
                 position
     """
-    ports: tuple[tuple]
-    positions: dict[int, tuple[tuple]]
+    ports: list[tuple]
+    positions: dict[int, tuple[tuple[None | int, ...], ...]]
 
 
-def all_tuples_in_nested_tuple(tuple_in: tuple[tuple],
-                               tuple_contains: tuple[tuple]) -> bool:
+def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
+                               tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
     """Check if all requested tuples are in a tuple of tuples"""
     all_contained = []
     for subtuple in tuple_in:
@@ -65,8 +66,8 @@ def all_tuples_in_nested_tuple(tuple_in: tuple[tuple],
         return False
 
 
-def no_tuple_in_nested_tuple(tuple_in: tuple[tuple],
-                             tuple_contains: tuple[tuple]) -> bool:
+def no_tuple_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
+                             tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
     """Check if none of requested tuples are in a tuple of tuples"""
     contains_tuple = False
     for subtuple in tuple_in:
@@ -96,8 +97,8 @@ class Valve(FlowchemComponent):
             self,
             name: str,
             hw_device: "FlowchemDevice",
-            stator_ports: tuple[tuple],
-            rotor_ports: tuple[tuple],
+            stator_ports: [(), ()],
+            rotor_ports: [(), ()],
     ) -> None:
         """Create a valve object.
 
