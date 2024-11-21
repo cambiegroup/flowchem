@@ -46,7 +46,7 @@ class ValveInfo(BaseModel):
     positions: an attribute mapping implicit, tacit numbers as keys to the stator ports that are connected at this
                 position
     """
-    ports: list[tuple]
+    ports: tuple[tuple]
     positions: dict[int, tuple[tuple]]
 
 
