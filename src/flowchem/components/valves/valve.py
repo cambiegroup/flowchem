@@ -172,7 +172,7 @@ class Valve(FlowchemComponent):
 
         return connections
 
-    def _change_connections(self, raw_position: int, reverse: bool = False) -> int | str:
+    def _change_connections(self, raw_position: int | str, reverse: bool = False) -> int | str:
         # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
         # device level since this is device communication protocol specific
@@ -180,7 +180,7 @@ class Valve(FlowchemComponent):
 
     def _connect_positions(self,
                            positions_to_connect: tuple[tuple],
-                           positions_not_to_connect: tuple[tuple] = None,
+                           positions_not_to_connect: tuple[tuple] | None = None,
                            arbitrary_switching: bool = True) -> int:
         """
         This is the heart of valve switching logic: select the suitable position (so actually the key in
@@ -224,11 +224,11 @@ class Valve(FlowchemComponent):
                            disconnect: str = "",
                            ambiguous_switching: str | bool = False):
         """Move valve to position, which connects named ports"""
-        connect=return_tuple_from_input(connect)
-        disconnect=return_tuple_from_input(disconnect)
-        ambiguous_switching=return_bool_from_input(ambiguous_switching)
-        target_pos = self._connect_positions(positions_to_connect=connect, positions_not_to_connect=disconnect,
-                                             arbitrary_switching=ambiguous_switching)
+        connect_tuple=return_tuple_from_input(connect)
+        disconnect_tuple=return_tuple_from_input(disconnect)
+        ambiguous_switching_bool=return_bool_from_input(ambiguous_switching)
+        target_pos = self._connect_positions(positions_to_connect=connect_tuple, positions_not_to_connect=disconnect_tuple,
+                                             arbitrary_switching=ambiguous_switching_bool)
         target_pos = self._change_connections(target_pos)
         if not hasattr(self, "identifier"):
             await self.hw_device.set_raw_position(target_pos)
