@@ -163,7 +163,7 @@ class R2InjectionValve(SixPortTwoPositionValve):
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
-        target_pos = self._connect_positions(position_to_connect)
+        target_pos = str(self._connect_positions(position_to_connect))
         target_pos = self._change_connections(target_pos)
         await self.hw_device.trigger_key_press(
             str(self.valve_code * 2 + int(target_pos)),
@@ -221,7 +221,7 @@ class R2TwoPortValve(TwoPortDistributionValve):  # total 3 positions (A, B, Coll
         """Move valve to position, which connects named ports. For example, [[5,0]] or [[2,3]]"""
         positions_to_connect_l = json.loads(connect)
         position_to_connect = tuple(tuple(inner_list) for inner_list in positions_to_connect_l)
-        target_pos = self._connect_positions(position_to_connect)
+        target_pos = str(self._connect_positions(position_to_connect))
         target_pos = self._change_connections(target_pos)
         await self.hw_device.trigger_key_press(
             str(self.valve_code * 2 + int(target_pos)),
