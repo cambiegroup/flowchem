@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 import json
-from typing import Tuple, Union
+from typing import Tuple
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -48,11 +48,11 @@ class ValveInfo(BaseModel):
                 position
     """
     ports: list[tuple]
-    positions: dict[int, tuple[tuple[None | int, ...], ...]]
+    positions: dict[int, Tuple[Tuple[None | int, ...], ...]]
 
 
-def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
-                               tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
+def all_tuples_in_nested_tuple(tuple_in: Tuple[Tuple[int, int], ...],
+                               tuple_contains: Tuple[Tuple[int, int, ...], ...]) -> bool:
     """Check if all requested tuples are in a tuple of tuples"""
     all_contained = []
     for subtuple in tuple_in:
@@ -66,8 +66,8 @@ def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
         return False
 
 
-def no_tuple_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
-                             tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
+def no_tuple_in_nested_tuple(tuple_in: Tuple[Tuple[int, int], ...],
+                             tuple_contains: Tuple[tuple[int, int, ...], ...]) -> bool:
     """Check if none of requested tuples are in a tuple of tuples"""
     contains_tuple = False
     for subtuple in tuple_in:
