@@ -63,11 +63,11 @@ class Knauer6PortDistributionValve(SixPortDistributionValve):
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
-    def _change_connections(self, raw_position: int, reverse: bool = False):
+    def _change_connections(self, raw_position: int | str, reverse: bool = False):
         if reverse:
-            return raw_position - 1
+            return int(raw_position) - 1
         else:
-            return raw_position + 1
+            return int(raw_position) + 1
 
     async def get_monitor_position(self) -> str:
         return await self.hw_device.get_raw_position()
@@ -88,11 +88,11 @@ class Knauer12PortDistributionValve(TwelvePortDistributionValve):
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
-    def _change_connections(self, raw_position: int, reverse: bool = False):
+    def _change_connections(self, raw_position: int | str, reverse: bool = False):
         if reverse:
-            return raw_position - 1
+            return int(raw_position) - 1
         else:
-            return raw_position + 1
+            return int(raw_position) + 1
 
     async def get_monitor_position(self) -> str:
         return await self.hw_device.get_raw_position()
@@ -113,11 +113,11 @@ class Knauer16PortDistributionValve(SixteenPortDistributionValve):
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
-    def _change_connections(self, raw_position: int, reverse: bool = False):
+    def _change_connections(self, raw_position: int | str, reverse: bool = False):
         if reverse:
-            return raw_position - 1
+            return int(raw_position) - 1
         else:
-            return raw_position + 1
+            return int(raw_position) + 1
 
     async def get_monitor_position(self) -> str:
         return await self.hw_device.get_raw_position()
