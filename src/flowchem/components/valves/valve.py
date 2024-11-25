@@ -129,6 +129,9 @@ class Valve(FlowchemComponent):
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
 
+        if not hasattr(hw_device, "get_raw_position"):
+            raise NotImplementedError
+
     @staticmethod
     def _create_connections(stator_ports, rotor_ports):
         """
