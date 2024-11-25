@@ -30,7 +30,7 @@ __all__ = ["Spinsolve"]
 
 
 class Spinsolve(FlowchemDevice):
-    """Spinsolve class, gives access to the spectrometer remote control API."""
+    """Spinsolve class, gives access to the spectrometer remote control API"""
 
     def __init__(
         self,
