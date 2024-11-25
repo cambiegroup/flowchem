@@ -239,9 +239,9 @@ class Valve(FlowchemComponent):
                                              arbitrary_switching=ambiguous_switching_bool)
         target_pos = self._change_connections(target_pos)
         if not hasattr(self, "identifier"):
-            await self.hw_device.set_raw_position(target_pos)
+            await self.hw_device.set_raw_position(target_pos) # type: ignore
         else:
-            await self.hw_device.set_raw_position(target_pos, target_component=self.identifier)
+            await self.hw_device.set_raw_position(target_pos, target_component=self.identifier) # type: ignore
 
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
