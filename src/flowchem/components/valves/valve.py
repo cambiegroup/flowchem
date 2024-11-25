@@ -227,7 +227,7 @@ class Valve(FlowchemComponent):
                            disconnect: str = "",
                            ambiguous_switching: str | bool = False):
 
-        if not hasattr(hw_device, "get_raw_position"):
+        if not hasattr(self.hw_device, "get_raw_position"):
             raise NotImplementedError
 
         """Move valve to position, which connects named ports"""
