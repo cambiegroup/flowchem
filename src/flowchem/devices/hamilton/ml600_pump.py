@@ -46,7 +46,7 @@ class ML600Pump(SyringePump):
         if not await self.hw_device.get_pump_status(self.pump_code):
             return True
         else:
-            logger.warning(f"the first check show false. try again.")
+            logger.warning("the first check show false. try again.")
             await asyncio.sleep(1)
             return not await self.hw_device.get_pump_status(self.pump_code)
 
@@ -63,7 +63,7 @@ class ML600Pump(SyringePump):
             logger.warning(f"the flow rate is not provided. set to the default {rate}")
         if not volume:
             target_vol = ureg.Quantity("0 ml")
-            logger.warning(f"the volume to infuse is not provided. set to 0 ml")
+            logger.warning("the volume to infuse is not provided. set to 0 ml")
         else:
             current_volume = await self.hw_device.get_current_volume(self.pump_code)
             target_vol = current_volume - ureg.Quantity(volume)

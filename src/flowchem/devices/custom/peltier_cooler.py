@@ -5,9 +5,8 @@ import aioserial
 import pint
 import numpy as np
 import asyncio
-from typing import Union, List, Tuple
+from typing import List, Tuple
 from dataclasses import dataclass
-from time import sleep
 
 from loguru import logger
 from asyncio import Lock
