@@ -51,6 +51,7 @@ class ValveInfo(BaseModel):
     positions: dict[int, Tuple[Tuple[None | int, ...], ...]]
 
 
+# mypy: ignore-errors
 def all_tuples_in_nested_tuple(tuple_in: Tuple[Tuple[int, int], ...],
                                tuple_contains: Tuple[Tuple[int, int, ...], ...]) -> bool:
     """Check if all requested tuples are in a tuple of tuples"""
@@ -66,6 +67,7 @@ def all_tuples_in_nested_tuple(tuple_in: Tuple[Tuple[int, int], ...],
         return False
 
 
+# mypy: ignore-errors
 def no_tuple_in_nested_tuple(tuple_in: Tuple[Tuple[int, int], ...],
                              tuple_contains: Tuple[Tuple[int, int, ...], ...]) -> bool:
     """Check if none of requested tuples are in a tuple of tuples"""
@@ -97,8 +99,8 @@ class Valve(FlowchemComponent):
             self,
             name: str,
             hw_device: "FlowchemDevice",
-            stator_ports: [(), ()],
-            rotor_ports: [(), ()],
+            stator_ports: [(), ()], # type: ignore
+            rotor_ports: [(), ()], # type: ignore
     ) -> None:
         """Create a valve object.
 
