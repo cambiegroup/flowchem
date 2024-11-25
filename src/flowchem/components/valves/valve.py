@@ -129,9 +129,6 @@ class Valve(FlowchemComponent):
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
 
-        if not hasattr(hw_device, "get_raw_position"):
-            raise NotImplementedError
-
     @staticmethod
     def _create_connections(stator_ports, rotor_ports):
         """
@@ -229,6 +226,10 @@ class Valve(FlowchemComponent):
                            connect: str = "",
                            disconnect: str = "",
                            ambiguous_switching: str | bool = False):
+
+        if not hasattr(hw_device, "get_raw_position"):
+            raise NotImplementedError
+
         """Move valve to position, which connects named ports"""
         connect_tuple = return_tuple_from_input(connect)
         disconnect_tuple = return_tuple_from_input(disconnect)
