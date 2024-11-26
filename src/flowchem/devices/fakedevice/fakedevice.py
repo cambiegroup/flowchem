@@ -1,7 +1,7 @@
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
-from flowchem.devices.fakedevice.fakedevice_component import FakeComponent_FakeDevice
+from flowchem.devices.fakedevice.fakedevice_component import FakeComponent_FakeDevice, FakeComponent2_FakeDevice
 from loguru import logger
 
 class FakeDeviceExample(FlowchemDevice):
@@ -27,6 +27,7 @@ class FakeDeviceExample(FlowchemDevice):
     async def initialize(self):
         logger.info('FakeDevice devices was succeccfully initialized!')
         self.components.extend([FakeComponent_FakeDevice("FakeComponent",self)])
+        self.components.extend([FakeComponent2_FakeDevice("FakeComponent2", self)])
 
     async def send_command(self, command):
         logger.info(command)  # This is in
