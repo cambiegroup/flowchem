@@ -445,10 +445,10 @@ class PeltierCooler(FlowchemDevice):
         await asyncio.sleep(120)
         await self.stop_control()
 
-    async def get_power(self) -> int:
+    async def get_power(self) -> float:
         # return power in W
-        reply = int(await self.send_command_and_read_reply(PeltierCommands.GET_POWER))
-        return reply
+        reply = await self.send_command_and_read_reply(PeltierCommands.GET_POWER)
+        return float(reply)
 
     async def get_current(self) -> int:
         # return power in W

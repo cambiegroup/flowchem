@@ -216,10 +216,6 @@ class Valve(FlowchemComponent):
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
     async def get_position(self) -> list[list[int]]:
-
-        if not hasattr(self.hw_device, "get_raw_position"):
-            raise NotImplementedError
-
         """Get current valve position."""
         if not hasattr(self, "identifier"):
             pos = await self.hw_device.get_raw_position() # type: ignore
@@ -232,10 +228,6 @@ class Valve(FlowchemComponent):
                            connect: str = "",
                            disconnect: str = "",
                            ambiguous_switching: str | bool = False):
-
-        if not hasattr(self.hw_device, "set_raw_position"):
-            raise NotImplementedError
-
         """Move valve to position, which connects named ports"""
         connect_tuple = return_tuple_from_input(connect)
         disconnect_tuple = return_tuple_from_input(disconnect)
