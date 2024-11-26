@@ -82,6 +82,10 @@ class PhidgetPressureSensor(FlowchemDevice):
             serial_number=vint_serial_number,
         )
 
+    async def initialize(self):
+
+        self.components.extend([PhidgetPressureSensorComponent("pressure-sensor", self)])
+
     def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
         self.phidget.close()
@@ -121,10 +125,6 @@ class PhidgetPressureSensor(FlowchemDevice):
             return 0 * ureg.bar
         else:
             return self._current_to_pressure(current)
-
-    def components(self):
-        """Return an IRSpectrometer component."""
-        return (PhidgetPressureSensorComponent("pressure-sensor", self),)
 
 
 if __name__ == "__main__":

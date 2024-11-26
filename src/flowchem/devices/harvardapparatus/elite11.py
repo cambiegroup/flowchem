@@ -98,7 +98,7 @@ class Elite11(FlowchemDevice):
         Elite11._io_instances.add(self.pump_io)
 
         self.address = address
-        self._infuse_only = True  # Actual value set in initialize
+        self._infuse_only = False  # Actual value set in initialize
 
         # syringe diameter and volume, and force will be set in initialize()
         self._force = force
@@ -412,6 +412,7 @@ if __name__ == "__main__":
         await pump.initialize()
         # await pump.set_syringe_diameter("30 mm")
         # await pump.set_syringe_diameter("30 mm")
+        print(await pump.version())
         await pump.set_flow_rate("0.001 ml/min")
         await pump.set_target_volume("0.001 ml")
         await pump.infuse()

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from flowchem.devices.flowchem_device import RepeatedTaskInfo
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
@@ -29,13 +30,13 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
     """DAD control class."""
 
     def __init__(
-        self,
-        ip_address: object = None,
-        mac_address: object = None,
-        name: str | None = None,
-        turn_on_d2: bool = False,
-        turn_on_halogen: bool = False,
-        display_control: bool = True,
+            self,
+            ip_address: object = None,
+            mac_address: object = None,
+            name: str | None = None,
+            turn_on_d2: bool = False,
+            turn_on_halogen: bool = False,
+            display_control: bool = True,
     ) -> None:
         super().__init__(ip_address, mac_address, name=name)
         self.eol = b"\n\r"
@@ -151,7 +152,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         return (
             response
             if not response.isnumeric()
-            else _reverse_shutter_mapping[response[response.find(":") + 1 :]]
+            else _reverse_shutter_mapping[response[response.find(":") + 1:]]
         )
 
     async def signal_type(self, s_type: str = "microAU") -> str:
@@ -167,7 +168,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         return (
             response
             if not response.isnumeric()
-            else _reverse_type_mapping[response[response.find(":") + 1 :]]
+            else _reverse_type_mapping[response[response.find(":") + 1:]]
         )
 
     async def get_wavelength(self, channel: int) -> int:
@@ -230,7 +231,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         async def keepalive():
             await self.status()
 
-        return 45, keepalive
+        return RepeatedTaskInfo(seconds_every=45, task=keepalive)
 
 
 async def main(dad):

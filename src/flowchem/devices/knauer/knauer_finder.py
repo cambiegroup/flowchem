@@ -45,7 +45,7 @@ async def get_device_type(ip_address: str) -> str:
         return "ConnectionError"
     except asyncio.TimeoutError:
         if ip_address == "192.168.1.2":
-            return "FlowIR"
+            return "TimeoutError - Nice FlowIR that you have :D"
         return "TimeoutError"
 
     # Test Pump
