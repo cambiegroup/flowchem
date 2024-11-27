@@ -301,6 +301,17 @@ class PeltierLowCoolingDefaults(PeltierDefaults):
     T_MIN = -66
 
 
+class PeltierTubeReactor(PeltierDefaults):
+    HEATING_PID = [2, 0.03, 0]
+    COOLING_PID = HEATING_PID
+    BASE_TEMP = -7.6
+    STATE_DEPENDANT_CURRENT_LIMITS = np.array(
+        [[-50, -45, -40, -35, -30, -25, -20, -15, -10, -5, 0, 5, 10, 15, 20], [12, 11, 10, 9, 8, 7, 6, 5, 4, 2, 1, 0, 0, 0, 0],
+         [0, 0, 0, 0, 0, 0, 0, 1, 1, 1.5, 2, 3, 4, 4, 4]]).transpose()
+    T_MAX = 25
+    T_MIN = -55
+
+
 class PeltierCooler:
 
     def __init__(self,
