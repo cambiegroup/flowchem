@@ -4,6 +4,7 @@ Module for communication with Autosampler.
 
 # For future: go through graph, acquire mac addresses, check which IPs these have and setup communication.
 # To initialise the appropriate device on the IP, use class name like on chemputer
+
 import inspect
 import json
 import logging
@@ -19,6 +20,7 @@ from rdkit.Chem import MolFromSmiles, MolToSmiles
 from pathlib import Path
 
 # TODO assert that writing to and reloading works reliably - so use old mapping if it exists, here ro from platform code
+
 try:
     # noinspection PyUnresolvedReferences
     from NDA_knauer_AS.knauer_AS import *
@@ -63,6 +65,7 @@ class ErrorCodes(Enum):
     ERROR_290 = "Error occurred during initialization, the Alias cannot start."
 
 
+
 class ASError(Exception):
     pass
 
@@ -76,9 +79,11 @@ class CommandOrValueError(ASError):
     """Command is unknown, value is unknown or out of range, transmission failed"""
     pass
 
+  
 class ASFailureError(ASError):
     """AS failed to execute command"""
     pass
+
 
 
 class ASBusyError(ASError):
@@ -92,6 +97,7 @@ def send_until_acknowledged(func, max_reaction_time = 10, time_between=0.01):
         while True:
             try:
                 return func(*args, **kwargs)
+
             except ASBusyError:
                 # AS is rather fast so this sounds like a reasonable time
                 sleep(time_between)
@@ -357,12 +363,15 @@ class Tray:
         pandas.DataFrame(columns=self._layout).to_excel(path)
 
 
+
 class KnauerAS(ASEthernetDevice):
     """
     Class to control Knauer or basically any Spark Holland AS.
     """
     AS_ID = 61
+    
     def __init__(self,ip_address,  autosampler_id = None, port=ASEthernetDevice.TCP_PORT, buffersize=ASEthernetDevice.BUFFER_SIZE, tray_mapping:Tray=None):
+
 
         super().__init__(ip_address, buffersize, port)
         # get statuses, that is basically syringe syize, volumes, platetype
@@ -457,6 +466,7 @@ class KnauerAS(ASEthernetDevice):
         """
         self._external_syringe_home = home
 
+
     def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str, **kwargs: str)->str:
         # input can be strings, is translated to enum internally -> enum no need to expsoe
         # if value cant be translated to enum, just through error with the available options
@@ -517,6 +527,7 @@ class KnauerAS(ASEthernetDevice):
             # TODO access enum
             self.reset_errors()
             raise ASFailureError("Error in setting: ", error)
+
         elif reply == CommunicationFlags.NOT_ACKNOWLEDGE.value:
             raise CommandOrValueError
         # this is only the case with replies on queries
@@ -553,6 +564,7 @@ class KnauerAS(ASEthernetDevice):
 
     def _set_get_value(self, command:Type[CommandStructure], parameter:int or None=None, reply_mapping: None or Type[Enum] = None, get_actual = False):
         """If get actual is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
+
         if parameter:
             command_string = self._construct_communication_string(command, CommandModus.SET.name, parameter)
             return self._set(command_string)
@@ -577,6 +589,7 @@ class KnauerAS(ASEthernetDevice):
         self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
         self.syringe_valve_position(SyringeValvePositions.WASTE.name)
         self.injector_valve_position(InjectorValvePositions.LOAD.name)
+
 
 
     def measure_tray_temperature(self):
@@ -617,6 +630,7 @@ class KnauerAS(ASEthernetDevice):
         LOW, NORMAL, HIGH
         This does NOT work on all models
         """
+
         return self._set_get_value(SyringeSpeedCommand, speed, SyringeSpeedCommand.speed_enum)
 
     #tested
@@ -718,13 +732,16 @@ class KnauerAS(ASEthernetDevice):
         # todo what does that do again? high level needle wash?
         if self.external_syringe_aspirate or self.external_syringe_dispense:
             raise NotImplementedError("Only works for buildt in syringe")
+
         command_string = self._construct_communication_string(FillTransportCommand, CommandModus.SET.name, repetitions)
         return self._set(command_string)
 
     #tested, if on is set it immeadiatly washed, if off is set it does nothing but refuses to wash sth else afterwards
     def initial_wash(self, port_to_wash:str, on_off: str):
+
         if self.external_syringe_aspirate or self.external_syringe_dispense:
             raise NotImplementedError("Only works for buildt in syringe")
+
         command_string = self._construct_communication_string(InitialWashCommand, CommandModus.SET.name, port_to_wash, on_off)
         return self._set(command_string)
     # move to row, singleplate not working (yet)
@@ -933,6 +950,7 @@ class KnauerAS(ASEthernetDevice):
         self.syringe_valve_position(SyringeValvePositions.NEEDLE.name)
         self.injector_valve_position(InjectorValvePositions.LOAD.name)
         self.dispense(volume+dead_volume, flow_rate)
+
 
 if __name__ == "__main__":
     pass

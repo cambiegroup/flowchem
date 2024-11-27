@@ -479,6 +479,7 @@ class ML600:
         self.send_command_and_read_reply(ML600Commands.CLEAR_BUFFER, syringe=syringe)
 
         speed = self.flowrate_to_seconds_per_stroke(flowrate, syringe=syringe)
+        
         if speed:
             assert 2 < speed < 3692
             return self.send_command_and_read_reply(
