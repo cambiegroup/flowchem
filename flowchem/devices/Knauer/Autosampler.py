@@ -868,8 +868,7 @@ class KnauerAS(ASEthernetDevice):
             #   fill syringe here and go to right position
             self.fill_wash_reservoir(volume=volume, flow_rate=flow_rate)
             self.empty_wash_reservoir(volume=volume, flow_rate=flow_rate)
-            self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
-            self._move_needle_vertical(NeedleVerticalPositions.DOWN.name)
+            self.connect_to_position("waste", None,None,None)
             # dispense to waste and go up
             self.dispense(volume, flow_rate)
             self.wait_until_ready()
