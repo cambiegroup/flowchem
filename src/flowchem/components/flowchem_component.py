@@ -56,6 +56,7 @@ class FlowchemComponent:
         self.component_info = ComponentInfo(
             name=name,
             parent_device=self.hw_device.name,
+            corresponding_class=self.__class__.__name__
         )
 
         # Initialize router
