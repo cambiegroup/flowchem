@@ -35,6 +35,7 @@ dependencies = [
     "ifaddr>=0.2.0",
     "loguru>=0.7.0",
     "lxml>=4.9.2",
+    "numpy",
     "packaging>=23.1",
     "pint>=0.16.1,!=0.21", # See hgrecco/pint#1642
     "pydantic[email]>=2.0.2",

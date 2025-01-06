@@ -134,7 +134,7 @@ class KnauerValve(KnauerEthernetDevice, FlowchemDevice):
 
         if reply == "?":
             # retry once before failing. This happens often on pos commands!
-            reply = await self._send_and_receive(message)
+            reply = await self._send_and_receive(str(message))
             if reply == "?":
                 warnings.warn(f"Command failed: {message}")
                 logger.warning(f"Command failed: {message}")

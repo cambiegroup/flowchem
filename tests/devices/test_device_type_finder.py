@@ -20,6 +20,7 @@ def test_device_finder():
         "PhidgetBubbleSensor",
         "PhidgetPowerSource5V",
         "PhidgetPressureSensor",
+        "PeltierCooler",
         "R2",
         "R4Heater",
         "Spinsolve",

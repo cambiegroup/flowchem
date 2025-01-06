@@ -24,7 +24,7 @@ from flowchem import ureg
 from flowchem.utils.exceptions import InvalidConfigurationError
 
 
-class PhidgetPressureSensor(FlowchemDevice): # Todo: should have a initialize method?
+class PhidgetPressureSensor(FlowchemDevice):
     """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
 
     def __init__(

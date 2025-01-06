@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from flowchem.devices.flowchem_device import RepeatedTaskInfo
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.knauer._common import KnauerEthernetDevice
@@ -230,7 +231,7 @@ class KnauerDAD(KnauerEthernetDevice, FlowchemDevice):
         async def keepalive():
             await self.status()
 
-        return 45, keepalive
+        return RepeatedTaskInfo(seconds_every=45, task=keepalive)
 
 
 async def main(dad):
