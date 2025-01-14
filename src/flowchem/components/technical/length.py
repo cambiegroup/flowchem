@@ -1,5 +1,6 @@
 """LengthControl Component"""
 from loguru import logger
+from typing import Union
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 
@@ -10,7 +11,7 @@ class LengthControl(FlowchemComponent):
     This serves as a base class for components like CNC that deal with positions.
     """
 
-    def __init__(self, name: str, hw_device: FlowchemDevice, mode: str = "discrete", _available_positions: list = []) -> None:
+    def __init__(self, name: str, hw_device: FlowchemDevice, mode: str = "discrete", _available_positions: list = [int | float | str]) -> None:
         """
         Initialize the LengthControl component.
 
@@ -26,13 +27,20 @@ class LengthControl(FlowchemComponent):
         self.mode = mode.lower()  # discrete or continuous
         if self.mode not in ["discrete", "continuous"]:
             logger.error(f"Invalid mode: {self.mode}. Must be 'discrete' or 'continuous'.")
-            raise ValueError(f"Invalid mode: {self.mode}. Must be 'discrete' or 'continuous'.")
-        self._available_positions = self.set_available_positions(_available_positions)  # List of available positions if discrete, min and max if continuous.
+        if self.mode == "discrete":
+            if not all(isinstance(pos, (int, float, str)) for pos in _available_positions):
+                logger.error("All positions must be numbers or strings in discrete mode.")
+        elif self.mode == "continuous":
+            if len(_available_positions) != 2 or _available_positions[0] >= _available_positions[1]:
+                logger.error(
+                    "In continuous mode, positions must be a list of two values [min, max] "
+                    "with min < max."
+                )
+        self._available_positions = _available_positions
 
         self.add_api_route("/get_position", self.get_position, methods=["GET"])
         self.add_api_route("/set_position", self.set_position, methods=["PUT"])
         self.add_api_route("/get_available_positions", self.get_available_positions, methods=["GET"])
-        self.add_api_route("/set_available_positions", self.set_available_positions, methods=["PUT"])
 
     async def get_position(self):
         """
@@ -43,7 +51,7 @@ class LengthControl(FlowchemComponent):
         """
         ...
 
-    async def set_position(self, position: Union[float, str]) -> None:
+    async def set_position(self, position: int | float | str) -> None:
         """
         Move the LengthControl component to a specific position.
 
@@ -51,36 +59,31 @@ class LengthControl(FlowchemComponent):
             position (Union[float, str]): The desired position to move to.
 
         """
-        ...
+        def validate_position(axis_name: str, position: int | float | str, mode: str, available_positions: list):
+            """Helper function to validate a position for a given axis."""
+            if available_positions is None:
+                logger.error(f"Available positions for {axis_name}-axis are not set.")
 
-    async def validate_set_position(self, position: Union[float, str]) -> None:
-        """
-        Validate the provided position based on the mode (discrete or continuous).
+            if mode == "continuous":
+                if not isinstance(position, float):
+                    logger.error(f"Invalid type for {axis_name}-axis in continuous mode: {position}. Must be a float.")
+                if not (available_positions[0] <= position <= available_positions[1]):
+                    logger.error(
+                        f"{axis_name}-axis position {position} is out of bounds for continuous mode. "
+                        f"Bounds: {available_positions[0]} to {available_positions[1]}."
+                    )
+            elif mode == "discrete":
+                if not isinstance(position, (int, float, str)):
+                    logger.error(
+                        f"Invalid type for {axis_name}-axis in discrete mode: {position}. Must be a float or str."
+                    )
+                if position not in available_positions:
+                    logger.error(
+                        f"{axis_name}-axis position {position} is not valid in discrete mode. "
+                        f"Available positions: {available_positions}."
+                    )
 
-        Args:
-            position (Union[float, str]): The position to validate.
-        """
-        if self.mode == "discrete":
-            if position not in self._available_positions:
-                logger.warning(
-                    f"Invalid position '{position}' in discrete mode. "
-                    f"Available positions: {self._available_positions}."
-                )
-                raise ValueError(
-                    f"Position '{position}' is not valid in discrete mode. "
-                    f"Available positions: {self._available_positions}."
-                )
-        elif self.mode == "continuous":
-            if not (self._available_positions[0] <= position <= self._available_positions[1]):
-                logger.warning(
-                    f"Position {position} is out of bounds for continuous mode. "
-                    f"Bounds: {self._available_positions[0]} to {self._available_positions[1]}."
-                )
-                raise RuntimeError(
-                    f"Position {position} is out of bounds for continuous mode. "
-                    f"Bounds: {self._available_positions[0]} to {self._available_positions[1]}."
-                )
-        return True
+        validate_position(axis_name=self.name, position=position, mode=self.mode, available_positions=self._available_positions)
 
     async def get_available_positions(self) -> list:
         """
@@ -93,29 +96,5 @@ class LengthControl(FlowchemComponent):
         """
         return self._available_positions
 
-    async def set_available_positions(self, positions: list[Union[float, str]]) -> None:
-        """
-        Set the available positions or bounds for the LengthControl component.
 
-        Args:
-            positions (list[Union[float, str]]):
-                - For discrete mode: List of valid positions (float or str).
-                - For continuous mode: [min, max] bounds.
-        """
-        if self.mode == "discrete":
-            if not all(isinstance(pos, (float, float, str)) for pos in positions):
-                logger.error("All positions must be numbers or strings in discrete mode.")
-                raise ValueError("All positions must be numbers or strings in discrete mode.")
-            self._available_positions = positions
-        elif self.mode == "continuous":
-            if len(positions) != 2 or positions[0] >= positions[1]:
-                logger.error(
-                    "In continuous mode, positions must be a list of two values [min, max] "
-                    "with min < max."
-                )
-                raise ValueError(
-                    "In continuous mode, positions must be a list of two values [min, max] "
-                    "with min < max."
-                )
-            self._available_positions = positions
 
