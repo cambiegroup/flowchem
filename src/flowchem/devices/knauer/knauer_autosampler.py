@@ -7,13 +7,10 @@ import time
 
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
-from flowchem.utils.people import jakob, Samuel_Saraiva, miguel
+from flowchem.utils.people import jakob, samuel_saraiva, miguel
 from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.knauer.knauer_autosampler_component import (
-    AutosamplerCNC,
-    AutosamplerPump,
-    AutosamplerSyringeValve,
-    AutosamplerInjectionValve,
+    KnauerAS
 )
 
 try:
@@ -296,10 +293,7 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
 
         logger.info('Knauer AutoSampler device was successfully initialized!')
         self.components.extend([
-            AutosamplerCNC("cnc", self),
-            AutosamplerPump("pump", self),
-            AutosamplerSyringeValve("syringe_valve", self),
-            AutosamplerInjectionValve("injection_valve", self),
+            KnauerAS("AS", self)
         ])
 
     async def _move_needle_horizontal(self, needle_position: str, plate: str = None, well: int = None):
