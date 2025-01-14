@@ -1,21 +1,21 @@
-"""Base CNC meta component."""
+"""Base gantry3D meta component."""
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.components.technical.length import LengthControl
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class CNC(FlowchemComponent):
+class gantry3D(FlowchemComponent):
     """
-    A CNC device that controls movement in 3 dimensions (X, Y, Z).
+    A gantry3D device that controls movement in 3 dimensions (X, Y, Z).
     Each axis can operate in discrete or continuous mode.
     """
 
     def __init__(self, name: str, hw_device: FlowchemDevice, axes_config: dict) -> None:
         """
-        Initialize the CNC component with individual configurations for X, Y, and Z axes.
+        Initialize the gantry3D component with individual LenghtControl components for X, Y, and Z axes.
 
         Args:
-            name (str): Name of the CNC device.
+            name (str): Name of the gantry3D device.
             hw_device (FlowchemDevice): Hardware device interface.
             axes_config (dict): Configuration for each axis. Example:
                 {
@@ -25,6 +25,7 @@ class CNC(FlowchemComponent):
                 }
         """
         super().__init__(name, hw_device)
+
         self.x_axis = LengthControl(
             f"{name}_x",
             hw_device,
@@ -44,13 +45,7 @@ class CNC(FlowchemComponent):
             _available_positions=axes_config["z"]["positions"],
         )
 
-        self.add_api_route("/set_x_position", self.set_x_position, methods=["PUT"])
-        self.add_api_route("/set_y_position", self.set_y_position, methods=["PUT"])
-        self.add_api_route("/set_z_position", self.set_z_position, methods=["PUT"])
-        self.add_api_route("/get_position", self.get_position, methods=["GET"])
-        self.component_info.type = "cnc"
-
-    async def set_x_position(self, position: float | str) -> None:
+    async def set_x_position(self, position: int | float | str) -> None:
         """
         Set the position of the X-axis.
 
@@ -59,7 +54,7 @@ class CNC(FlowchemComponent):
         """
         await self.x_axis.set_position(position)
 
-    async def set_y_position(self, position: float | str) -> None:
+    async def set_y_position(self, position: int | float | str) -> None:
         """
         Set the position of the Y-axis.
 
@@ -68,7 +63,7 @@ class CNC(FlowchemComponent):
         """
         await self.y_axis.set_position(position)
 
-    async def set_z_position(self, position: float | str) -> None:
+    async def set_z_position(self, position: int | float | str) -> None:
         """
         Set the position of the Z-axis.
 
@@ -79,7 +74,7 @@ class CNC(FlowchemComponent):
 
     async def get_position(self) -> dict:
         """
-        Get the current position of the CNC device.
+        Get the current position of the gantry3D device.
 
         Returns:
             dict: A dictionary with the current positions of X, Y, and Z axes.
