@@ -117,7 +117,7 @@ class Protocol1Command:
         compiled_command = (
             f"{PUMP_ADDRESS[self.target_pump_num]}"
             f"{self.target_component}"
-            f"{self.command}{self.command_value}"
+            f"{self.command.value}{self.command_value}"
         )
 
         if self.parameter_value:
@@ -663,18 +663,6 @@ class ML600(FlowchemDevice):
                 await asyncio.sleep(0.1)
         return True
 
-async def main():
-    conf = {
-        "port": "COM11",
-        "address": 1,
-        "name": "test1",
-        "syringe_volume": "5 mL",
-    }
-    pump1 = ML600.from_config(**conf)
-    # await pump1.initialize()
-    print(await pump1.get_valve_status())
-    print(await pump1.get_valve_angle("B"))
-    await pump1.set_valve_angle()
 
 if __name__ == "__main__":
     # asyncio.run(main())
@@ -686,6 +674,6 @@ if __name__ == "__main__":
         "syringe_volume": "5 mL",
     }
     pump1 = ML600.from_config(**conf)
-    # asyncio.run(pump1.initialize())
-    print(asyncio.run(pump1.get_valve_status()))
+    asyncio.run(pump1.initialize())
+    #print(asyncio.run(pump1.get_valve_status("C")))
 
