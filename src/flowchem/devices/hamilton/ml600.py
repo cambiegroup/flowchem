@@ -526,7 +526,7 @@ class ML600(FlowchemDevice):
             Protocol1Command(command=ML600Commands.EMPTY, target_component=pump, execution_command="V"),)
         return True  # Todo: need?
 
-    async def get_pump_status(self, pump: str = "") -> bool:
+    async def get_pump_status(self, pump: str = "") -> bool | dict[str, bool]:
         """Ture means pump is busy. False means pump is idle."""
         checking_mapping = {"B": 1, "C": 3}
         pump = "B" if not pump else pump
@@ -534,7 +534,7 @@ class ML600(FlowchemDevice):
         logger.info(f"pump {pump} is busy: {status}")
         return status
 
-    async def get_valve_status(self, valve: str = "") -> bool:
+    async def get_valve_status(self, valve: str = "") -> bool | dict[str, bool]:
         """Ture means valve is busy. False means valve is idle."""
         checking_mapping = {"B": 0, "C": 2}
         valve = "B" if not valve else valve
@@ -542,9 +542,9 @@ class ML600(FlowchemDevice):
         logger.info(f"valve {valve} is busy: {status}")
         return status
 
-    async def system_status(self, component: int = -1) -> bool | dict[str: bool]:
+    async def system_status(self, component: int = -1) -> bool | dict[str, bool]:
         """
-        Represent the status of specific component. True means busy; False meaens idle.
+        Represent the status of specific component. True means busy; False means idle.
         Return status of all parts of instrument in dictionary.
         """
         reply = await self.send_command_and_read_reply(
