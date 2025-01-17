@@ -31,7 +31,7 @@ class ML600Pump(SyringePump):
         """ML600 can withdraw."""
         return True
 
-    async def is_pumping(self) -> bool:
+    async def is_pumping(self) -> bool | dict[str, bool]:
         """Check if pump is moving.
         false means pump is not moving and buffer is empty. """
         # true might mean pump is moving, buffer still contain command or both
