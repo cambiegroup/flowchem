@@ -526,7 +526,7 @@ class ML600(FlowchemDevice):
             Protocol1Command(command=ML600Commands.EMPTY, target_component=pump, execution_command="V"),)
         return True  # Todo: need?
 
-    async def get_pump_status(self, pump: str = "") -> bool | dict[str, bool]:
+    async def get_pump_status(self, pump: str = "") -> bool:
         """Ture means pump is busy. False means pump is idle."""
         checking_mapping = {"B": 1, "C": 3}
         pump = "B" if not pump else pump
@@ -534,7 +534,7 @@ class ML600(FlowchemDevice):
         logger.info(f"pump {pump} is busy: {status}")
         return status
 
-    async def get_valve_status(self, valve: str = "") -> bool | dict[str, bool]:
+    async def get_valve_status(self, valve: str = "") -> bool:
         """Ture means valve is busy. False means valve is idle."""
         checking_mapping = {"B": 0, "C": 2}
         valve = "B" if not valve else valve
@@ -563,8 +563,7 @@ class ML600(FlowchemDevice):
             status[value_map[key]] = all_status[key] == "0"
         return status
 
-    async def general_status_info(self, component: int = -1) -> bool | dict[str: bool]:
-        # todo: this command will reset the error of syntax and instrument, use others error monitoring method
+    async def general_status_info(self, component: int = -1) -> bool | dict[str, bool]:
         reply = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.STATUS_REQUEST, execution_command=""))
         binary_representation = ''.join(format(byte, '08b') for byte in reply.encode('ascii'))[::-1]
