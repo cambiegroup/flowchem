@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 import json
-from typing import Tuple
+from typing import Tuple, Any, List, Optional
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -215,7 +215,7 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
-    async def get_position(self) -> list[list[int]]:
+    async def get_position(self) -> List[List[Optional[int]]]:
         """Get current valve position."""
         if not hasattr(self, "identifier"):
             pos = await self.hw_device.get_raw_position() # type: ignore
