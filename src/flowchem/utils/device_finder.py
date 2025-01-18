@@ -13,6 +13,7 @@ from flowchem.devices.knauer.knauer_finder import knauer_finder
 from flowchem.devices.mettlertoledo.icir_finder import icir_finder
 from flowchem.devices.vacuubrand.cvc3000_finder import cvc3000_finder
 from flowchem.devices.vapourtec.vapourtec_finder import r4_finder
+from flowchem.devices.fakedevice.fakeassemble_finder import fakeassemble_finder
 
 SERIAL_DEVICE_INSPECTORS = (
     ml600_finder,
