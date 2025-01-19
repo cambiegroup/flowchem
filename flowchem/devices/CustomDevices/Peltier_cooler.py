@@ -230,6 +230,12 @@ class PeltierCommands:
     GET_TEMPERATURE = PeltierCommandTemplate(
         command_string="GT1", reply_lines=1, requires_argument=False
     )
+
+    #TEMP1=-8.93 C
+    GET_TEMPERATURE_SETPOINT = PeltierCommandTemplate(
+        command_string="GTV", reply_lines=1, requires_argument=False
+    )
+
     # TEMP2 = -7.77C
     GET_SINK_TEMPERATURE = PeltierCommandTemplate(
         command_string="GT2", reply_lines=1, requires_argument=False
@@ -384,6 +390,11 @@ class PeltierCooler:
         reply = self.send_command_and_read_reply(PeltierCommands.GET_TEMPERATURE)
         assert type(reply) == float
         return reply
+
+    def get_temperature_setpoint(self) -> float:
+        reply = self.send_command_and_read_reply(PeltierCommands.GET_TEMPERATURE_SETPOINT)
+        assert type(reply) == float
+        return reply    
 
     def get_sink_temperature(self) -> float:
         reply = self.send_command_and_read_reply(PeltierCommands.GET_SINK_TEMPERATURE)
