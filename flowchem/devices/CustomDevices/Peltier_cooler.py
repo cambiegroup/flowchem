@@ -353,7 +353,7 @@ class PeltierCooler:
         )
 
     def set_temperature(self, temperature: float):
-        if self.get_temperature() != temperature:
+        if self.get_temperature_setpoint() != temperature:
             self.stop_control()
             # start softly
             self._set_current_limit_cooling(0.5)
