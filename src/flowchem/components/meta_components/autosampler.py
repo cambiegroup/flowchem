@@ -42,6 +42,16 @@ class Autosampler(FlowchemComponent):
                 }
         """
         super().__init__(name, hw_device)
+        self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
+        self.add_api_route("/needle_position", self.set_xy_position, methods=["PUT"])
+        self.add_api_route("/needle_position", self.set_z_position, methods=["PUT"])
+        self.add_api_route("/infuse", self.infuse, methods=["PUT"])
+        self.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
+        self.add_api_route("/syringe_valve_position", self.set_syringe_valve_position, methods=["PUT"])
+        self.add_api_route("/syringe_valve_position", self.get_syringe_valve_position, methods=["GET"])
+        self.add_api_route("/injection_valve_position", self.set_injection_valve_position, methods=["PUT"])
+        self.add_api_route("/injection_valve_position", self.get_injection_valve_position, methods=["GET"])
+
         self._config = _config
 
         valve_class_map = {
@@ -92,6 +102,13 @@ class Autosampler(FlowchemComponent):
                 f"Must be one of {self._config['needle_positions']}."
             )
 
+    # async def get_needle_position(self) -> dict:
+    #     """
+    #     Get.
+    #     """
+    #     pos = await self.gantry3D.get_position()
+    #     return pos
+
     async def set_xy_position(self, x: int | float | str = 0, y: int | float | str = 0) -> None:
         """
         Move the 3D gantry to the specified (x, y) coordinate.
@@ -129,17 +146,21 @@ class Autosampler(FlowchemComponent):
 
     # Syringe valve Methods
     async def set_syringe_valve_position(self, position: str = None):
-
+        """Set the position of the syringe valve.        """
         await self.syringe_valve.set_position(position=position)
 
     async def get_syringe_valve_position(self, position: str = None):
-
+        """Retrieve the current position of the syringe valve."""
         await self.syringe_valve.get_position(position=position)
 
     # Injection valve Methods
-    async def set_injection_valve_position(self, position: str = None):
-
+    async def set_injection_valve_position(self, position: str | tuple = ""):
+        """Set the position of the injection valve."""
         await self.injection_valve.set_position(position=position)
+
+    async def get_injection_valve_position(self):
+        """Retrieve the current position of the injection valve."""
+        await self.injection_valve.get_position()
 
 
     # AS Methods
