@@ -229,22 +229,28 @@ class HamiltonPumpIO:
 
         """ Main HamiltonPumpIO method.
         Sends a command to the pump, read the replies and returns it, optionally parsed """
-        command_compiled = ""
-        with self.lock:
-            self.reset_buffer()
-            if type(command) != list:
-                command = [command]
-            for com in command:
-                command_compiled += com._compile()
-            com_comp = com.compile(command_compiled)
-            self._write(com_comp)
-            response = self._read_reply()
+        def dispatch_and_read(command):
+            command_compiled = ""
+            with self.lock:
+                self.reset_buffer()
+                if type(command) != list:
+                    command = [command]
+                for com in command:
+                    command_compiled += com._compile()
+                com_comp = com.compile(command_compiled)
+                self._write(com_comp)
+                response = self._read_reply()
+            return response
+
+        response = dispatch_and_read(command)
 
         if not response:
-            raise InvalidConfiguration(
-                f"No response received from pump, check pump address! "
-                f"(Currently set to {command[0].target_pump_num})"
-            )
+            response = dispatch_and_read(command)
+            if not response:
+                raise InvalidConfiguration(
+                    f"No response received from pump, check pump address! "
+                    f"(Currently set to {command[0].target_pump_num})"
+                )
 
         # Parse reply
         success, parsed_response = self.parse_response(response)
