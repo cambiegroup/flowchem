@@ -353,6 +353,7 @@ class PeltierCooler:
         )
 
     def set_temperature(self, temperature: float):
+        """ Set the temperature of the peltier cooler and start it"""
         if self.get_temperature_setpoint() != temperature:
             self.stop_control()
             # start softly
