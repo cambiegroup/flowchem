@@ -648,6 +648,7 @@ class KnauerAS(ASEthernetDevice):
     def injector_valve_position(self, port:str = None):
         return self._set_get_value(SwitchInjectorValveCommand, port, SwitchInjectorValveCommand.allowed_position, get_actual=True)
     
+    # todo this doesnt work
     def needle_vertical_offset(self, offset: float = None):
         return self._set_get_value(VerticalNeedleOffsetCommand, offset)
 
