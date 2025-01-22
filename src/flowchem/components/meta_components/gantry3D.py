@@ -25,6 +25,11 @@ class gantry3D(FlowchemComponent):
                 }
         """
         super().__init__(name, hw_device)
+        self.add_api_route("/position", self.set_x_position, methods=["PUT"])
+        self.add_api_route("/position", self.set_y_position, methods=["PUT"])
+        self.add_api_route("/position", self.set_z_position, methods=["PUT"])
+        self.add_api_route("/position", self.get_position, methods=["GET"])
+
 
         self.x_axis = LengthControl(
             f"{name}_x",
