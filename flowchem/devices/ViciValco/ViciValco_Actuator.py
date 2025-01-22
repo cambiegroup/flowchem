@@ -325,6 +325,7 @@ class ViciValco:
         """
         Toogle the valve for the time defined in set_switch_delay_sync
         """
+        #todo: check if delay is set
         valve_by_name_cw = ViciProtocolCommandTemplate(command="TT")
         self.send_command_and_read_reply_sync(valve_by_name_cw, command_value= '', lines=0)
         self.log.debug(f"{self.name} valve will switch for defined amount of time")
