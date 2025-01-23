@@ -168,8 +168,8 @@ class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
         self.tray_type = tray_type
         self.syringe_volume = syringe_volume
         self.device_info = DeviceInfo(
-            authors=[jakob, miguel, Samuel_Saraiva],
-            maintainers=[jakob, miguel, Samuel_Saraiva],
+            authors=[jakob, miguel, samuel_saraiva],
+            maintainers=[jakob, miguel, samuel_saraiva],
             manufacturer="Knauer",
             model="Autosampler AS 6.1L"
         )
