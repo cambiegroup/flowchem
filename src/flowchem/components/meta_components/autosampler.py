@@ -30,27 +30,35 @@ class Autosampler(FlowchemComponent):
             hw_device (FlowchemDevice): Hardware device interface.
             axes_config (dict): Configuration for each axis. Example:
                 _config = {
-                    "axes_config": {
-                        "x": {"mode": "discrete", "positions": [1, 2, 3, 4, 5, 6, 7, 8]},
-                        "y": {"mode": "discrete", "positions": ["a", "b", "c", "d", "e", "f"]},
-                        "z": {"mode": "discrete", "positions": ["UP", "DOWN"]}
+                    "tray_config": {
+                        "rows": [1, 2, 3, 4, 5, 6, 7, 8],
+                        "columns": ["a", "b", "c", "d", "e", "f"]
                     },
                     "needle_positions": ["WASH", "WASTE", "EXCHANGE", "TRANSPORT"],
-                    "syringe_valve": {"type": "FourPortDistributionValve", "mapping": {0: "NEEDLE", 1: "WASH", 2: "WASH_PORT2", 3: "WASTE"}},
-                    "injection_valve": {"type": "SixPortTwoPositionValve",
-                                      "mapping": {0: "LOAD", 1: "INJECT"}}
+                    "syringe_valve": {"mapping": {0: "NEEDLE", 1: "WASH",  2: "WASH_PORT2", 3: "WASTE"},
                 }
         """
         super().__init__(name, hw_device)
+        self._config = _config
+
+        #gantry3D
         self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
         self.add_api_route("/needle_position", self.set_xy_position, methods=["PUT"])
         self.add_api_route("/needle_position", self.set_z_position, methods=["PUT"])
+        self.add_api_route("/needle_position", self.connect_to_position, methods=["PUT"])
+        self.add_api_route("/is_needle_running", self.is_needle_running, methods=["GET"])
+        #Pump
         self.add_api_route("/infuse", self.infuse, methods=["PUT"])
         self.add_api_route("/withdraw", self.withdraw, methods=["PUT"])
+        self.add_api_route("/is_pumping", self.is_pumping, methods=["GET"])
+        #Syringe Valve
         self.add_api_route("/syringe_valve_position", self.set_syringe_valve_position, methods=["PUT"])
         self.add_api_route("/syringe_valve_position", self.get_syringe_valve_position, methods=["GET"])
+        #Injection Valve
         self.add_api_route("/injection_valve_position", self.set_injection_valve_position, methods=["PUT"])
         self.add_api_route("/injection_valve_position", self.get_injection_valve_position, methods=["GET"])
+        #Meta Methods
+        self.add_api_route("/wash_needle", self.wash_needle, methods=["PUT"])
 
         self._config = _config
 
