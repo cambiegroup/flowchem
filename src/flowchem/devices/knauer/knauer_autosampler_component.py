@@ -53,8 +53,21 @@ class KnauerAS(Autosampler):
                         TRANSPORT
         """
         await super().set_needle_position(position=position)
-        await self.hw_device._move_needle_vertical(NeedleVerticalPositions.UP.name)
+        await self.set_z_position("UP")
         await self.hw_device._move_needle_horizontal(needle_position=position)
+
+    async def connect_to_position(self, tray: str = "", row: int | float | str = "", column: int | float | str = "" ):
+        """
+        Move the gantry to the specified position on a tray.
+
+        Args:
+            tray (str): Identifier for the tray to move to.
+            row (int | float | str): Row position on the tray.
+            column (int | float | str): Column position on the tray.
+        """
+        await self.set_z_position("UP")
+        await self.set_xy_position(tray=tray,row=row,column=column)
+        await self.set_z_position("DOWN")
 
     async def set_xy_position(self, plate: str = "", row: int = 0, column: str = "a") -> None:
         """
@@ -69,25 +82,22 @@ class KnauerAS(Autosampler):
         """
 
         await super().set_xy_position(x=row,y=column)
-        column = ord(column.upper()) - 64 #change to int
-        if await self.hw_device.get_status() == "NEEDLE_RUNNING":
+        column = ord(column.upper()) - 64 # change column to int
+
+        if await self.is_needle_running():
             logger.warning("Needle already moving!")
+
         traytype = self.hw_device.tray_type.upper()
-        await self.hw_device._move_needle_vertical(NeedleVerticalPositions.UP.name)
-        if traytype in PlateTypes.__dict__.keys():
-            try:
-                if PlateTypes[traytype] == PlateTypes.SINGLE_TRAY_87:
-                    raise NotImplementedError
-            except KeyError as e:
-                raise Exception(
-                    f"Please provide one of following plate types: {[i.name for i in PlateTypes]}") from e
-            # now check if that works for selected tray:
-            assert PlateTypes[traytype].value[0] >= column and PlateTypes[traytype].value[1] >= row
-            await self.hw_device._move_tray(plate, row)
-            success = await self.hw_device._move_needle_horizontal(NeedleHorizontalPosition.PLATE.name, plate=plate, well=column)
-            if success:
-                logger.info("Needle moved successfully to row: {row}, column: {column} on plate: {plate}")
-            return
+        await self.hw_device._move_needle_vertical("UP")
+        await self.hw_device._move_tray(plate, row)
+        success = await self.hw_device._move_needle_horizontal("PLATE", plate=plate, well=column)
+        if success:
+            logger.info(f"Needle moved successfully to row: {row}, column: {column} on plate: {plate}")
+
+    async def is_needle_running(self):
+        """"Checks if Autosampler is running"""
+        if self.hw_device.get_status() == "NEEDLE_RUNNING":
+            return True
         else:
             raise NotImplementedError
 
@@ -100,9 +110,8 @@ class KnauerAS(Autosampler):
             UP
         """
         await super().set_z_position(z=direction)
-        if await self.hw_device.get_status() == "NEEDLE_RUNNING":
+        if await self.is_needle_running:
             logger.warning("Needle already moving!")
-
         success = await self.hw_device._move_needle_vertical(move_to=direction)
         if success:
             logger.info(f"Needle moved successfully to {direction} direction.")
@@ -144,3 +153,6 @@ class KnauerAS(Autosampler):
         """Can the pump reverse its normal flow direction?"""
         return True
 
+    async def is_pumping(self):
+        status = await self.hw_device.is_pumping()
+        return status
