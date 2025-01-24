@@ -99,7 +99,7 @@ class KnauerAS(Autosampler):
         if self.hw_device.get_status() == "NEEDLE_RUNNING":
             return True
         else:
-            raise NotImplementedError
+            return False
 
     async def set_z_position(self, direction: str = "") -> None:
         """
