@@ -1,0 +1,3 @@
+# Examples
+
+Example of use.
