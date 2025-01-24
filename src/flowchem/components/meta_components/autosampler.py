@@ -193,7 +193,7 @@ class Autosampler(FlowchemComponent):
             else:
                 sleep(0.01)
 
-    def wait_until_ready(self, wait_for_syringe=True):
+    async def wait_until_ready(self, wait_for_syringe=True):
         """
         Wait for AS to be done
         Args:
@@ -204,10 +204,10 @@ class Autosampler(FlowchemComponent):
 
         """
         while True:
-            if not self.is_running():
+            if not await self.is_needle_running():
                 # if theres external syringe, wait for it to get ready
                 if wait_for_syringe == True:
-                    if not self.is_pumping():
+                    if not await self.is_pumping():
                         break
                 else:
                     break
@@ -233,7 +233,7 @@ class Autosampler(FlowchemComponent):
 
 
     # AS Methods
-    def fill_wash_reservoir(self, volume: float = 0.2, rate: float = None):
+    async def fill_wash_reservoir(self, volume: float = 0.2, rate: float = None):
         """
         Fill the wash reservoir with a specified volume and rate.
 
@@ -241,20 +241,20 @@ class Autosampler(FlowchemComponent):
             volume (float): Volume to be used for filling the wash reservoir. Default is 0.2 mL.
             rate (float): Flow rate for filling the reservoir. If not provided, the default rate is used.
         """
-        self.set_syringe_valve_position("WASH")
-        self.withdraw(rate=rate, volume=volume)
-        self.set_needle_position("WASH")
-        self.set_z_position("DOWN")
-        self.wait_until_ready()
-        self.set_injection_valve_position("LOAD")
-        self.wait_until_ready()
-        self.set_syringe_valve_position("NEEDLE")
-        self.wait_until_ready()
-        self.infuse(rate=rate, volume=volume)
-        self.wait_for_syringe()
-        self.set_z_position("UP")
+        await self.set_syringe_valve_position("WASH")
+        await self.withdraw(rate=rate, volume=volume)
+        await self.set_needle_position("WASH")
+        await self.set_z_position("DOWN")
+        await self.wait_until_ready()
+        await self.set_injection_valve_position("LOAD")
+        await self.wait_until_ready()
+        await self.set_syringe_valve_position("NEEDLE")
+        await self.wait_until_ready()
+        await self.infuse(rate=rate, volume=volume)
+        await self.wait_for_syringe()
+        await self.set_z_position("UP")
 
-    def empty_wash_reservoir(self, volume: float = 0.2, rate: float = None):
+    async def empty_wash_reservoir(self, volume: float = 0.2, rate: float = None):
         """
         Empty the wash reservoir by withdrawing a specified volume.
 
@@ -262,12 +262,12 @@ class Autosampler(FlowchemComponent):
             volume (float): Volume to be removed from the wash reservoir. Default is 0.2 mL.
             rate (float): Flow rate for emptying the reservoir. If not provided, the default rate is used.
         """
-        self.set_needle_position("WASH")
-        self.set_z_position("DOWN")
-        self.pick_up_sample(rate=rate, volume=volume)
-        self.set_z_position("UP")
+        await self.set_needle_position("WASH")
+        await self.set_z_position("DOWN")
+        await self.pick_up_sample(rate=rate, volume=volume)
+        await self.set_z_position("UP")
 
-    def pick_up_sample(self, volume: float = 0.2, rate: float = None):
+    async def pick_up_sample(self, volume: float = 0.2, rate: float = None):
         """
         Pick up a sample using the syringe.
 
@@ -275,11 +275,11 @@ class Autosampler(FlowchemComponent):
             volume (float): Volume of the sample to pick up. Default is 0.2 mL.
             rate (float): Flow rate for withdrawing the sample. If not provided, the default rate is used.
         """
-        self.set_injection_valve_position("LOAD")
-        self.wait_until_ready()
-        self.set_syringe_valve_position("NEEDLE")
-        self.withdraw(rate=rate, volume=volume)
-        self.wait_until_ready()
+        await self.set_injection_valve_position("LOAD")
+        await self.wait_until_ready()
+        await self.set_syringe_valve_position("NEEDLE")
+        await self.withdraw(rate=rate, volume=volume)
+        await self.wait_until_ready()
 
     async def wash_needle(self, volume: float = 0.2, times: int = 3, rate: float = None):
         """
