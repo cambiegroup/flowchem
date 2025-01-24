@@ -8,7 +8,142 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c35da707-d0b4-4a30-8a44-04249c59fdd2" name="Changes" comment="New theme and some details important was added" />
+    <list default="true" id="c35da707-d0b4-4a30-8a44-04249c59fdd2" name="Changes" comment="Clear old documentation!">
+      <change afterPath="$PROJECT_DIR$/docs/architecture_v1.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/decision.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/add_device/add_as_plugin.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/add_device/add_to_flowchem.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/add_device/command_flow.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/add_device/example.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/add_device/example_explained.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/add_device/extendable_ear1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/add_device/extendable_ear2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/add_device/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/contribute.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/faq.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/additional/testing.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/foundations/code_structure.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/foundations/code_structure/modules.rst" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/foundations/determine_valve.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/foundations/foundation.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/foundations/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/foundations/valve_logic.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/foundations/valve_logic.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/development/foundations/valve_logic_6p.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/getting_started.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/tldr.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/FakeComponent.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/FakeDeviceAPI.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/configuration.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/example.toml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/img.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/img_1.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/img_2.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/img_3.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/img_4.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/installation.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/realdevice.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/How-ToGuide/using_api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/examples/reaction.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/examples/reaction_optimization.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/explanation/abstraction.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/explanation/conf_file.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/explanation/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/explanation/inherit.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/img.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/azura_compact/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/azura_compact/azura_compact.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/azura_compact/azura_compact.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/bronkhorst_EPC/EPC.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/bronkhorst_EPC/EPC.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/bronkhorst_EPC/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/bronkhorst_MFC/MFC.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/bronkhorst_MFC/MFC.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/bronkhorst_MFC/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/clarity/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/clarity/clarity.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/clarity/clarity.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/cvc3000/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/cvc3000/cvc3000.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/cvc3000/cvc3000.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/devices.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/elite11/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/elite11/elite11.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/elite11/elite11.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/elite11/elite11_withdraw.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/elite11/elite11_withdraw.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/huber_chiller/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/huber_chiller/huber_chiller.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/huber_chiller/huber_chiller.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/icir/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/icir/icir.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/icir/icir.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/knauer_dad/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/knauer_dad/knauer_dad.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/knauer_dad/knauer_dad.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/knauer_valve/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/knauer_valve/knauer_valve.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/manson_power_supply/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/manson_power_supply/manson_power_supply.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/manson_power_supply/manson_power_supply.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/ml600/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/ml600/ml600_1.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/ml600/ml600_2.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/phidget_p_sensor/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/phidget_p_sensor/phidget_pressure_sensor.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/phidget_p_sensor/phidget_pressure_sensor.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/r4_heater/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/r4_heater/r4_heater.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/r4_heater/r4_heater.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/spinsolve/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/spinsolve/spinsolve.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/vici_valve/api.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/api/vici_valve/vici_valve.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/analytics/clarity.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/analytics/icir.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/analytics/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/analytics/knauer_dad.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/analytics/spinsolve.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/misc/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/misc/manson.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/misc/r2_reactor.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/pumps/azura_compact.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/pumps/azura_compact.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/pumps/elite11.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/pumps/elite11.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/pumps/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/pumps/ml600.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/pumps/ml600.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/sensors/EPC.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/sensors/MFC.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/sensors/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/sensors/phidget_pressure_sensor.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/supported_devices.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/technical/cvc3000.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/technical/huber_chiller.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/technical/huber_chiller.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/technical/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/technical/r4_heater.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/valves/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/valves/knauer_valve.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/valves/knauer_valve.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/valves/vici_valve.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/devices/valves/vici_valve.pdf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/reference/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/tools.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/tutorials/examples/reaction.JPG" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/tutorials/examples/reaction_optimization.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/tutorials/img.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/tutorials/index.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/tutorials/installation.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/docs/user-guides/tutorials/start.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/docs/conf.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -81,18 +216,18 @@
     "Python.watch.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "docstring__clean",
-    "last_opened_file_path": "C:/Users/ssaraiva/Documents/flowchem/docs/user-guides/tutorials",
+    "last_opened_file_path": "C:/Users/ssaraiva/Documents/flowchem/docs",
     "run.code.analysis.last.selected.profile": "aDefault",
     "settings.editor.selected.configurable": "preferences.keymap"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\ssaraiva\Documents\flowchem\docs" />
       <recent name="C:\Users\ssaraiva\Documents\flowchem\docs\user-guides\tutorials" />
       <recent name="C:\Users\ssaraiva\Documents\flowchem\docs\development\additional\add_device" />
       <recent name="C:\Users\ssaraiva\Documents\flowchem\src\flowchem\utils" />
       <recent name="C:\Users\ssaraiva\Documents\flowchem\tests\devices\pumps" />
-      <recent name="C:\Users\ssaraiva\Documents\flowchem\docs\development\additional" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\ssaraiva\Documents\flowchem\docs\user-guides\tutorials" />
@@ -228,30 +363,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1721120667873</updated>
-    </task>
-    <task id="LOCAL-00061" summary="Fix error of notation - according to the mypy inspection: error: Invalid index type &quot;str | int&quot; for &quot;dict[int, str]&quot;; expected type &quot;int&quot;  [index]">
-      <option name="closed" value="true" />
-      <created>1731950780655</created>
-      <option name="number" value="00061" />
-      <option name="presentableId" value="LOCAL-00061" />
-      <option name="project" value="LOCAL" />
-      <updated>1731950780655</updated>
-    </task>
-    <task id="LOCAL-00062" summary="Fix error of notation - according to the mypy inspection: error: Argument 1 to &quot;_send_and_receive&quot; of &quot;KnauerEthernetDevice&quot; has incompatible type &quot;str | int&quot;; expected &quot;str&quot;  [arg-type]">
-      <option name="closed" value="true" />
-      <created>1731950847321</created>
-      <option name="number" value="00062" />
-      <option name="presentableId" value="LOCAL-00062" />
-      <option name="project" value="LOCAL" />
-      <updated>1731950847321</updated>
-    </task>
-    <task id="LOCAL-00063" summary="Fix error of notation - according to the mypy inspection: error: Return type &quot;int&quot; of &quot;_change_connections&quot; incompatible with return type &quot;str&quot; in supertype &quot;Valve&quot;  [override]">
-      <option name="closed" value="true" />
-      <created>1731950980051</created>
-      <option name="number" value="00063" />
-      <option name="presentableId" value="LOCAL-00063" />
-      <option name="project" value="LOCAL" />
-      <updated>1731950980051</updated>
     </task>
     <task id="LOCAL-00064" summary="Fix error of notation - according to the mypy inspection: error: Invalid type comment or annotation  [valid-type] note: did you mean to use ',' instead of ':' ?">
       <option name="closed" value="true" />
@@ -621,7 +732,31 @@
       <option name="project" value="LOCAL" />
       <updated>1737734633826</updated>
     </task>
-    <option name="localTasksCounter" value="110" />
+    <task id="LOCAL-00110" summary="Clear old files">
+      <option name="closed" value="true" />
+      <created>1737734859331</created>
+      <option name="number" value="00110" />
+      <option name="presentableId" value="LOCAL-00110" />
+      <option name="project" value="LOCAL" />
+      <updated>1737734859331</updated>
+    </task>
+    <task id="LOCAL-00111" summary="New documentation update">
+      <option name="closed" value="true" />
+      <created>1737734899951</created>
+      <option name="number" value="00111" />
+      <option name="presentableId" value="LOCAL-00111" />
+      <option name="project" value="LOCAL" />
+      <updated>1737734899951</updated>
+    </task>
+    <task id="LOCAL-00112" summary="Clear old documentation!">
+      <option name="closed" value="true" />
+      <created>1737735029565</created>
+      <option name="number" value="00112" />
+      <option name="presentableId" value="LOCAL-00112" />
+      <option name="project" value="LOCAL" />
+      <updated>1737735029565</updated>
+    </task>
+    <option name="localTasksCounter" value="113" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -645,7 +780,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="DocString_Doc_Improvement" />
+                        <option value="docstring_clean" />
                       </list>
                     </value>
                   </entry>
@@ -658,9 +793,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Fix type to mypy - merger into main:&#10;&#10;511: error: Value of type &quot;int64&quot; is not indexable  [index]" />
-    <MESSAGE value="Fix type to mypy - merger into main:&#10;&#10;error: Argument 1 to &quot;array&quot; has incompatible type &quot;list[object]&quot;; expected &quot;list[bool] | list[list[bool]] | list[list[list[bool]]] | list[list[list[list[bool]]]]&quot;  [arg-type]" />
-    <MESSAGE value="Fix type to mypy - merger into main:&#10;&#10;error: Value of type &quot;float64&quot; is not indexable  [index]" />
     <MESSAGE value="Fix type to mypy - merger into main:&#10;&#10;error: &quot;float64&quot; has no attribute &quot;tolist&quot;  [attr-defined]" />
     <MESSAGE value="Fix type to mypy - merger into main:&#10;&#10;error: Bracketed expression &quot;[...]&quot; is not valid as a type  [valid-type]" />
     <MESSAGE value="Fix type to mypy - merger into main:&#10;&#10;Argument &quot;positions_to_connect&quot; to &quot;_connect_positions&quot; of &quot;Valve&quot; has incompatible type &quot;str&quot;; expected &quot;tuple[tuple[Any, ...]]&quot;  [arg-type]" />
@@ -683,7 +815,10 @@
     <MESSAGE value="Fix according to the comments in commit c52905c!" />
     <MESSAGE value="Add new information to the components metadata information. It is useful to inspect what the class corresponding to the component!" />
     <MESSAGE value="New theme and some details important was added" />
-    <option name="LAST_COMMIT_MESSAGE" value="New theme and some details important was added" />
+    <MESSAGE value="Clear old files" />
+    <MESSAGE value="New documentation update" />
+    <MESSAGE value="Clear old documentation!" />
+    <option name="LAST_COMMIT_MESSAGE" value="Clear old documentation!" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
