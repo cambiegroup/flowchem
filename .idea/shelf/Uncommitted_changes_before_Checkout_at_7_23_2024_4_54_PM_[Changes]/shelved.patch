@@ -1,0 +1,172 @@
+Index: docs/start/introduction.md
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># A Friendly Introduction\r\n\r\n## Why use flowchem?\r\n\r\nFlowchem was designed to assist in the development of automation in laboratories. Many electronic devices used in \r\nlaboratories have different providers and different types of communication. To automate, for example, a set of devices \r\nto operate a process automatically, it is necessary:\r\n\r\n* Define a programming coding language;\r\n\r\n* Search with providers for ways to access the device using the chosen language;\r\n\r\n* Develop the communication system using computer signal inputs like serial and Ethernet;\r\n\r\n* Integrate all devices into a single system, where it is possible to start building protocols and instructions.\r\n\r\nIn addition to all the complexity involved in the steps presented, a factor that can be stressful is if there is a need \r\nto change a device during the construction or operation of the platform. This change will require rework to build the \r\nnew device system, especially if it comes from a different supplier (with other communication, functions, and methods).\r\n\r\nFlowchem connects with each device, ensuring easy access to all available commands through a web interface. This means \r\nthat the user will not have to limit themselves to using a specific program language, as the connection to the devices \r\ncan be easily accessed with a web data request package, which is present in most program languages (i.e., python, java, \r\nc++, HTML, and others).\r\n\r\nFlowchem also has a high level of abstraction concerning devices. This abstraction occurs through the use of class, \r\nwhich represents components of a device, to build equipment. To explain better, look at the table below.\r\n\r\n Class of the system | Description         | Main function             | \r\n-------------------- |---------------------|---------------------------|\r\nAzura Compact Pump   | Device              | Communication Configure   |\r\nHPLC pump            | Component Specific  | Specific access commands  |\r\nPump                 | Component Base      | Base access commands      |\r\nFlowchem Component   | Class Base          | Base Constructor          |\r\n\r\nWhen constructing a class to represent a device, as in our case, ***Azura Compact Pump*** inherits the attributes and \r\nmethods of the class ***HPLC Pump***. This ***HPLC Pump*** class presents the specific standard commands for this pump \r\ncategory. In turn, this class inherits the attributes and methods of the class ***Pump***. This class has the most \r\ngeneric commands in all pumps (activate, infuse). This class still features the main class with attributes and methods \r\npresent on all devices. This level of abstraction allows the user to switch from one device to another very quickly, \r\nas long as both devices have the same function (inherit the commands from ***HPLC Pump***, for example). It doesn't \r\nmatter if they come from suppliers and have different communication protocols. This device exchange will occur without\r\nchanging anything in the already implemented code structure (a program related to the platform's automation). This \r\nchange will only occur in the configuration file, which is easily editable.\r\n\r\n## How easily editable is the configuration file?\r\n\r\nOnce installed, flowchem can be used. The first step to using the flowchem is to write the configuration file. This file\r\nuses human-editable and friendly language. Each connected device must have a coding block, as shown below.\r\n\r\n```toml\r\n# Example of configuration flowchem file to access some devices\r\n[device.socl2]\r\ntype = \"Elite11\"                 # Class name of the device\r\nport = \"COM4\"                    # Communication access\r\nsyringe_diameter = \"14.567 mm\"   # Additional configuration\r\nsyringe_volume = \"10 ml\"         # Additional configuration\r\nbaudrate = 115200                # Additional configuration\r\n\r\n[device.hexyldecanoic]\r\ntype = \"AzuraCompact\"          # Class name of the device\r\nip_address = \"192.168.1.119\"   # Communication access\r\nmax_pressure = \"10 bar\"        # Additional configuration\r\n\r\n[device.r4-heater]\r\ntype = \"R4Heater\"              # Class name of the device\r\nport = \"COM1\"                  # Communication access\r\n\r\n[device.flowir]\r\ntype = \"IcIR\"                                     # Class name of the device\r\nurl = \"opc.tcp://localhost:62552/iCOpcUaServer\"   # Communication access\r\ntemplate = \"30sec_2days.iCIRTemplate\"             # Additional configuration\r\n\r\n[device.s-pump]\r\ntype = \"ML600\"             # Class name of the device\r\nport = \"COM5\"              # Communication port\r\nsyringe_volume = \"0.05 ml\" # Additional configuration\r\n```\r\nEach block of code, separated by spacing, represents a device connected to the computer. The ***socl2***, ***hexyldecanoic***, \r\n***r4-heater***, ***flowir***, ***s-pump*** are the names of the devices. Its name is flexible enough to be editable by \r\nits users. The parameter type is the name of the implemented class that represents the device. See the devices available\r\nand additional configurations in the [device configuration guides](../devices/supported_devices.md). This file needs to \r\nbe saved with the extension ***.toml***. \r\n\r\n
+===================================================================
+diff --git a/docs/start/introduction.md b/docs/start/introduction.md
+--- a/docs/start/introduction.md	
++++ b/docs/start/introduction.md	
+@@ -26,12 +26,12 @@
+ Flowchem also has a high level of abstraction concerning devices. This abstraction occurs through the use of class, 
+ which represents components of a device, to build equipment. To explain better, look at the table below.
+ 
+- Class of the system | Description         | Main function             | 
+--------------------- |---------------------|---------------------------|
+-Azura Compact Pump   | Device              | Communication Configure   |
+-HPLC pump            | Component Specific  | Specific access commands  |
+-Pump                 | Component Base      | Base access commands      |
+-Flowchem Component   | Class Base          | Base Constructor          |
++|  Class of the system | Description         | Main function             | 
++|----------------------|---------------------|---------------------------|
++| Azura Compact Pump   | Device              | Communication Configure   |
++| HPLC pump            | Component Specific  | Specific access commands  |
++| Pump                 | Component Base      | Base access commands      |
++| Flowchem Component   | Class Base          | Base Constructor          |
+ 
+ When constructing a class to represent a device, as in our case, ***Azura Compact Pump*** inherits the attributes and 
+ methods of the class ***HPLC Pump***. This ***HPLC Pump*** class presents the specific standard commands for this pump 
+Index: src/flowchem/devices/plugins_test/plugins.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from flowchem.devices.flowchem_device import FlowchemDevice\r\nfrom flowchem.devices.plugins_test.pluginpump import pluginpump\r\nfrom flowchem.devices.plugins_test.pluginvalve import pluginvalve\r\nfrom flowchem.components.device_info import DeviceInfo\r\nfrom loguru import logger\r\n\r\nclass plugins(FlowchemDevice):\r\n    \"\"\"Our plugins fake device!\"\"\"\r\n\r\n    def __init__(self, name):\r\n        super().__init__(name)\r\n        self.device_info = DeviceInfo(\r\n            authors=[],\r\n            manufacturer=\"Testing_plugin\",\r\n            model=\"Universal testing Actuator\",\r\n        )\r\n\r\n    async def initialize(self):\r\n        logger.info('Plugins devices was succeccfully initialized!')\r\n        self.components.extend([pluginpump(\"pump1\",self),\r\n                                pluginpump(\"pump2\", self),\r\n                                pluginpump(\"pump3\", self),\r\n                                pluginvalve(\"valve\",self)])\r\n\r\n    def send_command(self, command):\r\n        logger.info(command)  # This is in\r\n\r\n
+===================================================================
+diff --git a/src/flowchem/devices/plugins_test/plugins.py b/src/flowchem/devices/plugins_test/plugins.py
+--- a/src/flowchem/devices/plugins_test/plugins.py	
++++ b/src/flowchem/devices/plugins_test/plugins.py	
+@@ -16,7 +16,7 @@
+         )
+ 
+     async def initialize(self):
+-        logger.info('Plugins devices was succeccfully initialized!')
++        logger.info('Plugins devices was successfully initialized!')
+         self.components.extend([pluginpump("pump1",self),
+                                 pluginpump("pump2", self),
+                                 pluginpump("pump3", self),
+Index: docs/start/using_api.md
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># Working with APIserver\r\n\r\nAfter running the flowchem with a specific configuration file, an API is available on the server and can be accessed \r\nthrough the address: http://127.0.0.1:8000. Suppose we have a configuration file ***flowchem_config.toml*** as \r\ndescribed below. My plugin is a generic device of the flowchem with the class name plugin.\r\n\r\n```toml\r\n[device.my-plugin-device]\r\ntype = \"plugins\"\r\n```\r\n\r\nThe flowchem needs be runnig as shown:\r\n\r\n```shell\r\nflowchem flowchem_config.toml\r\n```\r\n\r\nThe API available in the address will be:\r\n\r\n![](API_plugin.png)\r\n\r\nAccess to API can be done directly through the web browser or by clients written in different languages. Below, we \r\nshow how easy it is to access API, for example, through Python. Access to API commands through Python files can be done\r\nusing the flowchem class.\r\n\r\n## Acess the API through Python\r\n\r\n```python\r\nfrom flowchem.client.client import get_all_flowchem_devices\r\n# Flowchem devices\r\nflowchem_devices = get_all_flowchem_devices()\r\n```\r\nThe variable ***flowchem_device*** in the code above is a dictionary with all devices connected through the API. With \r\nthis variable, it is possible to access all components available in the device. In this example, the my-plugin-device\r\nhas four elements that can be accessed through the code below:\r\n\r\n```python\r\npump1 = flowchem_devices['my-plugin-device'].components['pump1']\r\npump2 = flowchem_devices['my-plugin-device'].components['pump2']\r\npump3 = flowchem_devices['my-plugin-device'].components['pump3']\r\nvalve = flowchem_devices['my-plugin-device'].components['valve']\r\n```\r\n\r\nEach of these components represents one class. This class has methods that can be accessed through commands available \r\nin the API. For example, if you want to infuse a liquid using pump1, you can use, according to API interface, a method \r\nput as shown below:\r\n\r\n![](API_plugin_pump1.png)\r\n\r\nThe argument parameters to send these commands need to be specified in the method.\r\n\r\n```python\r\npump1.put('infuse', params={'rate': \"5 ul/min\", 'volume': '1 ml'})\r\n```\r\n\r\nTherefore, creating a list of structures based on these components makes it possible to make the platform work \r\nautomatically. We recommend writing the instructions in a standardized file, as shown below.\r\n\r\n```python\r\n# Important package to control the time\r\nimport time    \r\n# Important class to monitor through a warning in the terminal the steps of the process.\r\n# We recommend using as many of these packages as possible to identify which steps \r\n# are currently in your process and if there are any errors.\r\nfrom loguru import logger\r\nlogger.add(\"./xp.log\", level=\"INFO\")\r\n# Import all classes and protocols important for the automation.\r\nfrom protocols import *\r\n\r\n# Here, you can write down all initial configurations. \r\n...\r\n\r\n# Run optimization for MAX_TIME\r\nMAX_TIME = 60 * 60  # 1 hours, as a example\r\nstart_time = time.monotonic()\r\n\r\nwhile time.monotonic() < (start_time + MAX_TIME):\r\n    # Here, you can write down all instructions running in a loop until the \r\n    # MAX_TIME is achieved.\r\n    ...\r\n````\r\n\r\nWe recommend that the process's class of components and protocols (as a function) be written in another file \r\n***protocols.py***. It all can be imported into your main file, as shown before.\r\n\r\n```python\r\nfrom loguru import logger\r\nfrom flowchem.client.client import get_all_flowchem_devices\r\n\r\nflowchem_devices = get_all_flowchem_devices()\r\n\r\npump1 = flowchem_devices['my-plugin-device'].components['pump1']\r\npump2 = flowchem_devices['my-plugin-device'].components['pump2']\r\npump3 = flowchem_devices['my-plugin-device'].components['pump3']\r\nvalve = flowchem_devices['my-plugin-device'].components['valve']\r\n\r\n# Process protocols\r\ndef calculate_flow_rates(*arg):\r\n    ...\r\n\r\ndef set_parameters(*arg):\r\n    ...\r\n...\r\n```\r\n\r\n## Access API through another languages\r\n\r\nUtilizing Visual Basic Applications, the API can be access, for exemple, using the ``WinHttp.WinHttpRequest.5.1``.\r\n\r\n```VBA\r\nSub request()\r\n    Dim LoginRequest As Object\r\n    Set LoginRequest = CreateObject(\"WinHttp.WinHttpRequest.5.1\")\r\n    LoginRequest.Open \"POST\", \"http://127.0.0.1:8000\", False\r\n    LoginRequest.setRequestHeader \"Content-type\", \"/my-plugin-device/\"\r\n    LoginRequest.send (\"pump1\")\r\nEnd Sub\r\n```\r\n\r\n
+===================================================================
+diff --git a/docs/start/using_api.md b/docs/start/using_api.md
+--- a/docs/start/using_api.md	
++++ b/docs/start/using_api.md	
+@@ -103,17 +103,98 @@
+ ...
+ ```
+ 
+-## Access API through another languages
++## Directly Access API
++
++The user can also go through the request package to gain direct access to the commands available in Python.
+ 
+-Utilizing Visual Basic Applications, the API can be access, for exemple, using the ``WinHttp.WinHttpRequest.5.1``.
++```python
++import requests
++
++url = 'http://127.0.0.1:8000/my-plugin-device/pump1/'
++data = response.json()
++response = requests.get(url)
++print(data)
++```
++
++Utilizing Visual Basic Applications, the API can be access, for example, using the ``WinHttp.WinHttpRequest.5.1``.
+ 
+ ```VBA
+ Sub request()
+     Dim LoginRequest As Object
+     Set LoginRequest = CreateObject("WinHttp.WinHttpRequest.5.1")
+-    LoginRequest.Open "POST", "http://127.0.0.1:8000", False
++    LoginRequest.Open "GET", "http://127.0.0.1:8000", False
+     LoginRequest.setRequestHeader "Content-type", "/my-plugin-device/"
+     LoginRequest.send ("pump1")
+ End Sub
+ ```
+ 
++Utilizing Java Script:
++
++```java
++import java.net.URI;
++import java.net.http.HttpClient;
++import java.net.http.HttpRequest;
++import java.net.http.HttpResponse;
++
++public class GetRequestExample {
++    public static void main(String[] args) throws Exception {
++        HttpClient client = HttpClient.newHttpClient();
++        HttpRequest request = HttpRequest.newBuilder()
++                .uri(new URI("http://127.0.0.1:8000/my-plugin-device/pump1/"))
++                .build();
++
++        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
++        System.out.println("Response: " + response.body());
++    }
++}
++```
++
++Utilizing R:
++
++```R
++library(httr)
++library(jsonlite)
++
++# Define the API endpoint
++url <- "http://127.0.0.1:8000/my-plugin-device/pump1/"
++
++# Make the GET request
++response <- GET(url)
++data <- fromJSON(content(response, "text", encoding = "UTF-8"))
++print(data)
++```
++
++Utilizing C++:
++
++```cpp
++#include <iostream>
++#include <curl/curl.h>
++#include <nlohmann/json.hpp>
++
++size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
++{
++    ((std::string*)userp)->append((char*)contents, size * nmemb);
++    return size * nmemb;
++}
++
++int main()
++{
++    CURL* curl;
++    CURLcode res;
++    std::string readBuffer;
++
++    curl = curl_easy_init();
++    if(curl) {
++        curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:8000/my-plugin-device/pump1/");
++        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
++        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
++        res = curl_easy_perform(curl);
++        curl_easy_cleanup(curl);
++        auto json_data = nlohmann::json::parse(readBuffer);
++        std::cout << json_data.dump(4) << std::endl;
++    }
++    return 0;
++}
++```
++
++This example showcases the versatility of the package across multiple coding languages.
+\ No newline at end of file
+Index: docs/examples/reaction_optimization.md
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+># Autonomous reaction optimization\r\n\r\nThis example demonstrates how to set up a process using flowchem. The process involves the reaction of two reagents, \r\n*hexyldecanoic acid*, and *thionyl chloride*, within a temperature-controlled reactor.\r\n\r\nIn this process, four electronic devices. Two pumps were used to promote the mixing the reagent and the flow within \r\nthe reactor. One pump is from [AzuraCompact](../devices/pumps/azura_compact.md), and the other is from \r\nElite11 [](../devices/pumps/elite11.md). A reactor with controlled temperature was used. This reator is a component of \r\nthe platform R2 - [R4Heater](../devices/temperature/r4_heater.md). An infrared sensor from IR was used to analyze the \r\nproduct - [IcIR](../devices/analytics/icir.md).\r\n\r\n![](reaction.JPG)\r\n\r\nThe configuration file is written according to the described below.\r\n\r\n```toml\r\n[device.socl2]\r\ntype = \"Elite11\"\r\nport = \"COM4\"\r\nsyringe_diameter = \"14.567 mm\"\r\nsyringe_volume = \"10 ml\"\r\nbaudrate = 115200\r\n\r\n[device.hexyldecanoic]\r\ntype = \"AzuraCompact\"\r\nip_address = \"192.168.1.119\"\r\nmax_pressure = \"10 bar\"\r\n\r\n[device.r4-heater]\r\ntype = \"R4Heater\"\r\nport = \"COM1\"\r\n\r\n[device.flowir]\r\ntype = \"IcIR\"\r\nurl = \"opc.tcp://localhost:62552/iCOpcUaServer\"\r\ntemplate = \"30sec_2days.iCIRTemplate\"\r\n```\r\n\r\n## Access API\r\n\r\nThe electronic components used in the process were easily accessed through a Python script.\r\n\r\n```python\r\nfrom flowchem.client.client import get_all_flowchem_devices\r\n# Flowchem devices\r\nflowchem_devices = get_all_flowchem_devices()\r\n\r\nsocl2 = flowchem_devices[\"socl2\"][\"pump\"]\r\nhexyldecanoic = flowchem_devices[\"hexyldecanoic\"][\"pump\"]\r\nreactor = flowchem_devices[\"r4-heater\"][\"reactor1\"]\r\nflowir = flowchem_devices[\"flowir\"][\"ir-control\"]\r\n```\r\n\r\nEach component has its own GET and PUT methods. The commands were written based on the available methods. \r\nWhen Flowchem is running, you can easily see each device's available methods through the address \r\n[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). You can also find the methods in the \r\n[API documentation](../api/index.md).\r\n\r\nThe following is a description of the main `main.py` script by which the experiment has been programmed.\r\n\r\n```python\r\n# This package is used to read the current time and work with time management.\r\nimport time  \r\n\r\n#Package used to support the optimization, more details was found in https://gryffin.readthedocs.io/en/latest/index.html\r\nfrom gryffin import Gryffin\r\n\r\n# This package monitored the process by logging in to the Python terminal.\r\n# It was advantageous to warn about errors, initialization, end, and stage of the experiment.\r\nfrom loguru import logger\r\n\r\n# Here was imported the devices and the main function used in the experiment.\r\nfrom run_experiment import run_experiment, reactor, flowir, hexyldecanoic, socl2\r\n\r\n# A file xp.log was added to record the logging of the experiment done by the loguru.\r\nlogger.add(\"./xp.log\", level=\"INFO\")\r\n\r\n# load configuration before initialized the experiment\r\nconfig = {\r\n    \"parameters\": [\r\n        {\"name\": \"SOCl2_equivalent\", \"type\": \"continuous\", \"low\": 1.0, \"high\": 1.5},\r\n        {\"name\": \"temperature\", \"type\": \"continuous\", \"low\": 30, \"high\": 65},\r\n        {\"name\": \"residence_time\", \"type\": \"continuous\", \"low\": 2, \"high\": 20},\r\n    ],\r\n    \"objectives\": [\r\n        {\"name\": \"product_ratio_IR\", \"goal\": \"max\"},\r\n    ],\r\n}\r\n\r\n# Initialize gryffin\r\ngryffin = Gryffin(config_dict=config)\r\nobservations = []\r\n\r\n\r\n# Initialize hardware\r\n# Heater to r.t.\r\nreactor.put(\"temperature\", params={\"temperature\": \"21\"})    # -> Observe how the methods PUT is used\r\nreactor.put(\"power-on\")\r\n\r\n# Start pumps with low flow rate\r\nsocl2.put(\"flow-rate\", params={\"rate\": \"5 ul/min\"})\r\nsocl2.put(\"infuse\")\r\n\r\nhexyldecanoic.put(\"flow-rate\", params={\"rate\": \"50 ul/min\"})\r\nhexyldecanoic.put(\"infuse\")\r\n\r\n# Ensure iCIR is running\r\nassert (\r\n    flowir.get(\"is-connected\").text == \"true\"\r\n), \"iCIR app must be open on the control PC\"\r\n# If IR is running we can just reuse previous experiment. Because cleaning the probe for the BG is slow\r\n\r\nstatus = flowir.get(\"probe-status\").text\r\nif status == \" Not running\":\r\n    # Start acquisition\r\n    xp = {\r\n        \"template\": \"30sec_2days.iCIRTemplate\",\r\n        \"name\": \"hexyldecanoic acid chlorination - automated\",\r\n    }\r\n    flowir.put(\"experiment/start\", xp)\r\n\r\n\r\n# Run optimization for MAX_TIME\r\nMAX_TIME = 8 * 60 * 60\r\nstart_time = time.monotonic()\r\n\r\nwhile time.monotonic() < (start_time + MAX_TIME):\r\n    # query gryffin for new conditions_to_test, 1 exploration 1 exploitation (i.e. lambda 1 and -1)\r\n    conditions_to_test = gryffin.recommend(\r\n        observations=observations,\r\n        num_batches=1,\r\n        sampling_strategies=[-1, 1],\r\n    )\r\n\r\n    # evaluate the proposed parameters!\r\n    for conditions in conditions_to_test:\r\n        # Get this from your experiment!\r\n        conditions[\"product_ratio_IR\"] = run_experiment(**conditions)\r\n\r\n        logger.info(f\"Experiment ended: {conditions}\")\r\n\r\n    observations.extend(conditions_to_test)\r\n    logger.info(observations)\r\n```\r\n\r\nThe package `run_experiment.py` is imported into the script. It's a set of functions and variables that are critical \r\nfor the execution of the experiment, especially for infrared analysis.\r\n\r\n```python\r\nimport time\r\nimport numpy as np\r\nimport pandas as pd\r\nfrom loguru import logger\r\nfrom scipy import integrate\r\n\r\nfrom flowchem.client.client import get_all_flowchem_devices\r\n\r\n# Flowchem devices\r\nflowchem_devices = get_all_flowchem_devices()\r\n\r\nsocl2 = flowchem_devices[\"socl2\"][\"pump\"]\r\nhexyldecanoic = flowchem_devices[\"hexyldecanoic\"][\"pump\"]\r\nreactor = flowchem_devices[\"r4-heater\"][\"reactor1\"]\r\nflowir = flowchem_devices[\"flowir\"][\"ir-control\"]\r\n\r\n\r\ndef calculate_flow_rates(SOCl2_equivalent: float, residence_time: float):\r\n    \"\"\"Calculate pump flow rate based on target residence time and SOCl2 equivalents.\r\n\r\n    Stream A: hexyldecanoic acid ----|\r\n                                     |----- REACTOR ---- IR ---- waste\r\n    Stream B: thionyl chloride   ----|\r\n\r\n    Args:\r\n    ----\r\n        SOCl2_equivalent:\r\n        residence_time:\r\n\r\n    Returns: dict with pump names and flow rate in ml/min\r\n\r\n    \"\"\"\r\n    REACTOR_VOLUME = 10  # ml\r\n    HEXYLDECANOIC_ACID = 1.374  # Molar\r\n    SOCl2 = 13.768  # Molar\r\n\r\n    total_flow_rate = REACTOR_VOLUME / residence_time  # ml/min\r\n\r\n    return {\r\n        \"hexyldecanoic\": (\r\n            a := (total_flow_rate * SOCl2)\r\n            / (HEXYLDECANOIC_ACID * SOCl2_equivalent + SOCl2)\r\n        ),\r\n        \"socl2\": total_flow_rate - a,\r\n    }\r\n\r\n\r\ndef set_parameters(rates: dict, temperature: float):\r\n    \"\"\"Set flow rates and temperature to the reaction setup.\"\"\"\r\n    socl2.put(\"flow-rate\", {\"rate\": f\"{rates['socl2']} ml/min\"})\r\n    hexyldecanoic.put(\"flow-rate\", {\"rate\": f\"{rates['hexyldecanoic']} ml/min\"})\r\n    reactor.put(\"temperature\", {\"temperature\": f\"{temperature:.2f} °C\"})\r\n\r\n\r\ndef wait_stable_temperature():\r\n    \"\"\"Wait until a stable temperature has been reached.\"\"\"\r\n    logger.info(\"Waiting for the reactor temperature to stabilize\")\r\n    while True:\r\n        if reactor.get(\"target-reached\").text == \"true\":\r\n            logger.info(\"Stable temperature reached!\")\r\n            break\r\n        else:\r\n            time.sleep(5)\r\n\r\n\r\ndef _get_new_ir_spectrum(last_sample_id):\r\n    while True:\r\n        current_sample_id = int(flowir.get(\"sample-count\").text)\r\n        if current_sample_id > last_sample_id:\r\n            break\r\n        else:\r\n            time.sleep(2)\r\n    return current_sample_id\r\n\r\n\r\ndef get_ir_once_stable():\r\n    \"\"\"Keep acquiring IR spectra until changes are small, then returns the spectrum.\"\"\"\r\n    logger.info(\"Waiting for the IR spectrum to be stable\")\r\n\r\n    # Wait for first spectrum to be available\r\n    while flowir.get(\"sample-count\").text == 0:\r\n        time.sleep(1)\r\n\r\n    # Get spectrum\r\n    previous_spectrum = pd.read_json(flowir.get(\"sample/spectrum-treated\").text)\r\n    previous_spectrum = previous_spectrum.set_index(\"wavenumber\")\r\n\r\n    last_sample_id = int(flowir.get(\"sample-count\").text)\r\n    while True:\r\n        current_sample_id = _get_new_ir_spectrum(last_sample_id)\r\n\r\n        current_spectrum = pd.read_json(flowir.get(\"sample/spectrum-treated\").text)\r\n        current_spectrum = current_spectrum.set_index(\"wavenumber\")\r\n\r\n        previous_peaks = integrate_peaks(previous_spectrum)\r\n        current_peaks = integrate_peaks(current_spectrum)\r\n\r\n        delta_product_ratio = abs(current_peaks[\"product\"] - previous_peaks[\"product\"])\r\n        logger.info(f\"Current product ratio is {current_peaks['product']}\")\r\n        logger.debug(f\"Delta product ratio is {delta_product_ratio}\")\r\n\r\n        if delta_product_ratio < 0.002:  # 0.2% error on ratio\r\n            logger.info(\"IR spectrum stable!\")\r\n            return current_peaks\r\n\r\n        previous_spectrum = current_spectrum\r\n        last_sample_id = current_sample_id\r\n\r\n\r\ndef integrate_peaks(ir_spectrum):\r\n    \"\"\"Integrate areas from `limits.in` in the spectrum provided.\"\"\"\r\n    # List of peaks to be integrated\r\n    peak_list = np.recfromtxt(\"limits.in\", encoding=\"UTF-8\")\r\n\r\n    peaks = {}\r\n    for name, start, end in peak_list:\r\n        # This is a common mistake since wavenumbers are plot in reverse order\r\n        if start > end:\r\n            start, end = end, start\r\n\r\n        df_view = ir_spectrum.loc[\r\n            (start <= ir_spectrum.index) & (ir_spectrum.index <= end)\r\n        ]\r\n        peaks[name] = integrate.trapezoid(df_view[\"intensity\"])\r\n        logger.debug(f\"Integral of {name} between {start} and {end} is {peaks[name]}\")\r\n\r\n    # Normalize integrals\r\n    return {k: v / sum(peaks.values()) for k, v in peaks.items()}\r\n\r\n\r\ndef run_experiment(\r\n    SOCl2_equiv: float,\r\n    temperature: float,\r\n    residence_time: float,\r\n) -> float:\r\n    \"\"\"Run one experiment with the provided conditions.\r\n\r\n    Args:\r\n    ----\r\n        SOCl2_equivalent: SOCl2 to substrate ratio\r\n        temperature: in Celsius\r\n        residence_time: in minutes\r\n\r\n    Returns: IR product area / (SM + product areas)\r\n\r\n    \"\"\"\r\n    logger.info(\r\n        f\"Starting experiment with {SOCl2_equiv:.2f} eq SOCl2, {temperature:.1f} degC and {residence_time:.2f} min\",\r\n    )\r\n    # Set stand-by flow-rate first\r\n    set_parameters({\"hexyldecanoic\": \"0.1 ml/min\", \"socl2\": \"10 ul/min\"}, temperature)\r\n    wait_stable_temperature()\r\n    # Set actual flow rate once the set temperature has been reached\r\n    pump_flow_rates = calculate_flow_rates(SOCl2_equiv, residence_time)\r\n    set_parameters(pump_flow_rates, temperature)\r\n    # Wait 1 residence time\r\n    time.sleep(residence_time * 60)\r\n    # Start monitoring IR\r\n    peaks = get_ir_once_stable()\r\n\r\n    return peaks[\"product\"]\r\n\r\n\r\nif __name__ == \"__main__\":\r\n    print(get_ir_once_stable())\r\n\r\n```\r\n\r\nWith its two files, it's possible to carry out a series of experiments in order to optimize the conditions for the \r\nproduction of a specific molecule. To see how this works in more detail, please go to \r\n[Continuous flow synthesis of the ionizable lipid ALC-0315](https://doi.org/10.1039/D3RE00630A).\r\n
+===================================================================
+diff --git a/docs/examples/reaction_optimization.md b/docs/examples/reaction_optimization.md
+--- a/docs/examples/reaction_optimization.md	
++++ b/docs/examples/reaction_optimization.md	
+@@ -5,7 +5,7 @@
+ 
+ In this process, four electronic devices. Two pumps were used to promote the mixing the reagent and the flow within 
+ the reactor. One pump is from [AzuraCompact](../devices/pumps/azura_compact.md), and the other is from 
+-Elite11 [](../devices/pumps/elite11.md). A reactor with controlled temperature was used. This reator is a component of 
++Elite11 [](../devices/pumps/elite11.md). A reactor with controlled temperature was used. This reactor is a component of 
+ the platform R2 - [R4Heater](../devices/temperature/r4_heater.md). An infrared sensor from IR was used to analyze the 
+ product - [IcIR](../devices/analytics/icir.md).
+ 

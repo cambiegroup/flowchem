@@ -1,0 +1,181 @@
+Index: src/flowchem/devices/fakedevice/fakedevice_component.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from flowchem.components.fakecomponentclass.fakecomponent import FakeComponent\r\nfrom flowchem.devices.flowchem_device import FlowchemDevice\r\nimport time\r\n\r\n\r\nclass FakeComponent_FakeDevice(FakeComponent):\r\n\r\n    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:\r\n        super().__init__(name, hw_device)\r\n        self.add_api_route(\"/set_specif_command\", self.set_specif_command, methods=[\"PUT\"])\r\n\r\n\r\n    async def fake_send_command(self, parameter_1: str = \"\", parameter_2: str = \"\") -> bool:  # type: ignore\r\n        \"\"\"\r\n        This is related to the FakeComponent_FakeDevice from FakeDevice:\r\n\r\n                Parameters:\r\n                        parameter_1 (str): in a specific unit (e.g. 3 ml). The value must be within (0 to 40 ml)\r\n                        parameter_2 (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32 min)\r\n        \"\"\"\r\n        time.sleep(2) # Simulated the delay to run a actuator, for example!\r\n\r\n        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '\r\n                                    f'parameter_2: {parameter_2}')\r\n        return True # If everything works appropriately the function will return a True\r\n\r\n    async def fake_receive_data(self) -> float:  # type: ignore\r\n        \"\"\"\r\n        Receive specific data from the FakeDevice.\r\n\r\n        This function demonstrates how the commands request of data can be sent through the API build\r\n        \"\"\"\r\n        self.hw_device.send_command(f'Request a data from the FakeDevice')\r\n        return 0.5 # Generic data to show how it works\r\n\r\n    async def set_specif_command(self) -> bool:\r\n        \"\"\"\r\n        This is an example of a specific command that only this device has!\r\n\r\n        Returns:\r\n            None\r\n        \"\"\"\r\n        self.hw_device.send_command(f'Set a specific command')\r\n        return True # If everything works appropriately the function will return a True\r\n\r\n\r\nclass FakeComponent2_FakeDevice(FakeComponent):\r\n\r\n    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:\r\n        super().__init__(name, hw_device)\r\n        self.add_api_route(\"/set_specif_command\", self.set_specif_command, methods=[\"PUT\"])\r\n\r\n\r\n    async def fake_send_command(self, parameter_1: str = \"\", parameter_2: str = \"\") -> bool:  # type: ignore\r\n        \"\"\"\r\n        This is related to the FakeComponent_FakeDevice from FakeDevice:\r\n\r\n                Parameters:\r\n                        parameter_1 (str): in a specific unit (e.g. 3 ml). The value must be within (0 to 40 ml)\r\n                        parameter_2 (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32 min)\r\n        \"\"\"\r\n        time.sleep(2) # Simulated the delay to run a actuator, for example!\r\n\r\n        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '\r\n                                    f'parameter_2: {parameter_2}')\r\n        return True # If everything works appropriately the function will return a True\r\n\r\n    async def fake_receive_data(self) -> float:  # type: ignore\r\n        \"\"\"\r\n        Receive specific data from the FakeDevice.\r\n\r\n        This function demonstrates how the commands request of data can be sent through the API build\r\n        \"\"\"\r\n        self.hw_device.send_command(f'Request a data from the FakeDevice')\r\n        return 0.5 # Generic data to show how it works\r\n\r\n    async def set_specif_command(self) -> bool:\r\n        \"\"\"\r\n        This is an example of a specific command that only this device has!\r\n\r\n        Returns:\r\n            None\r\n        \"\"\"\r\n        self.hw_device.send_command(f'Set a specific command')\r\n        return True # If everything works appropriately the function will return a True
+===================================================================
+diff --git a/src/flowchem/devices/fakedevice/fakedevice_component.py b/src/flowchem/devices/fakedevice/fakedevice_component.py
+--- a/src/flowchem/devices/fakedevice/fakedevice_component.py	
++++ b/src/flowchem/devices/fakedevice/fakedevice_component.py	
+@@ -3,7 +3,7 @@
+ import time
+ 
+ 
+-class FakeComponent_FakeDevice(FakeComponent):
++class FakeSquare(FakeComponent):
+ 
+     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+         super().__init__(name, hw_device)
+@@ -44,7 +44,130 @@
+         return True # If everything works appropriately the function will return a True
+ 
+ 
+-class FakeComponent2_FakeDevice(FakeComponent):
++class FakeCircle(FakeComponent):
++
++    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
++        super().__init__(name, hw_device)
++        self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
++
++
++    async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
++        """
++        This is related to the FakeComponent_FakeDevice from FakeDevice:
++
++                Parameters:
++                        parameter_1 (str): in a specific unit (e.g. 3 ml). The value must be within (0 to 40 ml)
++                        parameter_2 (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32 min)
++        """
++        time.sleep(2) # Simulated the delay to run a actuator, for example!
++
++        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
++                                    f'parameter_2: {parameter_2}')
++        return True # If everything works appropriately the function will return a True
++
++    async def fake_receive_data(self) -> float:  # type: ignore
++        """
++        Receive specific data from the FakeDevice.
++
++        This function demonstrates how the commands request of data can be sent through the API build
++        """
++        self.hw_device.send_command(f'Request a data from the FakeDevice')
++        return 0.5 # Generic data to show how it works
++
++    async def set_specif_command(self) -> bool:
++        """
++        This is an example of a specific command that only this device has!
++
++        Returns:
++            None
++        """
++        self.hw_device.send_command(f'Set a specific command')
++        return True # If everything works appropriately the function will return a True
++
++
++class FakeTriangle(FakeComponent):
++
++    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
++        super().__init__(name, hw_device)
++        self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
++
++
++    async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
++        """
++        This is related to the FakeComponent_FakeDevice from FakeDevice:
++
++                Parameters:
++                        parameter_1 (str): in a specific unit (e.g. 3 ml). The value must be within (0 to 40 ml)
++                        parameter_2 (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32 min)
++        """
++        time.sleep(2) # Simulated the delay to run a actuator, for example!
++
++        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
++                                    f'parameter_2: {parameter_2}')
++        return True # If everything works appropriately the function will return a True
++
++    async def fake_receive_data(self) -> float:  # type: ignore
++        """
++        Receive specific data from the FakeDevice.
++
++        This function demonstrates how the commands request of data can be sent through the API build
++        """
++        self.hw_device.send_command(f'Request a data from the FakeDevice')
++        return 0.5 # Generic data to show how it works
++
++    async def set_specif_command(self) -> bool:
++        """
++        This is an example of a specific command that only this device has!
++
++        Returns:
++            None
++        """
++        self.hw_device.send_command(f'Set a specific command')
++        return True # If everything works appropriately the function will return a True
++
++
++class FakeHexagon(FakeComponent):
++
++    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
++        super().__init__(name, hw_device)
++        self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
++
++
++    async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
++        """
++        This is related to the FakeComponent_FakeDevice from FakeDevice:
++
++                Parameters:
++                        parameter_1 (str): in a specific unit (e.g. 3 ml). The value must be within (0 to 40 ml)
++                        parameter_2 (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32 min)
++        """
++        time.sleep(2) # Simulated the delay to run a actuator, for example!
++
++        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
++                                    f'parameter_2: {parameter_2}')
++        return True # If everything works appropriately the function will return a True
++
++    async def fake_receive_data(self) -> float:  # type: ignore
++        """
++        Receive specific data from the FakeDevice.
++
++        This function demonstrates how the commands request of data can be sent through the API build
++        """
++        self.hw_device.send_command(f'Request a data from the FakeDevice')
++        return 0.5 # Generic data to show how it works
++
++    async def set_specif_command(self) -> bool:
++        """
++        This is an example of a specific command that only this device has!
++
++        Returns:
++            None
++        """
++        self.hw_device.send_command(f'Set a specific command')
++        return True # If everything works appropriately the function will return a True
++
++
++class FakeOctagon(FakeComponent):
+ 
+     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+         super().__init__(name, hw_device)
+Index: src/flowchem/devices/fakedevice/fakedevice.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from flowchem.devices.flowchem_device import FlowchemDevice\r\nfrom flowchem.components.device_info import DeviceInfo\r\nfrom flowchem.utils.people import samuel_saraiva\r\nfrom flowchem.devices.fakedevice.fakedevice_component import FakeComponent_FakeDevice, FakeComponent2_FakeDevice\r\nfrom loguru import logger\r\n\r\nclass FakeDeviceExample(FlowchemDevice):\r\n    \"\"\"Our plugins fake device!\"\"\"\r\n    device_info = DeviceInfo(\r\n        authors=[samuel_saraiva],\r\n        maintainers=[samuel_saraiva],\r\n        manufacturer=\"Fake-device\",\r\n        model=\"FakeDevice\",\r\n        serial_number=42,\r\n        version=\"v1.0\",\r\n    )\r\n\r\n    def __init__(self, name, another_attribute: str = \"some_attribute\"):\r\n        super().__init__(name)\r\n        self.device_info = DeviceInfo(\r\n            authors=[samuel_saraiva],\r\n            manufacturer=\"FakeDeviceExample\",\r\n            model=\"Universal testing Actuator\",\r\n        )\r\n        self.another_attribute = another_attribute\r\n\r\n    async def initialize(self):\r\n        logger.info('FakeDevice devices was succeccfully initialized!')\r\n        self.components.extend([FakeComponent_FakeDevice(\"FakeComponent\",self)])\r\n        self.components.extend([FakeComponent2_FakeDevice(\"FakeComponent2\", self)])\r\n\r\n    async def send_command(self, command):\r\n        logger.info(command)  # This is in\r\n\r\n\r\n\r\nif __name__ == '__main__':\r\n    import asyncio\r\n\r\n    device = FakeDeviceExample(name='Fake')\r\n    asyncio.run(device.initialize())\r\n\r\n\r\n\r\n\r\n\r\n
+===================================================================
+diff --git a/src/flowchem/devices/fakedevice/fakedevice.py b/src/flowchem/devices/fakedevice/fakedevice.py
+--- a/src/flowchem/devices/fakedevice/fakedevice.py	
++++ b/src/flowchem/devices/fakedevice/fakedevice.py	
+@@ -1,7 +1,8 @@
+ from flowchem.devices.flowchem_device import FlowchemDevice
+ from flowchem.components.device_info import DeviceInfo
+ from flowchem.utils.people import samuel_saraiva
+-from flowchem.devices.fakedevice.fakedevice_component import FakeComponent_FakeDevice, FakeComponent2_FakeDevice
++from flowchem.devices.fakedevice.fakedevice_component import (FakeCircle, FakeTriangle, FakeSquare, FakeHexagon,
++                                                              FakeOctagon)
+ from loguru import logger
+ 
+ class FakeDeviceExample(FlowchemDevice):
+@@ -26,8 +27,11 @@
+ 
+     async def initialize(self):
+         logger.info('FakeDevice devices was succeccfully initialized!')
+-        self.components.extend([FakeComponent_FakeDevice("FakeComponent",self)])
+-        self.components.extend([FakeComponent2_FakeDevice("FakeComponent2", self)])
++        self.components.extend([FakeSquare("Square",self)])
++        self.components.extend([FakeCircle("Circle", self)])
++        self.components.extend([FakeTriangle("Triangle", self)])
++        self.components.extend([FakeHexagon("Hexagon", self)])
++        self.components.extend([FakeOctagon("Octagon", self)])
+ 
+     async def send_command(self, command):
+         logger.info(command)  # This is in

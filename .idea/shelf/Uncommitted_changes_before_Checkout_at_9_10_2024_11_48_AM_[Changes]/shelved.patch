@@ -1,0 +1,98 @@
+Index: src/flowchem/devices/fakedevice/fakedevice_component.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from flowchem.components.fakecomponentclass.fakecomponent import FakeComponent\r\nfrom flowchem.devices.flowchem_device import FlowchemDevice\r\nimport time\r\n\r\n\r\nclass FakeComponent_FakeDevice(FakeComponent):\r\n\r\n    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:\r\n        super().__init__(name, hw_device)\r\n        self.add_api_route(\"/set_specif_command\", self.set_specif_command, methods=[\"PUT\"])\r\n\r\n\r\n    async def fake_send_command(self, parameter_1: str = \"\", parameter_2: str = \"\") -> bool:  # type: ignore\r\n        \"\"\"\r\n        This is related to the FakeComponent_FakeDevice from FakeDevice:\r\n\r\n                Parameters:\r\n                        parameter_1 (str): in a specific unit (e.g. 3 ml). The value must be within (0 to 40 ml)\r\n                        parameter_2 (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32 min)\r\n        \"\"\"\r\n        time.sleep(2) # Simulated the delay to run a actuator, for example!\r\n\r\n        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '\r\n                                    f'parameter_2: {parameter_2}')\r\n        return True # If everything works appropriately the function will return a True\r\n\r\n    async def fake_receive_data(self) -> float:  # type: ignore\r\n        \"\"\"\r\n        Receive specific data from the FakeDevice.\r\n\r\n        This function demonstrates how the commands request of data can be sent through the API build\r\n        \"\"\"\r\n        self.hw_device.send_command(f'Request a data from the FakeDevice')\r\n        return 0.5 # Generic data to show how it works\r\n\r\n    async def set_specif_command(self) -> bool:\r\n        \"\"\"\r\n        This is an example of a specific command that only this device has!\r\n\r\n        Returns:\r\n            None\r\n        \"\"\"\r\n        self.hw_device.send_command(f'Set a specific command')\r\n        return True # If everything works appropriately the function will return a True
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/flowchem/devices/fakedevice/fakedevice_component.py b/src/flowchem/devices/fakedevice/fakedevice_component.py
+--- a/src/flowchem/devices/fakedevice/fakedevice_component.py	
++++ b/src/flowchem/devices/fakedevice/fakedevice_component.py	
+@@ -4,41 +4,71 @@
+ 
+ 
+ class FakeComponent_FakeDevice(FakeComponent):
++    """
++    The `FakeComponent_FakeDevice` class represents a specialized component that interacts with a specific type
++    of device (FakeDevice) in the Flowchem system. This class extends the `FakeComponent` base class and
++    introduces additional methods tailored to the FakeDevice's unique capabilities.
++
++    This component allows sending commands to the FakeDevice, retrieving data, and executing device-specific commands
++    through an API. The specialized methods provided by this class demonstrate how to interact with the device
++    in a simulated environment.
++    """
+ 
+     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
++        """
++        Initialize the `FakeComponent_FakeDevice` with the specified name and associated hardware device.
++
++        Args:
++            name (str): The name of the component/device.
++            hw_device (FlowchemDevice): The hardware device instance that this component will interact with.
++        """
+         super().__init__(name, hw_device)
+         self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
+ 
+-
+     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
+         """
+-        This is related to the FakeComponent_FakeDevice from FakeDevice:
++        Simulates sending a command to the FakeDevice.
++
++        This method sends a command to the FakeDevice with two parameters, simulating the behavior
++        of the device when instructed to perform a task.
+ 
+-                Parameters:
+-                        parameter_1 (str): in a specific unit (e.g. 3 ml). The value must be within (0 to 40 ml)
+-                        parameter_2 (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32 min)
++        Args:
++            parameter_1 (str): The first parameter for the command (e.g., "3 ml").
++                               The value must be within the range of 0 to 40 ml.
++            parameter_2 (str): The second parameter for the command (e.g., "4 min").
++                               The value must be within the range of 0 to 32 min.
++
++        Returns:
++            bool: Returns `True` if the command is successfully sent and executed.
+         """
+-        time.sleep(2) # Simulated the delay to run a actuator, for example!
++        time.sleep(2)  # Simulates the delay of running an actuator, for example.
+ 
+         self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
+                                     f'parameter_2: {parameter_2}')
+-        return True # If everything works appropriately the function will return a True
++        return True  # If everything works appropriately, the function will return `True`.
+ 
+     async def fake_receive_data(self) -> float:  # type: ignore
+         """
+-        Receive specific data from the FakeDevice.
++        Simulates receiving data from the FakeDevice.
+ 
+-        This function demonstrates how the commands request of data can be sent through the API build
++        This method sends a request through the API to retrieve specific data from the FakeDevice,
++        demonstrating how data communication might occur in a real scenario.
++
++        Returns:
++            float: A simulated data value received from the FakeDevice.
+         """
+-        self.hw_device.send_command(f'Request a data from the FakeDevice')
+-        return 0.5 # Generic data to show how it works
++        self.hw_device.send_command('Request data from the FakeDevice')
++        return 0.5  # Returns a generic data value to demonstrate functionality.
+ 
+     async def set_specif_command(self) -> bool:
+         """
+-        This is an example of a specific command that only this device has!
++        Executes a specific command unique to this device.
++
++        This method is an example of a command that is particular to the FakeDevice and not generally available
++        in other devices. It demonstrates the use of device-specific functionality within the system.
+ 
+         Returns:
+-            None
++            bool: Returns `True` if the command is successfully sent and executed.
+         """
+-        self.hw_device.send_command(f'Set a specific command')
+-        return True # If everything works appropriately the function will return a True
+\ No newline at end of file
++        self.hw_device.send_command('Set a specific command')
++        return True  # If everything works appropriately, the function will return `True`.

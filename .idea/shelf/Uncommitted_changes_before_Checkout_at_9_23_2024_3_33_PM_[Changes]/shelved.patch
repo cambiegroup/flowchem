@@ -1,0 +1,147 @@
+Index: tests/devices/pumps/test_ml600.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>def test_infuse():\r\n    ...\r\n    # test without parameters\r\n    # test with only rate\r\n    # test with only volume\r\n    # test with both\r\n    # test with too large volume\r\n\r\n\r\ndef test_stop():\r\n    ...\r\n    # run, stop, is-pumping is False\r\n\r\n\r\ndef test_withdraw():\r\n    ...\r\n    # test without parameters\r\n    # test with only rate\r\n    # test with only volume\r\n    # test with both\r\n    # test with too large volume\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/tests/devices/pumps/test_ml600.py b/tests/devices/pumps/test_ml600.py
+--- a/tests/devices/pumps/test_ml600.py	
++++ b/tests/devices/pumps/test_ml600.py	
+@@ -1,21 +1,65 @@
+-def test_infuse():
+-    ...
+-    # test without parameters
+-    # test with only rate
+-    # test with only volume
+-    # test with both
+-    # test with too large volume
++import sys
++from pathlib import Path
++from xprocess import ProcessStarter
++from flowchem.client.client import get_all_flowchem_devices
++import pytest
++import time
++
++# pytest tests/devices/Fake_group/test_elite11.py -s
++# pytest ./tests -m HApump -s
+ 
++@pytest.fixture(scope="module")
++def api_dev(xprocess):
+ 
+-def test_stop():
+-    ...
+-    # run, stop, is-pumping is False
++    config_file = Path(__file__).parent.resolve() / "elite11.toml"
++    main = Path(__file__).parent.resolve() / ".." / ".." / ".." / "src" / "flowchem" / "__main__.py"
+ 
++    class Starter(ProcessStarter):
++        # Process startup ends with this text in stdout (timeout is long cause some GA runners are slow)
++        pattern = "Uvicorn running"
++        timeout = 30
+ 
+-def test_withdraw():
+-    ...
+-    # test without parameters
+-    # test with only rate
+-    # test with only volume
+-    # test with both
+-    # test with too large volume
++        # execute flowchem with current venv
++        args = [sys.executable, main, config_file]
++
++    xprocess.ensure("flowchem_instance", Starter)
++    yield get_all_flowchem_devices()
++    xprocess.getinfo("flowchem_instance").terminate()
++
++@pytest.mark.ml600
++async def infuse(api_dev):
++    pump = api_dev['test']['pump']
++    assert pump.put("infuse", params={"rate": "1 ml/min", "volume": "2 ml"})
++    time.sleep(5)
++    assert pump.get("is-pumping")
++    time.sleep(5)
++    pump.put("stop")
++    msg = ("Two commands was sent to the pump in order to infuse 2 ml of fluid at 1 ml/min. "
++           "Is it observed by you? Does the device behaviour as expected, i.e., does it present "
++           "some movement? (yes, no):")
++    response = input(msg)
++    assert response.lower() == 'yes', "The user indicated that device worked."
++
++@pytest.mark.ml600
++def test_withdraw(api_dev):
++    pump = api_dev['test']['pump']
++    assert pump.put("withdraw", params={"rate": "1 ml/min", "volume": "2 ml"})
++    time.sleep(5)
++    assert pump.get("is-pumping")
++    time.sleep(5)
++    pump.put("stop")
++    msg = ("Two commands was sent to the pump in order to withdraw 2 ml of fluid at 1 ml/min. "
++           "Is it observed by you? Does the device behaviour as expected, i.e., does it present "
++           "some movement and back to it initial state? (yes, no):")
++    response = input(msg)
++    assert response.lower() == 'yes', "The user indicated that device worked."
++
++@pytest.mark.ml600
++def test_valve(api_dev):
++    valve = api_dev['test']['valve']
++    init = valve.get("position")
++    valve.put("set_position", params={"connect": (1, 2)})
++    time.sleep(1)
++    assert valve.get("position") != init
++    time.sleep(1)
++    valve.put("set_position", params={"connect": (1, 2)})
+\ No newline at end of file
+Index: tests/conftest.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import sys\r\nfrom pathlib import Path\r\n\r\nimport pytest\r\nfrom xprocess import ProcessStarter\r\n\r\n\r\n@pytest.fixture(scope=\"module\")\r\ndef flowchem_test_instance(xprocess):\r\n    config_file = Path(__file__).parent.resolve() / \"test_config.toml\"\r\n    main = Path(__file__).parent.resolve() / \"..\" / \"src\" / \"flowchem\" / \"__main__.py\"\r\n\r\n    class Starter(ProcessStarter):\r\n        # Process startup ends with this text in stdout (timeout is long cause some GA runners are slow)\r\n        pattern = \"Uvicorn running\"\r\n        timeout = 30\r\n\r\n        # execute flowchem with current venv\r\n        args = [sys.executable, main, config_file]\r\n\r\n    xprocess.ensure(\"flowchem_instance\", Starter)\r\n    yield\r\n    xprocess.getinfo(\"flowchem_instance\").terminate()\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/tests/conftest.py b/tests/conftest.py
+--- a/tests/conftest.py	
++++ b/tests/conftest.py	
+@@ -7,6 +7,20 @@
+ 
+ @pytest.fixture(scope="module")
+ def flowchem_test_instance(xprocess):
++    """
++   Pytest fixture to set up and tear down a FlowChem instance for testing.
++   This fixture uses the xprocess plugin to start a FlowChem instance before any tests
++   in the module run and ensures it is terminated after all tests complete. The fixture
++   expects a configuration file named 'test_config.toml' in the same directory as the
++   test script and the main FlowChem script to be located at '../src/flowchem/__main__.py'
++   relative to the test script.
++   Args:
++       xprocess: The pytest-xprocess fixture, used to manage external processes.
++   Yields:
++       None. The fixture sets up the FlowChem instance before tests and tears it down after tests.
++   Raises:
++       TimeoutError: If the FlowChem instance does not start within the specified timeout.
++   """
+     config_file = Path(__file__).parent.resolve() / "test_config.toml"
+     main = Path(__file__).parent.resolve() / ".." / "src" / "flowchem" / "__main__.py"
+ 
+Index: pyproject.toml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>[build-system]\r\nrequires = [\"setuptools>64\", \"wheel\", \"pip>=22\"]\r\nbuild-backend = \"setuptools.build_meta\"\r\n\r\n[project]\r\nname = \"flowchem\"\r\nversion = \"1.0.0a3\"\r\ndescription = \"Flowchem is a library to control instruments and devices commonly found in chemistry labs via an interoperable web API.\"\r\nreadme = \"README.md\"\r\nrequires-python = \">=3.10\"\r\nlicense =  { text = \"MIT\" }\r\nkeywords = [\"chemistry\", \"automation\", \"laboratory\", \"science\"]\r\nauthors = [\r\n    { name = \"Dario Cambié\", email = \"2422614+dcambie@users.noreply.github.com\" },\r\n    { name = \"Jakob Wolf\", email = \"75418671+JB-Wolf@users.noreply.github.com\" },\r\n    { name = \"Wei-Hsin Hsu\", email = \"98024191+cynthiabour@users.noreply.github.com\" },\r\n]\r\nmaintainers = [\r\n  { name = \"Dario Cambié\", email = \"2422614+dcambie@users.noreply.github.com\" }\r\n]\r\nclassifiers = [\r\n    \"License :: OSI Approved :: MIT License\"\r\n]\r\ndependencies = [\r\n    \"aioserial>=1.3.1\",\r\n    \"anyio\",\r\n    \"asyncua>=1.0.2\",\r\n    \"bronkhorst-propar>=1.1.0\",\r\n    \"click<=8.1.3\", # Temporary due to https://github.com/pallets/click/issues/2558\r\n    \"fastapi>=0.100.0\",\r\n    \"ifaddr>=0.2.0\",\r\n    \"loguru>=0.7.0\",\r\n    \"lxml>=4.9.2\",\r\n    \"packaging>=23.1\",\r\n    \"pint>=0.16.1,!=0.21\", # See hgrecco/pint#1642\r\n    \"pydantic[email]>=2.0.2\",\r\n    \"pyserial>=3\",\r\n    \"requests\",\r\n    \"rich_click>=1.6.1\",\r\n    'tomli; python_version<\"3.11\"',\r\n    \"uvicorn>=0.19.0\",\r\n    \"zeroconf>=0.71.0\",\r\n]\r\n\r\n[project.optional-dependencies]\r\nall = [\"flowchem[dev,test,phidget,docs]\"]\r\nci = [\"flowchem[dev,test,docs]\"]\r\ndev = [\r\n    \"black\",\r\n    \"data-science-types\",\r\n    \"lxml-stubs\",\r\n    \"mypy\",\r\n    \"pre-commit\",\r\n    \"ruff>=0.0.252\",\r\n    \"types-lxml\",\r\n    \"types-PyYAML\",\r\n    \"types-requests\",\r\n]\r\ntest = [\r\n    \"flowchem-test>=0.1b4\",\r\n    \"httpx\",\r\n    \"pytest\",\r\n    \"pytest-asyncio\",\r\n    \"pytest-cov\",\r\n    \"pytest-mock\",\r\n    \"pytest-xprocess\",\r\n]\r\nphidget = [\r\n    \"phidget22>=1.7.20211005\",\r\n]\r\ndocs = [\r\n    \"furo\",\r\n    \"mistune==0.8.4\", # Due to sphinx-contrib/openapi#121\r\n    \"myst-parser\",\r\n    \"sphinx\",\r\n    \"sphinx-design\",\r\n    \"sphinx-autodoc-typehints\",\r\n    \"sphinx-rtd-theme\",\r\n    \"sphinxcontrib-openapi\",\r\n]\r\n\r\n[project.urls]\r\nhomepage = \"https://github.com/cambiegroup/flowchem\"\r\ndocumentation = \"https://flowchem.readthedocs.io\"\r\nrepository = \"https://github.com/cambiegroup/flowchem\"\r\n\r\n[project.scripts]\r\nflowchem = \"flowchem.__main__:main\"\r\nflowchem-autodiscover = \"flowchem.utils.device_finder:main\"\r\n\r\n[tool.setuptools]\r\npackage-dir = {\"\" = \"src\"}\r\npackages.find.where = [\"src\"]\r\npackage-data.flowchem = [\"py.typed\"]\r\n\r\n[tool.mypy]\r\nignore_missing_imports = true\r\npython_version = \"3.11\"\r\n\r\n[tool.pytest.ini_options]\r\ntestpaths = \"tests\"\r\nasyncio_mode = \"auto\"\r\n# Note: pytest cov is not compatible with the pycharm debugger in tests\r\naddopts = \"-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --no-cov\"\r\nmarkers = [\r\n    \"HApump: tests requiring a local HA Elite11 connected.\",\r\n    \"Spinsolve: tests requiring a connection to Spinsolve.\",\r\n    \"FlowIR: tests requiring a connection to a FlowIR.\",\r\n    \"KPump: tests for Azura compact\" ]\r\n\r\n[tool.ruff]\r\nline-length = 120\r\n# Allow imports relative to the \"src\" and \"test\" directories.\r\nsrc = [\"src\", \"test\"]\r\nper-file-ignores.\"__init__.py\" = [\"F403\"]\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/pyproject.toml b/pyproject.toml
+--- a/pyproject.toml	
++++ b/pyproject.toml	
+@@ -106,7 +106,10 @@
+     "HApump: tests requiring a local HA Elite11 connected.",
+     "Spinsolve: tests requiring a connection to Spinsolve.",
+     "FlowIR: tests requiring a connection to a FlowIR.",
+-    "KPump: tests for Azura compact" ]
++    "KPump: tests for Azura compact.",
++    "FakeDevice: tests for FakeDevice.",
++    "ml600: test for ML600 pump."
++]
+ 
+ [tool.ruff]
+ line-length = 120
