@@ -26,15 +26,13 @@ class KnauerAS(Autosampler):
     """
 
     _config = {
-        "axes_config": {
-            "x": {"mode": "discrete", "positions": [1, 2, 3, 4, 5, 6, 7, 8]},
-            "y": {"mode": "discrete", "positions": ["a", "b", "c", "d", "e", "f"]},
-            "z": {"mode": "discrete", "positions": ["UP", "DOWN"]}
+        "tray_config": {
+            "rows": [1, 2, 3, 4, 5, 6, 7, 8],
+            "columns": ["a", "b", "c", "d", "e", "f"]
         },
         "needle_positions": ["WASH", "WASTE", "EXCHANGE", "TRANSPORT"],
-        "syringe_valve": {"type": "FourPortDistributionValve", "mapping": {0: "NEEDLE", 1: "WASH", 2: "WASH_PORT2", 3: "WASTE"}},
-        "injection_valve": {"type": "SixPortTwoPositionValve",
-                          "mapping": {0: "LOAD", 1: "INJECT"}}
+        "syringe_valve": {"mapping": {0: "NEEDLE", 1: "WASH", 2: "WASH_PORT2", 3: "WASTE"},
+        }
     }
 
     hw_device: KnauerAutosampler  # for typing's sake
