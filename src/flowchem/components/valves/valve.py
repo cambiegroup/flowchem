@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 import json
+from typing import Tuple
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -49,21 +50,13 @@ class ValveInfo(BaseModel):
         positions: A dictionary mapping position numbers to the stator ports that are connected at this position.
     """
     ports: list[tuple]
-    positions: dict[int, tuple[tuple[None | int, ...], ...]]
+    positions: dict[int, Tuple[Tuple[None | int, ...], ...]]
 
 
-def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
-                               tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
-    """
-    Checks if all requested tuples are in a tuple of tuples.
-
-    Args:
-        tuple_in: The tuples to check for.
-        tuple_contains: The nested tuples to check within.
-
-    Returns:
-        bool: True if all requested tuples are found, False otherwise.
-    """
+# mypy: ignore-errors
+def all_tuples_in_nested_tuple(tuple_in: Tuple[Tuple[int, int], ...],
+                               tuple_contains: Tuple[Tuple[int, int, ...], ...]) -> bool:
+    """Check if all requested tuples are in a tuple of tuples"""
     all_contained = []
     for subtuple in tuple_in:
         for supertuple in tuple_contains:
@@ -76,18 +69,10 @@ def all_tuples_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
         return False
 
 
-def no_tuple_in_nested_tuple(tuple_in: tuple[tuple[int, int], ...],
-                             tuple_contains: tuple[tuple[int, int, ...], ...]) -> bool:
-    """
-    Checks if none of the requested tuples are in a tuple of tuples.
-
-    Args:
-        tuple_in: The tuples to check for.
-        tuple_contains: The nested tuples to check within.
-
-    Returns:
-        bool: True if none of the requested tuples are found, False otherwise.
-    """
+# mypy: ignore-errors
+def no_tuple_in_nested_tuple(tuple_in: Tuple[Tuple[int, int], ...],
+                             tuple_contains: Tuple[Tuple[int, int, ...], ...]) -> bool:
+    """Check if none of requested tuples are in a tuple of tuples"""
     contains_tuple = False
     for subtuple in tuple_in:
         for supertuple in tuple_contains:
@@ -100,6 +85,7 @@ class Valve(FlowchemComponent):
     """
     An abstract class for devices of type valve.
 
+    ... warning::
     Warning:
         Device objects should not directly generate components with this object but rather a more specific valve type,
         such as `SixPortTwoPositionValve` or `SixPortPositionValve`.
@@ -118,18 +104,24 @@ class Valve(FlowchemComponent):
     def __init__(
             self,
             name: str,
-            hw_device: FlowchemDevice,
-            stator_ports: [(), ()],
-            rotor_ports: [(), ()],
+            hw_device: "FlowchemDevice",
+            stator_ports: [(), ()], # type: ignore
+            rotor_ports: [(), ()], # type: ignore
     ) -> None:
         """Create a valve object.
 
-
-        Rotor and stator are both represented like:
-        ((1,2,3,4,5,6),          (0))
-            radial ports       middle ports
-        Ports should be equally distributed, with equally spaced angle in between. If this is not the case, add None
-         for missing port
+        Args:
+        ----
+            name: device name, passed to FlowchemComponent.
+            hw_device: the object that controls the hardware.
+            stator_ports
+            rotor_ports
+            rotor and stator are both represented like:
+            (   (1,2,3,4,5,6),          (0))
+                radial ports       middle ports
+                          should be equally distributed, with equally spaced angle in between. If this is not the
+                          case, add None
+             for missing port
 
         Exemple: 4 port 5 Position Valve
         stator_ports=[(None, None, 1, None, 2, None, 3, None,), (0,)],
@@ -175,7 +167,8 @@ class Valve(FlowchemComponent):
         self.add_api_route("/position", self.set_position, methods=["PUT"])
         self.add_api_route("/connections", self.connections, methods=["GET"])
 
-    def _create_connections(self, stator_ports, rotor_ports):
+    @staticmethod
+    def _create_connections(stator_ports, rotor_ports):
         """
         Create possible switching states from a stator and rotor representation.
 
@@ -192,7 +185,7 @@ class Valve(FlowchemComponent):
         if len(rotor_ports) == 1:
             # in case there is no 0 port, for data uniformity, internally add it. strictly, the stator and rotor
             # should reflect physical properties, so if stator has a hole in middle it should have 0, but only rotor
-            # None. Sinc ethis does not impact functionality, thoroughness will be left to the user
+            # None. Sinc this does not impact functionality, thoroughness will be left to the user
             rotor_ports.append([None])
             stator_ports.append([None])
         # it is rather simple: we just move the rotor by one and thereby create a dictionary
@@ -226,25 +219,15 @@ class Valve(FlowchemComponent):
 
         return connections
 
-    def _change_connections(self, raw_position: int, reverse: bool = False) -> str:
-        """
-        Translate the raw position to the corresponding device-specific position naming.
-
-        Args:
-            raw_position: The raw position value to be translated.
-            reverse: If True, performs the reverse translation (default is False).
-
-        Returns:
-            str: The translated position.
-        """
-        # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
+    def _change_connections(self, raw_position: int | str, reverse: bool = False):
+        # abstract valve mapping needs to be translated to device-specific position naming. This can be e.g.
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
         # device level since this is device communication protocol specific
         raise NotImplementedError
 
     def _connect_positions(self,
-                           positions_to_connect: tuple[tuple],
-                           positions_not_to_connect: tuple[tuple] = None,
+                           positions_to_connect: Tuple[Tuple[int, int], ...],
+                           positions_not_to_connect: Tuple[Tuple[int, int], ...] | None = None,
                            arbitrary_switching: bool = True) -> int:
         """
         Select the suitable position to create desired connections.
@@ -265,7 +248,6 @@ class Valve(FlowchemComponent):
         # check if this is possible given the mapping
         for key, values in self._positions.items():
             if positions_not_to_connect:
-                # Check the type of the 'no_tuple_in_nested_tuple' Expected tuple[tuple[int, int], ...]
                 if all_tuples_in_nested_tuple(positions_to_connect, values) and no_tuple_in_nested_tuple(
                         positions_not_to_connect, values):
                     possible_positions.append(key)
@@ -286,42 +268,32 @@ class Valve(FlowchemComponent):
             raise DeviceError("Connection is not possible. The valve you selected can not connect selected ports."
                               "This can be due to exclusion of certain connections by setting positions_not_to_connect")
 
-    async def get_position(self) -> tuple[tuple, tuple]:
-        """
-        Get the current valve position.
-
-        Returns:
-            tuple: The current position of the valve.
-        """
+    async def get_position(self) -> list[list[int]]:
+        """Get current valve position."""
         if not hasattr(self, "identifier"):
-            pos = await self.hw_device.get_raw_position()
+            pos = await self.hw_device.get_raw_position() # type: ignore
         else:
-            pos = await self.hw_device.get_raw_position(self.identifier)
+            pos = await self.hw_device.get_raw_position(self.identifier) # type: ignore
         pos = int(pos) if pos.isnumeric() else pos
         # check the type (tuple[tuple, tuple]) -> return a tuple[Any,]
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
-    async def set_position(self, connect: str | tuple = "", disconnect: str | tuple = "",
+    async def set_position(self,
+                           connect: str = "",
+                           disconnect: str = "",
                            ambiguous_switching: str | bool = False):
-        """
-        Move the valve to the position that connects the specified ports.
-
-        Args:
-            connect: Ports to connect.
-            disconnect: Ports to disconnect.
-            ambiguous_switching: If True, allows ambiguous switching.
-        """
-        connect=return_tuple_from_input(connect)
-        disconnect=return_tuple_from_input(disconnect)
-        ambiguous_switching=return_bool_from_input(ambiguous_switching)
-        target_pos = self._connect_positions(positions_to_connect=connect, positions_not_to_connect=disconnect,
-                                             arbitrary_switching=ambiguous_switching)
+        """Move valve to position, which connects named ports"""
+        connect_tuple = return_tuple_from_input(connect)
+        disconnect_tuple = return_tuple_from_input(disconnect)
+        ambiguous_switching_bool = return_bool_from_input(ambiguous_switching)
+        target_pos = self._connect_positions(positions_to_connect=connect_tuple,
+                                             positions_not_to_connect=disconnect_tuple,
+                                             arbitrary_switching=ambiguous_switching_bool)
         target_pos = self._change_connections(target_pos)
         if not hasattr(self, "identifier"):
-            await self.hw_device.set_raw_position(target_pos)
+            await self.hw_device.set_raw_position(target_pos) # type: ignore
         else:
-            await self.hw_device.set_raw_position(target_pos, target_component=self.identifier)
-
+            await self.hw_device.set_raw_position(target_pos, target_component=self.identifier) # type: ignore
 
     def connections(self) -> ValveInfo:
         """
@@ -333,20 +305,22 @@ class Valve(FlowchemComponent):
         return ValveInfo(ports=self._stator_ports, positions=self._positions)
 
     # Philosophy: explicitly specify which ports to connect
-    # In case of a simple multiposition valve, it always connects the always open central port to the requested port.
-    # But there are more complex rotors available, already with an injection valve: connect((1, 2)) is concise and clear.
+    # In case of a simple multi-position valve, it always connects the always open central port to the requested port.
+    # But there are more complex rotors available, already with an injection valve: connect((1, 2)) is concise and
+    # clear.
     # What is even more important, one can specify which ports to not connect (optionally during switching)
-    # This issue is most pressing with hamilton valves, where some positions connect 3 ports and it is very hard to
+    # This issue is most pressing with hamilton valves, where some positions connect 3 ports, and it is very hard to
     # foresee what command does what. SO here a simple connect((1,2)) helps.
     # In order for that to work, and to make the coding and usage simple and concise, some definitions are needed:
     # 1) The port zero can exist, but does not necessarily.
-    #    For nomenclature reasons, port zero is the one the turning axis and only this one. COmmonly, this port,
+    #    For nomenclature reasons, port zero is the one the turning axis and only this one. Commonly, this port,
     #    if existing, is always open
-    # 2) At the physical valve, the upmost is port 1
-    #   a) If there is no port straight on top, then one goes in clockwise direction, until a port comes, which is then one
+    # 2) At the physical valve, the upmost is port 1.
+    # a) If there is no port straight on top, then one goes in clockwise direction, until a port comes, which is then
+    # one
     # 3 )Beware: For logical reasons, we need to introduce ports of "number" None. These are needed because we need to
     #   define dead-ends. These dead-ends are IMMUTABLE dead-ends, so the stator or rotor do not have an opening there
-    #   Any time there is a different amount of positions on rotor and stator, Noneports are introduced
+    #   Any time there is a different amount of positions on rotor and stator, None ports are introduced
     # 5) Mutable dead-ends: blanking plugs are treated as port number, the consumer needs to deal with its definition by
     #   graph or similar since blanking plugs on valve side could be open
     # Dead-ends are needed because we represent valves as graphs, edges are represented by same numbers shared. If a
@@ -354,5 +328,5 @@ class Valve(FlowchemComponent):
     # to work: Again the hamilton, it will become clear why. So much now: The rotor has more open positions than the
     # stator.
     # 6) The so far mentioned logic only strictly applies to valves facing the user with their front side, however,
-    # e.g. the autosampler faces one valve with its always open port to the ground. Simply flip horizontally until it
+    # e.g. the auto-sampler faces one valve with its always open port to the ground. Simply flip horizontally until it
     # faces you

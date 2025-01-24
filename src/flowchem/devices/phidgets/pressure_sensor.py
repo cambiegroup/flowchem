@@ -24,7 +24,7 @@ from flowchem import ureg
 from flowchem.utils.exceptions import InvalidConfigurationError
 
 
-class PhidgetPressureSensor(FlowchemDevice): # Todo: should have a initialize method?
+class PhidgetPressureSensor(FlowchemDevice):
     """Use a Phidget current input to translate a Swagelock 4..20mA signal to the corresponding pressure value."""
 
     def __init__(
@@ -82,6 +82,10 @@ class PhidgetPressureSensor(FlowchemDevice): # Todo: should have a initialize me
             serial_number=vint_serial_number,
         )
 
+    async def initialize(self):
+
+        self.components.extend([PhidgetPressureSensorComponent("pressure-sensor", self)])
+
     def __del__(self) -> None:
         """Ensure connection closure upon deletion."""
         self.phidget.close()
@@ -121,10 +125,6 @@ class PhidgetPressureSensor(FlowchemDevice): # Todo: should have a initialize me
             return 0 * ureg.bar
         else:
             return self._current_to_pressure(current)
-
-    def components(self):
-        """Return an Pressure component."""
-        return (PhidgetPressureSensorComponent("pressure-sensor", self),)
 
 
 if __name__ == "__main__":
