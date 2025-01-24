@@ -60,15 +60,35 @@ class Autosampler(FlowchemComponent):
         #Meta Methods
         self.add_api_route("/wash_needle", self.wash_needle, methods=["PUT"])
 
-        self._config = _config
-
-        valve_class_map = {
-            "TwoPortDistributionValve": TwoPortDistributionValve,
-            "FourPortDistributionValve": FourPortDistributionValve,
-            "SixPortDistributionValve": SixPortDistributionValve,
-            "TwelvePortDistributionValve": TwelvePortDistributionValve,
-            "SixteenPortDistributionValve": SixteenPortDistributionValve,
+        # valve_class_map = {
+        #     "FourPortDistributionValve": FourPortDistributionValve,
+        #     "SixPortDistributionValve": SixPortDistributionValve,
+        # }
+        {"axes_config": {
+                "x": {"mode": "discrete", "positions": _config["tray_config"]["rows"]},
+                "y": {"mode": "discrete", "positions": _config["tray_config"]["columns"]},
+                "z": {"mode": "discrete", "positions": ["UP", "DOWN"]}
+            }
         }
+
+        # Check config #
+        #Syringe valve mapping
+        required_syringe_valve_values = {"NEEDLE", "WASH", "WASTE"}  # Set of required values
+        syringe_mapping = config.get("syringe_valve", {}).get("mapping", {})
+        updated_mapping = {key: value.upper() for key, value in syringe_mapping.items()}
+        missing_values = required_syringe_valve_values - set(updated_mapping.values())  # Check if required values are in the mapping
+        if missing_values:
+            logger.error(f"Missing required values in syringe valve mapping: {missing_values}")
+        config["syringe_valve"]["mapping"] = updated_mapping
+        #Needle positions
+        required_needle_positions = {"WASH", "WASTE"}
+        needle_positions = config.get("needle_positions", [])
+        updated_needle_positions = [pos.upper() for pos in needle_positions]
+        missing_needle_positions = required_needle_positions - set(updated_needle_positions)
+        if missing_needle_positions:
+            logger.error(f"Missing required needle positions: {missing_needle_positions}")
+        config["needle_positions"] = updated_needle_positions
+
 
         self.gantry3D = gantry3D(
             f"{name}_gantry3D",
@@ -79,13 +99,14 @@ class Autosampler(FlowchemComponent):
             f"{name}_pump",
             hw_device,
         )
-        valve_type = _config["syringe_valve"]["type"]
-        if valve_type not in valve_class_map:
-            logger.error(
-                f"Invalid syringe_valve_type: {valve_type}. "
-                f"Must be one of {list(valve_class_map.keys())}."
-            )
-        self.syringe_valve = valve_class_map[valve_type](
+        # valve_type = _config["syringe_valve"]["type"]
+        # if valve_type not in valve_class_map:
+        #     logger.error(
+        #         f"Invalid syringe_valve_type: {valve_type}. "
+        #         f"Must be one of {list(valve_class_map.keys())}."
+        #     )
+        #ToDo: Is the syringe valve always four ports?
+        self.syringe_valve = FourPortDistributionValve(
             f"{name}_syringe_valve",
             hw_device,
         )
@@ -97,7 +118,7 @@ class Autosampler(FlowchemComponent):
                 hw_device,
             )
         self.injection_valve.identifier = "injection_valve"
-        self.injection_valve.mapping = _config["injection_valve"]["mapping"]
+        self.injection_valve.mapping = {0: 'LOAD', 1: 'INJECT'}
 
     # Gantry3D Methods
     async def set_needle_position(self, position: str = "") -> None:
