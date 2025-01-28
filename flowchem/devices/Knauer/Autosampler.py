@@ -314,7 +314,7 @@ class Tray:
             return None
             
     
-    def find_lowest_volume_vial(self, identifier: List[str], min_volume = 0.07) -> int or None:
+    def find_lowest_volume_vial(self, identifier: List[str], min_volume:float) -> int or None:
         """
         Find the vial with the lowest volume of a list of substances
         Args:
