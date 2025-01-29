@@ -96,8 +96,6 @@ class KnauerAS(Autosampler):
 
         #traytype = self.hw_device.tray_type.upper()
         await self.hw_device._move_needle_vertical("UP")
-        await self.hw_device._move_tray(plate, row)
-        success = await self.hw_device._move_needle_horizontal("PLATE", plate=plate, well=column)
         await self.hw_device._move_tray(tray, row)
         success = await self.hw_device._move_needle_horizontal("PLATE", plate=tray, well=column_num)
         if success:
