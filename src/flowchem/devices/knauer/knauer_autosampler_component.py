@@ -42,7 +42,7 @@ class KnauerAS(Autosampler):
         super().__init__(name, hw_device, self._config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
 
-    async def set_needle_position(self, position: str = "") -> None:
+    async def set_needle_position(self, position: str = "") -> bool:
         """
         Move the needle to one of the predefined positions.
 
@@ -56,21 +56,27 @@ class KnauerAS(Autosampler):
         await super().set_needle_position(position=position)
         await self.set_z_position("UP")
         await self.hw_device._move_needle_horizontal(needle_position=position)
+        logger.info(f"Needle moved succesfully to position: {position}")
+        return True
 
-    async def connect_to_position(self, tray: str = "", row: int | float | str = "", column: int | float | str = "" ):
+    async def connect_to_position(self, tray: str = "", row: int = None, column: str = None) -> bool:
         """
-        Move the gantry to the specified position on a tray.
+        Move the 3D gantry to the specified (x, y) coordinate of a specific plate and connects to it.
 
-        Args:
-            tray (str): Identifier for the tray to move to.
-            row (int | float | str): Row position on the tray.
-            column (int | float | str): Column position on the tray.
+        plate (str):
+                    LEFT_PLATE
+                    RIGHT_PLATE
+
+        column: ["a", "b", "c", "d", "e", "f"].
+        row: [1, 2, 3, 4, 5, 6, 7, 8]
         """
         await self.set_z_position("UP")
         await self.set_xy_position(tray=tray,row=row,column=column)
         await self.set_z_position("DOWN")
+        logger.info(f"Needle connected successfully to row: {row}, column: {column} on tray: {tray}")
+        return True
 
-    async def set_xy_position(self, plate: str = "", row: int = 0, column: str = "a") -> None:
+    async def set_xy_position(self, tray: str = "", row: int = None, column: str = None) -> bool:
         """
         Move the 3D gantry to the specified (x, y) coordinate of a specific plate.
 
@@ -83,26 +89,29 @@ class KnauerAS(Autosampler):
         """
 
         await super().set_xy_position(x=row,y=column)
-        column = ord(column.upper()) - 64 # change column to int
+        column_num = ord(column.upper()) - 64 # change column to int
 
         if await self.is_needle_running():
             logger.warning("Needle already moving!")
 
-        traytype = self.hw_device.tray_type.upper()
+        #traytype = self.hw_device.tray_type.upper()
         await self.hw_device._move_needle_vertical("UP")
         await self.hw_device._move_tray(plate, row)
         success = await self.hw_device._move_needle_horizontal("PLATE", plate=plate, well=column)
+        await self.hw_device._move_tray(tray, row)
+        success = await self.hw_device._move_needle_horizontal("PLATE", plate=tray, well=column_num)
         if success:
-            logger.info(f"Needle moved successfully to row: {row}, column: {column} on plate: {plate}")
+            logger.info(f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}")
+            return True
 
-    async def is_needle_running(self):
+    async def is_needle_running(self) -> bool:
         """"Checks if Autosampler is running"""
-        if self.hw_device.get_status() == "NEEDLE_RUNNING":
+        if await self.hw_device.get_status() == "NEEDLE_RUNNING":
             return True
         else:
             return False
 
-    async def set_z_position(self, direction: str = "") -> None:
+    async def set_z_position(self, direction: str = "") -> bool:
         """
         Move the 3D gantry along the Z axis.
 
@@ -111,11 +120,12 @@ class KnauerAS(Autosampler):
             UP
         """
         await super().set_z_position(z=direction)
-        if await self.is_needle_running:
+        if await self.is_needle_running():
             logger.warning("Needle already moving!")
         success = await self.hw_device._move_needle_vertical(move_to=direction)
         if success:
             logger.info(f"Needle moved successfully to {direction} direction.")
+            return True
 
     async def infuse(self, rate: str = None, volume: str = None) -> bool:  # type: ignore
         """
@@ -154,9 +164,13 @@ class KnauerAS(Autosampler):
         """Can the pump reverse its normal flow direction?"""
         return True
 
-    async def is_pumping(self):
-        status = await self.hw_device.is_pumping()
-        return status
+    async def is_pumping(self) -> bool:
+        """"Checks if Syringe or syringe valve is running"""
+        if self.hw_device.get_status() == "SYRINGE_OR_SYRINGE_VALVE_RUNNING":
+            return True
+        else:
+            return False
+
     async def reset_errors(self) -> bool:
         """Resets AS erors"""
         errors = await self.hw_device.get_errors()
