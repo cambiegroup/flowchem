@@ -288,13 +288,18 @@ class Autosampler(FlowchemComponent):
         if current_pos == return_tuple_from_input(position):
             return True
 
-    async def get_injection_valve_position(self):
+    async def get_injection_valve_position(self) -> list[list[int | None]]:
         """Retrieve the current position of the injection valve."""
         await self.injection_valve.get_position()
 
+    def injection_valve_connections(self) -> ValveInfo:
+        """Get the list of all available positions for this valve.
+        This mainly has informative purpose
+        """
+        return self.injection_valve.connections()
 
     # AS Methods
-    async def fill_wash_reservoir(self, volume: float = 0.2, rate: float = None):
+    async def fill_wash_reservoir(self, volume: str = "0.2 ml", rate: str = None):
         """
         Fill the wash reservoir with a specified volume and rate.
 
@@ -302,20 +307,20 @@ class Autosampler(FlowchemComponent):
             volume (float): Volume to be used for filling the wash reservoir. Default is 0.2 mL.
             rate (float): Flow rate for filling the reservoir. If not provided, the default rate is used.
         """
-        await self.set_syringe_valve_position("WASH")
+        await self.set_syringe_valve_position_monitor("WASH")
         await self.withdraw(rate=rate, volume=volume)
         await self.set_needle_position("WASH")
         await self.set_z_position("DOWN")
         await self.wait_until_ready()
-        await self.set_injection_valve_position("LOAD")
+        await self.set_injection_valve_position_monitor("LOAD")
         await self.wait_until_ready()
-        await self.set_syringe_valve_position("NEEDLE")
+        await self.set_syringe_valve_position_monitor("NEEDLE")
         await self.wait_until_ready()
         await self.infuse(rate=rate, volume=volume)
         await self.wait_for_syringe()
         await self.set_z_position("UP")
 
-    async def empty_wash_reservoir(self, volume: float = 0.2, rate: float = None):
+    async def empty_wash_reservoir(self, volume: str = "0.2 ml", rate: str = None):
         """
         Empty the wash reservoir by withdrawing a specified volume.
 
@@ -328,7 +333,7 @@ class Autosampler(FlowchemComponent):
         await self.pick_up_sample(rate=rate, volume=volume)
         await self.set_z_position("UP")
 
-    async def pick_up_sample(self, volume: float = 0.2, rate: float = None):
+    async def pick_up_sample(self, volume: str = "0 ml", rate: str = None):
         """
         Pick up a sample using the syringe.
 
@@ -336,29 +341,23 @@ class Autosampler(FlowchemComponent):
             volume (float): Volume of the sample to pick up. Default is 0.2 mL.
             rate (float): Flow rate for withdrawing the sample. If not provided, the default rate is used.
         """
-        await self.set_injection_valve_position("LOAD")
+        await self.set_injection_valve_position_monitor("LOAD")
         await self.wait_until_ready()
-        await self.set_syringe_valve_position("NEEDLE")
+        await self.set_syringe_valve_position_monitor("NEEDLE")
         await self.withdraw(rate=rate, volume=volume)
         await self.wait_until_ready()
 
-    async def wash_needle(self, volume: float = 0.2, times: int = 3, rate: float = None):
+    async def wash_needle(self, volume: str = "0.2 ml", times: int = 1, rate: str = None) -> bool:
         """
-        Fill neelde with solvent and then wash it.
-        Args:
-            volume: 0.2 mL is a reasonable value
-            times:
-            flow_rate:
-
-        Returns: None
-
+        Fill needle with solvent and then wash it.
         """
         for i in range(times):
-            self.fill_wash_reservoir(volume=volume, rate=flow_rate)
-            self.empty_wash_reservoir(volume=volume, rate=flow_rate)
-            self.set_needle_position("WASTE")
-            self.set_z_position("DOWN")
+            await self.fill_wash_reservoir(volume=volume, rate=rate)
+            await self.empty_wash_reservoir(volume=volume, rate=rate)
+            await self.set_needle_position("WASTE")
+            await self.set_z_position("DOWN")
             # dispense to waste and go up
-            self.infuse(rate=rate, volume=volume)
-            self.wait_until_ready()
-            self.set_z_position("UP")
+            await self.infuse(rate=rate, volume=volume)
+            await self.wait_until_ready()
+            await self.set_z_position("UP")
+        return True
