@@ -151,7 +151,42 @@ class ASEthernetDevice:
             )
 
 
-class KnauerAutosampler(ASEthernetDevice, FlowchemDevice):
+class ASSerialDevice:
+    """Setup and manage communication for Knauer Autosampler."""
+
+    DEFAULT_SERIAL_CONFIG = {
+        "timeout": 1,  # Timeout in seconds
+        "baudrate": 9600,  # Fixed baudrate
+        "bytesize": aioserial.EIGHTBITS,  # Data: 8 bits (fixed)
+        "parity": aioserial.PARITY_NONE,  # Parity: None (fixed)
+        "stopbits": aioserial.STOPBITS_ONE  # Stopbits: 1 (fixed)
+    }
+
+    def __init__(self, port: str = None, **kwargs):
+        if not port:
+            logger.error("A valid port must be specified for Serial communication")
+            raise ValueError("A valid port must be specified for Serial communication.")
+        configuration = dict(ASSerialDevice.DEFAULT_SERIAL_CONFIG, **kwargs)
+        try:
+            self._serial = aioserial.AioSerial(port, **configuration)
+        except aioserial.SerialException as serial_exception:
+            logger.error(f"Cannot connect to the Autosampler on the port <{port}>")
+            raise ValueError(f"Cannot connect to the Autosampler on the port <{port}>") from serial_exception
+        self._lock = asyncio.Lock()
+
+    async def _send_and_receive(self, message: str) -> bytes:
+        """Send and receive messages over Serial communication."""
+        async with self._lock:
+            self._serial.reset_input_buffer()
+            logger.debug(f"Sending message to Serial: {message}")
+            await self._serial.write_async(message.encode("ascii"))
+
+            reply = await self._serial.readline_async()
+            logger.debug(f"Received reply from Serial: {reply}")
+            return reply
+
+
+class KnauerAutosampler(FlowchemDevice):
     """AutoSampler control class."""
 
     def __init__(self,
