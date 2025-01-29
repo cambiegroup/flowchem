@@ -1,9 +1,11 @@
 """Base Autosampler meta component."""
 from loguru import logger
-
+from time import sleep
+import json
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.components.meta_components.gantry3D import gantry3D
 from flowchem.components.pumps.syringe_pump import SyringePump
+from flowchem.components.valves.valve import ValveInfo, return_tuple_from_input
 from flowchem.components.valves.distribution_valves import (
     TwoPortDistributionValve,
     FourPortDistributionValve,
