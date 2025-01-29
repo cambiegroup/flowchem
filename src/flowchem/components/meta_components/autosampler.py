@@ -167,8 +167,8 @@ class Autosampler(FlowchemComponent):
     #     pos = await self.gantry3D.get_position()
     #     return pos
 
-    async def connect_to_position(self, tray: str = "", row: int | float | str = "", column: int | float | str = "" ):
-            await self.gantry3D.set_xy_position(tray=tray,row=row,column=column)
+    async def connect_to_position(self, row: int | float | str = "", column: int | float | str = "" ):
+            await self.set_xy_position(x=row,y=column)
             await self.gantry3D.set_z_position("DOWN")
             return True
 
@@ -196,7 +196,8 @@ class Autosampler(FlowchemComponent):
 
         Returns: None
         """
-        await self.pump.infuse(rate=rate, volume=volume)
+        success = await self.pump.infuse(rate=rate, volume=volume)
+        return success
 
     async def withdraw(self, rate: str = None, volume: str = None) -> bool:  # type: ignore
         """
@@ -206,15 +207,16 @@ class Autosampler(FlowchemComponent):
 
         Returns: None
         """
-        await self.pump.withdraw(rate=rate, volume=volume)
+        success = await self.pump.withdraw(rate=rate, volume=volume)
+        return success
 
-    async def is_pumping(self):
+    async def is_pumping(self) -> bool:
         status = await self.pump.is_pumping()
         return status
 
     async def wait_for_syringe(self):
         while True:
-            if await self.pump.is_pumping() == False:
+            if not await self.is_pumping():
                 break
             else:
                 sleep(0.01)
