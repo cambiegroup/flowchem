@@ -88,30 +88,29 @@ class Autosampler(FlowchemComponent):
         #     "FourPortDistributionValve": FourPortDistributionValve,
         #     "SixPortDistributionValve": SixPortDistributionValve,
         # }
-        {"axes_config": {
-                "x": {"mode": "discrete", "positions": _config["tray_config"]["rows"]},
-                "y": {"mode": "discrete", "positions": _config["tray_config"]["columns"]},
-                "z": {"mode": "discrete", "positions": ["UP", "DOWN"]}
-            }
+        _config["axes_config"] = {
+            "x": {"mode": "discrete", "positions": _config["tray_config"]["rows"]},
+            "y": {"mode": "discrete", "positions": _config["tray_config"]["columns"]},
+            "z": {"mode": "discrete", "positions": ["UP", "DOWN"]}
         }
 
         # Check config #
         #Syringe valve mapping
         required_syringe_valve_values = {"NEEDLE", "WASH", "WASTE"}  # Set of required values
-        syringe_mapping = config.get("syringe_valve", {}).get("mapping", {})
+        syringe_mapping = _config.get("syringe_valve", {}).get("mapping", {})
         updated_mapping = {key: value.upper() for key, value in syringe_mapping.items()}
         missing_values = required_syringe_valve_values - set(updated_mapping.values())  # Check if required values are in the mapping
         if missing_values:
             logger.error(f"Missing required values in syringe valve mapping: {missing_values}")
-        config["syringe_valve"]["mapping"] = updated_mapping
+        _config["syringe_valve"]["mapping"] = updated_mapping
         #Needle positions
         required_needle_positions = {"WASH", "WASTE"}
-        needle_positions = config.get("needle_positions", [])
+        needle_positions = _config.get("needle_positions", [])
         updated_needle_positions = [pos.upper() for pos in needle_positions]
         missing_needle_positions = required_needle_positions - set(updated_needle_positions)
         if missing_needle_positions:
             logger.error(f"Missing required needle positions: {missing_needle_positions}")
-        config["needle_positions"] = updated_needle_positions
+        _config["needle_positions"] = updated_needle_positions
 
 
         self.gantry3D = gantry3D(
