@@ -264,7 +264,7 @@ class KnauerAutosampler(FlowchemDevice):
         :return: reply: str
         """
 
-        reply = await self._send_and_receive(message)
+        reply = await self.io._send_and_receive(message)
         # this only checks that it was acknowledged
         await self._parse_setting_reply(reply)
         return True
@@ -277,7 +277,7 @@ class KnauerAutosampler(FlowchemDevice):
         :param message:
         :return: reply: str
         """
-        reply = await self._send_and_receive(message)
+        reply = await self.io._send_and_receive(message)
         query_reply = await self._parse_query_reply(reply)
         return query_reply
 
