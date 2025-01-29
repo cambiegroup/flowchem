@@ -243,17 +243,33 @@ class Autosampler(FlowchemComponent):
 
     # Syringe valve Methods
     async def set_syringe_valve_position(self, position: str = None):
-        """Set the position of the syringe valve.        """
-        await self.syringe_valve.set_position(position=position)
+        """Write the connections to make in the syringe valve.
+            Example: "[[1,0]]"
+        """
+        await self.syringe_valve.set_position(connect=position)
+        current_pos = await self.get_syringe_valve_position()
+        logger.debug(f"current_pos {current_pos}")
+        logger.debug(f"position {position}")
+        if current_pos == return_tuple_from_input(position):
+            return True
+
+    async def get_syringe_valve_position(self) -> list[list[int | None]]:
+        """Retrieve the current connections of the syringe valve."""
+        return await self.syringe_valve.get_position()
 
     async def get_syringe_valve_position(self, position: str = None):
         """Retrieve the current position of the syringe valve."""
         await self.syringe_valve.get_position(position=position)
 
     # Injection valve Methods
-    async def set_injection_valve_position(self, position: str | tuple = ""):
+    async def set_injection_valve_position(self, position: str = None):
         """Set the position of the injection valve."""
-        await self.injection_valve.set_position(position=position)
+        await self.injection_valve.set_position(connect=position)
+        current_pos = await self.get_injection_valve_position()
+        logger.debug(f"current_pos {current_pos}")
+        logger.debug(f"position {position}")
+        if current_pos == return_tuple_from_input(position):
+            return True
 
     async def get_injection_valve_position(self):
         """Retrieve the current position of the injection valve."""
