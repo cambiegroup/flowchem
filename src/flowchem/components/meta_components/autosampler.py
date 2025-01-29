@@ -257,9 +257,26 @@ class Autosampler(FlowchemComponent):
         """Retrieve the current connections of the syringe valve."""
         return await self.syringe_valve.get_position()
 
-    async def get_syringe_valve_position(self, position: str = None):
-        """Retrieve the current position of the syringe valve."""
-        await self.syringe_valve.get_position(position=position)
+    async def set_syringe_valve_position_monitor(self, position: str = None) -> bool:
+        """Select which position you want to set on the syringe valve according to mapping.
+        Example: "WASH"
+        """
+        pos_num = self.syringe_valve._change_connections(raw_position=position, reverse=True)
+        pos_str = json.dumps(list(self.syringe_valve._positions.get(int(pos_num))))
+        await self.set_syringe_valve_position(position=pos_str)
+        return True
+
+    async def set_injection_valve_position_monitor(self, position: str = None) -> bool:
+        pos_num = self.injection_valve._change_connections(raw_position=position, reverse=True)
+        pos_str = json.dumps(list(self.injection_valve._positions.get(int(pos_num))))
+        await self.set_injection_valve_position(position=pos_str)
+        return True
+
+    def syringe_valve_connections(self) -> ValveInfo:
+        """Get the list of all available positions for this valve.
+                This mainly has informative purpose
+                """
+        return self.syringe_valve.connections()
 
     # Injection valve Methods
     async def set_injection_valve_position(self, position: str = None):
