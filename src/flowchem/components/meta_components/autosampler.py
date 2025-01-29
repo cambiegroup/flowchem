@@ -59,9 +59,9 @@ class Autosampler(FlowchemComponent):
 
         #gantry3D
         self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
-        self.add_api_route("/needle_position", self.set_xy_position, methods=["PUT"])
-        self.add_api_route("/needle_position", self.set_z_position, methods=["PUT"])
-        self.add_api_route("/needle_position", self.connect_to_position, methods=["PUT"])
+        self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
+        self.add_api_route("/set_z_position", self.set_z_position, methods=["PUT"])
+        self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
         self.add_api_route("/is_needle_running", self.is_needle_running, methods=["GET"])
         #Pump
         self.add_api_route("/infuse", self.infuse, methods=["PUT"])
@@ -69,12 +69,20 @@ class Autosampler(FlowchemComponent):
         self.add_api_route("/is_pumping", self.is_pumping, methods=["GET"])
         #Syringe Valve
         self.add_api_route("/syringe_valve_position", self.set_syringe_valve_position, methods=["PUT"])
+        self.add_api_route("/syringe_valve_position_monitor", self.set_syringe_valve_position_monitor, methods=["PUT"])
         self.add_api_route("/syringe_valve_position", self.get_syringe_valve_position, methods=["GET"])
+        self.add_api_route("/syringe_valve_connections", self.syringe_valve_connections, methods=["GET"])
         #Injection Valve
         self.add_api_route("/injection_valve_position", self.set_injection_valve_position, methods=["PUT"])
+        self.add_api_route("/injection_valve_position_monitor", self.set_injection_valve_position_monitor, methods=["PUT"])
         self.add_api_route("/injection_valve_position", self.get_injection_valve_position, methods=["GET"])
+        self.add_api_route("/injection_valve_connections", self.injection_valve_connections, methods=["GET"])
+
         #Meta Methods
         self.add_api_route("/wash_needle", self.wash_needle, methods=["PUT"])
+        #self.add_api_route("/fill_wash_reservoir", self.fill_wash_reservoir, methods=["PUT"])
+        #self.add_api_route("/empty_wash_reservoir", self.empty_wash_reservoir, methods=["PUT"])
+        self.add_api_route("/pick_up_sample", self.pick_up_sample, methods=["PUT"])
 
         # valve_class_map = {
         #     "FourPortDistributionValve": FourPortDistributionValve,
