@@ -17,6 +17,20 @@ from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 from flowchem.devices.flowchem_device import FlowchemDevice
 
 
+class ASInjectionValve(SixPortTwoPositionValve):
+
+    def __init__(self, name: str, hw_device: FlowchemDevice, mapping: dict = None):
+        self.identifier = "injection_valve"
+        self.mapping = mapping
+        super().__init__(name, hw_device)
+
+class ASSyringeValve(FourPortDistributionValve):
+
+    def __init__(self, name: str, hw_device: FlowchemDevice, mapping: dict = None):
+        self.identifier = "syringe_valve"
+        self.mapping = mapping
+        super().__init__(name, hw_device)
+
 class Autosampler(FlowchemComponent):
     """
     A CNC device that controls movement in 3 dimensions (X, Y, Z).
@@ -108,19 +122,21 @@ class Autosampler(FlowchemComponent):
         #         f"Must be one of {list(valve_class_map.keys())}."
         #     )
         #ToDo: Is the syringe valve always four ports?
-        self.syringe_valve = FourPortDistributionValve(
+        self.syringe_valve = ASSyringeValve(
             f"{name}_syringe_valve",
             hw_device,
+            _config["syringe_valve"]["mapping"]
         )
-        self.syringe_valve.identifier = "syringe_valve"
-        self.syringe_valve.mapping = _config["syringe_valve"]["mapping"]
+        #self.syringe_valve.identifier = "syringe_valve"
+        #self.syringe_valve.mapping = _config["syringe_valve"]["mapping"]
 
-        self.injection_valve = SixPortTwoPositionValve(
+        self.injection_valve = ASInjectionValve(
                 f"{name}_injection_valve",
                 hw_device,
+            {0: "LOAD", 1: "INJECT"}
             )
-        self.injection_valve.identifier = "injection_valve"
-        self.injection_valve.mapping = {0: 'LOAD', 1: 'INJECT'}
+        #self.injection_valve.identifier = "injection_valve"
+        #self.injection_valve.mapping = {0: 'LOAD', 1: 'INJECT'}
 
     # Gantry3D Methods
     async def is_needle_running(self):
