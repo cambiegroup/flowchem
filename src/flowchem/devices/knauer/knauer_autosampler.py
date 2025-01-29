@@ -374,8 +374,8 @@ class KnauerAutosampler(FlowchemDevice):
         return await self._set_get_value(SwitchInjectorValveCommand, port, SwitchInjectorValveCommand.allowed_position,
                                          get_actual=True)
 
-    async def set_raw_position(self, identifier: str = None, position: str = None):
-        match identifier:
+    async def set_raw_position(self, position: str = None, target_component: str = None):
+        match target_component:
             case "injection_valve":
                 return await self.injector_valve_position(port=position)
             case "syringe_valve":
@@ -383,8 +383,8 @@ class KnauerAutosampler(FlowchemDevice):
             case _:
                 raise RuntimeError("Unknown valve type")
 
-    async def get_raw_position(self, identifier: str = None):
-        match identifier:
+    async def get_raw_position(self, target_component: str = None) -> str:
+        match target_component:
             case "injection_valve":
                 return await self.injector_valve_position(port=None)
             case "syringe_valve":
@@ -453,7 +453,8 @@ if __name__ == "__main__":
 
     AS = KnauerAutosampler(
         name="test-AS",
-        ip_address="192.168.10.114",
+        #ip_address="192.168.10.114",
+        port="COM3",
         autosampler_id=61,
         tray_type="TRAY_48_VIAL",
     )
@@ -461,6 +462,7 @@ if __name__ == "__main__":
     async def execute_tasks(A_S):
         print(await A_S.get_errors())
         await A_S.reset_errors()
+        print(await A_S.get_raw_position(target_component="syringe_valve"))
     asyncio.run(execute_tasks(AS))
 
 
