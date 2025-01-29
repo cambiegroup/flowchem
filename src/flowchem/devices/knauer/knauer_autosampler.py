@@ -1,5 +1,7 @@
 from enum import Enum, auto
 from loguru import logger
+import aioserial
+
 import asyncio
 from typing import Type, List
 import functools
@@ -8,7 +10,6 @@ import time
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import jakob, samuel_saraiva, miguel
-from flowchem.devices.knauer._common import KnauerEthernetDevice
 from flowchem.devices.knauer.knauer_autosampler_component import (
     KnauerAS
 )
