@@ -192,13 +192,33 @@ class KnauerAutosampler(FlowchemDevice):
     def __init__(self,
                  name: str = None,
                  ip_address: str = "",
-                 autosampler_id: int = 0,
+                 autosampler_id: int = None,
+                 port: str = None,
                  syringe_volume: str = "0.05 ml",
                  tray_type: str = "TRAY_48_VIAL",
                  **kwargs,
                  ):
-        ASEthernetDevice.__init__(self, ip_address, **kwargs)
-        FlowchemDevice.__init__(self, name=name)
+        # Ensure only one communication mode is set
+        if ip_address and port:
+            logger.error("Specify either ip_address (Ethernet) or port (Serial), not both.")
+            raise ValueError("Specify either ip_address (Ethernet) or port (Serial), not both.")
+        if not ip_address and not port:
+            logger.error("Either ip_address or port must be specified for communication.")
+            raise ValueError("Either ip_address or port must be specified for communication.")
+
+        self.ip_address = ip_address
+        self.port = port
+
+        if self.ip_address:
+            # Ethernet communication
+            self.io = ASEthernetDevice(ip_address=self.ip_address, **kwargs)
+        elif self.port:
+            # Serial communication
+            self.io = ASSerialDevice(port=self.port, **kwargs)
+
+        #ASEthernetDevice.__init__(self, ip_address, **kwargs)
+
+        super().__init__(name)
         self.autosampler_id = autosampler_id
         self.name = f"AutoSampler ID: {self.autosampler_id}" if name is None else name
         self.tray_type = tray_type
