@@ -146,9 +146,10 @@ class Autosampler(FlowchemComponent):
         #self.injection_valve.mapping = {0: 'LOAD', 1: 'INJECT'}
 
     # Gantry3D Methods
-    async def is_needle_running(self):
+    async def is_needle_running(self) -> bool:
         """"Checks if needle is running"""
     ...
+
     async def set_needle_position(self, position: str = "") -> None:
         """
         Move the needle to one of the predefined positions.
