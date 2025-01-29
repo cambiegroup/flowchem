@@ -290,7 +290,7 @@ class Autosampler(FlowchemComponent):
 
     async def get_injection_valve_position(self) -> list[list[int | None]]:
         """Retrieve the current position of the injection valve."""
-        await self.injection_valve.get_position()
+        return await self.injection_valve.get_position()
 
     def injection_valve_connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
