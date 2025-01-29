@@ -40,6 +40,7 @@ class KnauerAS(Autosampler):
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         """Initialize component."""
         super().__init__(name, hw_device, self._config)
+        self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
 
     async def set_needle_position(self, position: str = "") -> None:
         """
@@ -156,3 +157,11 @@ class KnauerAS(Autosampler):
     async def is_pumping(self):
         status = await self.hw_device.is_pumping()
         return status
+    async def reset_errors(self) -> bool:
+        """Resets AS erors"""
+        errors = await self.hw_device.get_errors()
+        if errors:
+            logger.info(f"Error: {errors} was present")
+            await self.hw_device.reset_errors()
+            logger.info(f"Errors reset")
+            return True
