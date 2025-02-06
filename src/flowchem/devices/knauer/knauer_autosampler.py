@@ -11,7 +11,10 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import jakob, samuel_saraiva, miguel
 from flowchem.devices.knauer.knauer_autosampler_component import (
-    KnauerAS
+    AutosamplerGantry3D,
+    AutosamplerPump,
+    AutosamplerSyringeValve,
+    AutosamplerInjectionValve,
 )
 
 try:
@@ -349,7 +352,10 @@ class KnauerAutosampler(FlowchemDevice):
 
         logger.info('Knauer AutoSampler device was successfully initialized!')
         self.components.extend([
-            KnauerAS("AS", self)
+            AutosamplerGantry3D("gantry3D", self),
+            AutosamplerPump("pump", self),
+            AutosamplerSyringeValve("syringe_valve", self),
+            AutosamplerInjectionValve("injection_valve", self),
         ])
 
     async def _move_needle_horizontal(self, needle_position: str, plate: str = None, well: int = None):
