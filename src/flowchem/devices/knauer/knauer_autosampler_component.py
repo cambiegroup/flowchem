@@ -7,7 +7,10 @@ from loguru import logger
 if TYPE_CHECKING:
     from .knauer_autosampler import KnauerAutosampler
 
-from flowchem.components.meta_components.autosampler import Autosampler
+from flowchem.components.meta_components.gantry3D import gantry3D
+from flowchem.components.pumps.syringe_pump import SyringePump
+from flowchem.components.valves.distribution_valves import FourPortDistributionValve
+from flowchem.components.valves.injection_valves import SixPortTwoPositionValve
 
 try:
     from NDA_knauer_AS.knauer_AS import *
@@ -17,7 +20,7 @@ except ImportError:
     HAS_AS_COMMANDS = False
 
 
-class KnauerAS(Autosampler):
+class AutosamplerGantry3D(gantry3D):
     """
     Control a Knauer Autosampler component .
 
@@ -25,22 +28,19 @@ class KnauerAS(Autosampler):
         hw_device (KnauerAutosampler): The hardware device for the Knauer CNC component.
     """
 
-    _config = {
-        "tray_config": {
-            "rows": [1, 2, 3, 4, 5, 6, 7, 8],
-            "columns": ["a", "b", "c", "d", "e", "f"]
-        },
-        "needle_positions": ["WASH", "WASTE", "EXCHANGE", "TRANSPORT"],
-        "syringe_valve": {"mapping": {0: "NEEDLE", 1: "WASH", 2: "WASH_PORT2", 3: "WASTE"},
-        }
+    tray_config = {
+        "x": {"mode": "discrete", "positions": [1, 2, 3, 4, 5, 6, 7, 8]},
+        "y": {"mode": "discrete", "positions": ["a", "b", "c", "d", "e", "f"]},
+        "z": {"mode": "discrete", "positions": ["UP", "DOWN"]}
     }
 
     hw_device: KnauerAutosampler  # for typing's sake
 
     def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
         """Initialize component."""
-        super().__init__(name, hw_device, self._config)
+        super().__init__(name, hw_device, axes_config=self.tray_config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
+        self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
@@ -53,7 +53,6 @@ class KnauerAS(Autosampler):
                         EXCHANGE
                         TRANSPORT
         """
-        await super().set_needle_position(position=position)
         await self.set_z_position("UP")
         await self.hw_device._move_needle_horizontal(needle_position=position)
         logger.info(f"Needle moved succesfully to position: {position}")
@@ -88,7 +87,8 @@ class KnauerAS(Autosampler):
         row: [1, 2, 3, 4, 5, 6, 7, 8]
         """
 
-        await super().set_xy_position(x=row,y=column)
+        await super().set_x_position(position=row)
+        await super().set_y_position(position=column)
         column_num = ord(column.upper()) - 64 # change column to int
 
         if await self.is_needle_running():
@@ -102,13 +102,6 @@ class KnauerAS(Autosampler):
             logger.info(f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}")
             return True
 
-    async def is_needle_running(self) -> bool:
-        """"Checks if Autosampler is running"""
-        if await self.hw_device.get_status() == "NEEDLE_RUNNING":
-            return True
-        else:
-            return False
-
     async def set_z_position(self, direction: str = "") -> bool:
         """
         Move the 3D gantry along the Z axis.
@@ -117,13 +110,32 @@ class KnauerAS(Autosampler):
             DOWN
             UP
         """
-        await super().set_z_position(z=direction)
+        await super().set_z_position(position=direction)
         if await self.is_needle_running():
             logger.warning("Needle already moving!")
         success = await self.hw_device._move_needle_vertical(move_to=direction)
         if success:
             logger.info(f"Needle moved successfully to {direction} direction.")
             return True
+
+    async def reset_errors(self) -> bool:
+        """Resets AS erors"""
+        errors = await self.hw_device.get_errors()
+        if errors:
+            logger.info(f"Error: {errors} was present")
+            await self.hw_device.reset_errors()
+            logger.info(f"Errors reset")
+            return True
+
+
+class AutosamplerPump(SyringePump):
+    """
+    Control a Knauer Autosampler component .
+
+    Attributes:
+        hw_device (KnauerAutosampler): The hardware device for the Knauer CNC component.
+    """
+    hw_device: KnauerAutosampler
 
     async def infuse(self, rate: str = None, volume: str = None) -> bool:  # type: ignore
         """
@@ -169,11 +181,129 @@ class KnauerAS(Autosampler):
         else:
             return False
 
-    async def reset_errors(self) -> bool:
-        """Resets AS erors"""
-        errors = await self.hw_device.get_errors()
-        if errors:
-            logger.info(f"Error: {errors} was present")
-            await self.hw_device.reset_errors()
-            logger.info(f"Errors reset")
-            return True
+
+class AutosamplerInjectionValve(SixPortTwoPositionValve):
+    """
+        Control a Knauer Autosampler 6-Port Distribution Valve.
+
+        Attributes:
+            hw_device (KnauerValve): The hardware device for the Knauer valve.
+        """
+    hw_device: KnauerAutosampler  # for typing's sake
+    identifier = "injection_valve"
+
+    def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
+        super().__init__(name, hw_device)
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+
+    def _change_connections(self, raw_position: str | int, reverse: bool = False):
+        """
+        Change connections based on the valve's raw position.
+
+        Args:
+            raw_position (str | int): The raw position of the valve.
+            reverse (bool): Whether to reverse the mapping.
+
+        Returns:
+            str | int: The mapped position.
+        """
+        position_mapping = {0: "LOAD", 1: "INJECT"}
+        if reverse:
+            return str([key for key, value in position_mapping.items() if value == raw_position][0])
+        else:
+            return position_mapping[raw_position]
+
+    async def get_monitor_position(self) -> str:
+        """
+        Gets the current valve position.
+
+        Returns:
+            position (str):
+                LOAD (position 0)
+                INJECT (position 1)
+        """
+        position = await self.hw_device.injector_valve_position(port=None)
+        if position:
+            logger.info(f"Injection valve is in position: {position}")
+        return position
+
+    async def set_monitor_position(self, position: str):
+        """
+        Set the valve to a specified position.
+
+        Args:
+            position (str):
+            LOAD (position 0)
+            INJECT (position 1)
+        """
+        try:
+            success = await self.hw_device.injector_valve_position(port=position)
+            if success:
+                logger.info(f"Injection valve moved successfully to position: {position}")
+        except KeyError as e:
+            raise Exception(f"Please give allowed positions {[pos.name for pos in InjectorValvePositions]}") from e
+
+class AutosamplerSyringeValve(FourPortDistributionValve):
+    """
+        Control a Knauer Autosampler 4-Port Distribution syringe Valve.
+
+        Attributes:
+            hw_device (KnauerAutosampler): The hardware device for the 4-Port Distribution syringe Valve.
+        """
+
+    hw_device: KnauerAutosampler  # for typing's sake
+    identifier = "syringe_valve"
+
+    def __init__(self, name: str, hw_device: KnauerAutosampler) -> None:
+        super().__init__(name, hw_device)
+        self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
+        self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
+
+    def _change_connections(self, raw_position: str | int, reverse: bool = False):
+        """
+        Change connections based on the valve's raw position.
+
+        Args:
+            raw_position (int): The raw position of the valve.
+            reverse (bool): Whether to reverse the mapping.
+
+        Returns:
+            int: The mapped position.
+        """
+        position_mapping = {0: "NEEDLE", 1: "WASH", 2: "WASH_PORT2", 3: "WASTE"}
+        if reverse:
+            return str([key for key, value in position_mapping.items() if value == raw_position][0])
+        else:
+            return position_mapping[raw_position]
+
+    async def get_monitor_position(self) -> str:
+        """
+        Gets the current valve position.
+
+        Returns:
+            position (str): The current position:
+            NEEDLE (position 0).
+            WASH (position 1).
+            WASH_PORT2 (position 2).
+            WASTE (position 3).
+        """
+        position = await self.hw_device.syringe_valve_position(port=None)
+        if position:
+            logger.info(f"Syringe valve is in position: {position}")
+        return position
+
+    async def set_monitor_position(self, position: str):
+        """
+        Set the valve to a specified position.
+
+        Args:
+            position (str): The desired position:
+            NEEDLE (position 0).
+            WASH (position 1).
+            WASH_PORT2 (position 2).
+            WASTE (position 3).
+        """
+        success = await self.hw_device.syringe_valve_position(port=position)
+        if success:
+            logger.info(f"Syringe valve moved successfully to position: {position}")
