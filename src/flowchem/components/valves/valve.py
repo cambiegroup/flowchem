@@ -191,12 +191,6 @@ class Valve(FlowchemComponent):
         Returns:
             int: The mapped position.
         """
-        if hasattr(self, "mapping"):
-            position_mapping = self.mapping
-            if reverse:
-                return str([key for key, value in position_mapping.items() if value == raw_position][0])
-            else:
-                return position_mapping[raw_position]
 
     def _connect_positions(self,
                            positions_to_connect: Tuple[Tuple[int, int], ...],
