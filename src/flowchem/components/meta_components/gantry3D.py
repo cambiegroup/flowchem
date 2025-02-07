@@ -25,11 +25,9 @@ class gantry3D(FlowchemComponent):
                 }
         """
         super().__init__(name, hw_device)
-        self.add_api_route("/position", self.set_x_position, methods=["PUT"])
-        self.add_api_route("/position", self.set_y_position, methods=["PUT"])
-        self.add_api_route("/position", self.set_z_position, methods=["PUT"])
-        self.add_api_route("/position", self.get_position, methods=["GET"])
-
+        self.add_api_route("/set_x_position", self.set_x_position, methods=["PUT"])
+        self.add_api_route("/set_y_position", self.set_y_position, methods=["PUT"])
+        self.add_api_route("/set_z_position", self.set_z_position, methods=["PUT"])
 
         self.x_axis = LengthControl(
             f"{name}_x",
@@ -77,15 +75,4 @@ class gantry3D(FlowchemComponent):
         """
         await self.z_axis.set_position(position)
 
-    async def get_position(self) -> dict:
-        """
-        Get the current position of the gantry3D device.
 
-        Returns:
-            dict: A dictionary with the current positions of X, Y, and Z axes.
-        """
-        return {
-            "x": await self.x_axis.get_position(),
-            "y": await self.y_axis.get_position(),
-            "z": await self.z_axis.get_position(),
-        }
