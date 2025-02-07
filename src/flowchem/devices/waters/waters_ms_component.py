@@ -17,5 +17,7 @@ class WatersMSControl(MSControl):
         """Device-specific initialization."""
         super().__init__(name, hw_device)
 
-    async def run_sample(self, sample_name: str) -> bool:
-        ...
+    async def run_sample(self, sample_name: str, run_duration: int = 0, queue_name="next.txt",
+                             do_conversion: bool = False):
+        """Run MS sample with the provided sample name and method."""
+        return await self.hw_device.record_mass_spec(sample_name=sample_name, run_duration = run_duration, do_conversion = do_conversion)
