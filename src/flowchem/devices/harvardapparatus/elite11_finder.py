@@ -51,16 +51,15 @@ def elite11_finder(serial_port) -> set[str]:
 
     # Local variable for enumeration
     elite11_finder.counter += 1  # type: ignore
-    cfg.add(
-        dedent(
-            f"""[device.elite11-{elite11_finder.counter}]  # type:ignore
-                type = "Elite11"
-                port = "{serial_port}"
-                address = {address}
-                syringe_diameter = "XXX mm" # Specify syringe diameter!
-                syringe_volume = "YYY ml" # Specify syringe volume!\n\n""",
-        ),
+    cfgs = f"[device.elite11-{elite11_finder.counter}]"  # type:ignore
+    cfgs += dedent(
+        f"""
+                   type = "Elite11"
+                   port = "{serial_port}"
+                   address = {address}
+                   syringe_diameter = "XXX mm" # Specify syringe diameter!
+                   syringe_volume = "YYY ml" # Specify syringe volume!\n\n""",
     )
     logger.info(f"Close the serial port: <{serial_port}>")
     link._serial.close()
-    return cfg
+    return set(cfgs)
