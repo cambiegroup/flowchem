@@ -132,7 +132,7 @@ class UV150PhotoReactor(Photoreactor):
 class R2InjectionValve(SixPortTwoPositionValve):
     """R2 reactor injection loop valve control class."""
 
-    #todo this needs to be adapted to new code
+    # todo this needs to be adapted to new code
 
     hw_device: R2  # for typing's sake
 
@@ -149,7 +149,7 @@ class R2InjectionValve(SixPortTwoPositionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
-        return raw_position
+        return raw_position # Check the return (raw_position is a int, right?)
 
     async def get_position(self) -> list[list]:
         """Get current valve position."""

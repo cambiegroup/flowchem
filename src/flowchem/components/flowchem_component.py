@@ -16,8 +16,41 @@ if TYPE_CHECKING:
 
 
 class FlowchemComponent:
+    """
+    A base class for Flowchem components that integrates with a hardware device.
+
+    This class provides the foundational setup for creating components that can
+    communicate with hardware devices and expose API routes for interacting with these components.
+
+    Attributes:
+    -----------
+    name : str
+        The name of the component.
+    hw_device : FlowchemDevice
+        The hardware device instance associated with this component.
+    component_info : ComponentInfo
+        Metadata about the component.
+    _router : APIRouter
+        The API router for the component to define HTTP endpoints.
+
+    Methods:
+    --------
+    add_api_route(path: str, endpoint: Callable, **kwargs):
+        Add an API route to the component's router.
+    get_component_info() -> ComponentInfo:
+        Retrieve the component's metadata.
+    """
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """Initialize component."""
+        """
+        Initialize the FlowchemComponent with a name and associated hardware device.
+
+        Parameters:
+        -----------
+        name : str
+            The name assigned to this component.
+        hw_device : FlowchemDevice
+            The hardware device instance associated with this component.
+        """
         self.name = name
         self.hw_device = hw_device
         self.component_info = ComponentInfo(
@@ -40,15 +73,46 @@ class FlowchemComponent:
 
     @property
     def router(self):
-        """Return the API Router. Serves as hook for subclass to add routes."""
+        """
+        Return the API router.
+
+        This serves as a hook for subclasses to add their specific routes.
+
+        Returns:
+        --------
+        APIRouter
+            The API router instance.
+        """
         return self._router
 
     def add_api_route(self, path: str, endpoint: Callable, **kwargs):
-        """Hook for subclasses to add routes to router."""
+        """
+        Add an API route to the component's router.
+
+        This method allows subclasses to define their own API endpoints.
+
+        Parameters:
+        -----------
+        path : str
+            The URL path for the API route.
+        endpoint : Callable
+            The function to be called when the route is accessed.
+        kwargs : dict
+            Additional arguments to configure the route.
+        """
         logger.debug(f"Adding route {path} for router of {self.name}")
         self._router.add_api_route(path, endpoint, **kwargs)
 
     def get_component_info(self) -> ComponentInfo:
-        """Return metadata."""
+        """
+        Retrieve the component's metadata.
+
+        This endpoint provides information about the component, such as its name and associated hardware device.
+
+        Returns:
+        --------
+        ComponentInfo
+            Metadata about the component.
+        """
         return self.component_info
 
