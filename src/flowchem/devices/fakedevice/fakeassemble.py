@@ -20,8 +20,8 @@ class FakeAssemble(FlowchemDevice):
         super().__init__(name)
         self.communication_attribute = attribute
         self.raw_position = {
-            "distribution":"",
-            "position":""
+            "distribution":"5",
+            "position":"2"
         }
 
     async def initialize(self):

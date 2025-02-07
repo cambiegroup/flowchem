@@ -12,7 +12,7 @@ class FakePump(SyringePump):
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:  # type: ignore
         """Start infusion."""
-        ...
+        return True
 
     async def stop(self):  # type: ignore
         """Stop pumping."""
@@ -20,7 +20,7 @@ class FakePump(SyringePump):
 
     async def is_pumping(self) -> bool:  # type: ignore
         """Is pump running?"""
-        ...
+        return True
 
     @staticmethod
     def is_withdrawing_capable() -> bool:  # type: ignore
@@ -29,7 +29,7 @@ class FakePump(SyringePump):
 
     async def withdraw(self, rate: str = "", volume: str = "") -> bool:  # type: ignore
         """Pump in the opposite direction of infuse."""
-        ...
+        return True
 
 
 class FakeValveDistribution(SixPortDistributionValve):
@@ -38,6 +38,12 @@ class FakeValveDistribution(SixPortDistributionValve):
         super().__init__(name, hw_device)
         self.identifier = "distribution"
 
+    def _change_connections(self, raw_position: int | str, reverse: bool = False):
+        if reverse:
+            return raw_position #- 1
+        else:
+            return raw_position #+ 1
+
 
 class FakeValvePosition(SixPortTwoPositionValve):
 
@@ -45,13 +51,19 @@ class FakeValvePosition(SixPortTwoPositionValve):
         super().__init__(name, hw_device)
         self.identifier = "position"
 
+    def _change_connections(self, raw_position: int | str, reverse: bool = False):
+        if reverse:
+            return raw_position - 1
+        else:
+            return raw_position + 1
+
 
 class FakePressureSensor(PressureSensor):
 
     def __init__(self, name: str, hw_device: FlowchemDevice):
         super().__init__(name, hw_device)
 
-    async def read_pressure(self, units: str = "bar"):
+    async def read_pressure(self, units: str = "bar") -> bool:
         """
         Read the current pressure from the sensor and return it in the specified units.
 
