@@ -41,6 +41,8 @@ class AutosamplerGantry3D(gantry3D):
         super().__init__(name, hw_device, axes_config=self.tray_config)
         self.add_api_route("/reset_errors", self.reset_errors, methods=["PUT"])
         self.add_api_route("/needle_position", self.set_needle_position, methods=["PUT"])
+        self.add_api_route("/set_xy_position", self.set_xy_position, methods=["PUT"])
+        self.add_api_route("/connect_to_position", self.connect_to_position, methods=["PUT"])
 
     async def set_needle_position(self, position: str = "") -> bool:
         """
@@ -102,7 +104,7 @@ class AutosamplerGantry3D(gantry3D):
             logger.info(f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}")
             return True
 
-    async def set_z_position(self, direction: str = "") -> bool:
+    async def set_z_position(self, position: str = "") -> bool:
         """
         Move the 3D gantry along the Z axis.
 
@@ -110,12 +112,12 @@ class AutosamplerGantry3D(gantry3D):
             DOWN
             UP
         """
-        await super().set_z_position(position=direction)
+        await super().set_z_position(position=position)
         if await self.is_needle_running():
             logger.warning("Needle already moving!")
-        success = await self.hw_device._move_needle_vertical(move_to=direction)
+        success = await self.hw_device._move_needle_vertical(move_to=position)
         if success:
-            logger.info(f"Needle moved successfully to {direction} direction.")
+            logger.info(f"Needle moved successfully to {position} direction.")
             return True
 
     async def reset_errors(self) -> bool:
@@ -126,6 +128,13 @@ class AutosamplerGantry3D(gantry3D):
             await self.hw_device.reset_errors()
             logger.info(f"Errors reset")
             return True
+
+    async def is_needle_running(self) -> bool:
+        """"Checks if Autosampler is running"""
+        if await self.hw_device.get_status() == "NEEDLE_RUNNING":
+            return True
+        else:
+            return False
 
 
 class AutosamplerPump(SyringePump):
@@ -152,6 +161,7 @@ class AutosamplerPump(SyringePump):
         success = await self.hw_device.dispense(volume=parsed_volume.m_as("mL"))
         if success:
             logger.info(f"Syringe pump successfully infused {volume} ml")
+            return True
 
     async def withdraw(self, rate: str = None, volume: str = None) -> bool:  # type: ignore
         """
@@ -168,6 +178,7 @@ class AutosamplerPump(SyringePump):
         success = await self.hw_device.aspirate(volume=parsed_volume.m_as("mL"))
         if success:
             logger.info(f"Syringe pump successfully withdrew {volume} ml")
+            return True
 
     @staticmethod
     def is_withdrawing_capable() -> bool:  # type: ignore
