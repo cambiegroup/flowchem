@@ -6,6 +6,8 @@ import asyncio
 from typing import Type, List
 import functools
 import time
+import pint
+from flowchem import ureg
 
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
@@ -197,8 +199,8 @@ class KnauerAutosampler(FlowchemDevice):
                  ip_address: str = "",
                  autosampler_id: int = None,
                  port: str = None,
-                 syringe_volume: str = "0.05 ml",
-                 tray_type: str = "TRAY_48_VIAL",
+                 _syringe_volume: str = "",
+                 tray_type: str = "",
                  **kwargs,
                  ):
         # Ensure only one communication mode is set
@@ -219,13 +221,44 @@ class KnauerAutosampler(FlowchemDevice):
             # Serial communication
             self.io = ASSerialDevice(port=self.port, **kwargs)
 
+            # Define valid syringe volumes (numerical values only)
+            valid_syringe_volumes = {250, 500, 1000, 2500}
+
+            try:
+                if _syringe_volume:
+                    _syringe_volume = ureg(_syringe_volume).to("microliters").magnitude
+                    _syringe_volume = int(_syringe_volume)  # Ensure it's an integer
+            except pint.errors.DimensionalityError as e:
+                logger.error(f"Invalid syringe volume format: {_syringe_volume}. Use formats like '250 uL'.")
+                raise ValueError(f"Invalid syringe volume format: {_syringe_volume}. Use formats like '250 uL'.") from e
+
+            # Validate Syringe Volume
+            if _syringe_volume and _syringe_volume not in valid_syringe_volumes:
+                logger.error(f"Invalid syringe volume: {_syringe_volume}. Must be one of {valid_syringe_volumes}.")
+                raise ValueError(f"Invalid syringe volume: {_syringe_volume}. Must be one of {valid_syringe_volumes}.")
+
+        # Validate Tray Type
+        tray_type = tray_type.upper()
+        if tray_type in PlateTypes.__dict__.keys():
+            try:
+                if PlateTypes[tray_type] == PlateTypes.SINGLE_TRAY_87:
+                    raise NotImplementedError("The tray type SINGLE_TRAY_87 is not yet implemented.")
+            except KeyError as e:
+                valid_plate_types = [i.name for i in PlateTypes]
+                raise Exception(
+                    f"Invalid tray type. Please provide one of the following plate types: {valid_plate_types}") from e
+        else:
+            valid_plate_types = [i.name for i in PlateTypes]
+            logger.error(f"Invalid tray type: {tray_type}. Must be one of {valid_plate_types}.")
+            raise ValueError(f"Invalid tray type: {tray_type}. Must be one of {valid_plate_types}.")
+
         #ASEthernetDevice.__init__(self, ip_address, **kwargs)
 
         super().__init__(name)
         self.autosampler_id = autosampler_id
         self.name = f"AutoSampler ID: {self.autosampler_id}" if name is None else name
         self.tray_type = tray_type
-        self.syringe_volume = syringe_volume
+        self._syringe_volume = _syringe_volume
         self.device_info = DeviceInfo(
             authors=[jakob, miguel, samuel_saraiva],
             maintainers=[jakob, miguel, samuel_saraiva],
@@ -358,6 +391,48 @@ class KnauerAutosampler(FlowchemDevice):
             AutosamplerInjectionValve("injection_valve", self),
         ])
 
+    async def measure_tray_temperature(self):
+        command_string = self._construct_communication_string(TrayTemperatureCommand, CommandModus.GET_ACTUAL.name)
+        return int(await self._query(command_string))
+
+    async def set_tray_temperature(self, setpoint: int = None):
+        return await self._set_get_value(TrayTemperatureCommand, setpoint)
+
+    async def tubing_volume(self, volume: None or int = None):
+        return await self._set_get_value(TubingVolumeCommand, volume)
+
+    async def set_tray_temperature_control(self, onoff: str = None):
+        return await self._set_get_value(TrayCoolingCommand, onoff, TrayCoolingCommand.on_off)
+
+    async def compressor(self, onoff: str = None):
+        return await self._set_get_value(SwitchCompressorCommand, onoff, SwitchCompressorCommand.on_off, get_actual=True)
+
+    # does not do anything perceivable - hm
+    async def headspace(self, onoff: str = None):
+        return await self._set_get_value(HeadSpaceCommand, onoff, HeadSpaceCommand.on_off)
+
+    async def syringe_volume(self, volume: None or int = None):
+        return await self._set_get_value(SyringeVolumeCommand, volume)
+
+    async def loop_volume(self, volume: None or int = None):
+        return await self._set_get_value(LoopVolumeCommand, volume)
+
+    # tested, find out what this does/means
+    async def flush_volume(self, volume: None or int = None):
+        return await self._set_get_value(FlushVolumeCommand, volume)
+
+    # tested, query works
+    # todo get setting to work
+    async def injection_volume(self, volume: None or int = None):
+        return await self._set_get_value(InjectionVolumeCommand, volume)
+
+    async def syringe_speed(self, speed: str = None):
+        """
+        LOW, NORMAL, HIGH
+        This does NOT work on all models
+        """
+        return await self._set_get_value(SyringeSpeedCommand, speed, SyringeSpeedCommand.speed_enum)
+
     async def _move_needle_horizontal(self, needle_position: str, plate: str = None, well: int = None):
         command_string = await self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)
         return await self._set(command_string)
@@ -463,6 +538,7 @@ if __name__ == "__main__":
         port="COM3",
         autosampler_id=61,
         tray_type="TRAY_48_VIAL",
+        _syringe_volume="0.25 mL",
     )
 
     async def execute_tasks(A_S):
