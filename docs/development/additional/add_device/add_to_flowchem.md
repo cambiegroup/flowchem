@@ -1,7 +1,6 @@
 # Add new device to flowchem
 
-## Code
-### Folder hierarchy
+## Folder hierarchy
 In the `flowchem.device` subpackage, the device modules are organized in folders by manufacturer.
 Since this is the first device from _Weasley & Weasley_ in flowchem, we need to create a new folder called
 `/flowchem/devices/weasley`.
@@ -9,7 +8,7 @@ Since this is the first device from _Weasley & Weasley_ in flowchem, we need to 
 Folders and modules should have short, all-lowercase names. Underscores can be used in the module name if it improves 
 readability, in line with [PEP8](https://peps.python.org/pep-0008/).
 
-### Module name
+## Module name
 In this folder we will create a _module_ (i.e. a python file 🐍) called `extendable_ear.py` with an `ExtendeableEar`
 class to control our magic device.
 ```python
@@ -18,7 +17,7 @@ class ExtendableEar:
     ...
 ```
 
-### FlowchemDevice subclass
+## FlowchemDevice subclass
 To signal flowchem that this class can be used to instantiate object specified in the device configuration we need to do
 two things:
 * inherit from `FlowchemDevice`
@@ -50,12 +49,13 @@ and correspondingly in the `/flowchem/devices/__init__.py` file.
 from .weasley import *
 ```
 
-### Device configuration
+## Device configuration
 Additional parameters needed for the device setup can be specified in the device classes `__init__` method, if a default is provided
 the parameter will also be optional in the device section in the configuration file.
 In our case, the ExtendableEar has an optional length parameter, with a default value of "10 cm".
-To prevent ambiguities, all amounts with units should be provided as strings and parsed by the pint UnitRegistry
-`flowchem.ureg`.
+To prevent ambiguities, all amounts with units should be provided as strings and parsed by the 
+[pint UnitRegistry](https://pint.readthedocs.io/en/0.10.1/tutorial.html) `flowchem.ureg`.
+
 ```python
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem import ureg
@@ -72,6 +72,7 @@ class ExtendableEar(FlowchemDevice):
 If some input/output operation is needed to initiate communication with the device, and the relevant code involves
 async calls, the `initialize()` coroutine can be used that is automatically called by flowchem after device
 initialization.
+
 ```python
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem import ureg
@@ -87,25 +88,11 @@ class ExtendableEar(FlowchemDevice):
         logger.info('ExtendableEar was successfully initialized!')
 ```
 Entering information points is recommended to detect possible errors during device initialization. You are advised to 
-use the loguru package. For more details, visit [Loguru doc](https://loguru.readthedocs.io/en/stable/). Before run the program, the device class 
-`ExtendableEar` must be initialized in the `__init__.py` of the device package for the flowchem to find it at the moment 
-of the inspection. In the device folder `flowchem.device.weasley.__init__`, create a file as described below:
-
-```python
-from .extendable_ear import ExtendableEar
-
-__all__ = ["ExtendableEar"]
-```
-
-And at the __init__.py of the device package, include the initialization of the new one class:
-
-```python
-...
-from .weasley import *
-```
+use the loguru package. For more details, visit [Loguru doc](https://loguru.readthedocs.io/en/stable/). 
 
 At this point we can create the configuration file to initialize our new device type. THis will check if everything is ok so far (it would not work otherwise).
 Let's create a minimal config file name `ear.toml` with this content:
+
 ```toml
 [device.my-magic-ear]
 type = "ExtendableEar"
@@ -128,17 +115,19 @@ no commands are available through the server:
 2022-11-25 09:40:58.930 | DEBUG    | flowchem.server.api_server:create_server_for_devices:78 - Got 0 components from my-magic-ear
 ```
 
-### Add a component
+## Add a component
+
 While the object subclassing FlowchemDevice has the responsibility of communicating with the device, the commands that
 are available for that device should be exposed through a list of components, that are subclasses of `FlowchemComponent`.
 `FlowchemComponent` represents specific and abstract functionalities.
 For example, a pump with an integrated pressure sensor serves two purposes: pumping and sensing; therefore it will expose
-two components, one subclassing `BasePump` (directly or indirectly, e.g. `HPLCPump`, which subclasses `BasePump`) the other one subclassing `PressureSensor`.
+two components, one subclassing `BasePump` (directly or indirectly, e.g. `HPLCPump`, which subclasses `BasePump`) the 
+other one subclassing `PressureSensor`.
 The components define the API for a class of capabilities and ensure a uniform API between different devices with similar
 functions.
 This is a crucial aspect of flowchem, that allows the abstraction of the device controlling code from the actual hardware
 that implements such commands.
-For example, it should be possible to swap one model of syringe pump for another one without any change in the code by
+For example, it should be possible to swap one model of pump for another one without any change in the code by
 simply updating the flowchem configuration file with the different device type.
 
 You can have a look in `flowchem.components` to check which component types already exist. These can be reused for
@@ -274,6 +263,7 @@ sending the command to our magic device.
 And that's it: congratulations! 🎉
 You have added support for the ExtendableEar👂 in flowchem!
 
-### Documentation and tests
+## Documentation and tests
+
 To let other people know that this device is also supported now it would be a good idea to add it to the documentation.
 Optionally, some tests for the device functions can be added to prevent regressions.

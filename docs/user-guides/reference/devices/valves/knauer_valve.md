@@ -23,6 +23,7 @@ Configuration sample showing all possible parameters:
 type = "KnauerValve"  # The actual valve type will be detected automatically
 ip_address = "192.168.2.1"  # Onyl one of either ip_address or mac_address need to be provided
 mac_address = "00:11:22:33:44:55"  #  Onyl one of either ip_address or mac_address need to be provided
+network = "192.198.*.*" # Informing the address of the network where the device is located will make it easier to search for it.
 ```
 
 ## API methods

@@ -18,7 +18,7 @@ The device tests available with their respective markers are described below:
 | KPump      | Tests for Azura compact.                               |
 | FakeDevice | Tests for FakeDevice, just an example how tests works. |
 
-```{warning}
+```{important}
 The configuration file needs to be changed to match your hardware.
 Each configuration file is placed in the folder of the corresponding device.
 ```

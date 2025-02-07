@@ -2,8 +2,8 @@
 
 ```{toctree}
 
-start
+installation
 
-examples/reaction_optimization
+start
 
 ```

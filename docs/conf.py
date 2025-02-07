@@ -8,6 +8,9 @@
 
 # Build the files to DocString reference
 # sphinx-apidoc -o code_structure ../src
+# Build html
+# sphinx-build -b html -v docs _build/html
+
 
 import datetime
 import os

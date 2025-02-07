@@ -45,6 +45,14 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 :tooltip: API reference - information-oriented theoretical knowledge
 ```
 :::
+:::{grid-item}
+:columns: auto
+
+```{button-ref} /user-guides/examples/reaction_optimization
+:color: secondary
+:tooltip: Real example
+```
+:::
 ::::
 
 ## Contents
@@ -62,6 +70,8 @@ Flowchem acts as unifying layer exposing devices using different command syntax 
 ./user-guides/reference/index
 
 ./user-guides/explanation/index
+
+./user-guides/examples/reaction_optimization
 
 ./user-guides/tools
 

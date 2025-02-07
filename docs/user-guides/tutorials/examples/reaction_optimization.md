@@ -15,7 +15,17 @@ product - [IcIR](../../reference/devices/analytics/icir.md).
 **Figure 1** Automatic synthesis
 :::
 
-The configuration file looks like that:
+To gain a better understanding of the example, let's examine three different files that enabled the automation of the 
+platform.
+
+```bash
+experiment_folder/
+├── configuration_file.toml
+├── main.py
+└── run_experiment.py
+```
+
+The configuration file looks like that (`configuration_file.toml`):
 
 ```toml
 [device.socl2]
@@ -42,7 +52,7 @@ template = "30sec_2days.iCIRTemplate"
 
 ## Access API
 
-The electronic components used in the process can be accessed from a Python script.
+The electronic components used in the process were accessed from a Python script `run_experiment.py`.
 
 ```python
 from flowchem.client.client import get_all_flowchem_devices
@@ -56,7 +66,7 @@ flowir = flowchem_devices["flowir"]["ir-control"]
 ```
 
 Each component has its own GET and PUT methods. The commands are written based on available methods. 
-When Flowchem is running, you can easily see each device's available methods through the address 
+When flowchem is running, you can easily see each device's available methods through the address 
 [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). You can also find the methods in the 
 [API documentation](../../reference/api/index.md).
 
