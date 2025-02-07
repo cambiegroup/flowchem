@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 class MSControl(FlowchemComponent):
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
-        """HPLC Control component. Sends methods, starts run, do stuff."""
+        """MS Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
         self.add_api_route("/run-sample", self.run_sample, methods=["PUT"])
         self.add_api_route("/send-method", self.send_method, methods=["PUT"])
@@ -23,5 +23,11 @@ class MSControl(FlowchemComponent):
         self.component_info.type = "Mass Spectrometer Control"
 
     async def run_sample(self, sample_name: str):
-        """Run HPLC sample with the provided sample name and method."""
+        """Run MS sample with the provided sample name and method."""
+        ...
+
+    async def send_method(self, method_name):
+        """
+        Submit method to MS.
+        """
         ...
