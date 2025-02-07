@@ -3,6 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from types import FunctionType
+import inspect
+
 from fastapi import APIRouter
 from loguru import logger
 
@@ -20,6 +23,7 @@ class FlowchemComponent:
         self.component_info = ComponentInfo(
             name=name,
             parent_device=self.hw_device.name,
+            corresponding_class=[cls.__name__ for cls in inspect.getmro(self.__class__)]
         )
 
         # Initialize router
@@ -47,3 +51,4 @@ class FlowchemComponent:
     def get_component_info(self) -> ComponentInfo:
         """Return metadata."""
         return self.component_info
+
