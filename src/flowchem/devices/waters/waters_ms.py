@@ -62,8 +62,6 @@ class WatersMS(FlowchemDevice):
             c.convert_masspec(str(sample_name), run_delay=run_duration+60)
 
 
-
-
 # convert to mzml C:\Users\BS-flowlab\AppData\Local\Apps\ProteoWizard 3.0.22198.0867718 64-bit>
 class Converter:
 
@@ -89,8 +87,6 @@ class Converter:
 
         subprocess.Popen(exe_str, cwd=self.exe, shell=True)
         #x.run(exe_str, shell=True, capture_output=False, timeout=3)
-
-
 
 
 if __name__ == "__main__":
