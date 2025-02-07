@@ -42,7 +42,7 @@ class ML600RightValve(ThreePortFourPositionValve):
         else:
             # round, the return is often off by 1°/the valve does not switch exactly
             # the slightly complicated logic here is because the degrees are differently defined in the abstract valve
-            # and the physical ML600 valve, the offset in multiples of 90 degres is corrected here
+            # and the physical ML600 valve, the offset in multiples of 90 degrees is corrected here
             translated = round(raw_position / 90)
             if translated < 2:
                 translated += 2

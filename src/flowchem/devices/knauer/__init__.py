@@ -8,5 +8,5 @@ __all__ = [
     "knauer_finder",
     "AzuraCompact",
     "KnauerDAD",
-    "KnauerValve",
+    "KnauerValve"
 ]
