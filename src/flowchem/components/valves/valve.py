@@ -230,7 +230,7 @@ class Valve(FlowchemComponent):
 
 
     async def set_position(self, connect: str = "", disconnect: str = "",
-                           ambiguous_switching: str | bool = False):
+                           ambiguous_switching: str | bool = False) -> bool:
         """Move valve to position, which connects named ports"""
         connect=return_tuple_from_input(connect)
         disconnect=return_tuple_from_input(disconnect)
@@ -240,8 +240,10 @@ class Valve(FlowchemComponent):
         target_pos = self._change_connections(target_pos)
         if not hasattr(self, "identifier"):
             await self.hw_device.set_raw_position(target_pos)
+            return True
         else:
             await self.hw_device.set_raw_position(target_pos, target_component=self.identifier)
+            return True
 
 
     def connections(self) -> ValveInfo:
