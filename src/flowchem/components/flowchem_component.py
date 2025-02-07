@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from types import FunctionType
 import inspect
 
 from fastapi import APIRouter
