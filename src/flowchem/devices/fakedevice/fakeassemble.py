@@ -43,3 +43,11 @@ if __name__ == '__main__':
 
     device = FakeAssemble(name='Fake')
     asyncio.run(device.initialize())
+
+    async def interaction():
+        pos = await device.components[2].get_position()
+        print(pos)
+        await device.components[2].set_position("[[3, 0]]")
+    asyncio.run(interaction())
+
+
