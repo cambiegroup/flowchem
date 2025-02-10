@@ -143,7 +143,7 @@ class Valve(FlowchemComponent):
         if len(rotor_ports) == 1:
             # in case there is no 0 port, for data uniformity, internally add it. strictly, the stator and rotor
             # should reflect physical properties, so if stator has a hole in middle it should have 0, but only rotor
-            # None. Sinc this does not impact functionality, thoroughness will be left to the user
+            # None. Sinc ethis does not impact functionality, thoroughness will be left to the user
             rotor_ports.append([None])
             stator_ports.append([None])
         # it is rather simple: we just move the rotor by one and thereby create a dictionary
@@ -221,7 +221,8 @@ class Valve(FlowchemComponent):
             pos = await self.hw_device.get_raw_position() # type: ignore
         else:
             pos = await self.hw_device.get_raw_position(self.identifier) # type: ignore
-        pos = int(pos) if pos.isnumeric() else pos
+        if type(pos) is not int:
+            pos = int(pos)
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
     async def set_position(self,
@@ -258,9 +259,8 @@ class Valve(FlowchemComponent):
     # 1) The port zero can exist, but does not necessarily.
     #    For nomenclature reasons, port zero is the one the turning axis and only this one. Commonly, this port,
     #    if existing, is always open
-    # 2) At the physical valve, the upmost is port 1.
-    # a) If there is no port straight on top, then one goes in clockwise direction, until a port comes, which is then
-    # one
+    # 2) At the physical valve, the upmost is port 1
+    #   a) If there is no port straight on top, then one goes in clockwise direction, until a port comes, which is then one
     # 3 )Beware: For logical reasons, we need to introduce ports of "number" None. These are needed because we need to
     #   define dead-ends. These dead-ends are IMMUTABLE dead-ends, so the stator or rotor do not have an opening there
     #   Any time there is a different amount of positions on rotor and stator, None ports are introduced
