@@ -221,7 +221,8 @@ class Valve(FlowchemComponent):
             pos = await self.hw_device.get_raw_position() # type: ignore
         else:
             pos = await self.hw_device.get_raw_position(self.identifier) # type: ignore
-        pos = int(pos) if pos.isnumeric() else pos
+        if type(pos) is not int:
+            pos = int(pos)
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
     async def set_position(self,
