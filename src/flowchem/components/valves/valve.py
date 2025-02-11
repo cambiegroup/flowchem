@@ -143,7 +143,7 @@ class Valve(FlowchemComponent):
         if len(rotor_ports) == 1:
             # in case there is no 0 port, for data uniformity, internally add it. strictly, the stator and rotor
             # should reflect physical properties, so if stator has a hole in middle it should have 0, but only rotor
-            # None. Sinc ethis does not impact functionality, thoroughness will be left to the user
+            # None. Since this does not impact functionality, thoroughness will be left to the user
             rotor_ports.append([None])
             stator_ports.append([None])
         # it is rather simple: we just move the rotor by one and thereby create a dictionary
