@@ -111,7 +111,11 @@ markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",
     "FlowIR: tests requiring a connection to a FlowIR.",
-    "KPump: tests for Azura compact" ]
+    "KPump: tests for Azura compact.",
+    "FakeDevice: tests for FakeDevice",
+    "ml600: test for ML600 pump",
+    "Knauer_Distribution_Valve: test knauer distribution valve"
+]
 
 [tool.ruff]
 line-length = 120
