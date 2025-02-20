@@ -1,6 +1,7 @@
 """Base FakeComponent."""
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
+from abc import abstractmethod
 
 
 class FakeComponent(FlowchemComponent):
@@ -12,6 +13,7 @@ class FakeComponent(FlowchemComponent):
         self.add_api_route("/fake_receive_data", self.fake_receive_data, methods=["GET"])
         self.component_info.type = "FakeComponent"
 
+    @abstractmethod
     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:
         """
         Send a specific command to the some - FakeDevice.
@@ -27,6 +29,7 @@ class FakeComponent(FlowchemComponent):
         """
         ...
 
+    @abstractmethod
     async def fake_receive_data(self) -> float:  # type: ignore
         """
         Receive specific data from the FakeDevice.

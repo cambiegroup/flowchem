@@ -1,8 +1,8 @@
 from __future__ import annotations
-
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from abc import ABC
 import inspect
 
 from fastapi import APIRouter
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from flowchem.devices.flowchem_device import FlowchemDevice
 
 
-class FlowchemComponent:
+class FlowchemComponent(ABC):
     """
     A base class for Flowchem components that integrates with a hardware device.
 

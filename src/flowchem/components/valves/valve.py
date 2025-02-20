@@ -1,6 +1,7 @@
 """Generic valve."""
 from __future__ import annotations
 
+from abc import abstractmethod
 from pydantic import BaseModel
 import json
 from typing import Tuple
@@ -197,6 +198,7 @@ class Valve(FlowchemComponent):
 
         return connections
 
+    @abstractmethod
     def _change_connections(self, raw_position: int | str, reverse: bool = False):
         # abstract valve mapping needs to be translated to device-specific position naming. This can be e.g.
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
