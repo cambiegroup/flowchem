@@ -44,8 +44,10 @@ def icir_finder():
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     try:
+        logger.info("Attempt connection on local iCIR")
         return [asyncio.run(generate_icir_config())]
     except OSError:
+        logger.info("Unsuccessfully!")
         return []
 
 
