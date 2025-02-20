@@ -76,3 +76,57 @@ devices["PumpG"]["pump"].put("infuse", {"volume": "10 ml", "rate": "1 ml/min"})
 
 The example shown in section [example](examples/reaction_optimization.md) presents one way of how the 
 protocols can be constructed.
+
+## Watch-Dog Approach
+
+This approach is designed to monitor specified methods' outputs and check their values against defined conditions. The 
+class exposes two main API endpoints to control the monitoring process:
+
+* PUT /watch: Starts watching a method with specified conditions.
+
+* PUT /stop-watch: Stops all active monitoring.
+
+The Watch-Dog approach is built to observe the output of specific methods at a set interval (`sample_time`) and check if 
+the returned value exceeds or falls below predefined thresholds (`greater_than` or `less_than`). If the value violates 
+the set conditions, an error is logged. This feactures is access through a API methods as shown bellow:
+
+![img_2.png](watch.png)
+
+The monitoring process runs in a separate thread to ensure non-blocking behavior, allowing the main application to 
+continue operating smoothly.
+
+### Endpoints
+
+* PUT /watch
+
+Description:
+Starts monitoring a method's output based on the specified conditions.
+
+Parameters:
+
+1 - api (str, required): The method name or API route to watch.
+
+2 - greater_than (float, optional): Triggers an alert if the value is greater than this threshold.
+
+3 - less_than (float, optional): Triggers an alert if the value is less than this threshold.
+
+4 - sample_time (float, optional): Interval in seconds for checking the value. Default is `2.0` seconds.
+
+* PUT /stop-watch
+
+Description:
+Stops the monitoring loop for all watched methods.
+
+### Example
+
+If the device, especially sensors, has a `GET` endpoint called `fake_receive_data` and you want to analyze this variable 
+every 2 seconds to check if its value remains between `0.1` and `1`, you can configure it as shown below:
+
+![watch_example.png](watch_example.png)
+
+Notes to developers
+
+* Monitoring runs in a separate thread to avoid blocking the event loop. 
+* Multiple methods can be watched simultaneously.
+* If a method is not found, an error is logged.
+* If the method's return value violates the defined conditions, an error is logged with the details.
