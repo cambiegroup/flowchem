@@ -15,13 +15,45 @@ if TYPE_CHECKING:
 
 
 class ML600Pump(SyringePump):
+    """
+    A component class representing an ML600 pump, capable of both infusion and withdrawal operations.
+
+    Attributes:
+    -----------
+    pump_code : str
+        Identifier for the pump ("" for single syringe pump, "B" or "C" for dual syringe pump).
+    hw_device : ML600
+        The hardware device instance associated with this component.
+
+    Methods:
+    --------
+    is_withdrawing_capable() -> bool:
+        Check if the pump supports withdrawal operations.
+    is_pumping() -> bool:
+        Check if the pump is currently moving.
+    stop() -> bool:
+        Stop the pump's operation.
+    infuse(rate: str = "", volume: str = "") -> bool:
+        Start an infusion with specified rate and volume.
+    withdraw(rate: str = "1 ml/min", volume: str | None = None) -> bool:
+        Start a withdrawal with specified rate and volume.
+    """
     pump_code: str
     hw_device: ML600  # for typing's sake
 
     def __init__(self, name: str, hw_device: ML600, pump_code: str = "") -> None:
         """
-        Create a Pump object.
-        "" for single syringe pump. B or C  for dual syringe pump.
+        Initialize an ML600Pump object.
+
+        Parameters:
+        -----------
+        name : str
+            The name of the pump.
+        hw_device : ML600
+            The hardware device instance associated with this component.
+        pump_code : str, optional
+            Identifier for the pump (default is "", which denotes a single syringe pump).
+            "" for single syringe pump. B or C  for dual syringe pump.
         """
         super().__init__(name, hw_device)
         self.pump_code = pump_code
@@ -29,17 +61,37 @@ class ML600Pump(SyringePump):
 
     @staticmethod
     def is_withdrawing_capable() -> bool:
-        """ML600 can withdraw."""
+        """
+        Indicate that the ML600 pump can perform withdrawal operations.
+
+        Returns:
+        --------
+        bool
+            True, since ML600 supports withdrawal.
+        """
         return True
 
     async def is_pumping(self) -> bool:
-        """Check if pump is moving.
-        false means pump is not moving and buffer is empty. """
+        """
+        Check if the pump is currently moving.
+
+        Returns:
+        --------
+        bool
+            True if the pump is moving or has commands in buffer, False if it's idle.
+        """
         # true might mean pump is moving, buffer still contain command or both
         return await self.hw_device.get_pump_status(self.pump_code)
 
     async def stop(self) -> bool:
-        """Stop pump."""
+        """
+        Stop the pump's operation.
+
+        Returns:
+        --------
+        bool
+            True if the pump successfully stops, False otherwise.
+        """
         await self.hw_device.stop(self.pump_code)
         # todo: sometime it take more then two seconds.
         await asyncio.sleep(1)
@@ -51,10 +103,29 @@ class ML600Pump(SyringePump):
             return not await self.hw_device.get_pump_status(self.pump_code)
 
     async def infuse(self, rate: str = "", volume: str = "") -> bool:
-        """Start infusion with given rate and volume (both optional).
+        """
+        Start an infusion with the given rate and volume.
 
         If no rate is specified, the default (1 ml/min) is used, can be set on per-pump basis via `default_infuse_rate`
+
         If no volume is specified, the max possible volume is infused.
+
+        Parameters:
+        -----------
+        rate : str, optional
+            The infusion rate (default is the device's configured default).
+        volume : str, optional
+            The volume to infuse (default is the maximum possible volume).
+
+        Returns:
+        --------
+        bool
+            True if the pump starts infusing successfully, False otherwise.
+
+        Raises:
+        -------
+        DeviceError
+            If the target volume to infuse exceeds the current syringe volume.
         """
         if await self.is_pumping():
             await self.stop()
@@ -81,11 +152,27 @@ class ML600Pump(SyringePump):
         return await self.hw_device.get_pump_status(self.pump_code)
 
     async def withdraw(self, rate: str = "1 ml/min", volume: str | None = None) -> bool:
-        """Start withdraw with given rate and volume (both optional).
+        """
+        Start a withdrawal with the given rate and volume.
 
-        If no rate is specified, the default (1 ml/min) is used.
         The default can be set on per-pump basis via `default_withdraw_rate`.
-        If no volume is specified, the max possible volume is infused.
+
+        Parameters:
+        -----------
+        rate : str, optional
+            The withdrawal rate (default is "1 ml/min").
+        volume : str, optional
+            The volume to withdraw (default is the maximum possible volume).
+
+        Returns:
+        --------
+        bool
+            True if the pump starts withdrawing successfully, False otherwise.
+
+        Raises:
+        -------
+        DeviceError
+            If the target volume to withdraw exceeds the syringe capacity.
         """
         if await self.is_pumping():
             await self.stop()

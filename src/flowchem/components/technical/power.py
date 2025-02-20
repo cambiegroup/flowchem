@@ -36,11 +36,8 @@ class PowerControl(PowerSwitch):
         name: str,
         hw_device: FlowchemDevice,
     ) -> None:
-        """Create a TemperatureControl object."""
+        """Create a PowerSwitch object."""
         super().__init__(name, hw_device)
-
-        self.add_api_route("/power-on", self.power_on, methods=["PUT"])
-        self.add_api_route("/power-off", self.power_off, methods=["PUT"])
 
         # Current
         self.add_api_route("/current", self.get_current, methods=["GET"])
