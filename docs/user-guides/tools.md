@@ -130,3 +130,54 @@ Notes to developers
 * Multiple methods can be watched simultaneously.
 * If a method is not found, an error is logged.
 * If the method's return value violates the defined conditions, an error is logged with the details.
+
+## Logging's
+
+Logging Configuration
+
+To set the logging folder, use the `--log` option followed by the desired file path.
+
+Example:
+
+```shell
+python -m flowchem example --log logs/flowchem.log
+```
+If --log is specified, all logs are saved to the file in DEBUG level.
+
+If not specified, logs are printed to the console in INFO level.
+
+In debug mode (-d), logs are more detailed and include debugging information.
+
+Example Usage
+
+* Run Flowchem with a simulated device with logging enabled:
+
+```shell
+python -m flowchem example --log /path/to/logs/flowchem.log
+```
+
+Logging Details
+
+The logging file records all information flow related to `GET` and `PUT` endpoint triggers on the API server. It includes:
+
+* The date and time of each request.
+
+* Relevant information about the request, such as the endpoint accessed, parameters used, and response status.
+
+This helps in monitoring the system's behavior and debugging potential issues.
+
+Example of a log entry:
+
+```text
+2025-02-20 13:57:12.989 | DEBUG    | flowchem.__main__:main:69 - Starting server with configuration file: 'flowchem\examples/FakeDevice_configuration.toml'
+2025-02-20 13:57:12.989 | INFO     | flowchem.server.zeroconf_server:__init__:32 - Zeroconf server up, broadcasting on IPs: ['141.14.233.161']
+2025-02-20 13:57:12.989 | DEBUG    | flowchem.server.fastapi_server:__init__:32 - HTTP ASGI server app created
+2025-02-20 13:57:13.005 | DEBUG    | flowchem.devices.list_known_device_type:_autodiscover_devices_in_module:26 - Found 22 device type(s) in flowchem.devices
+2025-02-20 13:57:13.074 | DEBUG    | flowchem.devices.list_known_device_type:_autodiscover_devices_in_module:26 - Found 1 device type(s) in flowchem_test.fakedevice
+2025-02-20 13:57:13.074 | DEBUG    | flowchem.server.configuration_parser:parse_device:141 - Created 'fake-device' instance: FakeDeviceExample
+2025-02-20 13:57:13.074 | INFO     | flowchem.server.core:setup:85 - Initializing device connection(s)...
+2025-02-20 13:57:13.074 | INFO     | flowchem.devices.fakedevice.fakedevice:initialize:28 - FakeDevice devices was successfully initialized!
+2025-02-20 13:57:13.074 | DEBUG    | flowchem.components.flowchem_component:add_api_route:102 - Adding route / for router of FakeComponent
+2025-02-20 13:57:13.074 | DEBUG    | flowchem.components.flowchem_component:add_api_route:102 - Adding route /watch for router of FakeComponent
+...
+```
