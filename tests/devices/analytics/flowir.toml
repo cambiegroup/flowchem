@@ -1,0 +1,3 @@
+[device.icir-local]
+type = "IcIR"
+template = "02212025.iCIRTemplate"  # Add template name with acquisition settings!

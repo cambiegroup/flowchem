@@ -2,7 +2,10 @@
 from pydantic import BaseModel
 
 from flowchem.components.flowchem_component import FlowchemComponent
-from flowchem.devices.flowchem_device import FlowchemDevice
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from flowchem.devices.flowchem_device import FlowchemDevice
 
 
 class IRSpectrum(BaseModel):
@@ -17,9 +20,10 @@ class IRSpectrum(BaseModel):
 
 
 class IRControl(FlowchemComponent):
-    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+    def __init__(self, name: str, hw_device: "FlowchemDevice") -> None:
         """HPLC Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
+        self.add_api_route("/start-experiment", self.start_experiment, methods=["PUT"])
         self.add_api_route("/acquire-spectrum", self.acquire_spectrum, methods=["PUT"])
         self.add_api_route("/stop", self.stop, methods=["PUT"])
 
@@ -28,6 +32,10 @@ class IRControl(FlowchemComponent):
             "http://purl.obolibrary.org/obo/OBI_0001057",
         )
         self.component_info.type = "IR Control"
+
+    async def start_experiment(self):
+        """ Start the programmed experiment """
+        ...
 
     async def acquire_spectrum(self) -> IRSpectrum:  # type: ignore
         """Acquire an IR spectrum."""
