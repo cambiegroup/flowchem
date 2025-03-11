@@ -38,7 +38,7 @@ class R4HeaterChannelControl(TemperatureControl):
         Set the target temperature for this channel using a natural language string.
 
         Args:
-            temp (str): The desired temperature as a string (e.g., '50C', '75.5C').
+            temp (str): The desired temperature as a string (e.g., '50 °C', '75.5 °C').
 
         Returns:
             Awaitable: Result of the set temperature operation from the hardware device.
@@ -48,10 +48,10 @@ class R4HeaterChannelControl(TemperatureControl):
 
     async def get_temperature(self) -> float:  # type: ignore
         """
-        Retrieve the current temperature of this channel in Celsius.
+        Retrieve the current temperature of this channel in degrees Celsius.
 
         Returns:
-            float: The current temperature in Celsius.
+            float: The current temperature in degrees Celsius.
         """
         return float(await self.hw_device.get_temperature(self.channel))
 

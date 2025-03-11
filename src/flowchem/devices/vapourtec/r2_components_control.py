@@ -149,7 +149,7 @@ class R2InjectionValve(SixPortTwoPositionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
-        return raw_position # Check the return (raw_position is a int, right?)
+        return raw_position
 
     async def get_position(self) -> list[list]:
         """Get current valve position."""

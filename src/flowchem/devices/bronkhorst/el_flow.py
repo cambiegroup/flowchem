@@ -21,7 +21,7 @@ def isfloat(num):
 
 class EPC(FlowchemDevice):
     """
-    A class to represent an Electronic Pressure Controller (EPC) device.
+    A class to represent an Electronic Pressure Controller (EPC) device from Bronkhorst.
 
     Attributes:
     -----------
@@ -30,13 +30,13 @@ class EPC(FlowchemDevice):
     port : str
         The port to which the EPC device is connected (Serial connection).
     channel : int
-        The communication channel of the EPC device.     # Todo - explain better it
+        The communication channel of the EPC device.
     address : int
-        The address of the EPC device.                   # Todo - explain better it
+        The address of the EPC device.
     max_pressure : float
         The maximum pressure of the EPC device in bar.
     id : str
-        The identifier of the connected EPC device.      # Todo - explain better it
+        The identifier of the connected EPC device.
 
     Methods:
     --------
@@ -103,11 +103,6 @@ class EPC(FlowchemDevice):
     async def set_pressure(self, pressure: str):
         """
         Set the pressure setpoint of the EPC device.
-
-        Minimus: 0      correspond to 0%
-
-        Maximo: 32000   correspond to 100%
-
 
         Parameters:
         -----------
@@ -238,10 +233,6 @@ class MFC(FlowchemDevice):
     async def set_flow_setpoint(self, flowrate: str):
         """
         Set the flow rate setpoint of the MFC device in ml/min.
-
-        Minimus: 0      correspond to 0%
-
-        Maximo: 32000   correspond to 100%
 
         Parameters:
         -----------

@@ -24,7 +24,7 @@ class HuberTemperatureControl(TemperatureControl):
         Set the target temperature to the given value.
 
         Args:
-            temp (str): The desired temperature as a string in natural language.
+            temp (str): The desired temperature as a string in natural language (scalar + unit), e.g. "7 °C"
 
         Returns:
             bool: True if the temperature was successfully set, False otherwise.

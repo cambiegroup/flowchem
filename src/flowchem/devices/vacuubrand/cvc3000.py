@@ -47,7 +47,7 @@ class CVC3000(FlowchemDevice):
     get_pressure(self) -> float:
         Get the current pressure from the device.
     motor_speed(self, speed: int) -> None:
-        Set the motor speed on the device.
+        Set the motor speed on the device (0 to 100%).
     status(self) -> ProcessStatus:
         Get the current process status from the device.
     """

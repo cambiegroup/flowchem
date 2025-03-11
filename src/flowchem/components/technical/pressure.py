@@ -96,7 +96,7 @@ class PressureControl(FlowchemComponent):
         Returns:
         --------
         float
-            The current pressure in mbar.
+            The current pressure.
         """
         ...
 
