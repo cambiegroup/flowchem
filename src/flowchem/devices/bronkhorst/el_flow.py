@@ -31,6 +31,9 @@ class EPC(FlowchemDevice):
         The port to which the EPC device is connected (Serial connection).
     channel : int
         The communication channel of the EPC device.
+        Some instruments are a single node (one address) but contain multiple channels (for multiple sensors). To
+        connect to a specific channel, specify the channel when creating an instrument instance. If no channel is
+        specified the first channel will be used.
     address : int
         The address of the EPC device.
     max_pressure : float

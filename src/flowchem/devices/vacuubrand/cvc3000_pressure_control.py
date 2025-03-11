@@ -99,14 +99,14 @@ class CVC3000PressureControl(PressureControl):
         status = await self.hw_device.status()
         return status.state == PumpState.VACUUM_REACHED
 
-    async def power_on(self) -> bool:
+    async def power_on(self) -> str:
         """
         Turn on the pressure control.
 
         Returns:
         --------
-        bool
-            Returns True if the command to start the pressure control was successful.
+        str
+            Returns "True" if the command to start the pressure control was successful.
         """
         return await self.hw_device._send_command_and_read_reply("START")
 
