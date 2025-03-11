@@ -132,8 +132,6 @@ class UV150PhotoReactor(Photoreactor):
 class R2InjectionValve(SixPortTwoPositionValve):
     """R2 reactor injection loop valve control class."""
 
-    # todo this needs to be adapted to new code
-
     hw_device: R2  # for typing's sake
 
     # get position
