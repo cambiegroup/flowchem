@@ -127,7 +127,7 @@ class DADChannelControl(PhotoSensor):
 
     async def acquire_signal(self) -> float:
         """
-        Acquire a signal from the sensor, result to be expressed in % (optional).
+        Acquire a signal from the sensor.
 
         Returns:
             float: The acquired signal.
