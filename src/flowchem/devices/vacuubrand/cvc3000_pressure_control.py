@@ -66,7 +66,8 @@ class CVC3000PressureControl(PressureControl):
         Parameters:
         -----------
         pressure : str
-            The target pressure to be set, expressed in a string format.
+            The target pressure to be set, expressed in a string format (e.g., mbar).
+            For example: "500 mbar"
 
         Returns:
         --------
@@ -106,7 +107,7 @@ class CVC3000PressureControl(PressureControl):
         Returns:
         --------
         str
-            Returns "True" if the command to start the pressure control was successful.
+            Returns binary string if the command to start the pressure control was successful.
         """
         return await self.hw_device._send_command_and_read_reply("START")
 
@@ -116,7 +117,7 @@ class CVC3000PressureControl(PressureControl):
 
         Returns:
         --------
-        bool
-            Returns True if the command to stop the pressure control was successful.
+        str
+            Returns binary string if the command to stop the pressure control was successful.
         """
         return await self.hw_device._send_command_and_read_reply("STOP")
