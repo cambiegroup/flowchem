@@ -34,7 +34,7 @@ class MansonPowerControl(PowerControl):
         """Set the target voltage using a "magnitude and unit" format string.
 
         Args:
-            voltage (str): The desired voltage as a string in "magnitude and unit" format (e.g., '12V', '3.3V').
+            voltage (str): The desired voltage as a string in "magnitude and unit" format (e.g., '12 V', '3.3 V').
 
         Returns:
             Awaitable: Result of the set_voltage operation from the hardware device.

@@ -83,6 +83,7 @@ class Knauer6PortDistributionValve(SixPortDistributionValve):
         Args:
             raw_position (int or str): The raw position of the valve.
             reverse (bool): Whether to reverse the mapping.
+            For this class the raw_position is the same of the monitor position
 
         Returns:
             int: The mapped position.

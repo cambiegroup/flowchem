@@ -138,6 +138,8 @@ class DADChannelControl(PhotoSensor):
         """
         Set the acquisition wavelength.
 
+        Be aware that wavelength=0 means that nothing will be collected.
+
         Args:
             wavelength (int): The desired wavelength in nm (0-999 nm).
 
