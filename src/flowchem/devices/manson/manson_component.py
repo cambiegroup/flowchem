@@ -12,10 +12,10 @@ class MansonPowerControl(PowerControl):
     hw_device: MansonPowerSupply  # for typing's sake
 
     async def set_current(self, current: str):
-        """Set the target current using a natural language string.
+        """Set the target current using a "magnitude and unit" format string.
 
         Args:
-            current (str): The desired current as a string in natural language (e.g., '5A', '500mA').
+            current (str): The desired current as a string in "magnitude and unit" format (e.g., '5 A', '500 mA').
 
         Returns:
             Awaitable: Result of the set_current operation from the hardware device.
@@ -31,10 +31,10 @@ class MansonPowerControl(PowerControl):
         return await self.hw_device.get_output_current()
 
     async def set_voltage(self, voltage: str):
-        """Set the target voltage using a natural language string.
+        """Set the target voltage using a "magnitude and unit" format string.
 
         Args:
-            voltage (str): The desired voltage as a string in natural language (e.g., '12V', '3.3V').
+            voltage (str): The desired voltage as a string in "magnitude and unit" format (e.g., '12V', '3.3V').
 
         Returns:
             Awaitable: Result of the set_voltage operation from the hardware device.

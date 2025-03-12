@@ -51,7 +51,9 @@ class EPCComponent(PressureSensor):
 
     async def set_pressure_setpoint(self, pressure: str) -> bool:
         """
-        Set the controlled pressure to the instrument; default unit is bar.
+        Set the controlled pressure on the instrument. The default unit is bar.
+        The unit is handled through the `ureg` package to convert it to the unit configured on the device.
+        To standardize units, it is recommended that the user works with the bar unit.
 
         Parameters:
         -----------

@@ -51,7 +51,7 @@ class PowerControl(PowerSwitch):
         self.add_api_route("/voltage", self.set_voltage, methods=["PUT"])
 
     async def set_current(self, current: str):
-        """Set the target current to the given string in natural language."""
+        """Set the target current to the given string in "magnitude and unit" format."""
         ...
 
     async def get_current(self) -> float:  # type: ignore
@@ -59,7 +59,7 @@ class PowerControl(PowerSwitch):
         ...
 
     async def set_voltage(self, voltage: str):
-        """Set the target voltage to the given string in natural language."""
+        """Set the target voltage to the given string in "magnitude and unit" format."""
         ...
 
     async def get_voltage(self) -> float:  # type: ignore

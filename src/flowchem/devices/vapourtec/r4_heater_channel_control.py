@@ -35,7 +35,7 @@ class R4HeaterChannelControl(TemperatureControl):
 
     async def set_temperature(self, temp: str):
         """
-        Set the target temperature for this channel using a natural language string.
+        Set the target temperature for this channel using a "magnitude and unit" format string.
 
         Args:
             temp (str): The desired temperature as a string (e.g., '50 °C', '75.5 °C').
