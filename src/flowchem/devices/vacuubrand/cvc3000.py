@@ -4,13 +4,32 @@ import asyncio
 import aioserial
 import pint
 from loguru import logger
+from enum import Enum
 
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vacuubrand.cvc3000_pressure_control import CVC3000PressureControl
 from flowchem.devices.vacuubrand.constants import ProcessStatus
 from flowchem.utils.exceptions import InvalidConfigurationError
-from flowchem.utils.people import dario, jakob, wei_hsin
+from flowchem.utils.people import dario, jakob, wei_hsin, samuel_saraiva
+
+class Commands(Enum):
+
+    # read commands
+    POWER_ON = "START"
+    POWER_OFF = "STOP 1"
+    SET_REMOTE = "REMOTE 1"  # Remote control on
+    ACTUAL_PRESSURE = "IN_PV_1"  # unit corresponding to default settings;
+    STATUS = "IN_START"
+    VERSION = "IN_VER"
+
+    # write commands
+    CONFIGURATION = "OUT_CFG 00001"  # internal air admittance valve auto - see details in manual
+    SET_PRESSURE_VACUUM = "OUT_SP_1"  # unit corresponding to default settings (mbar/hPa/Torr);
+    MOTOR_SPEED = "OUT_SP_2" # motor speed in % (1-100%) or 101 allowed
+    ECHO_REPLY = "ECHO 1"  # echo on, write commands with reply value
+    STORE_SETTINGS = "STORE"  # store settings permanently
+    CVC = "CVC 3"  # Send CVC 3 and STORE to permanently set the controller RS 232C commands to the extended
 
 
 class CVC3000(FlowchemDevice):
@@ -86,7 +105,7 @@ class CVC3000(FlowchemDevice):
         )
 
     @classmethod
-    def from_config(cls, port, name=None, **serial_kwargs):
+    def from_config(cls, port, name="", **serial_kwargs):
         """
         Create an instance from configuration parameters.
 
@@ -98,8 +117,8 @@ class CVC3000(FlowchemDevice):
         -----------
         port : str
             The port to which the CVC3000 is connected.
-        name : str, optional
-            The name assigned to the device instance (default is None).
+        name : str
+            The name assigned to the device instance (default is "").
         **serial_kwargs : dict
             Additional keyword arguments for configuring the serial interface.
 
@@ -254,3 +273,32 @@ class CVC3000(FlowchemDevice):
         if not raw_status:
             raw_status = await self._send_command_and_read_reply("IN_STAT")
         return ProcessStatus.from_reply(raw_status)
+
+
+if __name__ == "__main__":
+
+    async def main():
+        cvc = CVC3000.from_config(port="COM5")
+        await cvc.initialize()
+        status = await cvc.components[0].power_on()
+        if not status:
+            logger.warning("Something is wrong with power-on, let's try again!")
+            status = await cvc.components[0].power_on()
+            if not status:
+                logger.error("Try againg and get something is wrong with power-on!")
+            else:
+                logger.info("Power-on worked!")
+
+        await asyncio.sleep(2)  # Max rate 10 commands/s as per manual
+
+        status = await cvc.components[0].power_off()
+        if not status:
+            logger.warning("Something is wrong with power-off, let's try again!")
+            status = await cvc.components[0].power_off()
+            if not status:
+                logger.error("Try againg and get something is wrong with power-off!")
+            else:
+                logger.info("Power-off worked!")
+
+    asyncio.run(main())
+

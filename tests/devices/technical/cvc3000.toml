@@ -1,0 +1,3 @@
+[device.cvc-test]
+type = "CVC3000"
+port = "COM5"
