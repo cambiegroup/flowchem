@@ -11,7 +11,7 @@ from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.vacuubrand.cvc3000_pressure_control import CVC3000PressureControl
 from flowchem.devices.vacuubrand.constants import ProcessStatus
 from flowchem.utils.exceptions import InvalidConfigurationError
-from flowchem.utils.people import dario, jakob, wei_hsin, samuel_saraiva
+from flowchem.utils.people import dario, jakob, wei_hsin
 
 class Commands(Enum):
 
