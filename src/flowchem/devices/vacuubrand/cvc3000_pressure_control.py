@@ -26,7 +26,7 @@ class CVC3000PressureControl(PressureControl):
     Methods:
     --------
     set_pressure(pressure: str) -> bool:
-        Set the target pressure using a string representation.
+        Set the target pressure using a string representation - unit have to be provided.
     get_pressure() -> float:
         Retrieve the current pressure from the device in mbar.
     is_target_reached() -> bool:
@@ -100,7 +100,7 @@ class CVC3000PressureControl(PressureControl):
         status = await self.hw_device.status()
         return status.state == PumpState.VACUUM_REACHED
 
-    async def power_on(self):
+    async def power_on(self) -> str:
         """
         Turn on the pressure control.
 

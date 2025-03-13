@@ -16,10 +16,10 @@ if TYPE_CHECKING:
 
 class FlowchemComponent:
     """
-    A base class for Flowchem components that integrates with a hardware device.
+    A base class for Flowchem components that integrates with the decomposition of the hardware device.
 
-    This class provides the foundational setup for creating components that can
-    communicate with hardware devices and expose API routes for interacting with these components.
+    This class provides the foundational setup for creating abstract components of hardware devices. It forms the
+    foundation to expose API routes for interacting with the hardware through a hierarchical structure.
 
     Attributes:
     -----------

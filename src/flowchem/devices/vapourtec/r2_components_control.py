@@ -70,7 +70,7 @@ class R4Reactor(TemperatureControl):
         self.channel = channel
 
     async def set_temperature(self, temperature: str, heating: bool | None = None):
-        """Set the target temperature to the given string in natural language."""
+        """Set the target temperature to the given string in "magnitude and unit" format."""
         set_t = await super().set_temperature(temperature)
         return await self.hw_device.set_temperature(self.channel, set_t, heating)
 
@@ -132,8 +132,6 @@ class UV150PhotoReactor(Photoreactor):
 class R2InjectionValve(SixPortTwoPositionValve):
     """R2 reactor injection loop valve control class."""
 
-    # todo this needs to be adapted to new code
-
     hw_device: R2  # for typing's sake
 
     # get position
@@ -149,7 +147,7 @@ class R2InjectionValve(SixPortTwoPositionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position, reverse: bool = False) -> str:
-        return raw_position # Check the return (raw_position is a int, right?)
+        return raw_position
 
     async def get_position(self) -> list[list]:
         """Get current valve position."""

@@ -51,8 +51,8 @@ def elite11_finder(serial_port) -> set[str]:
 
     # Local variable for enumeration
     elite11_finder.counter += 1  # type: ignore
-    cfgs = f"[device.elite11-{elite11_finder.counter}]"  # type:ignore
-    cfgs += dedent(
+    msg = f"[device.elite11-{elite11_finder.counter}]"  # type:ignore
+    msg += dedent(
         f"""
                    type = "Elite11"
                    port = "{serial_port}"
@@ -62,4 +62,5 @@ def elite11_finder(serial_port) -> set[str]:
     )
     logger.info(f"Close the serial port: <{serial_port}>")
     link._serial.close()
-    return set(cfgs)
+    cfg.add(msg)
+    return cfg

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from loguru import logger
 
 from flowchem.components.analytics.ir import IRControl, IRSpectrum
 
@@ -35,13 +36,26 @@ class IcIRControl(IRControl):
 
     async def acquire_spectrum(self, treated: bool = True) -> IRSpectrum:
         """
-        Acquire an IR spectrum.
+        Acquire an IR spectrum from the instrument.
+
+        This method retrieves the most recent infrared (IR) spectrum acquired by the device.
+        Depending on the `treated` parameter, it can return either a processed spectrum with background subtraction
+        or a raw, unprocessed spectrum.
+
+        The acquisition process works as follows:
+        - If `treated` is True, the method returns a spectrum where background subtraction has been performed,
+          providing a clean signal suitable for analysis. The treated spectrum is retrieved from the device's
+          OPC UA node specified by `SPECTRA_TREATED` ("ns=2;s=Local.iCIR.Probe1.SpectraTreated").
+        - If `treated` is False, the method returns the raw, unprocessed spectrum directly from the device,
+          without any background correction. The raw spectrum is retrieved from the OPC UA node specified by
+          `SPECTRA_RAW` ("ns=2;s=Local.iCIR.Probe1.SpectraRaw").
 
         Args:
-            treated (bool): If True, perform background subtraction. If False, return a raw scan.
+            treated (bool): If True, perform background subtraction and return the treated spectrum.
+                            If False, return the raw scan without any processing.
 
         Returns:
-            IRSpectrum: The acquired IR spectrum.
+            IRSpectrum: The acquired IR spectrum, either treated or raw.
         """
         if treated:
             return await self.hw_device.last_spectrum_treated()
@@ -59,6 +73,7 @@ class IcIRControl(IRControl):
         if count is not None:
             return count
         else:
+            logger.warning("The spectrum count return a 'None' value! This reply was replaced to the int -1.")
             return -1
 
     async def stop(self):
