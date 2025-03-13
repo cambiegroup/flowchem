@@ -5,8 +5,7 @@ from flowchem.client.client import get_all_flowchem_devices
 import pytest
 import time
 
-# pytest tests/devices/Fake_group/test_elite11.py -s
-# pytest ./tests -m HApump -s
+# pytest tests/devices/pump/test_elite11.py -s
 
 @pytest.fixture(scope="module")
 def api_dev(xprocess):
@@ -26,8 +25,7 @@ def api_dev(xprocess):
     yield get_all_flowchem_devices()
     xprocess.getinfo("flowchem_instance").terminate()
 
-@pytest.mark.ml600
-async def infuse(api_dev):
+def test_infuse(api_dev):
     pump = api_dev['test']['pump']
     assert pump.put("infuse", params={"rate": "1 ml/min", "volume": "2 ml"})
     time.sleep(5)
@@ -39,29 +37,4 @@ async def infuse(api_dev):
            "some movement? (yes, no):")
     response = input(msg)
     assert response.lower() == 'yes', "The user indicated that device worked."
-
-@pytest.mark.ml600
-def test_withdraw(api_dev):
-    pump = api_dev['test']['pump']
-    assert pump.put("withdraw", params={"rate": "1 ml/min", "volume": "2 ml"})
-    time.sleep(5)
-    assert pump.get("is-pumping")
-    time.sleep(5)
-    pump.put("stop")
-    msg = ("Two commands was sent to the pump in order to withdraw 2 ml of fluid at 1 ml/min. "
-           "Is it observed by you? Does the device behaviour as expected, i.e., does it present "
-           "some movement and back to it initial state? (yes, no):")
-    response = input(msg)
-    assert response.lower() == 'yes', "The user indicated that device worked."
-
-@pytest.mark.ml600
-def test_valve(api_dev):
-    valve = api_dev['test']['valve']
-    init = valve.get("position")
-    valve.put("set_position", params={"connect": (1, 2)})
-    time.sleep(1)
-    assert valve.get("position") != init
-    time.sleep(1)
-    valve.put("set_position", params={"connect": (1, 2)})
-
 

@@ -56,7 +56,7 @@ class CVC3000PressureControl(PressureControl):
             "/status",
             self.hw_device.status,
             response_model=ProcessStatus,
-            methods=["PUT"],
+            methods=["GET"],
         )
 
     async def set_pressure(self, pressure: str):
@@ -120,4 +120,4 @@ class CVC3000PressureControl(PressureControl):
         str
             Returns binary string if the command to stop the pressure control was successful.
         """
-        return await self.hw_device._send_command_and_read_reply("STOP")
+        return await self.hw_device._send_command_and_read_reply("STOP 1")
