@@ -117,6 +117,32 @@ class Valve(FlowchemComponent):
                           case, add None
              for missing port
 
+            Exemple: 4 port 5 Position Valve
+            stator_ports=[(None, None, 1, None, 2, None, 3, None,), (0,)],
+            rotor_ports=[(None, 5, None, None, 4, None, 4, None), (5,)],
+
+                                 1
+                             * * * * *
+                           *     x     *
+                         *               *
+                     8  *  x            -x *  2
+                        *            -     *
+                     7  * o-      o-     o *  3
+                        *   -              *
+                        *  x -           x *  4
+                     6   *     -          *
+                           *    -o      *
+                             * * * * *
+                                 5
+
+        X - inaccessible port (addressed as None in stator_ports)
+        O - accessible port
+
+        Note that the only positions available as accessible ports are 3, 5, 7, and 0 (corresponding to 1, 2, 3, and 0).
+
+        The connection is made between the port at position 5 and the ports at positions 7 and 0 (central port) and
+        at position 2.
+
         """
         # a valve consists of a rotor and a stator. Solenoid valves Are special cases and can be decomposed into
         # Open/closed valves, need not be treated here but could be simulated by a [1,2,None] and rotor [3,3,None]
