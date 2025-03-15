@@ -1,0 +1,13 @@
+[device.virtual-EPC]
+type = "VirtualEPC"
+port = "COMX"
+channel = 1
+address = 0x80
+max_pressure = 9
+
+[device.virtual-MFC]
+type = "VirtualMFC"
+port = "COMX"    # Access port (serial)
+channel = 1
+address = 0x80
+max_flow = 9

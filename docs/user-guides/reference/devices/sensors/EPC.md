@@ -15,6 +15,7 @@ Configuration sample showing all possible parameters:
 
 ```toml
 [device.my-EPC]  # This is the MFC identifier
+type = "EPC"
 port = "COM4"    # Access port (serial)
 channel = 1      # The communication channel of the EPC device.
 address = 0x80   # The address of the EPC device.  
