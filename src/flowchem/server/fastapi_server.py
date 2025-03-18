@@ -37,14 +37,14 @@ class FastAPIServer:
             """Redirect root to `/docs` to enable interaction w/ API."""
             return RedirectResponse(url="/docs")
 
-    def add_background_tasks(self, repeated_tasks: Iterable[RepeatedTaskInfo]):
+    def add_background_tasks(self, repeated_tasks: RepeatedTaskInfo):
         """Schedule repeated tasks to run upon server startup."""
-        for seconds_delay, task in repeated_tasks:
-            @self.app.on_event("startup")
-            @repeat_every(seconds=seconds_delay)
-            async def my_task():
-                logger.debug("Running repeated task...")
-                await task()
+        seconds_delay, task = repeated_tasks
+        @self.app.on_event("startup")
+        @repeat_every(seconds=seconds_delay)
+        async def my_task():
+            logger.debug(f"Running repeated task {task.__name__} every {seconds_every} seconds...")
+            await task()
 
     def add_device(self, device):
         """Add device to server."""
