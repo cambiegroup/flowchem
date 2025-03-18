@@ -36,7 +36,22 @@ syringe_volume = "1 ml"
 type = "VirtualHuberChiller"
 port = "COMX"
 
+[device.virtual-azura]  # This is the pump identifier
+type = "VirtualAzuraCompact"
+ip_address = ""
+max_pressure = "10 bar"  # Optionally, a string with natural language specifying max pressure can be provided
+min_pressure = "5 bar"  # Optio
 
-[device.valve-knauer]
-type = "KnauerValve"
-ip_address = "141.14.233.147"
+[device.virtual-knauerDad]  # This is the device identifier
+type = "VirtualKnauerDAD"
+ip_address = ""  # Onyl one of either ip_address or mac_address need to be provided
+
+[device.virtual-valveKnauer]
+type = "VirtualKnauerValve"
+ip_address = ""
+valve_type = "LI" # LI 6 12 16
+
+
+#[device.valve-knauer]
+#type = "KnauerValve"
+#ip_address = "141.14.233.147"
