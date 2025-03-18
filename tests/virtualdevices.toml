@@ -11,3 +11,17 @@ port = "COMX"    # Access port (serial)
 channel = 1
 address = 0x80
 max_flow = 9
+
+[device.virtual-peltier]  # This is the device name
+type = "VirtualPeltierCooler"
+port = "COMX"
+address = 0
+
+[device.virtual-hplc]  # This is the 'device' identifier
+type = "VirtualClarity"
+
+[device.virtual-ml600]  # This is the pump identifier
+type = "VirtualML600"
+port = "COMX"
+address= 1
+syringe_volume = "5 ml"
