@@ -32,6 +32,9 @@ port = "COMX"
 syringe_diameter = "4.6 mm"
 syringe_volume = "1 ml"
 
+[device.virtual-huber]  # This is the chiller identifier
+type = "VirtualHuberChiller"
+port = "COMX"
 
 
 [device.valve-knauer]
