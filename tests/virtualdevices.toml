@@ -25,3 +25,15 @@ type = "VirtualML600"
 port = "COMX"
 address= 1
 syringe_volume = "5 ml"
+
+[device.virtual-elite11]  # This is the pump identifier
+type = "VirtualElite11"
+port = "COMX"
+syringe_diameter = "4.6 mm"
+syringe_volume = "1 ml"
+
+
+
+[device.valve-knauer]
+type = "KnauerValve"
+ip_address = "141.14.233.147"
