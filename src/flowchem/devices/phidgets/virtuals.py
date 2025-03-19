@@ -38,13 +38,13 @@ class VirtualPhidgetBubbleSensor(PhidgetBubbleSensor):
     async def power_off(self):
         ...
 
-    async def read_voltage(self) -> float:
+    def read_voltage(self) -> float:
         return self._voltage
 
-    async def read_intensity(self) -> float:
+    def read_intensity(self) -> float:
         return 0.0
 
-    async def set_dataInterval(self, datainterval: int) -> None:
+    def set_dataInterval(self, datainterval: int) -> None:
         ...
 
 

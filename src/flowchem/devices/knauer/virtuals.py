@@ -113,6 +113,7 @@ class VirtualKnauerDAD(KnauerDAD):
 
     async def bandwidth(self, bw: str | int) -> str | int:
         logger.debug(f"Set the bandwidth {bw} - Virtual KnauerDad")
+        return 0
 
 
 class VirtualKnauerValve(KnauerValve):

@@ -27,9 +27,10 @@ class VirtualIcIR(IcIR):
         return await self.last_spectrum_raw()
 
     async def last_spectrum_raw(self) -> IRSpectrum:
-        asw = IRSpectrum
-        asw.wavenumber = [0]
-        asw.intensity = [0]
+        asw = IRSpectrum(
+            wavenumber=[0],
+            intensity=[0]
+        )
         return asw
 
     async def sample_count(self) -> int | None:

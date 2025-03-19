@@ -53,8 +53,6 @@ class VirtualML600(ML600):
         address: int = 1,
         **config,
     ) -> None:
-
-
         # Call the parent class constructor with the virtual HamiltonPumpIO
         super().__init__(pump_io, syringe_volume, name, address, **config)
 
@@ -88,31 +86,31 @@ class VirtualML600(ML600):
 
     async def get_current_volume(self, pump: str) -> pint.Quantity:
         """Return current syringe position in ml."""
-        return ureg.Quantity(f"{self.pump_io._current_volume} ml")
+        return ureg.Quantity(f"{self.pump_io._current_volume} ml")  # type: ignore
 
     async def set_to_volume(self, target_volume: pint.Quantity, rate: pint.Quantity, pump: str):
         """Simulate setting the syringe to a target volume."""
-        self.pump_io._current_volume = target_volume.m_as("ml")
+        self.pump_io._current_volume = target_volume.m_as("ml")  # type: ignore
         logger.debug(f"Virtual ML600 {self.name} set to volume {target_volume} at rate {rate}")
         return True
 
     async def get_valve_position_by_name(self, valve: ML600Commands) -> str:
         """Simulate getting the valve position by name."""
-        return self.pump_io._valve_position
+        return self.pump_io._valve_position  # type: ignore
 
     async def set_valve_position_by_name(self, valve: ML600Commands, target_position: str, wait_for_movement_end: bool = True):
         """Simulate setting the valve position by name."""
-        self.pump_io._valve_position = target_position
+        self.pump_io._valve_position = target_position  # type: ignore
         logger.debug(f"Virtual ML600 {self.name} valve position set to {target_position}")
         return True
 
     async def get_pump_status(self, pump: str = "") -> bool:
         """Simulate getting the pump status."""
-        return self.pump_io._pump_status
+        return self.pump_io._pump_status   # type: ignore
 
     async def get_valve_status(self, valve: str = "") -> bool:
         """Simulate getting the valve status."""
-        return self.pump_io._valve_status
+        return self.pump_io._valve_status   # type: ignore
 
     async def get_raw_position(self, target_component: str) -> str:
         return "1"

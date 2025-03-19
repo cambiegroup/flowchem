@@ -10,6 +10,7 @@ import pint
 class Serial:
     port = "Fake"
 
+
 class VirtualPeltierIO(PeltierIO):
 
     def __init__(self):
@@ -82,6 +83,9 @@ class VirtualPeltierCooler(PeltierCooler):
             model="Virtual Peltier Cooler",
         )
 
+        self.current_temperature = 0
+        self.power = 0
+
     @classmethod
     def from_config(
             cls,
@@ -98,45 +102,46 @@ class VirtualPeltierCooler(PeltierCooler):
 
     async def set_temperature(self, temperature: pint.Quantity):
         """ Override set_temperature to simulate temperature changes. """
-        self.peltier_io.current_temperature = temperature.m_as("°C")
-        logger.debug(f"Virtual temperature set to {self.peltier_io.current_temperature} °C")
+        self.current_temperature = temperature.m_as("°C")
+        logger.debug(f"Virtual temperature set to {self.current_temperature} °C")
         await asyncio.sleep(0.01)
 
     async def get_temperature(self) -> float:
         """ Override get_temperature to return the simulated value. """
-        return self.peltier_io.current_temperature
+        return self.current_temperature
 
     async def get_power(self) -> float:
         """ Override get_power to return a simulated power value. """
-        return self.peltier_io.power
+        return self.power
 
     async def _set_current_limit_cooling(self, current_limit: float):
         # current in amp
-        reply = await self.send_command_and_read_reply(PeltierCommands.COOLING_CURRENT_LIMIT, round(current_limit * 100))
+        await self.send_command_and_read_reply(PeltierCommands.COOLING_CURRENT_LIMIT, round(current_limit * 100))
 
     async def _set_current_limit_heating(self, current_limit: float):
         # current in amp
-        reply = await self.send_command_and_read_reply(PeltierCommands.HEATING_CURRENT_LIMIT, round(current_limit * 100))
+        await self.send_command_and_read_reply(PeltierCommands.HEATING_CURRENT_LIMIT, round(current_limit * 100))
 
     async def _set_d_of_pid(self, differential: float):
         # max 10
-        reply = await self.send_command_and_read_reply(PeltierCommands.SET_DIFFERENTIAL_PID, round(differential * 100))
+        await self.send_command_and_read_reply(PeltierCommands.SET_DIFFERENTIAL_PID, round(differential * 100))
 
     async def _set_i_of_pid(self, integral):
         # max 10
-        reply = await self.send_command_and_read_reply(PeltierCommands.SET_INTEGRAL_PID, round(integral * 100))
+        await self.send_command_and_read_reply(PeltierCommands.SET_INTEGRAL_PID, round(integral * 100))
 
     async def _set_p_of_pid(self, proportional):
         # max 10
-        reply = await self.send_command_and_read_reply(PeltierCommands.SET_PROPORTIONAL_PID, round(proportional * 100))
+        await self.send_command_and_read_reply(PeltierCommands.SET_PROPORTIONAL_PID, round(proportional * 100))
 
     async def _set_max_temperature(self, t_max):
         # max 10
-        reply = await self.send_command_and_read_reply(PeltierCommands.SET_T_MAX, round(t_max * 100))
+        await self.send_command_and_read_reply(PeltierCommands.SET_T_MAX, round(t_max * 100))
 
     async def _set_min_temperature(self, t_min):
         # max 10
-        reply = await self.send_command_and_read_reply(PeltierCommands.SET_T_MIN, round(t_min * 100))
+        await self.send_command_and_read_reply(PeltierCommands.SET_T_MIN, round(t_min * 100))
+
 
 async def main():
     from flowchem import ureg
@@ -153,6 +158,7 @@ async def main():
 
     # Turn off the virtual device
     await virtual_peltier.stop_control()
+
 
 if __name__ == "__main__":
     # Run the main function
