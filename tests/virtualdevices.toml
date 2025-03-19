@@ -7,44 +7,44 @@ max_pressure = 9
 
 [device.virtual-MFC]
 type = "VirtualMFC"
-port = "COMX"    # Access port (serial)
+port = "COMX"
 channel = 1
 address = 0x80
 max_flow = 9
 
-[device.virtual-peltier]  # This is the device name
+[device.virtual-peltier]
 type = "VirtualPeltierCooler"
 port = "COMX"
 address = 0
 
-[device.virtual-hplc]  # This is the 'device' identifier
+[device.virtual-hplc]
 type = "VirtualClarity"
 
-[device.virtual-ml600]  # This is the pump identifier
+[device.virtual-ml600]
 type = "VirtualML600"
 port = "COMX"
 address= 1
 syringe_volume = "5 ml"
 
-[device.virtual-elite11]  # This is the pump identifier
+[device.virtual-elite11]
 type = "VirtualElite11"
 port = "COMX"
 syringe_diameter = "4.6 mm"
 syringe_volume = "1 ml"
 
-[device.virtual-huber]  # This is the chiller identifier
+[device.virtual-huber]
 type = "VirtualHuberChiller"
 port = "COMX"
 
-[device.virtual-azura]  # This is the pump identifier
+[device.virtual-azura]
 type = "VirtualAzuraCompact"
 ip_address = ""
-max_pressure = "10 bar"  # Optionally, a string with natural language specifying max pressure can be provided
-min_pressure = "5 bar"  # Optio
+max_pressure = "10 bar"
+min_pressure = "5 bar"
 
-[device.virtual-knauerDad]  # This is the device identifier
+[device.virtual-knauerDad]
 type = "VirtualKnauerDAD"
-ip_address = ""  # Onyl one of either ip_address or mac_address need to be provided
+ip_address = ""
 
 [device.virtual-valveKnauer]
 type = "VirtualKnauerValve"
@@ -57,7 +57,6 @@ host = ""
 xml_schema = "virtual"
 solvent = "chloroform-d"
 
-
-#[device.valve-knauer]
-#type = "KnauerValve"
-#ip_address = "141.14.233.147"
+[device.virtual-power-supply]
+type = "VirtualMansonPowerSupply"
+port = "COMX"
