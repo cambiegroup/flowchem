@@ -36,8 +36,8 @@ class FakeComponent_FakeDevice(FakeComponent):
 
         This function demonstrates how the commands request of data can be sent through the API build
         """
-        await self.hw_device.send_command(f'Request a data from the FakeDevice')
-        return 0.5 # Generic data to show how it works
+        await self.hw_device.send_command('Request a data from the FakeDevice')
+        return 0.5  # Generic data to show how it works
 
     async def set_specif_command(self) -> bool:
         """
@@ -46,7 +46,7 @@ class FakeComponent_FakeDevice(FakeComponent):
         Returns:
             None
         """
-        await self.hw_device.send_command(f'Set a specific command')
+        await self.hw_device.send_command('Set a specific command')
         return True  # If everything works appropriately the function will return a True
 
 
@@ -78,7 +78,7 @@ class FakeComponent2_FakeDevice(FakeComponent):
 
         This function demonstrates how the commands request of data can be sent through the API build
         """
-        await self.hw_device.send_command(f'Request a data from the FakeDevice')
+        await self.hw_device.send_command('Request a data from the FakeDevice')
         return 0.5  # Generic data to show how it works
 
     async def set_specif_command(self) -> bool:
@@ -88,5 +88,5 @@ class FakeComponent2_FakeDevice(FakeComponent):
         Returns:
             None
         """
-        await self.hw_device.send_command(f'Set a specific command')
+        await self.hw_device.send_command('Set a specific command')
         return True  # If everything works appropriately the function will return a True

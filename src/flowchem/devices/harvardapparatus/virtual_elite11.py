@@ -1,11 +1,8 @@
 from flowchem.devices.harvardapparatus.elite11 import Elite11, HarvardApparatusPumpIO, Protocol11Command
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
-from flowchem import ureg
 from loguru import logger
-import aioserial
 import asyncio
-import pint
 
 
 class Serial:

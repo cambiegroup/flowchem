@@ -4,7 +4,6 @@ from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
 from flowchem import ureg
 from loguru import logger
-import aioserial
 import asyncio
 import pint
 

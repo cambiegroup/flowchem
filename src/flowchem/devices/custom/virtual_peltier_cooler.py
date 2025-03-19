@@ -3,7 +3,6 @@ from flowchem.devices.custom.peltier_cooler import PeltierCooler, PeltierIO, Pel
 from flowchem.utils.people import samuel_saraiva
 from loguru import logger
 import asyncio
-import aioserial
 import pint
 
 

@@ -178,6 +178,6 @@ if __name__ == "__main__":
     async def main():
         valve = VirtualKnauerValve(ip_address="", name="", valve_type="LI")
         await valve.initialize()
-        pos = await valve.components[0].get_position()  # type: ignore
+        await valve.components[0].get_position()  # type: ignore
 
     asyncio.run(main())

@@ -19,7 +19,7 @@ class VirtualHuberChiller(HuberChiller):
         self.components.append(
             HuberTemperatureControl("temperature-control", self, temperature_range)
         )
-        logger.debug(f"Virtual HuberChiller initialized")
+        logger.debug("Virtual HuberChiller initialized")
 
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):

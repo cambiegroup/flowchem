@@ -1,7 +1,5 @@
 """FastAPI server for devices control."""
-from collections.abc import Iterable
 from importlib.metadata import metadata, version
-
 from fastapi import APIRouter, FastAPI
 from loguru import logger
 from starlette.responses import RedirectResponse
