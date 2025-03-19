@@ -25,7 +25,7 @@ class FakeComponent(FlowchemComponent):
                 Returns:
                         status (bool): If everything works appropriately the function will return a True
         """
-        ...
+        return True
 
     async def fake_receive_data(self) -> float:  # type: ignore
         """

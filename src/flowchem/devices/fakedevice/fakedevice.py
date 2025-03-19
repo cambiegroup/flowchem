@@ -4,11 +4,11 @@ from flowchem.utils.people import samuel_saraiva
 from flowchem.devices.fakedevice.fakedevice_component import FakeComponent_FakeDevice, FakeComponent2_FakeDevice
 from loguru import logger
 
+
 class FakeDeviceExample(FlowchemDevice):
     """Our plugins fake device!"""
     device_info = DeviceInfo(
         authors=[samuel_saraiva],
-        maintainers=[samuel_saraiva],
         manufacturer="Fake-device",
         model="FakeDevice",
         serial_number=42,
@@ -31,7 +31,6 @@ class FakeDeviceExample(FlowchemDevice):
 
     async def send_command(self, command):
         logger.info(command)  # This is in
-
 
 
 if __name__ == '__main__':

@@ -2,8 +2,14 @@ from flowchem.components.fakecomponentclass.fakecomponent import FakeComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 import time
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from flowchem.devices.fakedevice.fakedevice import FakeDeviceExample
+
 
 class FakeComponent_FakeDevice(FakeComponent):
+
+    hw_device: FakeDeviceExample
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
@@ -18,11 +24,11 @@ class FakeComponent_FakeDevice(FakeComponent):
                         parameter_1 (str): in a specific unit (e.g. 3 ml). The value must be within (0 to 40 ml)
                         parameter_2 (str): in a specific unit (e.g. 4 min). The value must be within (0 to 32 min)
         """
-        time.sleep(2) # Simulated the delay to run a actuator, for example!
+        time.sleep(2)  # Simulated the delay to run a actuator, for example!
 
-        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
-                                    f'parameter_2: {parameter_2}')
-        return True # If everything works appropriately the function will return a True
+        await self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
+                                          f'parameter_2: {parameter_2}')
+        return True  # If everything works appropriately the function will return a True
 
     async def fake_receive_data(self) -> float:  # type: ignore
         """
@@ -30,7 +36,7 @@ class FakeComponent_FakeDevice(FakeComponent):
 
         This function demonstrates how the commands request of data can be sent through the API build
         """
-        self.hw_device.send_command(f'Request a data from the FakeDevice')
+        await self.hw_device.send_command(f'Request a data from the FakeDevice')
         return 0.5 # Generic data to show how it works
 
     async def set_specif_command(self) -> bool:
@@ -40,16 +46,17 @@ class FakeComponent_FakeDevice(FakeComponent):
         Returns:
             None
         """
-        self.hw_device.send_command(f'Set a specific command')
-        return True # If everything works appropriately the function will return a True
+        await self.hw_device.send_command(f'Set a specific command')
+        return True  # If everything works appropriately the function will return a True
 
 
 class FakeComponent2_FakeDevice(FakeComponent):
 
+    hw_device: FakeDeviceExample
+
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
-
 
     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
         """
@@ -61,9 +68,9 @@ class FakeComponent2_FakeDevice(FakeComponent):
         """
         time.sleep(2) # Simulated the delay to run a actuator, for example!
 
-        self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
-                                    f'parameter_2: {parameter_2}')
-        return True # If everything works appropriately the function will return a True
+        await self.hw_device.send_command(f'Send a command to the FakeDevice with parameter_1: {parameter_1} and '
+                                          f'parameter_2: {parameter_2}')
+        return True  # If everything works appropriately the function will return a True
 
     async def fake_receive_data(self) -> float:  # type: ignore
         """
@@ -71,8 +78,8 @@ class FakeComponent2_FakeDevice(FakeComponent):
 
         This function demonstrates how the commands request of data can be sent through the API build
         """
-        self.hw_device.send_command(f'Request a data from the FakeDevice')
-        return 0.5 # Generic data to show how it works
+        await self.hw_device.send_command(f'Request a data from the FakeDevice')
+        return 0.5  # Generic data to show how it works
 
     async def set_specif_command(self) -> bool:
         """
@@ -81,5 +88,5 @@ class FakeComponent2_FakeDevice(FakeComponent):
         Returns:
             None
         """
-        self.hw_device.send_command(f'Set a specific command')
-        return True # If everything works appropriately the function will return a True
+        await self.hw_device.send_command(f'Set a specific command')
+        return True  # If everything works appropriately the function will return a True
