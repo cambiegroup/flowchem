@@ -1,20 +1,21 @@
+from __future__ import annotations
 from flowchem.components.fakecomponentclass.fakecomponent import FakeComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
 import time
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from flowchem.devices.fakedevice.fakedevice import FakeDeviceExample
+    from .fakedevice import FakeDeviceExample
 
 
 class FakeComponent_FakeDevice(FakeComponent):
 
-    hw_device: FakeDeviceExample
+    code: str
+    hw_device: FakeDeviceExample  # for typing's sake
 
-    def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
+    def __init__(self, name: str, hw_device: FakeDeviceExample) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
-
 
     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
         """
@@ -52,7 +53,7 @@ class FakeComponent_FakeDevice(FakeComponent):
 
 class FakeComponent2_FakeDevice(FakeComponent):
 
-    hw_device: FakeDeviceExample
+    hw_device: FakeDeviceExample  # for typing's sake
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
