@@ -43,7 +43,7 @@ class FastAPIServer:
         @self.app.on_event("startup")
         @repeat_every(seconds=seconds_delay)
         async def my_task():
-            logger.debug(f"Running repeated task {task.__name__} every {seconds_every} seconds...")
+            logger.debug(f"Running repeated task {task.__name__} every time...")
             await task()
 
     def add_device(self, device):
