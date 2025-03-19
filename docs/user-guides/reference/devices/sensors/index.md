@@ -8,4 +8,6 @@ phidget_pressure_sensor
 MFC
 
 EPC
+
+phidget_bubble
 ```

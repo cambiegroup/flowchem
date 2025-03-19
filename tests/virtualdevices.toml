@@ -65,3 +65,12 @@ port = "COMX"
 type = "VirtualIcIR"
 url = " "
 template = " "
+
+[device.virtual-phidgets-bubble]
+type = "VirtualPhidgetBubbleSensor"
+
+[device.virtual-phidgets-pressure]
+type = "VirtualPhidgetPressureSensor"
+
+[device.virtual-phidgets-power]
+type = "VirtualPhidgetPowerSource5V"
