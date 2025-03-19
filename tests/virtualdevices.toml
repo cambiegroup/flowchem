@@ -84,3 +84,8 @@ type = "VirtualR2"
 
 [device.virtual-r4Heater]
 type = "VirtualR4Heater"
+
+[device.virtual-ViciValve]
+type = "VirtualViciValve"
+port = "COMX"
+address = 1
