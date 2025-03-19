@@ -16,25 +16,30 @@ class Clarity(FlowchemDevice):
     """
     Controls a local ClarityChrom instance via the CLI interface.
 
+    This class manages software startup, configuration, and command execution for
+    ClarityChrom chromatography software. It validates executable paths, constructs
+    initialization commands, and handles CLI interactions with timeout management.
+
     Attributes:
     -----------
     executable : str
-        Path to the ClarityChrom executable.
+        Path to the ClarityChrom executable. Automatically quoted if spaces are detected.
     instrument_number : int
-        The instrument number to control.
+        Target instrument number for multi-instrument setups (default: 1).
     startup_time : float
-        The time to wait for ClarityChrom to start up and become responsive.
+        Time (seconds) allowed for software initialization before operation.
     cmd_timeout : float
-        The timeout duration for command execution.
+        Maximum duration (seconds) allowed for individual command execution.
     _init_command : str
-        The command string to initialize ClarityChrom.
+        Pre-built initialization command combining config file, credentials,
+        and startup method parameters.
 
     Methods:
     --------
-    initialize():
-        Start ClarityChrom and wait for it to be responsive.
-    execute_command(command: str, without_instrument_num: bool = False) -> bool:
-        Execute a ClarityChrom command.
+    initialize() -> None
+        Start ClarityChrom with configured parameters and register components.
+    execute_command(command: str, without_instrument_num: bool = False) -> bool
+        Execute CLI commands with optional instrument number bypass.
     """
     def __init__(
         self,
@@ -69,7 +74,7 @@ class Clarity(FlowchemDevice):
             The username for ClarityChrom (default is "admin").
         password : str, optional
             The password for ClarityChrom (default is an empty string).
-        cfg_file : str, optional
+        cfg_file : str, optional (PATH\FILENAME)
             The configuration file for ClarityChrom (default is an empty string).
         """
         super().__init__(name=name)
@@ -107,19 +112,23 @@ class Clarity(FlowchemDevice):
 
     async def execute_command(self, command: str, without_instrument_num: bool = False):
         """
-        Execute a ClarityChrom command.
+        Execute ClarityChrom CLI command with timeout handling.
+
+        Commands in string format that are accepted by the device.
+        There is a list of the command available.
+        (See more detail in the documentation and/or the manual reference)
 
         Parameters:
         -----------
         command : str
-            The command to execute.
-        without_instrument_num : bool, optional
-            Whether to execute the command without specifying the instrument number (default is False).
+            Command string to execute (without instrument specification).
+        without_instrument_num : bool
+            Skip adding instrument number parameter (for global commands).
 
         Returns:
         --------
         bool
-            True if the command was executed successfully, False otherwise.
+            True if command completed successfully, False on timeout.
         """
         if without_instrument_num:
             cmd_string = self.executable + f" {command}"

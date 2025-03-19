@@ -48,9 +48,11 @@ class HPLCControl(FlowchemComponent):
 
     async def send_method(self, method_name):
         """
-        Submit a method to the HPLC system.
+        Set or load a analytical method to the HPLC system.
 
         This method is useful for scenarios where an injection is automatically triggered, such as when switching a valve.
+
+        Note that the commands is wrapped in the run sample
 
         Parameters:
         -----------

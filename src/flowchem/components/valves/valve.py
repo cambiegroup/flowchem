@@ -135,7 +135,13 @@ class Valve(FlowchemComponent):
                              * * * * *
                                  5
 
-        The connection is done between port 7 and 5 and 0 (central port) and 2
+        X - inaccessible port (addressed as None in stator_ports)
+        O - accessible port
+
+        Note that the only positions available as accessible ports are 3, 5, 7, and 0 (corresponding to 1, 2, 3, and 0).
+
+        The connection is made between the port at position 5 and the ports at positions 7 and 0 (central port) and
+        at position 2.
 
         """
         # a valve consists of a rotor and a stator. Solenoid valves Are special cases and can be decomposed into

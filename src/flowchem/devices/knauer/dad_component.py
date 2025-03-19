@@ -127,7 +127,7 @@ class DADChannelControl(PhotoSensor):
 
     async def acquire_signal(self) -> float:
         """
-        Acquire a signal from the sensor, result to be expressed in % (optional).
+        Acquire a signal from the sensor.
 
         Returns:
             float: The acquired signal.
@@ -137,6 +137,8 @@ class DADChannelControl(PhotoSensor):
     async def set_wavelength(self, wavelength: int):
         """
         Set the acquisition wavelength.
+
+        Be aware that wavelength=0 means that nothing will be collected.
 
         Args:
             wavelength (int): The desired wavelength in nm (0-999 nm).

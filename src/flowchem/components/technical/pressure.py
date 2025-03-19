@@ -96,7 +96,7 @@ class PressureControl(FlowchemComponent):
         Returns:
         --------
         float
-            The current pressure in mbar.
+            The current pressure.
         """
         ...
 
@@ -123,8 +123,8 @@ class PressureControl(FlowchemComponent):
 
         Returns:
         --------
-        bool
-            Returns True if the operation was successful.
+        str
+            Returns binary string if the operation was successful.
         """
         ...
 
@@ -137,7 +137,7 @@ class PressureControl(FlowchemComponent):
 
         Returns:
         --------
-        bool
-            Returns True if the operation was successful.
+        str
+            Returns binary string if the operation was successful.
         """
         ...
