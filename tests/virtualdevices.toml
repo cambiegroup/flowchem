@@ -78,3 +78,9 @@ type = "VirtualPhidgetPowerSource5V"
 [device.virtual-cvc3000]
 type = "VirtualCVC3000"
 port = "COMX"
+
+[device.virtual-r2]
+type = "VirtualR2"
+
+[device.virtual-r4Heater]
+type = "VirtualR4Heater"
