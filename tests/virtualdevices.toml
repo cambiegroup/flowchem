@@ -60,3 +60,8 @@ solvent = "chloroform-d"
 [device.virtual-power-supply]
 type = "VirtualMansonPowerSupply"
 port = "COMX"
+
+[device.virtual-icir-spectometer]
+type = "VirtualIcIR"
+url = " "
+template = " "
