@@ -1,12 +1,5 @@
-from fastapi import BackgroundTasks
-
 from .spinsolve import Spinsolve, SpinsolveControl
-from flowchem.components.device_info import DeviceInfo
-from flowchem.utils.people import samuel_saraiva
-from flowchem import ureg
-from loguru import logger
-import asyncio
-import pint
+from fastapi import BackgroundTasks
 
 
 class VirtualSpinsolve(Spinsolve):
