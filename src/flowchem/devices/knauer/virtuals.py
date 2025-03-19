@@ -3,6 +3,7 @@ from flowchem.devices.knauer.dad import KnauerDAD, KnauerDADLampControl, DADChan
 from flowchem.devices.knauer.knauer_valve import (KnauerValve, KnauerValveHeads, KnauerInjectionValve,
                                                   Knauer6PortDistributionValve, Knauer12PortDistributionValve,
                                                   Knauer16PortDistributionValve)
+from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
 from flowchem import ureg
@@ -140,6 +141,7 @@ class VirtualKnauerValve(KnauerValve):
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()
 
         # Set components
+        valve_component: FlowchemComponent
         match self.device_info.additional_info["valve-type"]:
             case KnauerValveHeads.SIX_PORT_TWO_POSITION:
                 valve_component = KnauerInjectionValve("injection-valve", self)
