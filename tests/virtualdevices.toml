@@ -51,6 +51,12 @@ type = "VirtualKnauerValve"
 ip_address = ""
 valve_type = "LI" # LI 6 12 16
 
+[device.virtual-benchtop-nmr]
+type = "VirtualSpinsolve"
+host = ""
+xml_schema = "virtual"
+solvent = "chloroform-d"
+
 
 #[device.valve-knauer]
 #type = "KnauerValve"
