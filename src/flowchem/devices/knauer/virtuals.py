@@ -167,14 +167,15 @@ class VirtualKnauerValve(KnauerValve):
         self._raw_position = position
         return True
 
-    async def get_valve_type(self):
-        return KnauerValveHeads(self._vale_type)
+    async def get_valve_type(self) -> KnauerValveHeads:
+        headtype = KnauerValveHeads(self._vale_type)
+        return headtype
 
 
 if __name__ == "__main__":
     async def main():
         valve = VirtualKnauerValve(ip_address="", name="", valve_type="LI")
         await valve.initialize()
-        pos = await valve.components[0].get_position()
+        pos = await valve.components[0].get_position()  # type: ignore
 
     asyncio.run(main())

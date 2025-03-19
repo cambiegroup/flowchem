@@ -11,7 +11,7 @@ class VirtualCVC3000(CVC3000):
     @classmethod
     def from_config(cls, port, name=None, **serial_kwargs):
         aws = cls(port, name)
-        aws._pressure = 0.0
+        aws._pressure = 0
         aws.device_info.authors = [samuel_saraiva]
         return aws
 
