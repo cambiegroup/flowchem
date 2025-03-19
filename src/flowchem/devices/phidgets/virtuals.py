@@ -29,6 +29,9 @@ class VirtualPhidgetBubbleSensor(PhidgetBubbleSensor):
         self.components = []
         self._voltage = 0.0
 
+    def __del__(self):
+        ...
+
     async def power_on(self):
         ...
 
@@ -66,6 +69,9 @@ class VirtualPhidgetPowerSource5V(PhidgetPowerSource5V):
         self.name = name
         self.components = []
 
+    def __del__(self):
+        ...
+
     async def power_on(self):
         ...
 
@@ -98,6 +104,9 @@ class VirtualPhidgetPressureSensor(PhidgetPressureSensor):
         sensor_min, sensor_max = pressure_range
         self._min_pressure = ureg.Quantity(sensor_min)
         self._max_pressure = ureg.Quantity(sensor_max)
+
+    def __del__(self):
+        ...
 
     def read_pressure(self) -> pint.Quantity:
         return ureg.Quantity(self._pressure)
