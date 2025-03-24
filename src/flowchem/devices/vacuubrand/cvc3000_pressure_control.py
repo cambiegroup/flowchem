@@ -109,7 +109,7 @@ class CVC3000PressureControl(PressureControl):
         str
             Returns binary string if the command to start the pressure control was successful.
         """
-        return await self.hw_device._send_command_and_read_reply("START")
+        return await self.hw_device.power_on()
 
     async def power_off(self):
         """
@@ -120,4 +120,4 @@ class CVC3000PressureControl(PressureControl):
         str
             Returns binary string if the command to stop the pressure control was successful.
         """
-        return await self.hw_device._send_command_and_read_reply("STOP 1")
+        return await self.hw_device.power_off()

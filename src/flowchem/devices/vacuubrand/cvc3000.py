@@ -13,7 +13,7 @@ from flowchem.devices.vacuubrand.constants import ProcessStatus
 from flowchem.utils.exceptions import InvalidConfigurationError
 from flowchem.utils.people import dario, jakob, wei_hsin
 
-class Commands(Enum):
+class CVC3000Commands(Enum):
 
     # read commands
     POWER_ON = "START"
@@ -161,21 +161,21 @@ class CVC3000(FlowchemDevice):
             raise InvalidConfigurationError("No reply received from CVC3000!")
 
         # Set to CVC3000 mode and save
-        await self._send_command_and_read_reply("CVC 3")
-        await self._send_command_and_read_reply("STORE")
+        await self._send_command_and_read_reply(CVC3000Commands.CVC)
+        await self._send_command_and_read_reply(CVC3000Commands.STORE_SETTINGS)
         # Get reply to set commands
-        await self._send_command_and_read_reply("ECHO 1")
+        await self._send_command_and_read_reply(CVC3000Commands.ECHO_REPLY)
         # Remote control
-        await self._send_command_and_read_reply("REMOTE 1")
+        await self._send_command_and_read_reply(CVC3000Commands.SET_REMOTE)
         # mbar, no autostart, no beep, venting auto
-        await self._send_command_and_read_reply("OUT_CFG 00001")
+        await self._send_command_and_read_reply(CVC3000Commands.CONFIGURATION)
         await self.motor_speed(100)
 
         logger.debug(f"Connected with CVC3000 version {self.device_info.version}")
 
         self.components.append(CVC3000PressureControl("pressure-control", self))
 
-    async def _send_command_and_read_reply(self, command: str) -> str:
+    async def _send_command_and_read_reply(self, cvc_command: CVC3000Commands, *args) -> str:
         """
         Send a command to the device and read the reply.
 
@@ -193,6 +193,11 @@ class CVC3000(FlowchemDevice):
         ------
         If no reply is received within the timeout period, an error is logged.
         """
+        command = cvc_command.value
+        if args:
+            for arg in args:
+                command += f" {arg}"
+
         await self._serial.write_async(command.encode("ascii") + b"\r\n")
         logger.debug(f"Command `{command}` sent!")
 
@@ -217,7 +222,7 @@ class CVC3000(FlowchemDevice):
         str
             The version of the device, or None if the version could not be retrieved.
         """
-        raw_version = await self._send_command_and_read_reply("IN_VER")
+        raw_version = await self._send_command_and_read_reply(CVC3000Commands.VERSION)
         # raw_version = CVC 3000 VX.YY
         try:
             return raw_version.split()[-1]
@@ -234,7 +239,7 @@ class CVC3000(FlowchemDevice):
             The target pressure to be set, expressed in units compatible with the device (e.g., mbar).
         """
         mbar = int(pressure.m_as("mbar"))
-        await self._send_command_and_read_reply(f"OUT_SP_1 {mbar}")
+        await self._send_command_and_read_reply(CVC3000Commands.SET_PRESSURE_VACUUM,mbar)
 
     async def get_pressure(self):
         """
@@ -245,7 +250,7 @@ class CVC3000(FlowchemDevice):
         float
             The current pressure in mbar.
         """
-        pressure_text = await self._send_command_and_read_reply("IN_PV_1")
+        pressure_text = await self._send_command_and_read_reply(CVC3000Commands.ACTUAL_PRESSURE)
         return float(pressure_text.split()[0])
 
     async def motor_speed(self, speed):
@@ -257,7 +262,7 @@ class CVC3000(FlowchemDevice):
         speed : int
             The target motor speed percentage (0-100%).
         """
-        return await self._send_command_and_read_reply(f"OUT_SP_2 {speed}")
+        return await self._send_command_and_read_reply(CVC3000Commands.MOTOR_SPEED,speed)
 
     async def status(self) -> ProcessStatus:
         """
@@ -268,11 +273,33 @@ class CVC3000(FlowchemDevice):
         ProcessStatus
             The status of the device process.
         """
-        raw_status = await self._send_command_and_read_reply("IN_STAT")
+        raw_status = await self._send_command_and_read_reply(CVC3000Commands.STATUS)
         # Sometimes fails on first call
         if not raw_status:
-            raw_status = await self._send_command_and_read_reply("IN_STAT")
+            raw_status = await self._send_command_and_read_reply(CVC3000Commands.STATUS)
         return ProcessStatus.from_reply(raw_status)
+
+    async def power_on(self):
+        """
+        Turn on the pressure control.
+
+        Returns:
+        --------
+        str
+            Returns binary string if the command to start the pressure control was successful.
+        """
+        return await self._send_command_and_read_reply(CVC3000Commands.POWER_ON)
+
+    async def power_off(self):
+        """
+        Turn off the pressure control.
+
+        Returns:
+        --------
+        str
+            Returns binary string if the command to stop the pressure control was successful.
+        """
+        return await self.hw_device._send_command_and_read_reply(CVC3000Commands.POWER_OFF)
 
 
 if __name__ == "__main__":
