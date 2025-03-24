@@ -21,7 +21,7 @@ class IRSpectrum(BaseModel):
 
 class IRControl(FlowchemComponent):
     def __init__(self, name: str, hw_device: "FlowchemDevice") -> None:
-        """HPLC Control component. Sends methods, starts run, do stuff."""
+        """IR Control component. Sends methods, starts run, do stuff."""
         super().__init__(name, hw_device)
         self.add_api_route("/start-experiment", self.start_experiment, methods=["PUT"])
         self.add_api_route("/acquire-spectrum", self.acquire_spectrum, methods=["PUT"])
@@ -34,11 +34,34 @@ class IRControl(FlowchemComponent):
         self.component_info.type = "IR Control"
 
     async def start_experiment(self):
-        """ Start the programmed experiment """
+        """
+        Start the programeted experiment according to the template provided in the config file
+        """
         ...
 
     async def acquire_spectrum(self) -> IRSpectrum:  # type: ignore
-        """Acquire an IR spectrum."""
+        """
+        Acquire an IR spectrum from the instrument.
+
+        This method retrieves the most recent infrared (IR) spectrum acquired by the device.
+        Depending on the `treated` parameter, it can return either a processed spectrum with background subtraction
+        or a raw, unprocessed spectrum.
+
+        The acquisition process works as follows:
+        - If `treated` is True, the method returns a spectrum where background subtraction has been performed,
+          providing a clean signal suitable for analysis. The treated spectrum is retrieved from the device's
+          OPC UA node specified by `SPECTRA_TREATED` ("ns=2;s=Local.iCIR.Probe1.SpectraTreated").
+        - If `treated` is False, the method returns the raw, unprocessed spectrum directly from the device,
+          without any background correction. The raw spectrum is retrieved from the OPC UA node specified by
+          `SPECTRA_RAW` ("ns=2;s=Local.iCIR.Probe1.SpectraRaw").
+
+        Args:
+            treated (bool): If True, perform background subtraction and return the treated spectrum.
+                            If False, return the raw scan without any processing.
+
+        Returns:
+            IRSpectrum: The acquired IR spectrum, either treated or raw.
+        """
         ...
 
     async def stop(self):
