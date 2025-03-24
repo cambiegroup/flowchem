@@ -34,7 +34,7 @@ def test_device_finder():
 
     # Check all devices implement base API
     for name, device in dev_found.items():
-        if name == "KnauerDADCommands" or name.startswith("Virtual"):
+        if name.startswith("Virtual"):
             continue  # not a real device
 
         assert hasattr(device, "initialize")
