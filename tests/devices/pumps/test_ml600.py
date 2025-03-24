@@ -8,10 +8,11 @@ import time
 # pytest tests/devices/Fake_group/test_elite11.py -s
 # pytest ./tests -m HApump -s
 
+
 @pytest.fixture(scope="module")
 def api_dev(xprocess):
 
-    config_file = Path(__file__).parent.resolve() / "elite11.toml"
+    config_file = Path(__file__).parent.resolve() / "ml600.toml"
     main = Path(__file__).parent.resolve() / ".." / ".." / ".." / "src" / "flowchem" / "__main__.py"
 
     class Starter(ProcessStarter):
@@ -25,6 +26,7 @@ def api_dev(xprocess):
     xprocess.ensure("flowchem_instance", Starter)
     yield get_all_flowchem_devices()
     xprocess.getinfo("flowchem_instance").terminate()
+
 
 @pytest.mark.ml600
 async def infuse(api_dev):
@@ -40,6 +42,7 @@ async def infuse(api_dev):
     response = input(msg)
     assert response.lower() == 'yes', "The user indicated that device worked."
 
+
 @pytest.mark.ml600
 def test_withdraw(api_dev):
     pump = api_dev['test']['pump']
@@ -53,6 +56,7 @@ def test_withdraw(api_dev):
            "some movement and back to it initial state? (yes, no):")
     response = input(msg)
     assert response.lower() == 'yes', "The user indicated that device worked."
+
 
 @pytest.mark.ml600
 def test_valve(api_dev):
