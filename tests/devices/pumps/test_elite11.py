@@ -7,6 +7,7 @@ import time
 
 # pytest tests/devices/pump/test_elite11.py -s
 
+
 @pytest.fixture(scope="module")
 def api_dev(xprocess):
 
@@ -25,6 +26,7 @@ def api_dev(xprocess):
     yield get_all_flowchem_devices()
     xprocess.getinfo("flowchem_instance").terminate()
 
+
 def test_infuse(api_dev):
     pump = api_dev['test']['pump']
     assert pump.put("infuse", params={"rate": "1 ml/min", "volume": "2 ml"})
@@ -32,8 +34,8 @@ def test_infuse(api_dev):
     assert pump.get("is-pumping")
     time.sleep(5)
     pump.put("stop")
-    msg = ("Two commands was sent to the pump in order to infuse 2 ml of fluid at 1 ml/min. "
-           "Is it observed by you? Does the device behaviour as expected, i.e., does it present "
+    msg = ("Two commands were sent to the pump in order to infuse 2 ml of fluid at 1 ml/min. "
+           "Is it observed by you? Does the device behave as expected, i.e., does it present "
            "some movement? (yes, no):")
     response = input(msg)
     assert response.lower() == 'yes', "The user indicated that device worked."
