@@ -290,13 +290,13 @@ class MansonPowerSupply(FlowchemDevice):
 if __name__ == "__main__":
 
     async def main():
-        PS = MansonPowerSupply.from_config(port="COM6")
-        await PS.initialize()
+        ps = MansonPowerSupply.from_config(port="COM6")
+        await ps.initialize()
         await asyncio.sleep(0.5)
-        await PS.set_voltage("10 V")
+        await ps.set_voltage("10 V")
         for i in range(5):
             await asyncio.sleep(0.5)
-            v = await PS.get_output_voltage()
+            v = await ps.get_output_voltage()
             print(f"actual voltage: {v}")
 
     import serial.tools.list_ports
