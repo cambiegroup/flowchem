@@ -135,6 +135,8 @@ class VirtualKnauerValve(KnauerValve):
         else:
             self._raw_position = "1"
 
+            # The _raw_position must be always str!
+
     async def initialize(self):
 
         # Detect valve type
@@ -165,6 +167,8 @@ class VirtualKnauerValve(KnauerValve):
         return self._raw_position
 
     async def set_raw_position(self, position: str) -> bool:
+        if type(position) != str:
+            position = str(position)
         logger.debug(f"Set raw_position in the Virtual Knauer Valve {position}")
         self._raw_position = position
         return True
