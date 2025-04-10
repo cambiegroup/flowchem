@@ -1,3 +1,4 @@
+from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
 from .el_flow import EPC, MFC
 from loguru import logger
@@ -28,6 +29,7 @@ class VirtualEPC(EPC):
         self.address = address
         self.max_pressure = max_pressure
 
+        self.device_info = DeviceInfo()
         self.device_info.authors = [samuel_saraiva]
         self.device_info.manufacturer = "VirtualBronkhorst"
         self.el_press = VirtualPropar()
@@ -55,6 +57,7 @@ class VirtualMFC(MFC):
         self.max_flow = max_flow
         self.max_flow = max_flow
         # Metadata
+        self.device_info = DeviceInfo()
         self.device_info.model = "EL-FLOW"
         # Metadata
         self.device_info.authors = [samuel_saraiva]
