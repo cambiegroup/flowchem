@@ -1,73 +1,77 @@
+from flowchem.devices.bronkhorst.el_flow_component import EPCComponent, MFCComponent
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
-from .el_flow import EPC, MFC
+from flowchem import ureg
 from loguru import logger
 
 
-class VirtualPropar:
+def isfloat(num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
 
-    id = 0
 
-    setpoint = 0
+class VirtualEPC(FlowchemDevice):
 
-    measure = 0
+    def __init__(self, name="", *args, max_pressure: float = 10, **kwargs) -> None:
 
+        super().__init__(name)
+        self.device_info.authors = [samuel_saraiva]
+        self.device_info.manufacturer = "VirtualBronkhorst"
+        self.device_info.model = "EPC"
+        logger.debug(f"Connected virtual EPC")
 
-class VirtualEPC(EPC):
-
-    def __init__(
-            self,
-            port: str,
-            name="",
-            channel: int = 1,
-            address: int = 0x80,
-            max_pressure: float = 10,  # bar = 100 % = 32000
-    ) -> None:
-
-        self.port = port
-        self.channel = channel
-        self.address = address
+        self.pressure = "0 bar"
         self.max_pressure = max_pressure
 
-        self.device_info = DeviceInfo()
+    async def initialize(self):
+        await self.set_pressure("0 bar")
+        self.components.append(EPCComponent("EPC", self))
+
+    async def set_pressure(self, pressure: str):
+        if pressure.isnumeric() or isfloat(pressure):
+            pressure = pressure + "bar"
+            logger.warning("No units provided to set_pressure, assuming bar.")
+        self.pressure = pressure
+
+    async def get_pressure(self) -> float:
+        return ureg.Quantity(self.pressure).magnitude
+
+    async def get_pressure_percentage(self) -> float:
+        return 100 * ureg.Quantity(self.pressure).magnitude / self.max_pressure
+
+
+class VirtualMFC(FlowchemDevice):
+
+    def __init__(self, name="", *args, max_flow: float = 9, **kwargs) -> None:
+
+        super().__init__(name)
         self.device_info.authors = [samuel_saraiva]
         self.device_info.manufacturer = "VirtualBronkhorst"
-        self.el_press = VirtualPropar()
-        self.id = self.el_press.id
-        logger.debug(f"Connected virtual EPC {self.id} to {self.port}")
-
-        self.name = name
-        self.components = []
-
-
-class VirtualMFC(MFC):
-
-    def __init__(
-            self,
-            port: str,
-            name="",
-            channel: int = 1,
-            address: int = 0x80,
-            max_flow: float = 9,  # ml / min = 100 % = 32000
-    ) -> None:
-
-        self.port = port
-        self.channel = channel
-        self.address = address
-        self.max_flow = max_flow
-        self.max_flow = max_flow
-        # Metadata
-        self.device_info = DeviceInfo()
         self.device_info.model = "EL-FLOW"
-        # Metadata
-        self.device_info.authors = [samuel_saraiva]
-        self.device_info.manufacturer = "VirtualBronkhorst"
-        self.el_flow = VirtualPropar()
-        self.id = self.el_flow.id
-        logger.debug(f"Connected virtual EPC {self.id} to {self.port}")
+        logger.debug(f"Connected virtual MFC")
 
-        self.name = name
-        self.components = []
+        self.max_flow = max_flow
+        self.flow = "0 ml/min"
 
+    async def initialize(self):
+        await self.set_flow_setpoint("0 ml/min")
+        self.components.append(MFCComponent("MFC", self))
 
+    async def set_flow_setpoint(self, flowrate: str):
+        if flowrate.isnumeric() or isfloat(flowrate):
+            flowrate = flowrate + "ml/min"
+            logger.warning(
+                "No units provided to set_flow_rate, assuming milliliter/minutes.",
+            )
+        self.flow = flowrate
+
+    async def get_flow_setpoint(self) -> float:
+        return ureg.Quantity(self.flow).magnitude
+
+    async def get_flow_percentage(self) -> float:
+        return 100 * ureg.Quantity(self.flow).magnitude / self.max_flow
 
