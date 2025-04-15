@@ -20,7 +20,7 @@ class VirtualClarity(FlowchemDevice):
     async def initialize(self):
         """Start ClarityChrom and wait for it to be responsive."""
         logger.info("Virtual clarity startup")
-        self.components.append(ClarityComponent(name="clarity", hw_device=self))
+        self.components.append(ClarityComponent(name="clarity", hw_device=self)) # type: ignore
 
 
     async def execute_command(self, command: str, without_instrument_num: bool = False):

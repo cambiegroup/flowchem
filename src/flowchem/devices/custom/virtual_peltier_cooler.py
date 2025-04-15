@@ -30,7 +30,7 @@ class VirtualPeltierCooler(FlowchemDevice):
             max=ureg.Quantity("100 °C")
         )
         list_of_components = [
-            PeltierCoolerTemperatureControl("temperature_control", self, temp_limits=temp_range)
+            PeltierCoolerTemperatureControl("temperature_control", self, temp_limits=temp_range) # type: ignore
         ]
         self.components.extend(list_of_components)
 

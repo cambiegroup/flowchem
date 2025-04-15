@@ -22,7 +22,7 @@ class VirtualElite11(FlowchemDevice):
         return cls(**kwargs)
 
     async def initialize(self):
-        self.components.append(Elite11PumpWithdraw("pump", self))
+        self.components.append(Elite11PumpWithdraw("pump", self)) # type: ignore
 
     async def is_moving(self) -> bool:
         return False
