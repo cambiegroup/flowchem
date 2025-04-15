@@ -1,6 +1,5 @@
 from flowchem.devices.bronkhorst.el_flow_component import EPCComponent, MFCComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
 from flowchem import ureg
 from loguru import logger
@@ -22,7 +21,7 @@ class VirtualEPC(FlowchemDevice):
         self.device_info.authors = [samuel_saraiva]
         self.device_info.manufacturer = "VirtualBronkhorst"
         self.device_info.model = "EPC"
-        logger.debug(f"Connected virtual EPC")
+        logger.info("Connected virtual EPC")
 
         self.pressure = "0 bar"
         self.max_pressure = max_pressure
@@ -52,7 +51,7 @@ class VirtualMFC(FlowchemDevice):
         self.device_info.authors = [samuel_saraiva]
         self.device_info.manufacturer = "VirtualBronkhorst"
         self.device_info.model = "EL-FLOW"
-        logger.debug(f"Connected virtual MFC")
+        logger.debug("Connected virtual MFC")
 
         self.max_flow = max_flow
         self.flow = "0 ml/min"

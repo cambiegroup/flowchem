@@ -252,6 +252,7 @@ class ML600Commands(Enum):
       # xxii.jj.k (ii major, jj minor, k revision)
     OPTIONAL_PARAMETER = "S"
 
+
 class ML600(FlowchemDevice):
     """ML600 implementation according to manufacturer docs. Tested on a 61501-01 (i.e. single syringe system).
 
@@ -713,6 +714,7 @@ class ML600(FlowchemDevice):
                 await asyncio.sleep(0.1)
         return True
             # todo: it's will be good check only pump but not whole system
+
 
 if __name__ == "__main__":
     import asyncio

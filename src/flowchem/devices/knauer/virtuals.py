@@ -167,7 +167,7 @@ class VirtualKnauerValve(KnauerValve):
         return self._raw_position
 
     async def set_raw_position(self, position: str) -> bool:
-        if type(position) != str:
+        if type(position) is str:
             position = str(position)
         logger.debug(f"Set raw_position in the Virtual Knauer Valve {position}")
         self._raw_position = position

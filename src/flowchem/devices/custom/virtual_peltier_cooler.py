@@ -19,15 +19,15 @@ class VirtualPeltierCooler(FlowchemDevice):
         self.device_info.authors = [samuel_saraiva]
         self.device_info.manufacturer = "Virtual Manufacturer"
         self.device_info.model = "Virtual Peltier Cooler"
-        logger.debug(f"Connected virtual Virtual Peltier Cooler")
+        logger.debug("Connected virtual Virtual Peltier Cooler")
 
         self.current_temperature = 0
         self.power = 0
 
     async def initialize(self):
         temp_range = TempRange(
-            min=ureg.Quantity(f"0 °C"),
-            max=ureg.Quantity(f"100 °C")
+            min=ureg.Quantity("0 °C"),
+            max=ureg.Quantity("100 °C")
         )
         list_of_components = [
             PeltierCoolerTemperatureControl("temperature_control", self, temp_limits=temp_range)
