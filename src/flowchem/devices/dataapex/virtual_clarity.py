@@ -1,42 +1,27 @@
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.people import samuel_saraiva
-from .clarity import Clarity
+from .clarity_hplc_control import ClarityComponent
 from loguru import logger
 import asyncio
 
 
-class VirtualClarity(Clarity):
+class VirtualClarity(FlowchemDevice):
 
-    def __init__(
-        self,
-        name,
-        executable: str = r"python",
-        instrument_number: int = 1,
-        startup_time: float = 1,
-        startup_method: str = "",
-        cmd_timeout: float = 3,
-        user: str = "admin",
-        password: str = "",
-        cfg_file: str = "",
-    ) -> None:
+    def __init__(self, name, **kwargs) -> None:
 
-        super().__init__(name=name, executable="python", startup_time=startup_time)
-        # Metadata
+        super().__init__(name)
+
         self.device_info.authors = [samuel_saraiva]
-        self.device_info.manufacturer = "Virtual"
-        self.device_info.model = "Virtual Clarity Chromatography"
-        self.executable = f'"{executable}"'
+        self.device_info.manufacturer = "Virtual Clarity"
+        self.device_info.model = "Virtual"
 
-        # Save instance variables
-        self.instrument = instrument_number
-        self.startup_time = startup_time
-        self.cmd_timeout = cmd_timeout
+        self.instrument = 0
 
-        # Pre-form initialization command to avoid passing tons of vars to initialize()
-        self._init_command = ""
-        self._init_command += f" cfg={cfg_file}" if cfg_file else ""
-        self._init_command += f" u={user}" if user else ""
-        self._init_command += f" p={password}" if password else ""
-        self._init_command += f' "{startup_method}"'
+    async def initialize(self):
+        """Start ClarityChrom and wait for it to be responsive."""
+        logger.info("Virtual clarity startup")
+        self.components.append(ClarityComponent(name="clarity", hw_device=self))
+
 
     async def execute_command(self, command: str, without_instrument_num: bool = False):
         """
@@ -60,10 +45,7 @@ class VirtualClarity(Clarity):
             cmd_string = f"Virtual Clarity command: i={self.instrument} {command}"
 
         logger.debug(f"Executing virtual Clarity command: {cmd_string}")
-        self._last_command = cmd_string
-
         # Simulate command execution delay
         await asyncio.sleep(0.1)
-
         # Simulate successful command execution
         return True
