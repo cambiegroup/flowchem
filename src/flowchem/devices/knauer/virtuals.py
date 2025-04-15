@@ -1,49 +1,43 @@
-from flowchem.devices.knauer.azura_compact import AzuraCompact, AzuraCompactPump, AzuraCompactSensor
-from flowchem.devices.knauer.dad import KnauerDAD, KnauerDADLampControl, DADChannelControl
-from flowchem.devices.knauer.knauer_valve import (KnauerValve, KnauerValveHeads, KnauerInjectionValve,
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.knauer.azura_compact_pump import AzuraCompactPump
+from flowchem.devices.knauer.azura_compact_sensor import AzuraCompactSensor
+
+from flowchem.devices.knauer.dad_component import (
+    DADChannelControl,
+    KnauerDADLampControl,
+)
+from flowchem.devices.knauer.knauer_valve import (KnauerValveHeads, KnauerInjectionValve,
                                                   Knauer6PortDistributionValve, Knauer12PortDistributionValve,
                                                   Knauer16PortDistributionValve)
 from flowchem.components.flowchem_component import FlowchemComponent
-from flowchem.components.device_info import DeviceInfo
 from flowchem.utils.people import samuel_saraiva
 from flowchem import ureg
 from loguru import logger
-import asyncio
 import pint
 
 
-class VirtualAzuraCompact(AzuraCompact):
+class VirtualAzuraCompact(FlowchemDevice):
 
-    def __init__(
-            self,
-            ip_address=None,
-            mac_address=None,
-            max_pressure: str = "",
-            min_pressure: str = "",
-            **kwargs,
-    ):
-        self.device_info = DeviceInfo(
-            authors=[samuel_saraiva],
-            manufacturer="Virtual Azura",
-            model="Virtual Azura Compact",
-        )
-        self.name = kwargs.get("name", "")
-        self.components = []
+    def __init__(self, name, **kwargs):
+        super().__init__(name)
+        self.device_info.authors = [samuel_saraiva]
+        self.device_info.manufacturer = "Virtual Azura"
+        self.device_info.model = "Virtual Azura Compact"
 
         # All the following are set upon initialize()
         self.max_allowed_pressure = 0
         self.max_allowed_flow = 0
         self._headtype = None
         self._running: bool = None  # type: ignore
-        self._pressure_max = max_pressure
-        self._pressure_min = min_pressure
+        self._pressure_max = kwargs.get("max_pressure", "10 bar")
+        self._pressure_min = kwargs.get("min_pressure", "0 bar")
 
         self.rate = ureg.parse_expression("0 ml/min")
 
     async def initialize(self):
         # Set Pump and Sensor components.
         self.components.extend(
-            [AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)]
+            [AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)] # typo: ignore
         )
 
     async def stop(self):
@@ -55,44 +49,30 @@ class VirtualAzuraCompact(AzuraCompact):
     async def infuse(self):
         return True
 
+    def is_running(self):
+        return False
+
     async def read_pressure(self) -> pint.Quantity:
         return 10 * ureg.bar
 
 
-class VirtualKnauerDAD(KnauerDAD):
+class VirtualKnauerDAD(FlowchemDevice):
 
-    def __init__(
-            self,
-            ip_address: object = None,
-            mac_address: object = None,
-            name: str | None = None,
-            turn_on_d2: bool = False,
-            turn_on_halogen: bool = False,
-            display_control: bool = True,
-    ) -> None:
-        self.eol = b"\n\r"
-        self._d2 = turn_on_d2
-        self._hal = turn_on_halogen
-        self._state_d2 = False
-        self._state_hal = False
-        self._control = display_control  # True for Local
-        self.name = name
-
-        self.device_info = DeviceInfo(
-            authors=[samuel_saraiva],
-            manufacturer="Virtual Knauer",
-            model="Virtual DAD",
-        )
+    def __init__(self, name, **kwargs):
+        super().__init__(name)
+        self.device_info.authors = [samuel_saraiva]
+        self.device_info.manufacturer = "Virtual Knauer"
+        self.device_info.model = "Virtual DAD"
 
     async def initialize(self):
 
         self.components = [
-            KnauerDADLampControl("d2", self),
-            KnauerDADLampControl("hal", self),
+            KnauerDADLampControl("d2", self), # typo: ignore
+            KnauerDADLampControl("hal", self), # typo: ignore
         ]
 
         self.components.extend(
-            [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)]
+            [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)] # typo: ignore
         )
 
     async def status(self):
@@ -117,18 +97,14 @@ class VirtualKnauerDAD(KnauerDAD):
         return 0
 
 
-class VirtualKnauerValve(KnauerValve):
+class VirtualKnauerValve(FlowchemDevice):
 
-    def __init__(self, ip_address=None, mac_address=None, **kwargs):
+    def __init__(self, name, **kwargs):
+        super().__init__(name)
+        self.device_info.authors = [samuel_saraiva]
+        self.device_info.manufacturer = "Virtual Azura"
+        self.device_info.model = "Virtual Valve"
 
-        self.device_info = DeviceInfo(
-            authors=[samuel_saraiva],
-            manufacturer="Virtual Knauer",
-            model="Virtual Valve",
-        )
-
-        self.name = kwargs.get("name", "")
-        self.components = []
         self._vale_type = kwargs.get("valve_type", "6")
         if self._vale_type == "LI":
             self._raw_position = "L"
@@ -146,19 +122,13 @@ class VirtualKnauerValve(KnauerValve):
         valve_component: FlowchemComponent
         match self.device_info.additional_info["valve-type"]:
             case KnauerValveHeads.SIX_PORT_TWO_POSITION:
-                valve_component = KnauerInjectionValve("injection-valve", self)
+                valve_component = KnauerInjectionValve("injection-valve", self) # typo: ignore
             case KnauerValveHeads.SIX_PORT_SIX_POSITION:
-                valve_component = Knauer6PortDistributionValve(
-                    "distribution-valve", self
-                )
+                valve_component = Knauer6PortDistributionValve("distribution-valve", self) # typo: ignore
             case KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION:
-                valve_component = Knauer12PortDistributionValve(
-                    "distribution-valve", self
-                )
+                valve_component = Knauer12PortDistributionValve("distribution-valve", self) # typo: ignore
             case KnauerValveHeads.SIXTEEN_PORT_SIXTEEN_POSITION:
-                valve_component = Knauer16PortDistributionValve(
-                    "distribution-valve", self
-                )
+                valve_component = Knauer16PortDistributionValve("distribution-valve", self) # typo: ignore
             case _:
                 raise RuntimeError("Unknown valve type")
         self.components.append(valve_component)
@@ -167,21 +137,12 @@ class VirtualKnauerValve(KnauerValve):
         return self._raw_position
 
     async def set_raw_position(self, position: str) -> bool:
-        if type(position) is str:
+        if type(position) is not str:
             position = str(position)
-        logger.debug(f"Set raw_position in the Virtual Knauer Valve {position}")
+        logger.info(f"Set raw_position in the Virtual Knauer Valve {position}")
         self._raw_position = position
         return True
 
     async def get_valve_type(self) -> KnauerValveHeads:
         headtype = KnauerValveHeads(self._vale_type)
         return headtype
-
-
-if __name__ == "__main__":
-    async def main():
-        valve = VirtualKnauerValve(ip_address="", name="", valve_type="LI")
-        await valve.initialize()
-        await valve.components[0].get_position()  # type: ignore
-
-    asyncio.run(main())
