@@ -1,23 +1,27 @@
-from .manson_power_supply import MansonPowerSupply
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.manson.manson_component import MansonPowerControl
 from flowchem.utils.people import samuel_saraiva
 from flowchem import ureg
 
 
-class VirtualMansonPowerSupply(MansonPowerSupply):
+class VirtualMansonPowerSupply(FlowchemDevice):
+
+    def __init__(self, name="", **kwargs) -> None:
+        """Control class for Manson Power Supply."""
+        super().__init__(name)
+        self.device_info.authors = [samuel_saraiva]
+        self.device_info.manufacturer = "Virtual Manson"
+        self.device_info.model = "Virtual"
+
+        self._voltage = 0.0
+        self._current = 0.0
 
     @classmethod
-    def from_config(cls, port, name="", **serial_kwargs):
-        asw = cls(port, name)
-        asw.device_info.authors = [samuel_saraiva]
-        asw.device_info.manufacturer = "Virtual Manson"
-        asw.device_info.model = "Virtual"
+    def from_config(cls, *args, **kwargs):
+        return cls(*args, **kwargs)
 
-        asw._voltage = 0.0
-        asw._current = 0.0
-        return asw
-
-    async def get_info(self) -> str:
-        return "HCS-3102"
+    async def initialize(self):
+        self.components.append(MansonPowerControl("power-control", self)) # typo: ignore
 
     async def set_current(self, current: str) -> bool:
         self._current = ureg.Quantity(current).magnitude
