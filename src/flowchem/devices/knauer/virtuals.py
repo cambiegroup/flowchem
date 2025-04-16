@@ -37,7 +37,7 @@ class VirtualAzuraCompact(FlowchemDevice):
     async def initialize(self):
         # Set Pump and Sensor components.
         self.components.extend(
-            [AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)] # typo: ignore
+            [AzuraCompactPump("pump", self), AzuraCompactSensor("pressure", self)] # type: ignore
         )
 
     async def stop(self):
@@ -67,12 +67,12 @@ class VirtualKnauerDAD(FlowchemDevice):
     async def initialize(self):
 
         self.components = [
-            KnauerDADLampControl("d2", self), # typo: ignore
-            KnauerDADLampControl("hal", self), # typo: ignore
+            KnauerDADLampControl("d2", self), # type: ignore
+            KnauerDADLampControl("hal", self), # type: ignore
         ]
 
         self.components.extend(
-            [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)] # typo: ignore
+            [DADChannelControl(f"channel{n + 1}", self, n + 1) for n in range(4)] # type: ignore
         )
 
     async def status(self):
@@ -122,13 +122,13 @@ class VirtualKnauerValve(FlowchemDevice):
         valve_component: FlowchemComponent
         match self.device_info.additional_info["valve-type"]:
             case KnauerValveHeads.SIX_PORT_TWO_POSITION:
-                valve_component = KnauerInjectionValve("injection-valve", self) # typo: ignore
+                valve_component = KnauerInjectionValve("injection-valve", self) # type: ignore
             case KnauerValveHeads.SIX_PORT_SIX_POSITION:
-                valve_component = Knauer6PortDistributionValve("distribution-valve", self) # typo: ignore
+                valve_component = Knauer6PortDistributionValve("distribution-valve", self) # type: ignore
             case KnauerValveHeads.TWELVE_PORT_TWELVE_POSITION:
-                valve_component = Knauer12PortDistributionValve("distribution-valve", self) # typo: ignore
+                valve_component = Knauer12PortDistributionValve("distribution-valve", self) # type: ignore
             case KnauerValveHeads.SIXTEEN_PORT_SIXTEEN_POSITION:
-                valve_component = Knauer16PortDistributionValve("distribution-valve", self) # typo: ignore
+                valve_component = Knauer16PortDistributionValve("distribution-valve", self) # type: ignore
             case _:
                 raise RuntimeError("Unknown valve type")
         self.components.append(valve_component)

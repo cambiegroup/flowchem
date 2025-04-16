@@ -14,7 +14,7 @@ class VirtualSpinsolve(FlowchemDevice):
         self.device_info.authors = [samuel_saraiva]
 
     async def initialize(self):
-        self.components.append(SpinsolveControl("nmr-control", self))  # typo: ignore
+        self.components.append(SpinsolveControl("nmr-control", self)) # type: ignore
 
     async def get_sample(self) -> str:
         return ""
