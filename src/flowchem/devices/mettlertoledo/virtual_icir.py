@@ -1,27 +1,20 @@
-from .icir import IcIR, IcIRControl, IRSpectrum
-from flowchem.components.device_info import DeviceInfo
+from flowchem.components.analytics.ir import IRSpectrum
+from flowchem.devices.mettlertoledo.icir_control import IcIRControl
+from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.utils.people import samuel_saraiva
 
 
-class VirtualIcIR(IcIR):
+class VirtualIcIR(FlowchemDevice):
 
-    def __init__(self, template="", url="", name="") -> None:
-        """Initiate connection with OPC UA server."""
-
-        self.device_info = DeviceInfo(
-            authors=[samuel_saraiva],
-            manufacturer="Virtual Mettler-Toledo",
-            model="Virtual iCIR",
-            version="",
-        )
-        self.name = name
-        self.components = []
-
-        self._template = template
+    def __init__(self, name="", **kwargs) -> None:
+        super().__init__(name)
+        self.device_info.authors = [samuel_saraiva]
+        self.device_info.manufacturer="Virtual Mettler-Toledo"
+        self.device_info.model="Virtual iCIR"
+        self.device_info.version=""
 
     async def initialize(self):
-        # Set IRSpectrometer component
-        self.components.append(IcIRControl("ir-control", self))
+        self.components.append(IcIRControl("ir-control", self)) # type: ignore
 
     async def last_spectrum_treated(self) -> IRSpectrum:
         return await self.last_spectrum_raw()
