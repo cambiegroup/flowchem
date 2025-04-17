@@ -1,42 +1,32 @@
-from .bubble_sensor import PhidgetBubbleSensor, PhidgetPowerSource5V
-from .pressure_sensor import PhidgetPressureSensor
-from flowchem.components.device_info import DeviceInfo
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.phidgets.bubble_sensor_component import (
+    PhidgetBubbleSensorComponent,
+    PhidgetBubbleSensorPowerComponent,
+)
+from flowchem.devices.phidgets.pressure_sensor_component import PhidgetPressureSensorComponent
 from flowchem.utils.people import samuel_saraiva
 from flowchem import ureg
 import pint
 
 
-class VirtualPhidgetBubbleSensor(PhidgetBubbleSensor):
+class VirtualPhidgetBubbleSensor(FlowchemDevice):
 
-    def __init__(
-            self,
-            vint_serial_number: int = -1,
-            vint_hub_port: int = -1,
-            vint_channel: int = -1,
-            phidget_is_remote: bool = False,
-            data_interval: int = 250,  # ms
-            name: str = "",
-    ) -> None:
+    def __init__(self, name: str = "", **kwargs) -> None:
+        super().__init__(name)
+        self.device_info.authors.append(samuel_saraiva)
+        self.device_info.manufacturer="Virtual Phidget"
+        self.device_info.model="Virtual BubbleSensor"
 
-        self.device_info = DeviceInfo(
-            authors=[samuel_saraiva],
-            manufacturer="Virtual Phidget",
-            model="Virtual VINT",
-            serial_number=vint_serial_number,
-        )
-
-        self.name = name
-        self.components = []
         self._voltage = 0.0
 
-    def __del__(self):
-        ...
+    async def initialize(self):
+        self.components.append(PhidgetBubbleSensorComponent("bubble-sensor", self)) # type: ignore
 
-    async def power_on(self):
-        ...
+    def power_on(self) -> bool:
+        return True
 
-    async def power_off(self):
-        ...
+    def power_off(self) -> bool:
+        return True
 
     def read_voltage(self) -> float:
         return self._voltage
@@ -48,65 +38,36 @@ class VirtualPhidgetBubbleSensor(PhidgetBubbleSensor):
         ...
 
 
-class VirtualPhidgetPowerSource5V(PhidgetPowerSource5V):
+class VirtualPhidgetPowerSource5V(FlowchemDevice):
 
-    def __init__(
-            self,
-            vint_serial_number: int = -1,
-            vint_hub_port: int = -1,
-            vint_channel: int = -1,
-            phidget_is_remote: bool = False,
-            name: str = "",
-    ) -> None:
+    def __init__(self, name: str = "", **kwargs) -> None:
+        super().__init__(name)
+        self.device_info.authors.append(samuel_saraiva)
+        self.device_info.manufacturer = "Virtual Phidget"
+        self.device_info.model = "Virtual PowerSource"
 
-        self.device_info = DeviceInfo(
-            authors=[samuel_saraiva],
-            manufacturer="Virtual Phidget",
-            model="Virtual VINT",
-            serial_number=vint_serial_number,
-        )
+    async def initialize(self):
+        self.components.append(PhidgetBubbleSensorPowerComponent("5V", self)) # type: ignore
 
-        self.name = name
-        self.components = []
-
-    def __del__(self):
+    def power_on(self):
         ...
 
-    async def power_on(self):
-        ...
-
-    async def power_off(self):
+    def power_off(self):
         ...
 
 
-class VirtualPhidgetPressureSensor(PhidgetPressureSensor):
+class VirtualPhidgetPressureSensor(FlowchemDevice):
 
-    def __init__(
-            self,
-            pressure_range: tuple[str, str] = ("0 bar", "10 bar"),
-            vint_serial_number: int = -1,
-            vint_channel: int = -1,
-            phidget_is_remote: bool = False,
-            name: str = "",
-    ) -> None:
-        self.device_info = DeviceInfo(
-            authors=[samuel_saraiva],
-            manufacturer="Virtual Phidget",
-            model="Virtual VINT",
-            serial_number=vint_serial_number,
-        )
+    def __init__(self, name: str = "", **kwargs) -> None:
+        super().__init__(name)
+        self.device_info.authors.append(samuel_saraiva)
+        self.device_info.manufacturer = "Virtual Phidget"
+        self.device_info.model = "Virtual PressureSensor"
 
-        self.name = name
-        self.components = []
         self._pressure = "0.0 bar"
 
-        # Sensor range
-        sensor_min, sensor_max = pressure_range
-        self._min_pressure = ureg.Quantity(sensor_min)
-        self._max_pressure = ureg.Quantity(sensor_max)
-
-    def __del__(self):
-        ...
+    async def initialize(self):
+        self.components.extend([PhidgetPressureSensorComponent("pressure-sensor", self)]) # type: ignore
 
     def read_pressure(self) -> pint.Quantity:
         return ureg.Quantity(self._pressure)
