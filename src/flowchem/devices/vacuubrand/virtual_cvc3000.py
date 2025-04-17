@@ -1,19 +1,25 @@
-import pint
-
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.vacuubrand.cvc3000_pressure_control import CVC3000PressureControl
 from flowchem.utils.people import samuel_saraiva
 from .constants import ProcessStatus
-from .cvc3000 import CVC3000
 from loguru import logger
+import pint
 
 
-class VirtualCVC3000(CVC3000):
+class VirtualCVC3000(FlowchemDevice):
+
+    def __init__(self, name="", **kwargs):
+        super().__init__(name)
+        self.device_info.authors = [samuel_saraiva]
+        self.device_info.version = "Virtual CVC3000"
+        self.device_info.manufacturer = "Vitual Device"
+
+    async def initialize(self):
+        self.components.append(CVC3000PressureControl("pressure-control", self)) # type: ignore
 
     @classmethod
-    def from_config(cls, port, name=None, **serial_kwargs):
-        aws = cls(port, name)
-        aws._pressure = 0
-        aws.device_info.authors = [samuel_saraiva]
-        return aws
+    def from_config(cls, *arg, **kwargs):
+        return cls(*arg, **kwargs)
 
     async def version(self):
         return "VIRTUAL"
