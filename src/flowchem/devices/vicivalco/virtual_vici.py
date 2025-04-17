@@ -1,30 +1,25 @@
-from .vici_valve import ViciValve, ViciValcoValveIO, ViciInjectionValve
+from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.vicivalco.vici_valve_component import ViciInjectionValve
+from flowchem.utils.people import samuel_saraiva
 
 
-class VirtualIO(ViciValcoValveIO):
+class VirtualViciValve(FlowchemDevice):
 
-    def __init__(self):
-        ...
+    def __init__(self, name: str = "", **kwargs) -> None:
+        super().__init__(name)
+        self.device_info.authors.append(samuel_saraiva)
+        self.device_info.manufacturer="Virtual Phidget"
+        self.device_info.model="Virtual BubbleSensor"
 
-
-class VirtualViciValve(ViciValve):
+        self._position = "1"
 
     @classmethod
-    def from_config(
-        cls,
-        port: str,
-        address: int,
-        name: str = "",
-        **serial_kwargs,
-    ):
-        asw = cls(VirtualIO(), address=address, name=name)
-        asw.device_info.version = "Virtual"
-        asw._position = "1"
-        return asw
+    def from_config(cls, *arg, **kwargs):
+        return cls(*arg, **kwargs)
 
     async def initialize(self):
         # Add component
-        self.components.append(ViciInjectionValve("injection-valve", self))
+        self.components.append(ViciInjectionValve("injection-valve", self)) # type: ignore
 
     async def set_raw_position(self, position: str):
         self._position = position
