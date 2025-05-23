@@ -29,6 +29,11 @@ class IcIRControl(IRControl):
         super().__init__(name, hw_device)
         self.add_api_route("/spectrum-count", self.spectrum_count, methods=["GET"])
 
+    async def start_experiment(self):
+        """ Start the programeted experiment according to the template provided in the config file """
+
+        return await self.hw_device.start_experiment()
+
     async def acquire_spectrum(self, treated: bool = True) -> IRSpectrum:
         """
         Acquire an IR spectrum from the instrument.

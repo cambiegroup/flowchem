@@ -185,7 +185,7 @@ def get_mac_address(
         # Fix cases where there are no colons
         if ":" not in mac and len(mac) == 12:
             log.debug(f"Adding colons to MAC {mac}")
-            mac = ":".join(mac[i : i + 2] for i in range(0, len(mac), 2))
+            mac = ":".join(mac[i: i + 2] for i in range(0, len(mac), 2))
 
         # Pad single-character octets with a leading zero (e.g. Darwin's ARP output)
         elif len(mac) < 17:

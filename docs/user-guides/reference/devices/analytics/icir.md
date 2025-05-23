@@ -29,6 +29,12 @@ url = "opc.tcp://localhost:62552/iCOpcUaServer"  # Default, optional
 template = "30sec_2days.iCIRTemplate"  # See note above
 ```
 
+```{note}
+For efficient communication between the server and the device, ensure that both the OPC UA and iCIR software are 
+running on the localhost connected to the device. When the experiment execution is triggered, it will start in the 
+provider software according to the configurations set in the template file, including the experiment duration and data 
+collection intervals. Make sure the triggering is synchronized with the experiment to ensure accurate data collection.
+```
 
 ## API methods
 See the [device API reference](../../api/icir/api.md) for a description of the available methods.
