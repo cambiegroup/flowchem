@@ -17,6 +17,9 @@ The device tests available with their respective markers are described below:
 | FlowIR     | Tests requiring a connection to a FlowIR.              |
 | KPump      | Tests for Azura compact.                               |
 | FakeDevice | Tests for FakeDevice, just an example how tests works. |
+| CVC3000    | Tests requiring a connection to CVC3000                |
+| Manson     | Tests requiring a Manson Power Control                 |
+
 
 ```{warning}
 The configuration file needs to be changed to match your hardware.
