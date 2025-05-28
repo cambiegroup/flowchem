@@ -299,7 +299,7 @@ class CVC3000(FlowchemDevice):
         str
             Returns binary string if the command to stop the pressure control was successful.
         """
-        return await self.hw_device._send_command_and_read_reply(CVC3000Commands.POWER_OFF)
+        return await self._send_command_and_read_reply(CVC3000Commands.POWER_OFF)
 
 
 if __name__ == "__main__":
