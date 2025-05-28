@@ -30,6 +30,7 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
+          attestations: false
 
       - name: Publish distribution 📦 to PyPI
         if: startsWith(github.ref_name, 'v')
