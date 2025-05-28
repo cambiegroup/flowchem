@@ -1,4 +1,5 @@
 """Control module for Manson lab power supply unites."""
+import asyncio
 # Note: Original code from Manson website with edits. No license originally specified.
 import re
 import warnings
@@ -35,7 +36,11 @@ class MansonPowerSupply(FlowchemDevice):
         """Create instance from config dict. Used by server to initialize obj from config.
 
         Only required parameter is 'port'.
+
+        Timeout argument ensure that the requet will not freeze the application
         """
+        if not serial_kwargs.get("timeout", None):
+            serial_kwargs["timeout"] = 3
         try:
             serial_object = aioserial.AioSerial(port, **serial_kwargs)
         except aioserial.SerialException as error:
@@ -280,17 +285,24 @@ class MansonPowerSupply(FlowchemDevice):
         await self.set_voltage(voltage)
         await self.set_current(current)
 
-    # def get_router(self, prefix: str | None = None):
-    #     """Create an APIRouter for this MansonPowerSupply instance."""
-    #     router = super().get_router()
-    #
-    #     router.add_api_route("/on", self.output_on, methods=["GET"])
-    #     router.add_api_route("/off", self.output_off, methods=["GET"])
-    #     router.add_api_route("/output/power", self.get_output_power, methods=["GET"])
-    #     router.add_api_route("/output/mode", self.get_output_mode, methods=["GET"])
-    #     router.add_api_route("/voltage/read", self.get_output_voltage, methods=["GET"])
-    #     router.add_api_route("/voltage/max", self.set_voltage, methods=["PUT"])
-    #     router.add_api_route("/current/read", self.get_output_current, methods=["GET"])
-    #     router.add_api_route("/current/max", self.set_current, methods=["PUT"])
-    #
-    #     return router
+
+if __name__ == "__main__":
+
+    async def main():
+        ps = MansonPowerSupply.from_config(port="COM6")
+        await ps.initialize()
+        await asyncio.sleep(0.5)
+        await ps.set_voltage("10 V")
+        for i in range(5):
+            await asyncio.sleep(0.5)
+            v = await ps.get_output_voltage()
+            print(f"actual voltage: {v}")
+
+    import serial.tools.list_ports
+
+    ports = serial.tools.list_ports.comports()
+    for port in ports:
+        print(f"Port: {port.device}, Description: {port.description}")
+
+    asyncio.run(main())
+

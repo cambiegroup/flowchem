@@ -1,0 +1,5 @@
+[device.test]
+type = "Elite11"
+port="COM4"
+syringe_volume="5 ml"
+syringe_diameter="20 mm"

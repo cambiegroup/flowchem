@@ -92,8 +92,6 @@ class IcIR(FlowchemDevice):
         if not await self.is_iCIR_connected():
             raise DeviceError("Device not connected! Check iCIR...")
 
-        # Start acquisition! Ensures the device is ready when a spectrum is needed
-        await self.start_experiment(name="Flowchem", template=self._template)
         probe = await self.probe_info()
         self.device_info.additional_info = probe.model_dump()
 
@@ -245,7 +243,12 @@ class IcIR(FlowchemDevice):
             self.opcua.get_node(self.SPECTRA_BACKGROUND),
         )
 
-    async def start_experiment(
+    async def start_experiment(self):
+        # Start acquisition! Ensures the device is ready when a spectrum is needed
+        status = await self._start_experiment(name="Flowchem", template=self._template)
+        return status
+
+    async def _start_experiment(
         self,
         template: str,
         name: str = "Unnamed flowchem exp.",
@@ -303,23 +306,21 @@ class IcIR(FlowchemDevice):
 
 
 if __name__ == "__main__":
-    ...
 
     async def main():
-        template_name = "15_sec_integration.iCIRTemplate"
+        template_name = "02212025.iCIRTemplate"
+        """
         url = IcIR.iC_OPCUA_DEFAULT_SERVER_ADDRESS.replace(
             "localhost", "BSMC-YMEF002121"
         )
-        ir_spectrometer = IcIR(template_name, url)
+        """
 
-        if await ir_spectrometer.is_iCIR_connected():
-            print("FlowIR connected!")
-        else:
-            raise ConnectionError("FlowIR not connected :(")
+        ir_spectrometer = IcIR(template_name)
 
-        await ir_spectrometer.start_experiment(
-            name="reaction_monitoring", template=template_name
-        )
+        await ir_spectrometer.initialize()
+
+        if await ir_spectrometer.start_experiment():
+            print("Experiment started, running spectrum...")
 
         spectrum = await ir_spectrometer.last_spectrum_treated()
         while len(spectrum.intensity) == 0:
@@ -327,6 +328,7 @@ if __name__ == "__main__":
 
         for x in range(3):
             spectra_count = await ir_spectrometer.sample_count()
+            print(f"Sample count: {spectra_count}")
 
             while await ir_spectrometer.sample_count() == spectra_count:
                 await asyncio.sleep(1)
