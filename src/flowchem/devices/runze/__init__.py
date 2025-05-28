@@ -1,4 +1,5 @@
 """Phidget-based devices."""
 from .runze_valve import RunzeValve
+from .virtual_runze_valve import VirtualRunzeValve
 
-__all__ = ["RunzeValve"]
+__all__ = ["RunzeValve", "VirtualRunzeValve"]

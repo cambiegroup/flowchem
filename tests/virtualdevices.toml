@@ -89,3 +89,9 @@ type = "VirtualR4Heater"
 type = "VirtualViciValve"
 port = "COMX"
 address = 1
+
+[device.my-runzen-valve]
+type = "VirtualRunzeValve"
+port = "COMX"
+valve_type = "6"
+address = 1

@@ -103,3 +103,11 @@ address = 0
 
 This functionality is intended for educational purposes, allowing users to explore how the package works without 
 requiring a physical device to be connected.
+
+The file containing all available virtual devices can be found 
+[here](../../tests/virtualdevices.toml). To run this file, simply type the following 
+command in your terminal:
+
+```local
+flowchem tests/virtualdevices.toml
+```
