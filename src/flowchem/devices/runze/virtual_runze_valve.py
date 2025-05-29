@@ -12,7 +12,7 @@ class VirtualRunzeValve(FlowchemDevice):
         """Virtual Control class for Ranze Valve."""
         super().__init__(name)
         self.device_info.authors = [samuel_saraiva]
-        self.device_info.manufacturer = "Virtual Ranze"
+        self.device_info.manufacturer = "Virtual Runze"
         self.device_info.model = "Virtual"
 
         self._vale_type = kwargs.get("valve_type", "6")
@@ -24,7 +24,6 @@ class VirtualRunzeValve(FlowchemDevice):
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()
 
         # Set components
-        valve_component: FlowchemComponent
         match self.device_info.additional_info["valve-type"]:
             case RunzeValveHeads.SIX_PORT_SIX_POSITION:
                 valve_component = Runze6PortDistributionValve(
@@ -53,7 +52,9 @@ class VirtualRunzeValve(FlowchemDevice):
     async def get_raw_position(self, raise_errors: bool = False) -> str:
         return self._position
 
-    async def set_raw_position(self, position: str, raise_errors: bool = True) -> bool:
+    async def set_raw_position(self, position: str | int, raise_errors: bool = True) -> bool:
+        if isinstance(position, int):
+            position = str(position)
         self._position = position
         logger.info(f"Virtual Valve position set to: {position}")
         return True
