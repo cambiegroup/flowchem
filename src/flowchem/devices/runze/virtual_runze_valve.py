@@ -25,6 +25,7 @@ class VirtualRunzeValve(FlowchemDevice):
         self.device_info.additional_info["valve-type"] = await self.get_valve_type()
 
         # Set components
+        valve_component: FlowchemComponent
         match self.device_info.additional_info["valve-type"]:
             case RunzeValveHeads.SIX_PORT_SIX_POSITION:
                 valve_component = Runze6PortDistributionValve(
