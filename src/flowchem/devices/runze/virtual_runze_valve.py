@@ -1,4 +1,5 @@
 from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.runze.runze_valve_component import (Runze16PortDistributionValve, Runze10PortDistributionValve,
                                                           Runze12PortDistributionValve, Runze6PortDistributionValve,
                                                           Runze8PortDistributionValve)
