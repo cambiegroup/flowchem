@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .runze_valve import RunzeValve
+    from .virtual_runze_valve import VirtualRunzeValve
 from flowchem.components.valves.distribution_valves import (
     SixPortDistributionValve,
     EightPortDistributionValve,
@@ -21,7 +22,7 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
 
     ANTI_CC_STATOR_MAPING = [1, 2, 3, 4, 5, 6]
 
-    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+    def __init__(self, name: str, hw_device: RunzeValve | VirtualRunzeValve) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
@@ -57,7 +58,7 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
 
     hw_device: RunzeValve
 
-    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+    def __init__(self, name: str, hw_device: RunzeValve | VirtualRunzeValve) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
@@ -93,7 +94,7 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
 
     hw_device: RunzeValve
 
-    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+    def __init__(self, name: str, hw_device: RunzeValve | VirtualRunzeValve) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
@@ -129,7 +130,7 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
 
     hw_device: RunzeValve
 
-    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+    def __init__(self, name: str, hw_device: RunzeValve | VirtualRunzeValve) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
@@ -165,7 +166,7 @@ class Runze16PortDistributionValve(SixteenPortDistributionValve):
 
     hw_device: RunzeValve
 
-    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+    def __init__(self, name: str, hw_device: RunzeValve | VirtualRunzeValve) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
