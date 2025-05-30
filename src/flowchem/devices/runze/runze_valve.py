@@ -239,13 +239,13 @@ class RunzeValve(FlowchemDevice):
             raise_errors: bool = True,
             is_factory_command: bool =False,
     ):
-        command = SV06Command(
+        valve_command = SV06Command(
             function_code=command,
             address=self.address,
             parameter=parameter,
             is_factory_command=is_factory_command,
         )
-        status, parameters = await self.valve_io.write_and_read_reply_async(command, raise_errors)
+        status, parameters = await self.valve_io.write_and_read_reply_async(valve_command, raise_errors)
         return status, parameters
 
     async def get_raw_position(self, raise_errors: bool = False) -> str:
@@ -254,6 +254,10 @@ class RunzeValve(FlowchemDevice):
         if status == "00":
             logger.info(f"Current valve position is: {parameters}")
             return parameters
+        else:
+            logger.warning(f"Something is not working in the valve. "
+                           f"Attempt to get raw position returned status: '{status}'.")
+            return ""
 
     async def set_raw_position(self, position: str, raise_errors: bool = True) -> bool:
         """Set valve position, following valve nomenclature."""
@@ -265,6 +269,8 @@ class RunzeValve(FlowchemDevice):
             logger.info(f"Valve position set to: {position}")
         if status == "00":
             return True
+        else:
+            return False
 
     async def set_address(self, address: int) -> str:
         """Function to change valve's slave address."""
