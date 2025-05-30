@@ -1,9 +1,10 @@
 from flowchem.devices.flowchem_device import FlowchemDevice
-from flowchem.devices.runze.runze_valve_component import *
+from flowchem.devices.runze.runze_valve_component import (Runze16PortDistributionValve, Runze10PortDistributionValve,
+                                                          Runze12PortDistributionValve, Runze6PortDistributionValve,
+                                                          Runze8PortDistributionValve)
 from flowchem.devices.runze.runze_valve import RunzeValveHeads
 from flowchem.utils.people import samuel_saraiva
 from loguru import logger
-from flowchem import ureg
 
 
 class VirtualRunzeValve(FlowchemDevice):
@@ -87,6 +88,7 @@ if __name__ == "__main__":
         """Test function."""
         await valve.initialize()
         position = await valve.components[0].set_monitor_position("2")
+        print(position)
         print(await valve.components[0].get_monitor_position())
         connect = await valve.components[0].get_position()
         print(connect)

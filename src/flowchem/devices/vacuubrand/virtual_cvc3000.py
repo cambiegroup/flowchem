@@ -37,3 +37,9 @@ class VirtualCVC3000(FlowchemDevice):
     async def status(self) -> ProcessStatus:
         p = ProcessStatus.from_reply("000002")
         return p
+
+    async def power_on(self):
+        return "1"
+
+    async def power_off(self):
+        return "1"

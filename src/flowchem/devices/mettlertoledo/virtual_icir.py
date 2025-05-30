@@ -16,6 +16,9 @@ class VirtualIcIR(FlowchemDevice):
     async def initialize(self):
         self.components.append(IcIRControl("ir-control", self)) # type: ignore
 
+    async def start_experiment(self):
+        return True
+
     async def last_spectrum_treated(self) -> IRSpectrum:
         return await self.last_spectrum_raw()
 

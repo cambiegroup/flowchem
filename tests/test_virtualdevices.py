@@ -109,57 +109,81 @@ def test_virtualValveKnauer(api_dev):
     assert valve.put("monitor_position", params={"position": "LOAD"})
     assert valve.get("monitor_position").json() == "LOAD"
 
-
+###
 def test_virtualBenchtopNMR(api_dev):
     nmr = api_dev['virtual-benchtop-nmr']['nmr-control']
-    # Assuming a basic status check since commands are not detailed
-    assert "status" in nmr.get("status")
+    assert nmr.get("is-busy")
 
 
-"""
 def test_virtualPowerSupply(api_dev):
-    ps = api_dev['virtual-power-supply']['powersupply']
+    ps = api_dev['virtual-power-supply']['power-control']
     ps.put("power-on")
     ps.put("power-off")
+    ps.put("current", params={"current": 2})
+    assert ps.get("current").json() == 2
+    ps.put("voltage", params={"voltage": 2})
+    assert ps.get("voltage").json() == 2
 
 
 def test_virtualIcIRSpectrometer(api_dev):
-    icir = api_dev['Virtual-Icir-Spectometer']['icir']
-    # Minimal check as API unclear
-    assert isinstance(icir.get("status"), dict)
+    icir = api_dev['virtual-icir-spectometer']['ir-control']
+    assert icir.put("start-experiment")
+    assert "intensity" in icir.put("acquire-spectrum").json()
+    assert icir.put("stop").json()
+    icir.get("spectrum-count")
+
 
 def test_virtualPhidgetsBubble(api_dev):
-    sensor = api_dev['Virtual-Phidgets-Bubble']['bubblesensor']
-    assert isinstance(sensor.get("read-bubbles"), int)
+    sensor = api_dev['virtual-phidgets-bubble']['bubble-sensor']
+    assert sensor.put("power-on").json()
+    assert sensor.put("power-off").json()
+    assert isinstance(sensor.get("read-voltage").json(), (int, float))
+    sensor.get("acquire-signal")
+
 
 def test_virtualPhidgetsPressure(api_dev):
-    sensor = api_dev['Virtual-Phidgets-Pressure']['pressuresensor']
-    assert isinstance(sensor.get("read-pressure"), float)
+    sensor = api_dev['virtual-phidgets-pressure']['pressure-sensor']
+    sensor.put("power-on")
+    assert isinstance(sensor.get("read-pressure").json(), (int, float))
+    sensor.put("power-off")
+
 
 def test_virtualPhidgetsPower(api_dev):
-    power = api_dev['Virtual-Phidgets-Power']['powersource']
-    assert power.get("is-powered") in (True, False)
+    power = api_dev['virtual-phidgets-power']['5V']
+    assert power.put("power-on").json()
+    assert power.put("power-off").json()
+
 
 def test_virtualCVC3000(api_dev):
-    cvc = api_dev['Virtual-CVC3000']['cvc']
+    cvc = api_dev['virtual-cvc3000']['pressure-control']
     cvc.put("power-on")
-    assert isinstance(cvc.get("status"), str)
+    cvc.put("pressure", params={"pressure": 3})
+    assert cvc.get("pressure").json() == 3
+    assert cvc.get("target-reached").json()
+    assert isinstance(cvc.get("status").json(), dict)
     cvc.put("power-off")
 
+
 def test_virtualR2(api_dev):
-    r2 = api_dev['Virtual-R2']['r2']
-    assert "status" in r2.get("status")
+    r2 = api_dev['virtual-r2']['PressureSensor']
+    assert isinstance(r2.get("read-pressure").json(), (int, float))
+
 
 def test_virtualR4Heater(api_dev):
-    r4 = api_dev['Virtual-R4Heater']['r4']
-    assert r4.put("set-temperature", params={"temperature": "70 C"})
+    r4 = api_dev['virtual-r4Heater']['reactor1']
+    assert r4.put("temperature", params={"temp": "70"})
+    assert r4.get("temperature").json() == 70
+
 
 def test_virtualViciValve(api_dev):
-    valve = api_dev['Virtual-ViciValve']['valve']
-    assert valve.put("move-to", params={"position": 2})
+    valve = api_dev['virtual-ViciValve']['injection-valve']
+    valve.put("position", params={"connect": "[[2, 3]]"})
+    assert [2, 3] in valve.get("position").json()
+
 
 def test_myRunzeValve(api_dev):
-    valve = api_dev['My-Runzen-Valve']['valve']
-    assert valve.put("move-to", params={"position": 3})
-
-"""
+    valve = api_dev['my-runzen-valve']['distribution-valve']
+    valve.put("position", params={"connect": "[[2, 0]]"})
+    assert [2, 0] in valve.get("position").json()
+    valve.put("monitor_position", params={"position": 3})
+    assert int(valve.get("monitor_position").json()) == 3
