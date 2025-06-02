@@ -1,0 +1,3 @@
+[device.manson-test]
+type = "MansonPowerSupply"
+port = "COM6"

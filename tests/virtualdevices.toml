@@ -1,0 +1,97 @@
+[device.virtual-EPC]
+type = "VirtualEPC"
+port = "COMX"
+channel = 1
+address = 0x80
+max_pressure = 9
+
+[device.virtual-MFC]
+type = "VirtualMFC"
+port = "COMX"
+channel = 1
+address = 0x80
+max_flow = 9
+
+[device.virtual-peltier]
+type = "VirtualPeltierCooler"
+port = "COMX"
+address = 0
+
+[device.virtual-hplc]
+type = "VirtualClarity"
+
+[device.virtual-ml600]
+type = "VirtualML600"
+port = "COMX"
+address= 1
+syringe_volume = "5 ml"
+
+[device.virtual-elite11]
+type = "VirtualElite11"
+port = "COMX"
+syringe_diameter = "4.6 mm"
+syringe_volume = "1 ml"
+
+[device.virtual-huber]
+type = "VirtualHuberChiller"
+port = "COMX"
+
+[device.virtual-azura]
+type = "VirtualAzuraCompact"
+ip_address = ""
+max_pressure = "10 bar"
+min_pressure = "5 bar"
+
+[device.virtual-knauerDad]
+type = "VirtualKnauerDAD"
+ip_address = ""
+
+[device.virtual-valveKnauer]
+type = "VirtualKnauerValve"
+ip_address = ""
+valve_type = "LI" # LI 6 12 16
+
+[device.virtual-benchtop-nmr]
+type = "VirtualSpinsolve"
+host = ""
+xml_schema = "virtual"
+solvent = "chloroform-d"
+
+[device.virtual-power-supply]
+type = "VirtualMansonPowerSupply"
+port = "COMX"
+
+[device.virtual-icir-spectometer]
+type = "VirtualIcIR"
+url = " "
+template = " "
+
+[device.virtual-phidgets-bubble]
+type = "VirtualPhidgetBubbleSensor"
+
+[device.virtual-phidgets-pressure]
+type = "VirtualPhidgetPressureSensor"
+
+[device.virtual-phidgets-power]
+type = "VirtualPhidgetPowerSource5V"
+
+[device.virtual-cvc3000]
+type = "VirtualCVC3000"
+port = "COMX"
+
+[device.virtual-r2]
+type = "VirtualR2"
+
+[device.virtual-r4Heater]
+type = "VirtualR4Heater"
+
+[device.virtual-ViciValve]
+type = "VirtualViciValve"
+port = "COMX"
+address = 1
+
+[device.my-runzen-valve]
+type = "VirtualRunzeValve"
+port = "COMX"
+valve_type = "6"
+address = 1

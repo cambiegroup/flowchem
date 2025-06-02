@@ -76,3 +76,38 @@ devices["PumpG"]["pump"].put("infuse", {"volume": "10 ml", "rate": "1 ml/min"})
 
 The example shown in section [example](examples/reaction_optimization.md) presents one way of how the 
 protocols can be constructed.
+
+## Virtual devices
+
+If the user does not have electronic devices available to initialize Flowchem, a practical approach is to use 
+virtual devices for testing.
+
+Flowchem provides a digital twin version for every implemented device. This means that, for example, if the user 
+wants to test a device with a configuration described as follows:
+
+```toml
+[device.my-realdevice]
+type = "PeltierCooler"
+port = "COM12"
+address = 0
+```
+
+Simply change the device type by prefixing the name with "Virtual":
+
+```toml
+[device.my-realdevice]
+type = "VirtualPeltierCooler"
+port = "COM12"
+address = 0
+```
+
+This functionality is intended for educational purposes, allowing users to explore how the package works without 
+requiring a physical device to be connected.
+
+The file containing all available virtual devices can be found 
+[here](../../tests/virtualdevices.toml). To run this file, simply type the following 
+command in your terminal:
+
+```local
+flowchem tests/virtualdevices.toml
+```

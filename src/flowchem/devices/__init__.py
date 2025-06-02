@@ -14,4 +14,6 @@ from .phidgets import *
 from .vacuubrand import *
 from .vapourtec import *
 from .vicivalco import *
+from .runze import *
+from .fakedevice import *
 from .custom import *
