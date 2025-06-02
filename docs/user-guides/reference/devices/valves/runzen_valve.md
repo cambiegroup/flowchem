@@ -23,4 +23,4 @@ The valve position naming follow the general convention of flowchem:
 * Distribution valves have positions from '1' to 'n' where n is the total amount of port available.
 
 ## Further information
-For further information please refer to the [manufacturer manual](knauer_valve.pdf)
+For further information please refer to the [manufacturer manual](runzen_valve.pdf)
