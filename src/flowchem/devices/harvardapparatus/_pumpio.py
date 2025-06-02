@@ -41,7 +41,7 @@ class HarvardApparatusPumpIO:
         try:
             self._serial = aioserial.AioSerial(port, **configuration)
         except aioserial.SerialException as serial_exception:
-            logger.error(f"Cannot connect to the Pump on the port <{port}>")
+            logger.error(f"Cannot connect to the Pump on the port <{port}> issue:{serial_exception}")
             raise InvalidConfigurationError(
                 f"Cannot connect to the Pump on the port <{port}>"
             ) from serial_exception
@@ -107,7 +107,7 @@ class HarvardApparatusPumpIO:
         self,
         command: Protocol11Command,
         return_parsed: bool = True,
-    ) -> list[str]:
+    ) -> str | list[str]:
         """Send a command to the pump, read the replies and return it, optionally parsed.
 
         If unparsed reply is a List[str] with raw replies.

@@ -1,4 +1,4 @@
-"""Entry-point module for the command line prefixer, called in case you use `python -m flowchem`.
+"""Entry-point module for the command line prefixes, called in case you use `python -m flowchem`.
 Why does this file exist, and why `__main__`? For more info, read:
 - https://www.python.org/dev/peps/pep-0338/
 - https://docs.python.org/3/using/cmdline.html#cmdoption-m.
@@ -6,6 +6,7 @@ Why does this file exist, and why `__main__`? For more info, read:
 import asyncio
 import sys
 from pathlib import Path
+import os
 
 import rich_click as click
 import uvicorn
@@ -40,6 +41,9 @@ def main(device_config_file, logfile, host, debug):
 
     Parse device_config_file and starts a server exposing the devices via REST-ful API.
 
+    In order to operate a simulated device for educational purposes without requiring
+    any connected device, simply execute 'flowchem example'
+
     Args:
     ----
         device_config_file: Flowchem configuration file specifying device connection settings (TOML)
@@ -47,6 +51,10 @@ def main(device_config_file, logfile, host, debug):
         host: IP on which the server will be listening. Loopback IP as default, use LAN IP to enable remote access.
         debug: Print debug info
     """
+    if device_config_file == "example":
+        device_config_file = (os.path.dirname(os.path.abspath(__file__)).split('src')[0] +
+                              'examples/FakeDevice_configuration.toml')
+
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -73,6 +81,7 @@ def main(device_config_file, logfile, host, debug):
             timeout_keep_alive=3600,
         )
         server = uvicorn.Server(config)
+        logger.info("Click on http://127.0.0.1:8000 to access device server.")
         await server.serve()
 
     asyncio.run(main_loop())

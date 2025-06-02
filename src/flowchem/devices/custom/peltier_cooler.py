@@ -204,7 +204,6 @@ class PeltierIO:
                 f"[Reply: {last_response_line}]"
             )
 
-
     def reset_buffer(self):
         """ Reset input buffer before reading from serial. In theory not necessary if all replies are consumed... """
         try:

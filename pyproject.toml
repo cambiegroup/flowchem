@@ -14,9 +14,13 @@ authors = [
     { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
     { name = "Jakob Wolf", email = "75418671+JB-Wolf@users.noreply.github.com" },
     { name = "Wei-Hsin Hsu", email = "98024191+cynthiabour@users.noreply.github.com" },
+    { name = "Samuel Saraiva", email = "88909409+samuelvitorsaraiva@users.noreply.github.com" },
 ]
 maintainers = [
-  { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" }
+    { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
+    { name = "Jakob Wolf", email = "75418671+JB-Wolf@users.noreply.github.com" },
+    { name = "Samuel Saraiva", email = "88909409+samuelvitorsaraiva@users.noreply.github.com" }
+
 ]
 classifiers = [
     "License :: OSI Approved :: MIT License"
@@ -103,15 +107,20 @@ python_version = "3.11"
 testpaths = "tests"
 asyncio_mode = "auto"
 # Note: pytest cov is not compatible with the pycharm debugger in tests
-addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump' --no-cov"
+addopts = "-m 'not HApump and not Spinsolve and not FlowIR and not KPump and not KPump and not ml600 and not Knauer_Distribution_Valve and not CVC3000 and not Manson' --no-cov"
 markers = [
     "HApump: tests requiring a local HA Elite11 connected.",
     "Spinsolve: tests requiring a connection to Spinsolve.",
     "FlowIR: tests requiring a connection to a FlowIR.",
-    "KPump: tests for Azura compact" ]
+    "KPump: tests for Azura compact.",
+    "ml600: test for ML600 pump",
+    "Knauer_Distribution_Valve: test knauer distribution valve",
+    "CVC3000: Test CVC3000 vacun pump",
+    "Manson: Test Manson power control"
+]
 
 [tool.ruff]
 line-length = 120
 # Allow imports relative to the "src" and "test" directories.
 src = ["src", "test"]
-per-file-ignores."__init__.py" = ["F403"]
+lint.per-file-ignores."__init__.py" = ["F403"]

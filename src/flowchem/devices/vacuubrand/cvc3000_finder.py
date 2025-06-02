@@ -24,12 +24,17 @@ def cvc3000_finder(serial_port) -> set[str]:
         cvc._serial.close()
         return set()
 
-    logger.info(f"CVC3000 {cvc.component_info.version} found on <{serial_port}>")
+    logger.info(f"CVC3000 {cvc.device_info.version} found on <{serial_port}>")
     dev_config = dedent(
         f"""
             [device.cvc-{cvc._device_sn}]
             type = "CVC3000"
             port = "{serial_port}"\n\n"""
     )
-
+    logger.info(f"Close the serial port: <{serial_port}>")
+    cvc._serial.close()
     return set(dev_config)
+
+
+if __name__ == "__main__":
+    print(cvc3000_finder("COM5"))
