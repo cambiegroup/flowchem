@@ -49,3 +49,7 @@ Note that the actual type of valve cannot be detected automatically, so you will
 
 ## Further information
 For further information please refer to the [manufacturer manual](vici_valve.pdf)
+
+## API methods
+See the [device API reference](../../api/Runzen/api.md) for a description of the available methods.
+
