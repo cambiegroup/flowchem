@@ -95,3 +95,10 @@ type = "VirtualRunzeValve"
 port = "COMX"
 valve_type = "6"
 address = 1
+
+[device.my-knauer-autosample]
+type = "VirtualKnauerAutosampler"
+ip_address = "192.168.2.1"
+autosampler_id = 1
+_syringe_volume = "0.5 mL"
+tray_type = "TRAY_48_VIAL"

@@ -9,6 +9,12 @@ from flowchem.devices.knauer.dad_component import (
 from flowchem.devices.knauer.knauer_valve import (KnauerValveHeads, KnauerInjectionValve,
                                                   Knauer6PortDistributionValve, Knauer12PortDistributionValve,
                                                   Knauer16PortDistributionValve)
+from flowchem.devices.knauer.knauer_autosampler_component import (
+    AutosamplerGantry3D,
+    AutosamplerPump,
+    AutosamplerSyringeValve,
+    AutosamplerInjectionValve,
+)
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.utils.people import samuel_saraiva
 from flowchem import ureg
@@ -146,3 +152,84 @@ class VirtualKnauerValve(FlowchemDevice):
     async def get_valve_type(self) -> KnauerValveHeads:
         headtype = KnauerValveHeads(self._vale_type)
         return headtype
+
+
+class VirtualKnauerAutosampler(FlowchemDevice):
+
+    def __init__(self, name, **kwargs):
+        super().__init__(name)
+
+        self.device_info.authors = [samuel_saraiva]
+        self.device_info.manufacturer = "Virtual Azura"
+        self.device_info.model = "Virtual Valve"
+
+        self.actual_injector_valve_position = "LOAD"
+        self.actual_syringe_valve_position = "NEEDLE"
+        self.actual_syringe_volume = 10
+
+    async def initialize(self):
+
+        logger.info('Virtual Knauer AutoSampler device was successfully initialized!')
+        self.components.extend([
+            AutosamplerGantry3D("gantry3D", self),
+            AutosamplerPump("pump", self),
+            AutosamplerSyringeValve("syringe_valve", self),
+            AutosamplerInjectionValve("injection_valve", self),
+        ])
+
+    async def _move_needle_horizontal(self, needle_position: str | None, plate: str | None = None, well: int | None = None):
+        ...
+
+    async def _move_needle_vertical(self, move_to: str):
+        ...
+
+    async def _move_tray(self, tray_type: str, sample_position: str | int):
+        ...
+
+    async def get_errors(self):
+        return None
+
+    async def get_status(self):
+        return "NEEDLE_IDLE"
+
+    async def dispense(self, volume, flow_rate=None):
+        return True
+
+    async def aspirate(self, volume: float, flow_rate: float | int | None = None):
+        return True
+
+    async def syringe_volume(self, volume: None | int = None):
+        if not volume:
+            return self.actual_syringe_volume
+        else:
+            self.actual_injector_valve_position = volume
+
+    async def set_raw_position(self, position: str | None = None, target_component: str | None = None):
+        match target_component:
+            case "injection_valve":
+                return await self.injector_valve_position(port=position)
+            case "syringe_valve":
+                return await self.syringe_valve_position(port=position)
+            case _:
+                raise RuntimeError("Unknown valve type")
+
+    async def get_raw_position(self, target_component: str | None = None) -> str:
+        match target_component:
+            case "injection_valve":
+                return await self.injector_valve_position(port=None)
+            case "syringe_valve":
+                return await self.syringe_valve_position(port=None)
+            case _:
+                raise RuntimeError("Unknown valve type")
+
+    async def injector_valve_position(self, port: str | None = None):
+        if not port:
+            return self.actual_injector_valve_position
+        else:
+            self.actual_injector_valve_position = port
+
+    async def syringe_valve_position(self, port: str | None = None):
+        if not port:
+            return self.actual_syringe_valve_position
+        else:
+            self.actual_syringe_valve_position = port
