@@ -1,4 +1,4 @@
-import requests
+import requests  # type: ignore
 from loguru import logger
 from pydantic import AnyHttpUrl
 

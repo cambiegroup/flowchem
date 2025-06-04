@@ -54,7 +54,6 @@ class MansonPowerSupply(FlowchemDevice):
             raise InvalidConfigurationError(
                 f"Device is not supported! [Supported models: {self.MODEL_ALT_RANGE}]"
             )
-        # Set TemperatureControl component
         self.components.append(MansonPowerControl("power-control", self))
 
     @staticmethod
