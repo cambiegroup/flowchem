@@ -171,10 +171,10 @@ class VirtualKnauerAutosampler(FlowchemDevice):
 
         logger.info('Virtual Knauer AutoSampler device was successfully initialized!')
         self.components.extend([
-            AutosamplerGantry3D("gantry3D", self),
-            AutosamplerPump("pump", self),
-            AutosamplerSyringeValve("syringe_valve", self),
-            AutosamplerInjectionValve("injection_valve", self),
+            AutosamplerGantry3D("gantry3D", self), # type: ignore
+            AutosamplerPump("pump", self), # type: ignore
+            AutosamplerSyringeValve("syringe_valve", self), # type: ignore
+            AutosamplerInjectionValve("injection_valve", self), # type: ignore
         ])
 
     async def _move_needle_horizontal(self, needle_position: str | None, plate: str | None = None, well: int | None = None):
@@ -202,7 +202,7 @@ class VirtualKnauerAutosampler(FlowchemDevice):
         if not volume:
             return self.actual_syringe_volume
         else:
-            self.actual_injector_valve_position = volume
+            self.actual_syringe_volume = volume
 
     async def set_raw_position(self, position: str | None = None, target_component: str | None = None):
         match target_component:
