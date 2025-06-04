@@ -1,6 +1,7 @@
+# ruff: noqa: F403, F405
 from __future__ import annotations
 from flowchem import ureg
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from loguru import logger
 
 
@@ -60,7 +61,7 @@ class AutosamplerGantry3D(gantry3D):
         logger.info(f"Needle moved succesfully to position: {position}")
         return True
 
-    async def connect_to_position(self, tray: str = "", row: int = None, column: str = None) -> bool:
+    async def connect_to_position(self, row: int, column: str, tray: str = "") -> bool:
         """
         Move the 3D gantry to the specified (x, y) coordinate of a specific plate and connects to it.
 
@@ -77,7 +78,7 @@ class AutosamplerGantry3D(gantry3D):
         logger.info(f"Needle connected successfully to row: {row}, column: {column} on tray: {tray}")
         return True
 
-    async def set_xy_position(self, tray: str = "", row: int = None, column: str = None) -> bool:
+    async def set_xy_position(self, row: int, column: str, tray: str = "") -> bool:
         """
         Move the 3D gantry to the specified (x, y) coordinate of a specific plate.
 
@@ -103,8 +104,10 @@ class AutosamplerGantry3D(gantry3D):
         if success:
             logger.info(f"Needle moved successfully to row: {row}, column: {column} on tray: {tray}")
             return True
+        else:
+            return False
 
-    async def set_z_position(self, position: str = "") -> bool:
+    async def set_z_position(self, position: int | float | str) -> bool:
         """
         Move the 3D gantry along the Z axis.
 
@@ -115,22 +118,28 @@ class AutosamplerGantry3D(gantry3D):
         await super().set_z_position(position=position)
         if await self.is_needle_running():
             logger.warning("Needle already moving!")
+        if not isinstance(position, str):
+            raise TypeError
         success = await self.hw_device._move_needle_vertical(move_to=position)
         if success:
             logger.info(f"Needle moved successfully to {position} direction.")
             return True
+        else:
+            return False
 
     async def reset_errors(self) -> bool:
-        """Resets AS erors"""
+        """Resets AS error"""
         errors = await self.hw_device.get_errors()
         if errors:
             logger.info(f"Error: {errors} was present")
             await self.hw_device.reset_errors()
-            logger.info(f"Errors reset")
+            logger.info("Errors reset")
             return True
+        else:
+            return False
 
     async def is_needle_running(self) -> bool:
-        """"Checks if Autosampler is running"""
+        """"Checks if Auto-sampler is running"""
         if await self.hw_device.get_status() == "NEEDLE_RUNNING":
             return True
         else:
@@ -139,14 +148,14 @@ class AutosamplerGantry3D(gantry3D):
 
 class AutosamplerPump(SyringePump):
     """
-    Control a Knauer Autosampler component .
+    Control a Knauer Auto-sampler component .
 
     Attributes:
         hw_device (KnauerAutosampler): The hardware device for the Knauer CNC component.
     """
     hw_device: KnauerAutosampler
 
-    async def infuse(self, rate: str = None, volume: str = None) -> bool:  # type: ignore
+    async def infuse(self, rate: Optional[str] = None, volume: Optional[str] = None) -> bool:
         """
         Dispense with built in syringe.
         Args:
@@ -156,29 +165,34 @@ class AutosamplerPump(SyringePump):
         """
         if volume is None:
             volume = "0 mL"
-            logger.warning(f"the volume to infuse is not provided. set to 0 ml")
+            logger.warning("the volume to infuse is not provided. set to 0 ml")
         parsed_volume = ureg.Quantity(volume)
         success = await self.hw_device.dispense(volume=parsed_volume.m_as("mL"))
         if success:
             logger.info(f"Syringe pump successfully infused {volume} ml")
             return True
+        else:
+            return False
 
-    async def withdraw(self, rate: str = None, volume: str = None) -> bool:  # type: ignore
+    async def withdraw(self, rate: Optional[str] = None, volume: Optional[str] = None) -> bool:  # type: ignore
         """
-        Aspirate with built in syringe.
+        Aspirate with built-in syringe.
         Args:
+            rate: Volume flow rate ml/min
             volume: volume to aspirate in mL
 
         Returns: None
         """
         if volume is None:
-            volume = self.hw_device.syringe_volume
+            volume = await self.hw_device.syringe_volume()
             logger.warning(f"the volume to withdraw is not provided. set to {self.hw_device.syringe_volume}")
         parsed_volume = ureg.Quantity(volume)
         success = await self.hw_device.aspirate(volume=parsed_volume.m_as("mL"))
         if success:
             logger.info(f"Syringe pump successfully withdrew {volume} ml")
             return True
+        else:
+            return False
 
     @staticmethod
     def is_withdrawing_capable() -> bool:  # type: ignore
@@ -187,7 +201,8 @@ class AutosamplerPump(SyringePump):
 
     async def is_pumping(self) -> bool:
         """"Checks if Syringe or syringe valve is running"""
-        if self.hw_device.get_status() == "SYRINGE_OR_SYRINGE_VALVE_RUNNING":
+        status = await self.hw_device.get_status()
+        if status == "SYRINGE_OR_SYRINGE_VALVE_RUNNING":
             return True
         else:
             return False
@@ -223,7 +238,10 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
         if reverse:
             return str([key for key, value in position_mapping.items() if value == raw_position][0])
         else:
-            return position_mapping[raw_position]
+            if type(raw_position) is int:
+                return position_mapping[raw_position]
+            else:
+                raise TypeError
 
     async def get_monitor_position(self) -> str:
         """
@@ -253,7 +271,8 @@ class AutosamplerInjectionValve(SixPortTwoPositionValve):
             if success:
                 logger.info(f"Injection valve moved successfully to position: {position}")
         except KeyError as e:
-            raise Exception(f"Please give allowed positions {[pos.name for pos in InjectorValvePositions]}") from e
+            raise Exception(f"Please give allowed positions {[pos.name for pos in InjectorValvePositions]}") from e  # type: ignore
+
 
 class AutosamplerSyringeValve(FourPortDistributionValve):
     """
@@ -286,7 +305,10 @@ class AutosamplerSyringeValve(FourPortDistributionValve):
         if reverse:
             return str([key for key, value in position_mapping.items() if value == raw_position][0])
         else:
-            return position_mapping[raw_position]
+            if type(raw_position) is int:
+                return position_mapping[raw_position]
+            else:
+                raise TypeError
 
     async def get_monitor_position(self) -> str:
         """

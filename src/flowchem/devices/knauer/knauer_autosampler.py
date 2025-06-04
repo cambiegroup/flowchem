@@ -1,9 +1,41 @@
+# ruff: noqa: F403, F405
+"""
+Knauer Autosampler Control Module
+=================================
+
+This module provides an interface to control the Knauer Autosampler AS 6.1L via either Serial or Ethernet communication.
+It enables users to interact with the device by sending and receiving commands, configuring parameters like tray temperature, 
+syringe volume, and controlling the movement of the needle and valves.
+
+Core Features
+-------------
+- Support for both serial (RS-232) and TCP/IP communication.
+- Full command construction and parsing for Knauer Autosampler protocol.
+- Error handling and status querying from the Autosampler.
+- High-level async control of tray movement, sample aspiration/dispensing, and valve positioning.
+
+Main Components
+---------------
+- `KnauerAutosampler`: Main class that encapsulates the Autosampler logic. Exposes methods to set/get parameters, 
+  initialize the device, and perform key operations like aspiration and dispensing.
+- `ASEthernetDevice`: TCP communication wrapper to interact with the Autosampler over Ethernet.
+- `ASSerialDevice`: Serial communication wrapper using `aioserial` for asynchronous operation.
+- `send_until_acknowledged`: Decorator that retries sending a command until acknowledged or a timeout occurs.
+- `ErrorCodes`, `CommandModus`: Enums for command interpretation and error decoding.
+- Custom exceptions (`ASError`, `CommunicationError`, etc.) to represent protocol-specific issues.
+
+Dependencies
+------------
+- `asyncio`, `aioserial`: For asynchronous I/O communication.
+- `pint`, `flowchem`: For unit handling and device integration.
+- `loguru`: For logging events and error reporting.
+"""
 from enum import Enum, auto
 from loguru import logger
 import aioserial
 
 import asyncio
-from typing import Type, List
+from typing import Type
 import functools
 import time
 import pint
@@ -21,7 +53,7 @@ from flowchem.devices.knauer.knauer_autosampler_component import (
 
 try:
     # noinspection PyUnresolvedReferences
-    from NDA_knauer_AS.knauer_AS import *
+    from NDA_knauer_AS.knauer_AS import * # This won't trigger F403 or F405 now
 
     HAS_AS_COMMANDS = True
 except ImportError:
@@ -73,6 +105,7 @@ class CommunicationError(ASError):
 class CommandOrValueError(ASError):
     """Command is unknown, value is unknown or out of range, transmission failed"""
     pass
+
 
 class ASFailureError(ASError):
     """AS failed to execute command"""
@@ -137,11 +170,11 @@ class ASEthernetDevice:
                     break
                 reply += chunk
                 try:
-                    CommunicationFlags(chunk)
+                    CommunicationFlags(chunk)  # type: ignore
                     break
                 except ValueError:
                     pass
-                if CommunicationFlags.MESSAGE_END.value in chunk:
+                if CommunicationFlags.MESSAGE_END.value in chunk:  # type: ignore
                     break
 
             writer.close()
@@ -167,7 +200,7 @@ class ASSerialDevice:
         "stopbits": aioserial.STOPBITS_ONE  # Stopbits: 1 (fixed)
     }
 
-    def __init__(self, port: str = None, **kwargs):
+    def __init__(self, port: str | None = None, **kwargs):
         if not port:
             logger.error("A valid port must be specified for Serial communication")
             raise ValueError("A valid port must be specified for Serial communication.")
@@ -192,13 +225,50 @@ class ASSerialDevice:
 
 
 class KnauerAutosampler(FlowchemDevice):
-    """AutoSampler control class."""
+    """
+    Interface for controlling the Knauer Autosampler AS 6.1L device.
 
+    This class supports both Serial (via RS-232) and Ethernet (via TCP/IP) communication and exposes
+    high-level methods to control hardware features such as syringe pumps, valves, gantry, and tray movement.
+
+    Parameters
+    ----------
+    name : str | None
+        Display name for the autosampler instance.
+    ip_address : str
+        IP address for Ethernet communication (mutually exclusive with `port`).
+    autosampler_id : int | None
+        Device ID used for command addressing.
+    port : str | None
+        Serial port name (e.g., 'COM3') for Serial communication (mutually exclusive with `ip_address`).
+    _syringe_volume : str
+        Syringe volume (e.g., '250 uL', '0.5 mL') to be validated and set.
+    tray_type : str
+        Type of sample tray used (must be one of the PlateTypes enum).
+    **kwargs : dict
+        Additional configuration options for the selected communication method.
+
+    Attributes
+    ----------
+    io : ASEthernetDevice | ASSerialDevice
+        Active communication handler depending on selected mode.
+    components : list
+        FlowChem component interfaces (pump, valves, gantry).
+    device_info : DeviceInfo
+        Metadata about the device (manufacturer, model, authors).
+
+    Raises
+    ------
+    ValueError
+        If communication mode, syringe volume, or tray type is invalid.
+    NotImplementedError
+        If a specific tray type is not supported yet.
+    """
     def __init__(self,
-                 name: str = None,
+                 name: str | None = None,
                  ip_address: str = "",
-                 autosampler_id: int = None,
-                 port: str = None,
+                 autosampler_id: int | None = None,
+                 port: str | None = None,
                  _syringe_volume: str = "",
                  tray_type: str = "",
                  **kwargs,
@@ -214,9 +284,11 @@ class KnauerAutosampler(FlowchemDevice):
         self.ip_address = ip_address
         self.port = port
 
+        self.io: ASEthernetDevice | ASSerialDevice
         if self.ip_address:
             # Ethernet communication
             self.io = ASEthernetDevice(ip_address=self.ip_address, **kwargs)
+            _syringe_volume_ = None
         elif self.port:
             # Serial communication
             self.io = ASSerialDevice(port=self.port, **kwargs)
@@ -227,28 +299,28 @@ class KnauerAutosampler(FlowchemDevice):
             try:
                 if _syringe_volume:
                     _syringe_volume = ureg(_syringe_volume).to("microliters").magnitude
-                    _syringe_volume = int(_syringe_volume)  # Ensure it's an integer
+                    _syringe_volume_ = int(_syringe_volume)  # Ensure it's an integer
             except pint.errors.DimensionalityError as e:
                 logger.error(f"Invalid syringe volume format: {_syringe_volume}. Use formats like '250 uL'.")
                 raise ValueError(f"Invalid syringe volume format: {_syringe_volume}. Use formats like '250 uL'.") from e
 
             # Validate Syringe Volume
-            if _syringe_volume and _syringe_volume not in valid_syringe_volumes:
+            if _syringe_volume_ and _syringe_volume_ not in valid_syringe_volumes:
                 logger.error(f"Invalid syringe volume: {_syringe_volume}. Must be one of {valid_syringe_volumes}.")
                 raise ValueError(f"Invalid syringe volume: {_syringe_volume}. Must be one of {valid_syringe_volumes}.")
 
         # Validate Tray Type
         tray_type = tray_type.upper()
-        if tray_type in PlateTypes.__dict__.keys():
+        if tray_type in PlateTypes.__dict__.keys():  # type: ignore
             try:
-                if PlateTypes[tray_type] == PlateTypes.SINGLE_TRAY_87:
+                if PlateTypes[tray_type] == PlateTypes.SINGLE_TRAY_87:  # type: ignore
                     raise NotImplementedError("The tray type SINGLE_TRAY_87 is not yet implemented.")
             except KeyError as e:
-                valid_plate_types = [i.name for i in PlateTypes]
+                valid_plate_types = [i.name for i in PlateTypes]  # type: ignore
                 raise Exception(
                     f"Invalid tray type. Please provide one of the following plate types: {valid_plate_types}") from e
         else:
-            valid_plate_types = [i.name for i in PlateTypes]
+            valid_plate_types = [i.name for i in PlateTypes]  # type: ignore
             logger.error(f"Invalid tray type: {tray_type}. Must be one of {valid_plate_types}.")
             raise ValueError(f"Invalid tray type: {tray_type}. Must be one of {valid_plate_types}.")
 
@@ -258,17 +330,19 @@ class KnauerAutosampler(FlowchemDevice):
         self.autosampler_id = autosampler_id
         self.name = f"AutoSampler ID: {self.autosampler_id}" if name is None else name
         self.tray_type = tray_type
-        self._syringe_volume = _syringe_volume
+        self._syringe_volume = _syringe_volume_ if _syringe_volume_ else _syringe_volume
         self.device_info = DeviceInfo(
             authors=[jakob, miguel, samuel_saraiva],
-            maintainers=[jakob, miguel, samuel_saraiva],
             manufacturer="Knauer",
             model="Autosampler AS 6.1L"
         )
 
-    async def _construct_communication_string(self, command: Type[CommandStructure], modus: str, *args: int or str,
-                                        **kwargs: str) -> str:
-        # input can be strings, is translated to enum internally -> enum no need to expsoe
+    async def _construct_communication_string(self,
+                                              command: Type["CommandStructure"],  # type: ignore
+                                              modus: str,
+                                              *args: int | str,
+                                              **kwargs: str) -> str:
+        # input can be strings, is translated to enum internally -> enum no need to expose
         # if value cant be translated to enum, just through error with the available options
         command_class = command()
         modus = modus.upper()
@@ -287,12 +361,10 @@ class KnauerAutosampler(FlowchemDevice):
             raise CommandOrValueError(
                 f"You set {modus} as command modus, however modus should be {CommandModus.SET.name},"
                 f" {CommandModus.GET_ACTUAL.name}, {CommandModus.GET_PROGRAMMED.name} ")
-        return f"{CommunicationFlags.MESSAGE_START.value.decode()}{self.autosampler_id}" \
-               f"{ADDITIONAL_INFO}{communication_string}" \
-               f"{CommunicationFlags.MESSAGE_END.value.decode()}"
+        return f"{CommunicationFlags.MESSAGE_START.value.decode()}{self.autosampler_id}{ADDITIONAL_INFO}{communication_string}{CommunicationFlags.MESSAGE_END.value.decode()}"  # type: ignore
 
     @send_until_acknowledged(max_reaction_time=10)
-    async def _set(self, message: str or int):
+    async def _set(self, message: str):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
@@ -306,7 +378,7 @@ class KnauerAutosampler(FlowchemDevice):
         return True
 
     @send_until_acknowledged(max_reaction_time=10)
-    async def _query(self, message: str or int):
+    async def _query(self, message: str):
         """
         Sends command and receives reply, deals with all communication based stuff and checks that the valve is
         of expected type
@@ -320,34 +392,34 @@ class KnauerAutosampler(FlowchemDevice):
     async def _parse_setting_reply(self, reply):
         # reply needs to be binary string
 
-        if reply == CommunicationFlags.ACKNOWLEDGE.value:
+        if reply == CommunicationFlags.ACKNOWLEDGE.value:  # type: ignore
             return True
-        elif reply == CommunicationFlags.TRY_AGAIN.value:
+        elif reply == CommunicationFlags.TRY_AGAIN.value:  # type: ignore
             raise ASBusyError
-        elif reply == CommunicationFlags.NOT_ACKNOWLEDGE.value:
+        elif reply == CommunicationFlags.NOT_ACKNOWLEDGE.value:  # type: ignore
             raise CommandOrValueError
         # this is only the case with replies on queries
         else:
             raise ASError(f"The reply is {reply} and does not fit the expected reply for value setting")
 
     async def _parse_query_reply(self, reply) -> int:
-        reply_start_char, reply_stripped, reply_end_char = reply[:ReplyStructure.STX_END.value], \
-                                                           reply[
-                                                           ReplyStructure.STX_END.value:ReplyStructure.ETX_START.value], \
-                                                           reply[ReplyStructure.ETX_START.value:]
-        if reply_start_char != CommunicationFlags.MESSAGE_START.value or reply_end_char != CommunicationFlags.MESSAGE_END.value:
+        reply_start_char, reply_stripped, reply_end_char = (reply[:ReplyStructure.STX_END.value],  # type: ignore
+                                                            reply[ReplyStructure.STX_END.value:ReplyStructure.ETX_START.value],  # type: ignore
+                                                            reply[ReplyStructure.ETX_START.value:])  # type: ignore
+        if reply_start_char != CommunicationFlags.MESSAGE_START.value or reply_end_char != CommunicationFlags.MESSAGE_END.value:  # type: ignore
             raise CommunicationError
 
         # basically, if the device gives an extended reply, length will be 14. This only matters for get commands
         if len(reply_stripped) == 14:
             # decompose further
-            as_id = reply[ReplyStructure.STX_END.value:ReplyStructure.ID_END.value]
-            as_ai = reply[ReplyStructure.ID_END.value:ReplyStructure.AI_END.value]
-            as_pfc = reply[ReplyStructure.AI_END.value:ReplyStructure.PFC_END.value]
-            as_val = reply[ReplyStructure.PFC_END.value:ReplyStructure.VALUE_END.value]
+            as_id = reply[ReplyStructure.STX_END.value:ReplyStructure.ID_END.value]  # type: ignore
+            as_ai = reply[ReplyStructure.ID_END.value:ReplyStructure.AI_END.value]  # type: ignore
+            as_pfc = reply[ReplyStructure.AI_END.value:ReplyStructure.PFC_END.value]  # type: ignore
+            as_val = reply[ReplyStructure.PFC_END.value:ReplyStructure.VALUE_END.value]  # type: ignore
             # check if reply from requested device
             if int(as_id.decode()) != self.autosampler_id:
-                raise ASError(f"ID of used AS is {self.autosampler_id}, but ID in reply is as_id")
+                logger.error(f"AS_AI reply {as_ai} and AS_PFC reply {as_pfc}!")
+                raise ASError(f"ID of used AS is {self.autosampler_id}, but ID in reply is {as_id}")
             # if reply is only zeros, which can be, give back one 0 for interpretation
             if len(as_val.decode().lstrip("0")) > 0:
                 return int(as_val.decode().lstrip("0"))
@@ -357,8 +429,10 @@ class KnauerAutosampler(FlowchemDevice):
         else:
             raise ASError(f"AutoSampler reply did not fit any of the known patterns, reply is: {reply_stripped}")
 
-    async def _set_get_value(self, command: Type[CommandStructure], parameter: int or None = None,
-                             reply_mapping: None or Type[Enum] = None, get_actual=False):
+    async def _set_get_value(self,
+                             command: Type["CommandStructure"],  # type: ignore
+                             parameter: int | str | None = None,
+                             reply_mapping: None | Type[Enum] = None, get_actual=False):
         """If get actual is set true, the actual value is queried, otherwise the programmed value is queried (default)"""
         if parameter:
             command_string = await self._construct_communication_string(command, CommandModus.SET.name, parameter)
@@ -378,10 +452,10 @@ class KnauerAutosampler(FlowchemDevice):
             logger.info(f"On init Error: {errors} was present")
         await self.reset_errors()
         # Sets initial positions of needle and valve
-        await self._move_needle_vertical(NeedleVerticalPositions.UP.name)
-        await self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)
-        await self.syringe_valve_position(SyringeValvePositions.WASTE.name)
-        await self.injector_valve_position(InjectorValvePositions.LOAD.name)
+        await self._move_needle_vertical(NeedleVerticalPositions.UP.name)  # type: ignore
+        await self._move_needle_horizontal(NeedleHorizontalPosition.WASTE.name)  # type: ignore
+        await self.syringe_valve_position(SyringeValvePositions.WASTE.name)  # type: ignore
+        await self.injector_valve_position(InjectorValvePositions.LOAD.name)  # type: ignore
 
         logger.info('Knauer AutoSampler device was successfully initialized!')
         self.components.extend([
@@ -392,70 +466,72 @@ class KnauerAutosampler(FlowchemDevice):
         ])
 
     async def measure_tray_temperature(self):
-        command_string = self._construct_communication_string(TrayTemperatureCommand, CommandModus.GET_ACTUAL.name)
+        command_string = self._construct_communication_string(TrayTemperatureCommand, CommandModus.GET_ACTUAL.name)  # type: ignore
         return int(await self._query(command_string))
 
-    async def set_tray_temperature(self, setpoint: int = None):
-        return await self._set_get_value(TrayTemperatureCommand, setpoint)
+    async def set_tray_temperature(self, setpoint: int | None = None):
+        return await self._set_get_value(TrayTemperatureCommand, setpoint)  # type: ignore
 
-    async def tubing_volume(self, volume: None or int = None):
-        return await self._set_get_value(TubingVolumeCommand, volume)
+    async def tubing_volume(self, volume: None | int = None):
+        return await self._set_get_value(TubingVolumeCommand, volume)  # type: ignore
 
-    async def set_tray_temperature_control(self, onoff: str = None):
-        return await self._set_get_value(TrayCoolingCommand, onoff, TrayCoolingCommand.on_off)
+    async def set_tray_temperature_control(self, onoff: str | None = None):
+        return await self._set_get_value(TrayCoolingCommand, onoff, TrayCoolingCommand.on_off)  # type: ignore
 
-    async def compressor(self, onoff: str = None):
-        return await self._set_get_value(SwitchCompressorCommand, onoff, SwitchCompressorCommand.on_off, get_actual=True)
+    async def compressor(self, onoff: str | None = None):
+        return await self._set_get_value(SwitchCompressorCommand, onoff, SwitchCompressorCommand.on_off, get_actual=True)  # type: ignore
 
     # does not do anything perceivable - hm
-    async def headspace(self, onoff: str = None):
-        return await self._set_get_value(HeadSpaceCommand, onoff, HeadSpaceCommand.on_off)
+    async def headspace(self, onoff: str | None = None):
+        return await self._set_get_value(HeadSpaceCommand, onoff, HeadSpaceCommand.on_off)  # type: ignore
 
-    async def syringe_volume(self, volume: None or int = None):
-        return await self._set_get_value(SyringeVolumeCommand, volume)
+    async def syringe_volume(self, volume: None | int = None):
+        return await self._set_get_value(SyringeVolumeCommand, volume)  # type: ignore
 
-    async def loop_volume(self, volume: None or int = None):
-        return await self._set_get_value(LoopVolumeCommand, volume)
+    async def loop_volume(self, volume: None | int = None):
+        return await self._set_get_value(LoopVolumeCommand, volume)  # type: ignore
 
     # tested, find out what this does/means
-    async def flush_volume(self, volume: None or int = None):
-        return await self._set_get_value(FlushVolumeCommand, volume)
+    async def flush_volume(self, volume: None | int = None):
+        return await self._set_get_value(FlushVolumeCommand, volume)  # type: ignore
 
     # tested, query works
     # todo get setting to work
-    async def injection_volume(self, volume: None or int = None):
-        return await self._set_get_value(InjectionVolumeCommand, volume)
+    async def injection_volume(self, volume: None | int = None):
+        return await self._set_get_value(InjectionVolumeCommand, volume)  # type: ignore
 
-    async def syringe_speed(self, speed: str = None):
+    async def syringe_speed(self, speed: str | None = None):
         """
         LOW, NORMAL, HIGH
         This does NOT work on all models
         """
-        return await self._set_get_value(SyringeSpeedCommand, speed, SyringeSpeedCommand.speed_enum)
+        return await self._set_get_value(SyringeSpeedCommand, speed, SyringeSpeedCommand.speed_enum)  # type: ignore
 
-    async def _move_needle_horizontal(self, needle_position: str, plate: str = None, well: int = None):
-        command_string = await self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)
+    async def _move_needle_horizontal(self, needle_position: str | None, plate: str | None = None, well: int | None = None):
+        command_string = await self._construct_communication_string(NeedleHorizontalCommand, CommandModus.SET.name, needle_position, plate, well)  # type: ignore
         return await self._set(command_string)
 
     async def _move_needle_vertical(self, move_to: str):
-        command_string = await self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)
+        command_string = await self._construct_communication_string(MoveNeedleVerticalCommand, CommandModus.SET.name, move_to)  # type: ignore
         return await self._set(command_string)
 
-    async def syringe_valve_position(self, port: str = None):
+    async def syringe_valve_position(self, port: str | None = None):
         # TODO check if this mapping offset can be fixed elegantly
         if port:
-            command_string = await self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.SET.name, port)
+            command_string = await self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.SET.name, port)  # type: ignore
             return await self._set(command_string)
         else:
-            command_string = await self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.GET_ACTUAL.name)
+            command_string = await self._construct_communication_string(SwitchSyringeValveCommand, CommandModus.GET_ACTUAL.name)  # type: ignore
             raw_reply = await self._query(command_string) - 1
-            return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name
+            return SwitchSyringeValveCommand.syringe_valve_positions(raw_reply).name  # type: ignore
 
-    async def injector_valve_position(self, port: str = None):
-        return await self._set_get_value(SwitchInjectorValveCommand, port, SwitchInjectorValveCommand.allowed_position,
+    async def injector_valve_position(self, port: str | None = None):
+        return await self._set_get_value(SwitchInjectorValveCommand,  # type: ignore
+                                         port,
+                                         SwitchInjectorValveCommand.allowed_position,  # type: ignore
                                          get_actual=True)
 
-    async def set_raw_position(self, position: str = None, target_component: str = None):
+    async def set_raw_position(self, position: str | None = None, target_component: str | None = None):
         match target_component:
             case "injection_valve":
                 return await self.injector_valve_position(port=position)
@@ -464,7 +540,7 @@ class KnauerAutosampler(FlowchemDevice):
             case _:
                 raise RuntimeError("Unknown valve type")
 
-    async def get_raw_position(self, target_component: str = None) -> str:
+    async def get_raw_position(self, target_component: str | None = None) -> str:
         match target_component:
             case "injection_valve":
                 return await self.injector_valve_position(port=None)
@@ -473,8 +549,7 @@ class KnauerAutosampler(FlowchemDevice):
             case _:
                 raise RuntimeError("Unknown valve type")
 
-
-    async def aspirate(self, volume: float, flow_rate: float or int = None):
+    async def aspirate(self, volume: float, flow_rate: float | int | None = None):
         """
         aspirate with built in syringe if no external syringe is set to AutoSampler.
         Else use external syringe
@@ -488,7 +563,7 @@ class KnauerAutosampler(FlowchemDevice):
         if flow_rate is not None:
             raise NotImplementedError("Built in syringe does not allow to control flow rate")
         volume = int(round(volume, 3) * 1000)
-        command_string = await self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)
+        command_string = await self._construct_communication_string(AspirateCommand, CommandModus.SET.name, volume)  # type: ignore
         return await self._set(command_string)
 
     async def dispense(self, volume, flow_rate=None):
@@ -505,28 +580,27 @@ class KnauerAutosampler(FlowchemDevice):
         if flow_rate is not None:
             raise NotImplementedError("Built in syringe does not allow to control flow rate")
         volume = int(round(volume, 3) * 1000)
-        command_string = await self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)
+        command_string = await self._construct_communication_string(DispenseCommand, CommandModus.SET.name, volume)  # type: ignore
         return await self._set(command_string)
 
-    async def _move_tray(self, tray_type: str, sample_position: str or int):
-        command_string = await self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)
+    async def _move_tray(self, tray_type: str, sample_position: str | int):
+        command_string = await self._construct_communication_string(MoveTrayCommand, CommandModus.SET.name, tray_type, sample_position)  # type: ignore
         return await self._set(command_string)
 
     async def get_errors(self):
-        command_string = await self._construct_communication_string(GetErrorsCommand, CommandModus.GET_ACTUAL.name)
+        command_string = await self._construct_communication_string(GetErrorsCommand, CommandModus.GET_ACTUAL.name)  # type: ignore
         reply = str(await self._query(command_string))
         return ErrorCodes[f"ERROR_{reply}"].value
 
     async def reset_errors(self):
-        command_string = await self._construct_communication_string(ResetErrorsCommand, CommandModus.SET.name)
+        command_string = await self._construct_communication_string(ResetErrorsCommand, CommandModus.SET.name)  # type: ignore
         await self._set(command_string)
 
     async def get_status(self):
-        command_string = await self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)
+        command_string = await self._construct_communication_string(RequestStatusCommand, CommandModus.GET_ACTUAL.name)  # type: ignore
         reply = str(await self._query(command_string))
         reply = (3-len(reply))*'0'+reply
-        return ASStatus(reply).name
-
+        return ASStatus(reply).name  # type: ignore
 
 
 if __name__ == "__main__":
