@@ -54,7 +54,6 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
 
   publish-to-testpypi:
-    # if: github.ref_type != 'tag'
     name: Publish Python 🐍 distribution 📦 to TestPyPI
     needs:
     - build
