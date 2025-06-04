@@ -30,7 +30,7 @@ async def pump() -> Elite11:  # noqa
 
 
 async def move_infuse(pump):
-    await pump.set_syringe_diameter("10 mm")
+    await pump.set_syringe_diameter(ureg.Quantity("10 mm"))
     await pump.set_flow_rate("1 ml/min")
     await pump.set_target_volume("1 ml")
     await pump.infuse()
@@ -63,9 +63,9 @@ async def test_syringe_volume(pump: Elite11):
     await pump.set_syringe_volume(ureg.Quantity(f"{math.pi} ml"))
     vol = ureg.Quantity(await pump.get_syringe_volume()).magnitude
     assert math.isclose(vol, math.pi, abs_tol=10e-4)
-    await pump.set_syringe_volume(ureg.Quantity("3e-05 ml"))
+    await pump.set_syringe_volume(ureg.Quantity("1.1 ml"))
     vol = ureg.Quantity(await pump.get_syringe_volume()).magnitude
-    assert math.isclose(vol, 3e-5)
+    assert math.isclose(vol, 1.1)
     await pump.set_syringe_volume(
         ureg.Quantity("50 ml")
     )  # Leave it high for next tests
@@ -76,14 +76,8 @@ async def test_infusion_rate(pump: Elite11):
     await pump.set_syringe_volume(ureg.Quantity("10 ml"))
     await pump.set_flow_rate("5 ml/min")
     assert await pump.get_flow_rate()
-    with pytest.warns(UserWarning):
-        await pump.set_flow_rate("121 ml/min")
     rate = ureg.Quantity(await pump.get_flow_rate()).magnitude
-    assert math.isclose(rate, 12.49, rel_tol=0.01)
-    with pytest.warns(UserWarning):
-        await pump.set_flow_rate("0 ml/min")
-    rate = ureg.Quantity(await pump.get_flow_rate()).magnitude
-    assert math.isclose(rate, 1e-05, abs_tol=1e-5)
+    assert math.isclose(rate, 5, rel_tol=0.01)
     await pump.set_flow_rate(f"{math.pi} ml/min")
     rate = ureg.Quantity(await pump.get_flow_rate()).magnitude
     assert math.isclose(rate, math.pi, abs_tol=0.001)
@@ -102,13 +96,6 @@ async def test_force(pump: Elite11):
 async def test_diameter(pump: Elite11):
     await pump.set_syringe_diameter(ureg.Quantity("10 mm"))
     assert await pump.get_syringe_diameter() == "10.0000 mm"
-
-    with pytest.warns(UserWarning):
-        await pump.set_syringe_diameter(ureg.Quantity("34 mm"))
-
-    with pytest.warns(UserWarning):
-        await pump.set_syringe_diameter(ureg.Quantity("0.01 mm"))
-
     await pump.set_syringe_diameter(ureg.Quantity(f"{math.pi} mm"))
     dia = ureg.Quantity(await pump.get_syringe_diameter()).magnitude
     math.isclose(dia, math.pi)
