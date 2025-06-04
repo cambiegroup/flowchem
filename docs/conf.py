@@ -10,7 +10,7 @@
 # sphinx-apidoc -o docs/development/foundations/code_structure src
 # Build html
 # sphinx-build -b html -v docs docs/_build/html
-# start docs/_build/index.html
+# start docs/_build/html/index.html
 
 
 import datetime
