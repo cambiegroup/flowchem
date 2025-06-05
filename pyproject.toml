@@ -64,7 +64,6 @@ all = [
     "types-lxml",
     "types-PyYAML",
     "types-requests",
-    "flowchem-test>=0.1b4",
     "httpx",
     "pytest",
     "pytest-asyncio",
