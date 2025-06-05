@@ -2,6 +2,8 @@ import time
 
 import requests
 from loguru import logger
+from pydantic import AnyHttpUrl
+from pydantic.type_adapter import TypeAdapter
 from zeroconf import ServiceBrowser, Zeroconf
 
 from flowchem.client.common import (
@@ -74,7 +76,7 @@ def get_flowchem_devices_from_url(url: str, timeout: int = 5) -> dict[str, Flowc
         if parts:
             device = parts[0]
             if device not in flowchem_devices:
-                flowchem_devices[device] = FlowchemDeviceClient(url=f"{url}/{device}")
+                flowchem_devices[device] = FlowchemDeviceClient(url=TypeAdapter(AnyHttpUrl).validate_python(f"{url}/{device}"))
 
     return flowchem_devices
 
