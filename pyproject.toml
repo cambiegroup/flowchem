@@ -19,7 +19,6 @@ authors = [
     { name = "Samuel Saraiva", email = "88909409+samuelvitorsaraiva@users.noreply.github.com" },
 ]
 maintainers = [
-    { name = "Dario Cambié", email = "2422614+dcambie@users.noreply.github.com" },
     { name = "Jakob Wolf", email = "75418671+JB-Wolf@users.noreply.github.com" },
     { name = "Samuel Saraiva", email = "88909409+samuelvitorsaraiva@users.noreply.github.com" }
 ]
