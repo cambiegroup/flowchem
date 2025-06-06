@@ -107,7 +107,7 @@ class HarvardApparatusPumpIO:
         self,
         command: Protocol11Command,
         return_parsed: bool = True,
-    ) -> list[str]:
+    ) -> str | list[str]:
         """Send a command to the pump, read the replies and return it, optionally parsed.
 
         If unparsed reply is a List[str] with raw replies.

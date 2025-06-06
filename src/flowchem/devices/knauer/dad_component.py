@@ -49,7 +49,6 @@ class KnauerDADLampControl(PowerSwitch):
             str: The status of the lamp.
         """
         return await self.hw_device.lamp(self.lamp)
-        # return {
 
     async def power_on(self):
         """

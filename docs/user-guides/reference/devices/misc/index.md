@@ -5,5 +5,6 @@
 
 r2_reactor
 manson
-
+phidget_power
+autosample
 ```
