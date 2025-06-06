@@ -71,8 +71,8 @@ class SensorBase(FlowchemComponent):
 
     async def watch(self,
                     api: str,
-                    greater_than: float = None,
-                    less_than: float = None,
+                    greater_than: float | None = None,
+                    less_than: float | None = None,
                     sample_time: float = 2.0):
         """
         Starts monitoring the specified method and checks its output against the defined conditions.
