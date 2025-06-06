@@ -142,7 +142,7 @@ class SensorBase(FlowchemComponent):
             - This method is non-blocking as it uses `async`.
             - It safely stops the monitoring thread, preventing potential race conditions.
         """
-        if self.threading.is_alive():
+        if self.threading and self.threading.is_alive():
 
             self._loop = False
 
