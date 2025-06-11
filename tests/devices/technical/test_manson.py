@@ -26,7 +26,7 @@ def api_dev(xprocess):
     yield devices["manson-test"]
     xprocess.getinfo("flowchem_instance").terminate()
 
-
+@pytest.mark.Manson
 async def test_operation(api_dev):
     manson = api_dev
     status = manson["power-control"].put("power-on")
