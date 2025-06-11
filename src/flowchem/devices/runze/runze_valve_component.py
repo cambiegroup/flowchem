@@ -19,17 +19,29 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
 
     hw_device: RunzeValve
 
-    def __init__(self, name: str, hw_device: RunzeValve) -> None:
+    ANTI_CC_STATOR_MAPING = [1, 2, 3, 4, 5, 6]
+
+    def __init__(self, name: str, hw_device: RunzeValve | VirtualRunzeValve) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
-        anti_cc_stator = [4, 3, 2, 1, 6, 5]
+        """
+        Update the valve's connections based on the given raw position.
+
+        Parameters:
+            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
+            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+
+        Notes:
+            The rotor does not move in a clockwise direction. The critical reference is the position marked
+            on the stator of the Valve!
+        """
         if reverse:
-            return anti_cc_stator[raw_position]
+            return int(raw_position) - 1
         else:
-            return anti_cc_stator.index(raw_position)
+            return int(raw_position) + 1
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
@@ -51,11 +63,21 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
-        anti_cc_stator = [5, 4, 3, 2, 1, 8, 7, 6]
+        """
+        Update the valve's connections based on the given raw position.
+
+        Parameters:
+            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
+            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+
+        Notes:
+            The rotor does not move in a clockwise direction. The critical reference is the position marked
+            on the stator of the Valve!
+        """
         if reverse:
-            return anti_cc_stator[raw_position]
+            return int(raw_position) - 1
         else:
-            return anti_cc_stator.index(raw_position)
+            return int(raw_position) + 1
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
@@ -77,11 +99,21 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
-        anti_cc_stator = [6, 5, 4, 3, 2, 1, 10, 9, 8, 7]
+        """
+        Update the valve's connections based on the given raw position.
+
+        Parameters:
+            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
+            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+
+        Notes:
+            The rotor does not move in a clockwise direction. The critical reference is the position marked
+            on the stator of the Valve!
+        """
         if reverse:
-            return anti_cc_stator[raw_position]
+            return int(raw_position) - 1
         else:
-            return anti_cc_stator.index(raw_position)
+            return int(raw_position) + 1
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
@@ -103,11 +135,21 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
-        anti_cc_stator = [7, 6, 5, 4, 3, 2, 1, 12, 11, 10, 9, 8]
+        """
+        Update the valve's connections based on the given raw position.
+
+        Parameters:
+            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
+            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+
+        Notes:
+            The rotor does not move in a clockwise direction. The critical reference is the position marked
+            on the stator of the Valve!
+        """
         if reverse:
-            return anti_cc_stator[raw_position]
+            return int(raw_position) - 1
         else:
-            return anti_cc_stator.index(raw_position)
+            return int(raw_position) + 1
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
@@ -129,11 +171,21 @@ class Runze16PortDistributionValve(SixteenPortDistributionValve):
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
-        anti_cc_stator = [9, 8, 7, 6, 5, 4, 3, 2, 1, 16, 15, 14, 13, 12, 11, 10]
+        """
+        Update the valve's connections based on the given raw position.
+
+        Parameters:
+            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
+            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+
+        Notes:
+            The rotor does not move in a clockwise direction. The critical reference is the position marked
+            on the stator of the Valve!
+        """
         if reverse:
-            return anti_cc_stator[raw_position]
+            return int(raw_position) - 1
         else:
-            return anti_cc_stator.index(raw_position)
+            return int(raw_position) + 1
 
     async def get_monitor_position(self) -> str:
         """Get current valve position."""
