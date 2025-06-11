@@ -21,7 +21,7 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
 
     ANTI_CC_STATOR_MAPING = [1, 2, 3, 4, 5, 6]
 
-    def __init__(self, name: str, hw_device: RunzeValve | VirtualRunzeValve) -> None:
+    def __init__(self, name: str, hw_device: RunzeValve) -> None:
         super().__init__(name, hw_device)
         self.add_api_route("/monitor_position", self.get_monitor_position, methods=["GET"])
         self.add_api_route("/monitor_position", self.set_monitor_position, methods=["PUT"])
