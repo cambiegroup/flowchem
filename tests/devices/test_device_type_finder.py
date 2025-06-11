@@ -24,6 +24,7 @@ def test_device_finder():
         "R4Heater",
         "Spinsolve",
         "ViciValve",
+        "WatersMS"
     }
 
     dev_found = autodiscover_device_classes()
