@@ -27,7 +27,7 @@ def api_dev(xprocess):
     xprocess.getinfo("flowchem_instance").terminate()
 
 
-#@pytest.mark.FlowIR
+@pytest.mark.FlowIR
 async def test_spectrum_acquisition(api_dev):
     spectrometer = api_dev
     spectrometer["ir-control"].put("start-experiment")
