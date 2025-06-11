@@ -13,6 +13,7 @@ def test_device_finder():
         "IcIR",
         "KnauerDAD",
         "KnauerValve",
+        "KnauerAutosampler",
         "MFC",
         "ML600",
         "MansonPowerSupply",
