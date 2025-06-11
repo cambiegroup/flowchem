@@ -8,7 +8,8 @@ def test_device_finder():
         "Clarity",
         "EPC",
         "Elite11",
-        "FakeDevice",
+        "FakeDevice", # This come from the flowchem-test package (used in the git tests actions)
+        "FakeDeviceExample",
         "HuberChiller",
         "IcIR",
         "KnauerDAD",
