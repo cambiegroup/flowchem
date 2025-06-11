@@ -1,12 +1,12 @@
-# Knauer Auto-Sampler
+# Knauer Autosampler
 
 Control the Knauer Autosampler AS 6.1L via either Serial or Ethernet communication.
 It enables users to interact with the device by sending and receiving commands, configuring parameters like tray temperature, 
 syringe volume, and controlling the movement of the needle and valves.
 
 [!IMPORTANT] 
-The commands available to control the Auto-Sample is accessible through a properties package software `NDA_knauer_AS`.
-Please contact the manufacture to get more information.
+This software package was created internally, utilizing a proprietary communication framework made available by the 
+manufacturer.
 
 ## Configuration
 Configuration sample showing all possible parameters:
@@ -48,4 +48,4 @@ buffersize 1024
 For further information please refer to the [manufacturer manual](Autosampler.pdf)
 
 ## API methods
-See the [device API reference](../../api/knauer_autosample/api.md) for a description of the available methods.
+See the [device API reference](../../api/knauer_autosampler/api.md) for a description of the available methods.
