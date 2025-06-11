@@ -25,7 +25,7 @@ def api_dev(xprocess):
     yield devices["cvc-test"]
     xprocess.getinfo("flowchem_instance").terminate()
 
-
+@pytest.mark.CVC3000
 async def test_status_and_unit(api_dev):
     cvc = api_dev
     status = cvc["pressure-control"].get("status")
