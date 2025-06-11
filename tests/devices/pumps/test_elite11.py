@@ -27,6 +27,7 @@ def api_dev(xprocess):
     xprocess.getinfo("flowchem_instance").terminate()
 
 
+@pytest.mark.HApump
 def test_infuse(api_dev):
     pump = api_dev['test']['pump']
     assert pump.put("infuse", params={"rate": "1 ml/min", "volume": "2 ml"})
