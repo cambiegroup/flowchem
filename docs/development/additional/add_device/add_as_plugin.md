@@ -86,6 +86,17 @@ from pycont.controller import VirtualC3000Controller, VirtualMultiPumpController
 
 
 class APIMultiPumpController(FlowchemDevice):
+    """
+    FlowchemDevice interface for controlling multiple Tricontinental C3000 pumps via pycont.
+
+    This class serves as a bridge between Flowchem and the `VirtualMultiPumpController`
+    from the pycont library. It initializes the pump controller and registers pump components.
+
+    Attributes:
+        device_info (DeviceInfo): Metadata about the device, such as manufacturer, model, and version.
+        configuration (str): Path to a JSON config file that describes the hardware setup.
+        controller (VirtualMultiPumpController): Internal controller object from pycont for low-level access.
+    """
 
     device_info = DeviceInfo(
         manufacturer="virtual-device",
@@ -95,73 +106,203 @@ class APIMultiPumpController(FlowchemDevice):
     )
 
     def __init__(self, name: str, configuration: str):
+        """
+        Initialize the API controller with a configuration file (detail in pycont documentation).
+
+        Args:
+            name (str): Name of the device instance within Flowchem.
+            configuration (str): Path to a JSON config file used to initialize the hardware.
+        """
         super().__init__(name)
         self.configuration = configuration
         self.controller: VirtualMultiPumpController | None = None
 
     async def initialize(self):
-        """Initialize the device and add its components."""
-        self.controller = VirtualMultiPumpController.from_configfile(self.configuration)
+        """
+        Asynchronously initialize the pump controller and register individual pump components.
 
+        This method is called automatically by Flowchem when the server starts. It parses
+        the configuration file and registers each pump and the multi-pump manager as components.
+        """
+        self.controller = VirtualMultiPumpController.from_configfile(self.configuration)
+        
+        # Register each individual pump as a FlowchemComponent
         for name in self.controller.pumps.keys():
             self.components.append(PumpComponent(name=name, hw_device=self))
-
+        
+        # Register the multi-pump controller component (used for global commands)
         self.components.append(MultiPumpComponent(name="MultiController", hw_device=self))
 
 
 class PumpComponent(FlowchemComponent):
+    """
+    Represents a single C3000 pump as a FlowchemComponent.
 
+    This class exposes individual pump operations (e.g., deliver, status checks) as REST API endpoints.
+
+    Attributes:
+        hw_device (APIMultiPumpController): Parent device managing the pump controller.
+        pump (VirtualC3000Controller): Reference to the low-level pump object from pycont.
+    """
     hw_device: APIMultiPumpController
 
     def __init__(self, name: str, hw_device: APIMultiPumpController):
+        """
+        Initialize the component and register API routes for pump operations.
+
+        Args:
+            name (str): Name of this pump (e.g., "P1").
+            hw_device (APIMultiPumpController): The hardware device managing this component.
+        """
         super().__init__(name, hw_device)
         self.pump: VirtualC3000Controller = self.hw_device.controller.pumps[name]
 
-        # Expose device methods via FastAPI endpoints
+        # Register REST endpoints for controlling the pump
         self.add_api_route("/is-idle", self.is_idle, methods=["GET"])
         self.add_api_route("/is-busy", self.is_busy, methods=["GET"])
         self.add_api_route("/get-valve-position", self.get_valve_position, methods=["GET"])
         self.add_api_route("/deliver", self.deliver, methods=["PUT"])
 
     async def is_idle(self):
+        """
+        Check if the pump is currently idle.
+
+        Returns:
+            bool: True if the pump is idle and ready for a new operation.
+        """
         return self.pump.is_idle()
 
     async def is_busy(self):
+        """
+        Check if the pump is currently executing a command.
+
+        Returns:
+            bool: True if the pump is busy (e.g., delivering or moving valves).
+        """
         return self.pump.is_busy()
 
     async def get_valve_position(self):
+        """
+        Get the current valve position of the pump.
+
+        Returns:
+            str: The valve position label (e.g., "A", "B").
+        """
         return self.pump.get_valve_position()
 
     async def deliver(self, volume_in_ml: float, to_valve: str | None = None, speed_out: int | None = None, 
                       wait: bool = False, secure: bool = True):
+        """
+        Instruct the pump to deliver a specific volume to a given valve port.
+
+        Args:
+            volume_in_ml (float): Volume to deliver in milliliters.
+            to_valve (str, optional): Valve port to deliver to (e.g., "A").
+            speed_out (int, optional): Speed of delivery.
+            wait (bool): Whether to wait for delivery to complete.
+            secure (bool): If True, use safety checks before delivery.
+
+        Returns:
+            Any: The result of the delivery operation from pycont.
+        """
         return self.pump.deliver(volume_in_ml, to_valve, speed_out, wait, secure)
 
 
 class MultiPumpComponent(FlowchemComponent):
+    """
+    Represents the multi-pump controller as a FlowchemComponent.
 
+    This component exposes commands that operate across all pumps simultaneously,
+    such as broadcasting commands, checking initialization, and termination.
+
+    Attributes:
+        hw_device (APIMultiPumpController): Reference to the parent multi-pump controller device.
+    """
     hw_device: APIMultiPumpController
 
     def __init__(self, name: str, hw_device: APIMultiPumpController):
+        """
+        Initialize the multi-pump component and register REST endpoints.
+
+        Args:
+            name (str): Name of the multi-pump component (e.g., "MultiController").
+            hw_device (APIMultiPumpController): The parent device controlling all pumps.
+        """
         super().__init__(name, hw_device)
 
-        # Expose multi-pump methods via FastAPI endpoints
+        # Register REST API endpoints for global pump actions
         self.add_api_route("/apply-command-to-all-pumps", self.apply_command_to_all_pumps, methods=["PUT"])
         self.add_api_route("/are-pumps-initialized", self.are_pumps_initialized, methods=["GET"])
         self.add_api_route("/wait-until-all-pumps-idle", self.wait_until_all_pumps_idle, methods=["PUT"])
         self.add_api_route("/terminate-all-pumps", self.terminate_all_pumps, methods=["PUT"])
 
     async def apply_command_to_all_pumps(self, command: str, *args, **kwargs):
+        """
+        Apply a raw command (as a string) to all pumps in the controller.
+
+        Args:
+            command (str): Command name.
+            *args: Positional arguments for the command.
+            **kwargs: Keyword arguments for the command.
+
+        Returns:
+            Any: Result of the batch command execution.
+        """
         return self.hw_device.controller.apply_command_to_all_pumps(command, *args, **kwargs)
 
     async def are_pumps_initialized(self) -> bool:
+        """
+        Check whether all pumps have been properly initialized.
+
+        Returns:
+            bool: True if all pumps are initialized.
+        """
         return self.hw_device.controller.are_pumps_initialized()
 
     async def wait_until_all_pumps_idle(self):
+        """
+        Block execution until all pumps report they are idle.
+        """
         return self.hw_device.controller.wait_until_all_pumps_idle()
 
     async def terminate_all_pumps(self):
+        """
+        Gracefully shut down all pump controllers and terminate communication.
+
+        Useful for clean application shutdown or hardware reset.
+        """
         return self.hw_device.controller.terminate_all_pumps()
+
+from flowchem.components.pumps.pump import Pump
 ```
+[!NOTE]
+You can also inherit from an existing component in `flowchem.components` instead of the base `FlowchemComponent`.
+For example, instead of inheriting directly from `FlowchemComponent`, you may inherit from a specialized class such as 
+Pump located in `flowchem.components.pumps.pump`.
+This approach allows you to reuse predefined API endpoints and behavior, saving development time. However, 
+it’s important to ensure that your device's methods match the expected interface (ontology) of the inherited component. 
+You must adapt your implementation accordingly.
+If the mapping between your device and the inherited component is not straightforward, **we do not recommend** this
+approach, as it can lead to confusion and broken API behavior.
+
+For example:
+```python
+...
+
+from flowchem.components.pumps.pump import Pump
+
+...
+
+class PumpComponent(Pump):
+    
+    # This method corresponds to an expected API endpoint
+    async def infuse(self, rate: str = "", volume: str = "") -> bool: 
+        """Start infusion."""
+        # Translate this high-level call from API-end point into a command for VirtualMultiPumpController
+        ...
+
+```
+
 [!NOTE]
 For more information on why you need to import FlowchemComponent and FlowchemDevice, refer to the guide on
 [how to add new devices (straight approach)](add_to_flowchem.md).
