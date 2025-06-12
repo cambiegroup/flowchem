@@ -26,15 +26,22 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Update the valve's connections based on the given raw position.
+        Change the valve connections based on its raw position.
 
-        Parameters:
-            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
-            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+        The `raw_position` refers to the device-specific naming for the current valve position,
+        which is assigned, in this class, as a numeric value from 1 to 6. The raw position
+        corresponds directly to the monitored position.
+
+        Args:
+            raw_position (int or str): The raw position of the valve.
+            reverse (bool): If True, reverse the mapping.
 
         Notes:
-            The rotor does not move in a clockwise direction. The critical reference is the position marked
-            on the stator of the Valve!
+            The motor rotates using an internal code disc and automatically selects
+            the optimal path. (Ref. Manual)
+
+        Returns:
+            int: The mapped position.
         """
         if reverse:
             return int(raw_position) - 1
@@ -51,7 +58,7 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
 
 
 class Runze8PortDistributionValve(EightPortDistributionValve):
-    """RunzeValve of type SIX_PORT_SIX_POSITION."""
+    """RunzeValve of type Eight_Port_Distribution."""
 
     hw_device: RunzeValve
 
@@ -62,15 +69,22 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Update the valve's connections based on the given raw position.
+        Change the valve connections based on its raw position.
 
-        Parameters:
-            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
-            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+        The `raw_position` refers to the device-specific naming for the current valve position,
+        which is assigned, in this class, as a numeric value from 1 to 8. The raw position
+        corresponds directly to the monitored position.
+
+        Args:
+            raw_position (int or str): The raw position of the valve.
+            reverse (bool): If True, reverse the mapping.
 
         Notes:
-            The rotor does not move in a clockwise direction. The critical reference is the position marked
-            on the stator of the Valve!
+            The motor rotates using an internal code disc and automatically selects
+            the optimal path. (Ref. Manual)
+
+        Returns:
+            int: The mapped position.
         """
         if reverse:
             return int(raw_position) - 1
@@ -87,7 +101,7 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
 
 
 class Runze10PortDistributionValve(TenPortDistributionValve):
-    """RunzeValve of type SIX_PORT_SIX_POSITION."""
+    """RunzeValve of type Ten_Port_Distribution."""
 
     hw_device: RunzeValve
 
@@ -98,15 +112,22 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Update the valve's connections based on the given raw position.
+        Change the valve connections based on its raw position.
 
-        Parameters:
-            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
-            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+        The `raw_position` refers to the device-specific naming for the current valve position,
+        which is assigned, in this class, as a numeric value from 1 to 10. The raw position
+        corresponds directly to the monitored position.
+
+        Args:
+            raw_position (int or str): The raw position of the valve.
+            reverse (bool): If True, reverse the mapping.
 
         Notes:
-            The rotor does not move in a clockwise direction. The critical reference is the position marked
-            on the stator of the Valve!
+            The motor rotates using an internal code disc and automatically selects
+            the optimal path. (Ref. Manual)
+
+        Returns:
+            int: The mapped position.
         """
         if reverse:
             return int(raw_position) - 1
@@ -123,7 +144,7 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
 
 
 class Runze12PortDistributionValve(TwelvePortDistributionValve):
-    """RunzeValve of type SIX_PORT_SIX_POSITION."""
+    """RunzeValve of type Twelve_Port_Distribution."""
 
     hw_device: RunzeValve
 
@@ -134,15 +155,22 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Update the valve's connections based on the given raw position.
+        Change the valve connections based on its raw position.
 
-        Parameters:
-            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
-            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+        The `raw_position` refers to the device-specific naming for the current valve position,
+        which is assigned, in this class, as a numeric value from 1 to 12. The raw position
+        corresponds directly to the monitored position.
+
+        Args:
+            raw_position (int or str): The raw position of the valve.
+            reverse (bool): If True, reverse the mapping.
 
         Notes:
-            The rotor does not move in a clockwise direction. The critical reference is the position marked
-            on the stator of the Valve!
+            The motor rotates using an internal code disc and automatically selects
+            the optimal path. (Ref. Manual)
+
+        Returns:
+            int: The mapped position.
         """
         if reverse:
             return int(raw_position) - 1
@@ -159,7 +187,7 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
 
 
 class Runze16PortDistributionValve(SixteenPortDistributionValve):
-    """RunzeValve of type SIX_PORT_SIX_POSITION."""
+    """RunzeValve of type Sixteen_Port_Distribution"""
 
     hw_device: RunzeValve
 
@@ -170,15 +198,22 @@ class Runze16PortDistributionValve(SixteenPortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Update the valve's connections based on the given raw position.
+        Change the valve connections based on its raw position.
 
-        Parameters:
-            raw_position (str | int): The position of the rotor. This can be either a label (e.g., "A") or an index.
-            reverse (bool): If True, the direction of the connections will be reversed. Default is False.
+        The `raw_position` refers to the device-specific naming for the current valve position,
+        which is assigned, in this class, as a numeric value from 1 to 16. The raw position
+        corresponds directly to the monitored position.
+
+        Args:
+            raw_position (int or str): The raw position of the valve.
+            reverse (bool): If True, reverse the mapping.
 
         Notes:
-            The rotor does not move in a clockwise direction. The critical reference is the position marked
-            on the stator of the Valve!
+            The motor rotates using an internal code disc and automatically selects
+            the optimal path. (Ref. Manual)
+
+        Returns:
+            int: The mapped position.
         """
         if reverse:
             return int(raw_position) - 1

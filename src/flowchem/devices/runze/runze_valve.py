@@ -221,7 +221,7 @@ class RunzeValve(FlowchemDevice):
     async def get_valve_type(self):
         """Get valve type by testing possible port values."""  # There was no command for this
 
-        possible_ports = [6, 8, 10, 12, 16]
+        possible_ports = [16, 12, 10, 8, 6]
         valve_type = None
 
         for value in possible_ports:
@@ -278,7 +278,6 @@ class RunzeValve(FlowchemDevice):
             return False
 
     async def set_address(self, address: int) -> str:
-        """Return current valve position, following valve nomenclature."""
         status, parameters = await self._send_command_and_read_reply(command="00", parameter=address, is_factory_command=True)
         if status == "00":
             self.address = address
