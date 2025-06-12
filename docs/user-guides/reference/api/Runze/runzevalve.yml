@@ -8,10 +8,10 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 1.0.0a3
 paths:
-  /my-knauervalve/:
+  /my-runzevalve/:
     get:
       tags:
-      - my-knauervalve
+      - my-runzevalve
       summary: Get Device Info
       operationId: get_device_info_fake_device__get
       responses:
@@ -21,11 +21,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeviceInfo'
-  /my-knauervalve/injection-valve/:
+  /my-runzevalve/injection-valve/:
     get:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runzevalve
+      - my-runzevalve
       summary: Get Component Info
       description: "Retrieve the component's metadata.\n\nThis endpoint provides information\
         \ about the component, such as its name and associated hardware device.\n\n\
@@ -38,11 +38,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComponentInfo'
-  /my-knauervalve/injection-valve/position:
+  /my-runzevalve/injection-valve/position:
     get:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runzevalve
+      - my-runzevalve
       summary: Get Position
       description: "Get the current valve position.\n\nReturns:\n    tuple: The current\
         \ position of the valve."
@@ -65,8 +65,8 @@ paths:
                   Get
     put:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runzevalve
+      - my-runzevalve
       summary: Set Position
       description: "Move the valve to the position that connects the specified ports.\n\
         \nArgs:\n    connect: Ports to connect.\n    disconnect: Ports to disconnect.\n\
@@ -99,11 +99,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /my-knauervalve/injection-valve/connections:
+  /my-runzevalve/injection-valve/connections:
     get:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runzevalve
+      - my-runzevalve
       summary: Connections
       description: "Get the list of all available positions for this valve.\n\nReturns:\n\
         \    ValveInfo: The ValveInfo object containing ports and positions."
@@ -115,11 +115,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValveInfo'
-  /my-knauervalve/injection-valve/monitor_position:
+  /my-runzevalve/injection-valve/monitor_position:
     get:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runzevalve
+      - my-runzevalve
       summary: Get Monitor Position
       description: "Get the current valve position.\n\nReturns:\n    str: The current\
         \ position (LOAD or INJECT)."
@@ -135,8 +135,8 @@ paths:
                   Position Get
     put:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runzevalve
+      - my-runzevalve
       summary: Set Monitor Position
       description: "Set the valve to a specified position.\n\nArgs:\n    position\
         \ (str): The desired position (LOAD or INJECT).\n\nReturns:\n    str: The\
