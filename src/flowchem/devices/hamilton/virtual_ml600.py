@@ -1,6 +1,6 @@
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
-from flowchem.devices.hamilton.ml600_valve import ML600LeftValve
+from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve
 from flowchem.utils.people import samuel_saraiva
 from flowchem import ureg
 from loguru import logger
@@ -30,6 +30,7 @@ class VirtualML600(FlowchemDevice):
         }
         self.syringe_volume = ureg.Quantity(kwargs.get("syringe_volume", "10 ml"))
         self._current_volume = self.syringe_volume.magnitude
+        self.dual_syringe = kwargs.get("dual_syringe", "") == "true"
 
     @classmethod
     def from_config(cls, **config):
@@ -38,8 +39,11 @@ class VirtualML600(FlowchemDevice):
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Simulate initializing the virtual ML600 pump."""
         logger.info(f"Virtual ML600 {self.name} with syringe {self.syringe_volume} initialized!")
-        self.dual_syringe = False  # Simulate single syringe system
-        self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)]) # type: ignore
+        if self.dual_syringe:
+            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C"),
+                                    ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
+        else:
+            self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)]) # type: ignore
 
     async def get_current_volume(self, pump: str) -> pint.Quantity:
         """Return current syringe position in ml."""
