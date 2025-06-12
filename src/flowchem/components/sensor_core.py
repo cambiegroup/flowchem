@@ -14,7 +14,7 @@ class SensorBase(FlowchemComponent):
     fall within the defined boundaries.
 
     Inherits from:
-        FlowchemComponent: A base class representing a chemical flow component.
+        FlowchemComponent: A base class representing a flowchem component.
 
     Attributes:
         _sample_time (float): Interval in seconds for sampling the watched methods. Default is 2.0.
