@@ -1,11 +1,16 @@
 # Adding a New Device as an External Plugin
 
-Flowchem supports external plugins, allowing users to create local packages to extend its functionalities. This approach offers several advantages, such as maintaining full control over the device-specific code. However, it introduces additional complexity, so it is recommended only for experienced Python developers.
+Flowchem supports external plugins, allowing users to create local packages that extend its functionalities. This 
+approach offers several advantages, such as maintaining full control over device-specific code. However, it introduces 
+additional complexity and is recommended only for experienced Python developers.
 
-Flowchem uses Python entry points to automatically discover installed plugins. To be recognized by Flowchem, any new plugin must register an entry point under the flowchem.devices group.
-Getting Started
+Flowchem uses Python [entry points](https://packaging.python.org/en/latest/specifications/entry-points/) 
+to automatically discover installed plugins. To be recognized by Flowchem, any new 
+plugin must register an entry point under the flowchem.devices group.
 
-You can start by forking the flowchem-test repository, which provides a template for a Flowchem plugin.
+## Getting Started
+
+You can start by forking the `flowchem-test` repository, which provides a template for a Flowchem plugin.
 Configuration with pyproject.toml
 
 If you are using a pyproject.toml file, the configuration should look something like this:
@@ -15,20 +20,27 @@ If you are using a pyproject.toml file, the configuration should look something 
 test-device = "flowchem_test:fakedevice"
 ```
 
-# Example: Integrating a Real Device Library
+## Example: Integrating a Real Device Library
 
-Let's walk through an example of integrating an existing library into Flowchem. We will use the pycont library, developed to control Tricontinent C3000 pumps.
+Let's walk through an example of integrating an existing library into Flowchem. We will use the 
+[pycont](https://github.com/croningp/pycont) library, developed to control Tricontinent C3000 pumps. 
 
-The pycont package contains two main classes:
+The `pycont` package contains two main classes, defined in 
+[controller.py](https://github.com/croningp/pycont/blob/master/pycont/controller.py#L338):
 
-* VirtualC3000Controller: Handles communication with individual pumps.
+* `VirtualC3000Controller`: Handles communication with individual pumps.
 
-* MultiPumpController: Manages multiple pumps simultaneously.
+* `MultiPumpController`: Manages multiple pumps simultaneously.
 
 To integrate this library into Flowchem, follow these steps:
-Step 1: Add an Entry Point to `setup.py`
 
-To make Flowchem recognize the device, we add an entry point to the setup.py file. Below is the complete file with the necessary modifications:
+### Step 1: Fork the library 
+
+Fork the `pycont` repository so you can modify it to fit the Flowchem plugin architecture.
+
+### Step 2: Add an Entry Point
+
+Add an entry point to the `setup.py` file to make Flowchem recognize the device:
 
 ```python
 from setuptools import find_packages, setup
@@ -54,20 +66,21 @@ setup(
     },
 )
 ```
+[!NOTE]
+Your fork of the `pycont` package must be installed in the same environment where flowchem is installed.
 
-This ensures that Flowchem will recognize the new device at startup.
-Step 2: Create a Flowchem-Compatible Plugin Module
+### Step 3: Create a Flowchem-Compatible Plugin Module
 
 Next, create a module that contains two classes to integrate with Flowchem. The classes are structured to adapt the 
-original library methods to work within Flowchem's asynchronous framework.
+original library`s methods to work within Flowchem's asynchronous framework.
 
-The plugin module file, named `_flowchem_plugin.py`, is located in the `pycont` folder, as specified in the entry point.
-Example: Plugin Module
+Create the plugin module file `_flowchem_plugin.py` inside the `pycont` directory, as specified in the entry point.
+
+#### Example: Plugin Module
 
 ```python
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import DeviceInfo, FlowchemDevice
-from flowchem.utils.people import samuel_saraiva
 
 from pycont.controller import VirtualC3000Controller, VirtualMultiPumpController
 
@@ -75,8 +88,6 @@ from pycont.controller import VirtualC3000Controller, VirtualMultiPumpController
 class APIMultiPumpController(FlowchemDevice):
 
     device_info = DeviceInfo(
-        authors=[samuel_saraiva],
-        maintainers=[samuel_saraiva],
         manufacturer="virtual-device",
         model="FakeDevice",
         serial_number=42,
@@ -151,8 +162,15 @@ class MultiPumpComponent(FlowchemComponent):
     async def terminate_all_pumps(self):
         return self.hw_device.controller.terminate_all_pumps()
 ```
+[!NOTE]
+For more information on why you need to import FlowchemComponent and FlowchemDevice, refer to the guide on
+[how to add new devices (straight approach)](add_to_flowchem.md).
 
-Step 3: Add Configuration
+[!NOTE]
+For detailed documentation on device behavior and communication, visit the `pycont` 
+[documentation](https://github.com/croningp/pycont/blob/master/README.md).
+
+### Step 4: Add Configuration
 
 Finally, create a configuration file that specifies the device initialization.
 
@@ -161,10 +179,10 @@ Example configuration (config.toml):
 ```toml
 [device.multi-c3000controller]
 type = "APIMultiPumpController"
-configuration = ".../pycont/tests/pump_multihub_config.json" # Just an example
+configuration = ".../pycont/tests/pump_multihub_config.json" # Path to the configuration file. See the pycont repo for more details.
 ```
 
-Result
+## Result
 
 By following these steps, the capabilities of your devices will be automatically exposed through the Flowchem server,
 similar to the native devices already present in Flowchem.
