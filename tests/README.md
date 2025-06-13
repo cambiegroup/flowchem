@@ -15,7 +15,7 @@ The device tests available with their respective markers are described below:
 | HApump     | Tests requiring a local HA Elite11 connected.          |
 | Spinsolve  | Tests requiring a connection to Spinsolve.             |
 | FlowIR     | Tests requiring a connection to a FlowIR.              |
-| KPump      | Tests for Azura compact.                               |
+| AzuraPump  | Tests for Azura compact.                               |
 | FakeDevice | Tests for FakeDevice, just an example how tests works. |
 | CVC3000    | Tests requiring a connection to CVC3000                |
 | Manson     | Tests requiring a Manson Power Control                 |
