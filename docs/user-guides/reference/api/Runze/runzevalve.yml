@@ -8,12 +8,12 @@ info:
     url: https://opensource.org/licenses/MIT
   version: 1.0.0a3
 paths:
-  /my-knauervalve/:
+  /my-runze-valve/:
     get:
       tags:
-      - my-knauervalve
+      - my-runze-valve
       summary: Get Device Info
-      operationId: get_device_info_fake_device__get
+      operationId: get_device_info_my_runze_valve__get
       responses:
         '200':
           description: Successful Response
@@ -21,16 +21,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeviceInfo'
-  /my-knauervalve/injection-valve/:
+  /my-runze-valve/distribution-valve/:
     get:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runze-valve
+      - my-runze-valve
       summary: Get Component Info
       description: "Retrieve the component's metadata.\n\nThis endpoint provides information\
         \ about the component, such as its name and associated hardware device.\n\n\
         Returns:\n--------\nComponentInfo\n    Metadata about the component."
-      operationId: get_component_info_fake_device_injection_valve__get
+      operationId: get_component_info_my_runze_valve_distribution_valve__get
       responses:
         '200':
           description: Successful Response
@@ -38,15 +38,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ComponentInfo'
-  /my-knauervalve/injection-valve/position:
+  /my-runze-valve/distribution-valve/position:
     get:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runze-valve
+      - my-runze-valve
       summary: Get Position
-      description: "Get the current valve position.\n\nReturns:\n    tuple: The current\
-        \ position of the valve."
-      operationId: get_position_fake_device_injection_valve_position_get
+      description: Get current valve position.
+      operationId: get_position_my_runze_valve_distribution_valve_position_get
       responses:
         '200':
           description: Successful Response
@@ -54,60 +53,70 @@ paths:
             application/json:
               schema:
                 type: array
-                prefixItems:
-                - type: array
-                  items: {}
-                - type: array
-                  items: {}
-                minItems: 2
-                maxItems: 2
-                title: Response Get Position Fake Device Injection Valve Position
+                items:
+                  type: array
+                  items:
+                    anyOf:
+                    - type: integer
+                    - type: 'null'
+                title: Response Get Position My Runze Valve Distribution Valve Position
                   Get
     put:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runze-valve
+      - my-runze-valve
       summary: Set Position
-      description: "Move the valve to the position that connects the specified ports.\n\
-        \nArgs:\n    connect: Ports to connect.\n    disconnect: Ports to disconnect.\n\
-        \    ambiguous_switching: If True, allows ambiguous switching."
-      operationId: set_position_fake_device_injection_valve_position_put
+      description: Move valve to position, which connects named ports
+      operationId: set_position_my_runze_valve_distribution_valve_position_put
       parameters:
+      - name: connect
+        in: query
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: Connect
+      - name: disconnect
+        in: query
+        required: false
+        schema:
+          type: string
+          default: ''
+          title: Disconnect
       - name: ambiguous_switching
         in: query
         required: false
         schema:
-          type: boolean
+          anyOf:
+          - type: string
+          - type: boolean
           default: false
           title: Ambiguous Switching
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              allOf:
-              - $ref: '#/components/schemas/Body_set_position_fake_device_injection_valve_position_put'
-              title: Body
       responses:
         '200':
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                type: boolean
+                title: Response Set Position My Runze Valve Distribution Valve Position
+                  Put
         '422':
           description: Validation Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
-  /my-knauervalve/injection-valve/connections:
+  /my-runze-valve/distribution-valve/connections:
     get:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runze-valve
+      - my-runze-valve
       summary: Connections
-      description: "Get the list of all available positions for this valve.\n\nReturns:\n\
-        \    ValveInfo: The ValveInfo object containing ports and positions."
-      operationId: connections_fake_device_injection_valve_connections_get
+      description: 'Get the list of all available positions for this valve.
+
+        This mainly has informative purpose'
+      operationId: connections_my_runze_valve_distribution_valve_connections_get
       responses:
         '200':
           description: Successful Response
@@ -115,15 +124,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValveInfo'
-  /my-knauervalve/injection-valve/monitor_position:
+  /my-runze-valve/distribution-valve/monitor_position:
     get:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runze-valve
+      - my-runze-valve
       summary: Get Monitor Position
-      description: "Get the current valve position.\n\nReturns:\n    str: The current\
-        \ position (LOAD or INJECT)."
-      operationId: get_monitor_position_fake_device_injection_valve_monitor_position_get
+      description: Get current valve position.
+      operationId: get_monitor_position_my_runze_valve_distribution_valve_monitor_position_get
       responses:
         '200':
           description: Successful Response
@@ -131,17 +139,15 @@ paths:
             application/json:
               schema:
                 type: string
-                title: Response Get Monitor Position Fake Device Injection Valve Monitor
-                  Position Get
+                title: Response Get Monitor Position My Runze Valve Distribution Valve
+                  Monitor Position Get
     put:
       tags:
-      - my-knauervalve
-      - my-knauervalve
+      - my-runze-valve
+      - my-runze-valve
       summary: Set Monitor Position
-      description: "Set the valve to a specified position.\n\nArgs:\n    position\
-        \ (str): The desired position (LOAD or INJECT).\n\nReturns:\n    str: The\
-        \ response from the hardware device."
-      operationId: set_monitor_position_fake_device_injection_valve_monitor_position_put
+      description: Move valve to position.
+      operationId: set_monitor_position_my_runze_valve_distribution_valve_monitor_position_put
       parameters:
       - name: position
         in: query
@@ -154,7 +160,10 @@ paths:
           description: Successful Response
           content:
             application/json:
-              schema: {}
+              schema:
+                type: boolean
+                title: Response Set Monitor Position My Runze Valve Distribution Valve
+                  Monitor Position Put
         '422':
           description: Validation Error
           content:
@@ -163,24 +172,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
 components:
   schemas:
-    Body_set_position_fake_device_injection_valve_position_put:
-      properties:
-        connect:
-          anyOf:
-          - type: string
-          - items: {}
-            type: array
-          title: Connect
-          default: ''
-        disconnect:
-          anyOf:
-          - type: string
-          - items: {}
-            type: array
-          title: Disconnect
-          default: ''
-      type: object
-      title: Body_set_position_fake_device_injection_valve_position_put
     ComponentInfo:
       properties:
         name:
@@ -195,6 +186,12 @@ components:
           type: string
           title: Type
           default: ''
+        corresponding_class:
+          items:
+            type: string
+          type: array
+          title: Corresponding Class
+          default: []
         owl_subclass_of:
           items:
             type: string
@@ -245,6 +242,7 @@ components:
           title: Authors
           default: []
         additional_info:
+          additionalProperties: true
           type: object
           title: Additional Info
           default: {}
@@ -305,7 +303,6 @@ components:
       - ports
       - positions
       title: ValveInfo
-      description: "Model representing valve information.\n\nAttributes:\n    ports:\
-        \ A list of tuples representing the available ports on the stator.\n    positions:\
-        \ A dictionary mapping position numbers to the stator ports that are connected\
-        \ at this position."
+      description: "ports: an attribute representing the available ports on the stator\n\
+        positions: an attribute mapping implicit, tacit numbers as keys to the stator\
+        \ ports that are connected at this\n            position"
