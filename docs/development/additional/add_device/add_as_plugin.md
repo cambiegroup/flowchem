@@ -276,16 +276,17 @@ class MultiPumpComponent(FlowchemComponent):
 from flowchem.components.pumps.pump import Pump
 ```
 [!NOTE]
-You can also inherit from an existing component in `flowchem.components` instead of the base `FlowchemComponent`.
-For example, instead of inheriting directly from `FlowchemComponent`, you may inherit from a specialized class such as 
-Pump located in `flowchem.components.pumps.pump`.
-This approach allows you to reuse predefined API endpoints and behavior, saving development time. However, 
-it’s important to ensure that your device's methods match the expected interface (ontology) of the inherited component. 
-You must adapt your implementation accordingly.
-If the mapping between your device and the inherited component is not straightforward, **we do not recommend** this
-approach, as it can lead to confusion and broken API behavior.
+Whenever possible, consider inheriting from an existing component in `flowchem.components` rather than directly from the 
+base `FlowchemComponent`. For instance, you might inherit from a specialized class like Pump in 
+`flowchem.components.pumps.pump`. This approach lets you take full advantage of FlowChem's hierarchical structure—reusing 
+built-in API endpoints and behavior, improving interoperability, and reducing development effort.
+We **strongly encourage** this when your device closely aligns with an existing component. However, **use caution**: your 
+device must conform to the interface (ontology) expected by the component you inherit from. If adapting your 
+implementation to fit the inherited interface requires unnatural workarounds or compromises clarity, this approach may 
+lead to unexpected API issues or maintenance headaches. In such cases, **it’s better to inherit from** 
+`FlowchemComponent` **directly** and define a clean, device-specific implementation.
 
-For example:
+For example, in case of inherent of a already implemented component:
 ```python
 ...
 
@@ -295,16 +296,29 @@ from flowchem.components.pumps.pump import Pump
 
 class PumpComponent(Pump):
     
+    hw_device: APIMultiPumpController
+
+    def __init__(self, name: str, hw_device: APIMultiPumpController):
+        ...
+        super().__init__(name, hw_device)
+        self.pump: VirtualC3000Controller = self.hw_device.controller.pumps[name]
+    
     # This method corresponds to an expected API endpoint
     async def infuse(self, rate: str = "", volume: str = "") -> bool: 
         """Start infusion."""
         # Translate this high-level call from API-end point into a command for VirtualMultiPumpController
         ...
+    
+    # This method corresponds to an expected API endpoint
+    async def is_pumping(self) -> bool:
+        # translate to a actual function already implemented
+        return self.pump.is_busy()
 
 ```
+See all the [already implemented End-Point](../../../../src/flowchem/components/pumps/pump.py).
 
 [!NOTE]
-For more information on why you need to import FlowchemComponent and FlowchemDevice, refer to the guide on
+For more information on why you need to import `FlowchemComponent` and `FlowchemDevice`, refer to the guide on
 [how to add new devices (straight approach)](add_to_flowchem.md).
 
 [!NOTE]
