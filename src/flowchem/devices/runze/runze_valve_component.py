@@ -26,14 +26,12 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Change the valve connections based on its raw position.
+        Change the valve connections based on the internal valve logic position numbering.
 
-        The `raw_position` refers to the device-specific naming for the current valve position,
-        which is assigned, in this class, as a numeric value from 1 to 6. The raw position
-        corresponds directly to the monitored position.
+        The `raw_position` refers to the internal valve logic numbering of positions (not to be confused with actual port numbers).
 
         Args:
-            raw_position (int or str): The raw position of the valve.
+            raw_position (int or str): The raw position to switch to, according to valve logic.
             reverse (bool): If True, reverse the mapping.
 
         Notes:
@@ -41,7 +39,7 @@ class Runze6PortDistributionValve(SixPortDistributionValve):
             the optimal path. (Ref. Manual)
 
         Returns:
-            int: The mapped position.
+            int: The mapped position, specific to the valve and corresponding to the manufacturer implementation and commands.
         """
         if reverse:
             return int(raw_position) - 1
@@ -69,14 +67,12 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Change the valve connections based on its raw position.
+        Change the valve connections based on the internal valve logic position numbering.
 
-        The `raw_position` refers to the device-specific naming for the current valve position,
-        which is assigned, in this class, as a numeric value from 1 to 8. The raw position
-        corresponds directly to the monitored position.
+        The `raw_position` refers to the internal valve logic numbering of positions (not to be confused with actual port numbers).
 
         Args:
-            raw_position (int or str): The raw position of the valve.
+            raw_position (int or str): The raw position to switch to, according to valve logic.
             reverse (bool): If True, reverse the mapping.
 
         Notes:
@@ -84,7 +80,7 @@ class Runze8PortDistributionValve(EightPortDistributionValve):
             the optimal path. (Ref. Manual)
 
         Returns:
-            int: The mapped position.
+            int: The mapped position, specific to the valve and corresponding to the manufacturer implementation and commands.
         """
         if reverse:
             return int(raw_position) - 1
@@ -112,14 +108,12 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Change the valve connections based on its raw position.
+        Change the valve connections based on the internal valve logic position numbering.
 
-        The `raw_position` refers to the device-specific naming for the current valve position,
-        which is assigned, in this class, as a numeric value from 1 to 10. The raw position
-        corresponds directly to the monitored position.
+        The `raw_position` refers to the internal valve logic numbering of positions (not to be confused with actual port numbers).
 
         Args:
-            raw_position (int or str): The raw position of the valve.
+            raw_position (int or str): The raw position to switch to, according to valve logic.
             reverse (bool): If True, reverse the mapping.
 
         Notes:
@@ -127,7 +121,7 @@ class Runze10PortDistributionValve(TenPortDistributionValve):
             the optimal path. (Ref. Manual)
 
         Returns:
-            int: The mapped position.
+            int: The mapped position, specific to the valve and corresponding to the manufacturer implementation and commands.
         """
         if reverse:
             return int(raw_position) - 1
@@ -155,14 +149,12 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Change the valve connections based on its raw position.
+        Change the valve connections based on the internal valve logic position numbering.
 
-        The `raw_position` refers to the device-specific naming for the current valve position,
-        which is assigned, in this class, as a numeric value from 1 to 12. The raw position
-        corresponds directly to the monitored position.
+        The `raw_position` refers to the internal valve logic numbering of positions (not to be confused with actual port numbers).
 
         Args:
-            raw_position (int or str): The raw position of the valve.
+            raw_position (int or str): The raw position to switch to, according to valve logic.
             reverse (bool): If True, reverse the mapping.
 
         Notes:
@@ -170,7 +162,7 @@ class Runze12PortDistributionValve(TwelvePortDistributionValve):
             the optimal path. (Ref. Manual)
 
         Returns:
-            int: The mapped position.
+            int: The mapped position, specific to the valve and corresponding to the manufacturer implementation and commands.
         """
         if reverse:
             return int(raw_position) - 1
@@ -198,14 +190,12 @@ class Runze16PortDistributionValve(SixteenPortDistributionValve):
 
     def _change_connections(self, raw_position: str | int, reverse: bool = False):
         """
-        Change the valve connections based on its raw position.
+        Change the valve connections based on the internal valve logic position numbering.
 
-        The `raw_position` refers to the device-specific naming for the current valve position,
-        which is assigned, in this class, as a numeric value from 1 to 16. The raw position
-        corresponds directly to the monitored position.
+        The `raw_position` refers to the internal valve logic numbering of positions (not to be confused with actual port numbers).
 
         Args:
-            raw_position (int or str): The raw position of the valve.
+            raw_position (int or str): The raw position to switch to, according to valve logic.
             reverse (bool): If True, reverse the mapping.
 
         Notes:
@@ -213,7 +203,7 @@ class Runze16PortDistributionValve(SixteenPortDistributionValve):
             the optimal path. (Ref. Manual)
 
         Returns:
-            int: The mapped position.
+            int: The mapped position, specific to the valve and corresponding to the manufacturer implementation and commands.
         """
         if reverse:
             return int(raw_position) - 1
