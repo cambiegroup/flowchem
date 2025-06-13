@@ -16,7 +16,6 @@ def test_device_finder():
         "MFC",
         "ML600",
         "MansonPowerSupply",
-        "PeltierCooler",
         "PhidgetBubbleSensor",
         "PhidgetPowerSource5V",
         "PhidgetPressureSensor",
@@ -25,7 +24,6 @@ def test_device_finder():
         "R4Heater",
         "Spinsolve",
         "ViciValve",
-        "RunzeValve"
     }
 
     dev_found = autodiscover_device_classes()
