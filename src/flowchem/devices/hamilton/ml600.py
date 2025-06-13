@@ -266,6 +266,9 @@ class ML600(FlowchemDevice):
     DEFAULT_CONFIG = {
         "default_infuse_rate": "1 ml/min",
         "default_withdraw_rate": "1 ml/min",
+        "valve_left_class": "ML600LeftValve",     # for device with two syringe pump and two valve
+        "valve_rigth_class": "ML600RightValve",   # for device with two syringe pump and two valve
+        "valve_class": "ML600LeftValve"           # for device with one syringe pump and valve
     }
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
@@ -367,15 +370,22 @@ class ML600(FlowchemDevice):
             config_for_pumpio = {
                 k: v
                 for k, v in config.items()
-                if k not in ("syringe_volume", "address", "name")
+                if k not in ("syringe_volume", "address", "name") and k not in cls.DEFAULT_CONFIG
             }
             pumpio = HamiltonPumpIO.from_config(config_for_pumpio)
+
+        configuration = {
+            k: config[k]
+            for k in cls.DEFAULT_CONFIG.keys()
+            if k in config
+        }
 
         return cls(
             pumpio,
             syringe_volume=config.get("syringe_volume", ""),
             address=config.get("address", 1),
             name=config.get("name", ""),
+            **configuration
         )
 
     async def get_return_steps(self) -> int:
@@ -410,10 +420,21 @@ class ML600(FlowchemDevice):
 
         # Add device components
         if self.dual_syringe:
-            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C"),
-                                    ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
+            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C")])
+            if self.config.get("valve_position_left", "") == "ML600RightValve":
+                self.components.extend([ML600RightValve("left_valve", self)])
+            else:
+                self.components.extend([ML600LeftValve("left_valve", self)])
+
+            if self.config.get("valve_position_rigth", "") == "ML600LeftValve":
+                self.components.extend([ML600LeftValve("right_valve", self)])
+            else:
+                self.components.extend([ML600RightValve("right_valve", self)])
         else:
-            self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
+            if self.config.get("valve_class", "") == "ML600RightValve":
+                self.components.extend([ML600Pump("pump", self), ML600RightValve("valve", self)])
+            else:
+                self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
