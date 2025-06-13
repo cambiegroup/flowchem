@@ -117,6 +117,32 @@ class Valve(FlowchemComponent):
                           case, add None
              for missing port
 
+            Exemple: 4 port 5 Position Valve
+            stator_ports=[(None, None, 1, None, 2, None, 3, None,), (0,)],
+            rotor_ports=[(None, 5, None, None, 4, None, 4, None), (5,)],
+
+                                 1
+                             * * * * *
+                           *     x     *
+                         *               *
+                     8  *  x            -x *  2
+                        *            -     *
+                     7  * o-      o-     o *  3
+                        *   -              *
+                        *  x -           x *  4
+                     6   *     -          *
+                           *    -o      *
+                             * * * * *
+                                 5
+
+        X - inaccessible port (addressed as None in stator_ports)
+        O - accessible port
+
+        Note that the only positions available as accessible ports are 3, 5, 7, and 0 (corresponding to 1, 2, 3, and 0).
+
+        The connection is made between the port at position 5 and the ports at positions 7 and 0 (central port) and
+        at position 2.
+
         """
         # a valve consists of a rotor and a stator. Solenoid valves Are special cases and can be decomposed into
         # Open/closed valves, need not be treated here but could be simulated by a [1,2,None] and rotor [3,3,None]
@@ -143,7 +169,7 @@ class Valve(FlowchemComponent):
         if len(rotor_ports) == 1:
             # in case there is no 0 port, for data uniformity, internally add it. strictly, the stator and rotor
             # should reflect physical properties, so if stator has a hole in middle it should have 0, but only rotor
-            # None. Sinc this does not impact functionality, thoroughness will be left to the user
+            # None. Since this does not impact functionality, thoroughness will be left to the user
             rotor_ports.append([None])
             stator_ports.append([None])
         # it is rather simple: we just move the rotor by one and thereby create a dictionary
@@ -258,9 +284,8 @@ class Valve(FlowchemComponent):
     # 1) The port zero can exist, but does not necessarily.
     #    For nomenclature reasons, port zero is the one the turning axis and only this one. Commonly, this port,
     #    if existing, is always open
-    # 2) At the physical valve, the upmost is port 1.
-    # a) If there is no port straight on top, then one goes in clockwise direction, until a port comes, which is then
-    # one
+    # 2) At the physical valve, the upmost is port 1
+    #   a) If there is no port straight on top, then one goes in clockwise direction, until a port comes, which is then one
     # 3 )Beware: For logical reasons, we need to introduce ports of "number" None. These are needed because we need to
     #   define dead-ends. These dead-ends are IMMUTABLE dead-ends, so the stator or rotor do not have an opening there
     #   Any time there is a different amount of positions on rotor and stator, None ports are introduced
