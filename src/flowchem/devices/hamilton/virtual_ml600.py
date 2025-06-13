@@ -10,10 +10,18 @@ import pint
 class VirtualML600(FlowchemDevice):
     """Virtual ML600 class to simulate the behavior of the real Hamilton ML600 syringe pump."""
 
+    DEFAULT_CONFIG = {
+        "default_infuse_rate": "1 ml/min",
+        "default_withdraw_rate": "1 ml/min",
+        "valve_left_class": "ML600LeftValve",  # for device with two syringe pump and two valve
+        "valve_rigth_class": "ML600RightValve",  # for device with two syringe pump and two valve
+        "valve_class": "ML600LeftValve"  # for device with one syringe pump and valve
+    }
+
     def __init__(
         self,
         name: str,
-        **kwargs
+        **config
     ) -> None:
         # Call the parent class constructor with the virtual HamiltonPumpIO
         super().__init__(name)
@@ -28,22 +36,53 @@ class VirtualML600(FlowchemDevice):
             "default_infuse_rate": "1 ml/min",
             "default_withdraw_rate": "1 ml/min",
         }
-        self.syringe_volume = ureg.Quantity(kwargs.get("syringe_volume", "10 ml"))
+        self.syringe_volume = ureg.Quantity(config.get("syringe_volume", "10 ml"))
         self._current_volume = self.syringe_volume.magnitude
-        self.dual_syringe = kwargs.get("dual_syringe", "") == "true"
+        self.config = VirtualML600.DEFAULT_CONFIG | config
+        self.dual_syringe = config.get("dual_syringe", "") == "true"
 
     @classmethod
     def from_config(cls, **config):
-        return cls(**config)
+        config_for_pumpio = {
+            k: v
+            for k, v in config.items()
+            if k not in ("syringe_volume", "address", "name") and k not in cls.DEFAULT_CONFIG
+        }
+        logger.info(f"Virtual PumpIO ML600 kwargs: {config_for_pumpio}")
+        configuration = {
+            k: config[k]
+            for k in cls.DEFAULT_CONFIG.keys()
+            if k in config
+        }
+
+        return cls(
+            syringe_volume=config.get("syringe_volume", ""),
+            address=config.get("address", 1),
+            name=config.get("name", ""),
+            dual_syringe = config.get("dual_syringe", ""),
+            **configuration
+        )
 
     async def initialize(self, hw_init=False, init_speed: str = "200 sec / stroke"):
         """Simulate initializing the virtual ML600 pump."""
-        logger.info(f"Virtual ML600 {self.name} with syringe {self.syringe_volume} initialized!")
+        logger.info(f"Virtual ML600 {self.name} with syringe {self.syringe_volume} initialized with conf: {self.config}!")
+        # Add device components
         if self.dual_syringe:
-            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C"),
-                                    ML600LeftValve("left_valve", self), ML600RightValve("right_valve", self)])
+            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C")])
+            if self.config.get("valve_left_class", "") == "ML600RightValve":
+                self.components.extend([ML600RightValve("left_valve", self)])
+            else:
+                self.components.extend([ML600LeftValve("left_valve", self)])
+
+            if self.config.get("valve_rigth_class", "") == "ML600LeftValve":
+                self.components.extend([ML600LeftValve("right_valve", self)])
+            else:
+                self.components.extend([ML600RightValve("right_valve", self)])
         else:
-            self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)]) # type: ignore
+            if self.config.get("valve_class", "") == "ML600RightValve":
+                self.components.extend([ML600Pump("pump", self), ML600RightValve("valve", self)])
+            else:
+                self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
 
     async def get_current_volume(self, pump: str) -> pint.Quantity:
         """Return current syringe position in ml."""

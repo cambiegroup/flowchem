@@ -25,6 +25,9 @@ type = "VirtualML600"
 port = "COMX"
 address= 1
 syringe_volume = "5 ml"
+dual_syringe = "true"
+valve_left_class = "ML600LeftValve"  # for device with two syringe pump and two valve
+valve_rigth_class = "ML600LeftValve"  # for device with two syringe pump and two valve
 
 [device.virtual-elite11]
 type = "VirtualElite11"
