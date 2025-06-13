@@ -28,13 +28,13 @@ def api_dev(xprocess):
 
 @pytest.mark.FakeDevice
 def test_fakedevice(api_dev):
-    component = api_dev['test']['FakeComponent']
+    component = api_dev['test']['FakeSpecificComponent']
     assert component.put("set_specif_command", params={"parameter_1": "first", "parameter_2": "second"})
 
 
 @pytest.mark.FakeDevice
 def test_fake_receive_data(api_dev):
-    component = api_dev['test']['FakeComponent']
+    component = api_dev['test']['FakeSpecificComponent']
     result = component.get("fake_receive_data").text
     assert float(result) == 0.5
 
