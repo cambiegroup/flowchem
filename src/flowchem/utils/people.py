@@ -1,6 +1,7 @@
 from pydantic import NameEmail
 
-__all__ = ["dario", "jakob", "wei_hsin", "samuel_saraiva"]
+
+__all__ = ["dario", "jakob", "wei_hsin", "samuel_saraiva", "miguel"]
 
 
 dario = NameEmail(name="Dario Cambiè", email="2422614+dcambie@users.noreply.github.com")

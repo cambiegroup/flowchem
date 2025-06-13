@@ -16,3 +16,4 @@ from .vapourtec import *
 from .vicivalco import *
 from .custom import *
 from .runze import *
+from .waters import *
