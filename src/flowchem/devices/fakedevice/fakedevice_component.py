@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from .fakedevice import FakeDeviceExample
 
 
-class FakeComponent_FakeDevice(FakeComponent):
+class FakeSpecificComponent(FakeComponent):
 
     code: str
     hw_device: FakeDeviceExample  # for typing's sake
@@ -40,18 +40,20 @@ class FakeComponent_FakeDevice(FakeComponent):
         await self.hw_device.send_command('Request a data from the FakeDevice')
         return 0.5  # Generic data to show how it works
 
-    async def set_specif_command(self) -> bool:
+    async def set_specif_command(self, command: str = "command") -> bool:
         """
         This is an example of a specific command that only this device has!
+
+        command: str
 
         Returns:
             None
         """
-        await self.hw_device.send_command('Set a specific command')
+        await self.hw_device.send_command(f'Set a specific command: {command}')
         return True  # If everything works appropriately the function will return a True
 
 
-class FakeComponent2_FakeDevice(FakeComponent):
+class FakeSpecificComponent2(FakeComponent):
 
     hw_device: FakeDeviceExample  # for typing's sake
 
