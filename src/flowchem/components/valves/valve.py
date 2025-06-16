@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 import json
-from typing import Tuple, Any, List, Optional
+from typing import Tuple, List, Optional
 
 from flowchem.components.flowchem_component import FlowchemComponent
 from flowchem.devices.flowchem_device import FlowchemDevice
@@ -92,15 +92,15 @@ class Valve(FlowchemComponent):
     - a `set_position()` method
     - a `get_position()` method
 
-    This is explicit and informative in itself and requires no further intermittant helper mappings
+    This is explicit and informative in itself and requires no further intermittent helper mappings
     """
 
     def __init__(
             self,
             name: str,
             hw_device: "FlowchemDevice",
-            stator_ports: [(), ()], # type: ignore
-            rotor_ports: [(), ()], # type: ignore
+            stator_ports: [(), ()],  # type: ignore
+            rotor_ports: [(), ()],  # type: ignore
     ) -> None:
         """Create a valve object.
 
@@ -113,9 +113,34 @@ class Valve(FlowchemComponent):
             rotor and stator are both represented like:
             (   (1,2,3,4,5,6),          (0))
                 radial ports       middle ports
-                          should be equally distributed, with equally spaced angle in between. If this is not the
-                          case, add None
+            Ports should be equally distributed, with equally spaced angle in between. If this is not the case, add None
              for missing port
+
+            Exemple: 4 port 5 Position Valve
+            stator_ports=[(None, None, 1, None, 2, None, 3, None,), (0,)],
+            rotor_ports=[(None, 5, None, None, 4, None, 4, None), (5,)],
+
+                                 1
+                             * * * * *
+                           *     x     *
+                         *               *
+                     8  *  x            -x *  2
+                        *            -     *
+                     7  * o-      o-     o *  3
+                        *   -              *
+                        *  x -           x *  4
+                     6   *     -          *
+                           *    -o      *
+                             * * * * *
+                                 5
+
+        X - inaccessible port (addressed as None in stator_ports)
+        O - accessible port
+
+        Note that the only positions available as accessible ports are 3, 5, 7, and 0 (corresponding to 1, 2, 3, and 0).
+
+        The connection is made between the port at position 5 and the ports at positions 7 and 0 (central port) and
+        at position 2.
 
         """
         # a valve consists of a rotor and a stator. Solenoid valves Are special cases and can be decomposed into
@@ -143,7 +168,7 @@ class Valve(FlowchemComponent):
         if len(rotor_ports) == 1:
             # in case there is no 0 port, for data uniformity, internally add it. strictly, the stator and rotor
             # should reflect physical properties, so if stator has a hole in middle it should have 0, but only rotor
-            # None. Sinc this does not impact functionality, thoroughness will be left to the user
+            # None. Since this does not impact functionality, thoroughness will be left to the user
             rotor_ports.append([None])
             stator_ports.append([None])
         # it is rather simple: we just move the rotor by one and thereby create a dictionary
@@ -178,9 +203,19 @@ class Valve(FlowchemComponent):
         return connections
 
     def _change_connections(self, raw_position: int | str, reverse: bool = False):
-        # abstract valve mapping needs to be translated to device-specific position naming. This can be e.g.
+        # abstract valve mapping needs to be translated to device-specific position naming. This can be eg
         # addition/subtraction of one, multiplication with some angle or mapping to letters. Needs to be implemented on
         # device level since this is device communication protocol specific
+        """
+        Change connections based on the valve's raw position.
+
+        Args:
+            raw_position (int | str): The raw position of the valve.
+            reverse (bool): Whether to reverse the mapping.
+
+        Returns:
+            int: The mapped position.
+        """
         raise NotImplementedError
 
     def _connect_positions(self,
@@ -218,16 +253,17 @@ class Valve(FlowchemComponent):
     async def get_position(self) -> List[List[Optional[int]]]:
         """Get current valve position."""
         if not hasattr(self, "identifier"):
-            pos = await self.hw_device.get_raw_position() # type: ignore
+            pos = await self.hw_device.get_raw_position()  # type: ignore
         else:
             pos = await self.hw_device.get_raw_position(self.identifier) # type: ignore
-        pos = int(pos) if pos.isnumeric() else pos
+        if isinstance(pos, str) and pos.isnumeric():
+            pos = int(pos)
         return self._positions[int(self._change_connections(pos, reverse=True))]
 
     async def set_position(self,
                            connect: str = "",
                            disconnect: str = "",
-                           ambiguous_switching: str | bool = False):
+                           ambiguous_switching: str | bool = False) -> bool:
         """Move valve to position, which connects named ports"""
         connect_tuple = return_tuple_from_input(connect)
         disconnect_tuple = return_tuple_from_input(disconnect)
@@ -240,6 +276,8 @@ class Valve(FlowchemComponent):
             await self.hw_device.set_raw_position(target_pos) # type: ignore
         else:
             await self.hw_device.set_raw_position(target_pos, target_component=self.identifier) # type: ignore
+        return True
+
 
     def connections(self) -> ValveInfo:
         """Get the list of all available positions for this valve.
@@ -258,9 +296,8 @@ class Valve(FlowchemComponent):
     # 1) The port zero can exist, but does not necessarily.
     #    For nomenclature reasons, port zero is the one the turning axis and only this one. Commonly, this port,
     #    if existing, is always open
-    # 2) At the physical valve, the upmost is port 1.
-    # a) If there is no port straight on top, then one goes in clockwise direction, until a port comes, which is then
-    # one
+    # 2) At the physical valve, the upmost is port 1
+    #   a) If there is no port straight on top, then one goes in clockwise direction, until a port comes, which is then one
     # 3 )Beware: For logical reasons, we need to introduce ports of "number" None. These are needed because we need to
     #   define dead-ends. These dead-ends are IMMUTABLE dead-ends, so the stator or rotor do not have an opening there
     #   Any time there is a different amount of positions on rotor and stator, None ports are introduced

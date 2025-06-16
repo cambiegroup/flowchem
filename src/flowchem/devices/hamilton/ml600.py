@@ -5,13 +5,13 @@ import asyncio
 import string
 import warnings
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 import aioserial
 from loguru import logger
 from enum import Enum
 
 from flowchem import ureg
+from pint import Quantity
 from flowchem.components.device_info import DeviceInfo
 from flowchem.devices.flowchem_device import FlowchemDevice
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
@@ -415,7 +415,7 @@ class ML600(FlowchemDevice):
         command.target_pump_num = self.address
         return await self.pump_io.write_and_read_reply_async(command)
 
-    def _validate_speed(self, speed: ureg.Quantity | None) -> str:
+    def _validate_speed(self, speed: Quantity | None) -> str:
         """Validate the speed.
 
         Given a speed (seconds/stroke) returns a valid value for it, and a warning if out of bounds.
@@ -451,7 +451,7 @@ class ML600(FlowchemDevice):
         """Initialize valve only."""
         return await self.send_command_and_read_reply(Protocol1Command(command=ML600Commands.INIT_VALVE_ONLY))
 
-    async def initialize_syringe(self, speed: ureg.Quantity | None = None):
+    async def initialize_syringe(self, speed: Quantity | None = None):
         """Initialize syringe only. speed: 2-3692 in seconds/stroke"""
         init_syringe = Protocol1Command(
             command=ML600Commands.INIT_SYRINGE_ONLY,
@@ -460,7 +460,7 @@ class ML600(FlowchemDevice):
         )
         return await self.send_command_and_read_reply(init_syringe)
 
-    def _flowrate_to_seconds_per_stroke(self, flowrate: ureg.Quantity):
+    def _flowrate_to_seconds_per_stroke(self, flowrate: Quantity):
         """Convert flow rates to steps per seconds.
 
         To determine the volume dispensed per step the total syringe volume is divided by
@@ -477,14 +477,14 @@ class ML600(FlowchemDevice):
         flowrate = 1 / (second_per_stroke * self._steps_per_ml)
         return flowrate.to("ml/min")
 
-    def _volume_to_step_position(self, volume: ureg.Quantity) -> int:
+    def _volume_to_step_position(self, volume: Quantity) -> int:
         """Convert a volume to a step position."""
         # todo: different syringes
         # noinspection PyArgumentEqualDefault
         steps = volume * self._steps_per_ml
         return round(steps.m_as("steps"))
 
-    async def get_current_volume(self, pump: str = "") -> ureg.Quantity:
+    async def get_current_volume(self, pump: str = "") -> Quantity:
         """Return current syringe position in ml."""
         syringe_pos = await self.send_command_and_read_reply(
             Protocol1Command(command=ML600Commands.CURRENT_SYRINGE_POSITION,target_component=pump),)
@@ -492,7 +492,7 @@ class ML600(FlowchemDevice):
         current_steps = int(syringe_pos) * ureg.step
         return current_steps / self._steps_per_ml
 
-    async def set_to_volume(self, target_volume: ureg.Quantity, rate: ureg.Quantity, pump: str = ""):
+    async def set_to_volume(self, target_volume: Quantity, rate: Quantity, pump: str = ""):
         """Absolute move to target volume provided by set step position and speed."""
         # in pump component, it already checked the desired volume setting is possible to execute or not
         speed = self._flowrate_to_seconds_per_stroke(rate)  # in seconds/stroke
@@ -526,13 +526,13 @@ class ML600(FlowchemDevice):
             Protocol1Command(command=ML600Commands.EMPTY, target_component=pump, execution_command="V"),)
         return True  # Todo: need?
 
-    async def get_pump_status(self, pump: str = "") -> bool | dict[str, bool]:
+    async def get_pump_status(self, pump: str = "") -> bool:
         """Ture means pump is busy. False means pump is idle."""
         checking_mapping = {"B": 1, "C": 3}
         pump = "B" if not pump else pump
         status = await self.system_status(checking_mapping[pump])
         logger.info(f"pump {pump} is busy: {status}")
-        return status
+        return status # type: ignore
 
     async def get_valve_status(self, valve: str = "") -> bool | dict[str, bool]:
         """Ture means valve is busy. False means valve is idle."""
@@ -686,7 +686,7 @@ class ML600(FlowchemDevice):
             target_component: str = ""
     ):
         """Set valve position.
-
+        Strongly encouraged to use switching by angle
         wait_for_movement_end is defaulted to True as it is a common mistake not to wait...
         """
         if not counter_clockwise:
