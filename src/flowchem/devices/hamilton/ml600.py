@@ -252,6 +252,13 @@ class ML600Commands(Enum):
       # xxii.jj.k (ii major, jj minor, k revision)
     OPTIONAL_PARAMETER = "S"
 
+
+class ValveType(Enum):
+    """Enum for supported valve types in ML600."""
+    LEFT = "ML600LeftValve"
+    RIGHT = "ML600RightValve"
+
+
 class ML600(FlowchemDevice):
     """ML600 implementation according to manufacturer docs. Tested on a 61501-01 (i.e. single syringe system).
 
@@ -347,7 +354,7 @@ class ML600(FlowchemDevice):
         self.return_steps = 24  # Steps added to each absolute move command (default)
 
         # This enables to configure on per-pump basis uncommon parameters
-        self.config = ML600.DEFAULT_CONFIG | config
+        self.config = ML600.DEFAULT_CONFIG | config # This will merger the config into ML600.DEFAULT_CONFIG (in order to update)
         self.dual_syringe = False
 
     @classmethod
@@ -374,6 +381,7 @@ class ML600(FlowchemDevice):
             }
             pumpio = HamiltonPumpIO.from_config(config_for_pumpio)
 
+        # Only get the kwargs that match with the DEFALT one, in order to update it!
         configuration = {
             k: config[k]
             for k in cls.DEFAULT_CONFIG.keys()
@@ -420,21 +428,40 @@ class ML600(FlowchemDevice):
 
         # Add device components
         if self.dual_syringe:
-            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C")])
-            if self.config.get("valve_left_class", "") == "ML600RightValve":
-                self.components.extend([ML600RightValve("left_valve", self)])
-            else:
-                self.components.extend([ML600LeftValve("left_valve", self)])
+            # Add pumps
+            self.components.extend([
+                ML600Pump("left_pump", self, "B"),
+                ML600Pump("right_pump", self, "C")
+            ])
 
-            if self.config.get("valve_rigth_class", "") == "ML600LeftValve":
-                self.components.extend([ML600LeftValve("right_valve", self)])
-            else:
-                self.components.extend([ML600RightValve("right_valve", self)])
+            # Add valves with validation
+            try:
+                left_valve_type = ValveType(self.config.get("valve_left_class", "LEFT"))
+                right_valve_type = ValveType(self.config.get("valve_right_class", "RIGHT"))
+
+                self.components.extend([
+                    ML600LeftValve("left_valve", self) if left_valve_type == ValveType.LEFT else ML600RightValve(
+                        "left_valve", self),
+                    ML600RightValve("right_valve", self) if right_valve_type == ValveType.RIGHT else ML600LeftValve(
+                        "right_valve", self)
+                ])
+            except ValueError as e:
+                raise InvalidConfigurationError(
+                    f"Invalid valve configuration! Supported valve types are: {[v.value for v in ValveType]}"
+                ) from e
         else:
-            if self.config.get("valve_class", "") == "ML600RightValve":
-                self.components.extend([ML600Pump("pump", self), ML600RightValve("valve", self)])
-            else:
-                self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
+            # Single syringe system
+            self.components.append(ML600Pump("pump", self))
+
+            try:
+                valve_type = ValveType(self.config.get("valve_class", "LEFT"))
+                self.components.append(
+                    ML600LeftValve("valve", self) if valve_type == ValveType.LEFT else ML600RightValve("valve", self)
+                )
+            except ValueError as e:
+                raise InvalidConfigurationError(
+                    f"Invalid valve configuration! Supported valve types are: {[v.value for v in ValveType]}"
+                ) from e
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
