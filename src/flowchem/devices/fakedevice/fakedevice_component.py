@@ -15,7 +15,7 @@ class FakeSpecificComponent(FakeComponent):
 
     def __init__(self, name: str, hw_device: FakeDeviceExample) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
+        self.add_api_route("/set_specific_command", self.set_specific_command, methods=["PUT"])
 
     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
         """
@@ -59,7 +59,7 @@ class FakeSpecificComponent2(FakeComponent):
 
     def __init__(self, name: str, hw_device: FlowchemDevice) -> None:
         super().__init__(name, hw_device)
-        self.add_api_route("/set_specif_command", self.set_specif_command, methods=["PUT"])
+        self.add_api_route("/set_specific_command", self.set_specific_command, methods=["PUT"])
 
     async def fake_send_command(self, parameter_1: str = "", parameter_2: str = "") -> bool:  # type: ignore
         """
