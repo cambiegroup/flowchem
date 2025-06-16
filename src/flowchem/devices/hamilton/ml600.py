@@ -343,7 +343,7 @@ class ML600(FlowchemDevice):
         # self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
         # logger.warning(f"due to offset steps is {self._offset_steps}. the max_vol : {self._max_vol}")
         # This enables to configure on per-pump basis uncommon parameters
-        self.config = ML600.DEFAULT_CONFIG | config
+        self.config = ML600.DEFAULT_CONFIG | config # This will merger the config into ML600.DEFAULT_CONFIG (in order to update)
         self.dual_syringe = False
 
     @classmethod
@@ -415,21 +415,40 @@ class ML600(FlowchemDevice):
 
         # Add device components
         if self.dual_syringe:
-            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C")])
-            if self.config.get("valve_left_class", "") == "ML600RightValve":
-                self.components.extend([ML600RightValve("left_valve", self)])
-            else:
-                self.components.extend([ML600LeftValve("left_valve", self)])
+            # Add pumps
+            self.components.extend([
+                ML600Pump("left_pump", self, "B"),
+                ML600Pump("right_pump", self, "C")
+            ])
 
-            if self.config.get("valve_rigth_class", "") == "ML600LeftValve":
-                self.components.extend([ML600LeftValve("right_valve", self)])
-            else:
-                self.components.extend([ML600RightValve("right_valve", self)])
+            # Add valves with validation
+            try:
+                left_valve_type = ValveType(self.config.get("valve_left_class", "LEFT"))
+                right_valve_type = ValveType(self.config.get("valve_right_class", "RIGHT"))
+
+                self.components.extend([
+                    ML600LeftValve("left_valve", self) if left_valve_type == ValveType.LEFT else ML600RightValve(
+                        "left_valve", self),
+                    ML600RightValve("right_valve", self) if right_valve_type == ValveType.RIGHT else ML600LeftValve(
+                        "right_valve", self)
+                ])
+            except ValueError as e:
+                raise InvalidConfigurationError(
+                    f"Invalid valve configuration! Supported valve types are: {[v.value for v in ValveType]}"
+                ) from e
         else:
-            if self.config.get("valve_class", "") == "ML600RightValve":
-                self.components.extend([ML600Pump("pump", self), ML600RightValve("valve", self)])
-            else:
-                self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
+            # Single syringe system
+            self.components.append(ML600Pump("pump", self))
+
+            try:
+                valve_type = ValveType(self.config.get("valve_class", "LEFT"))
+                self.components.append(
+                    ML600LeftValve("valve", self) if valve_type == ValveType.LEFT else ML600RightValve("valve", self)
+                )
+            except ValueError as e:
+                raise InvalidConfigurationError(
+                    f"Invalid valve configuration! Supported valve types are: {[v.value for v in ValveType]}"
+                ) from e
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""
@@ -718,7 +737,7 @@ class ML600(FlowchemDevice):
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CW")
         else:
             await self.send_command_and_read_reply(
-                Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW, command_value=target_position,
+                Protocol1Command(command=ML600Commands.VALVE_BY_ANGLE_CCW.value, command_value=target_position,
                                  target_component=target_component if self.dual_syringe else ""),
             )
             logger.debug(f"{self.name} valve position set to position {target_position}, switching CCW")
