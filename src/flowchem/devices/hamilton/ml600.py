@@ -446,34 +446,20 @@ class ML600(FlowchemDevice):
                 ML600Pump("right_pump", self, "C")
             ])
 
-            # Add valves with validation
-            try:
-                left_valve_type = ValveType(self.config.get("valve_left_class", "LEFT"))
-                right_valve_type = ValveType(self.config.get("valve_right_class", "RIGHT"))
-
-                self.components.extend([
-                    ML600LeftValve("left_valve", self) if left_valve_type == ValveType.LEFT else ML600RightValve(
-                        "left_valve", self),
-                    ML600RightValve("right_valve", self) if right_valve_type == ValveType.RIGHT else ML600LeftValve(
-                        "right_valve", self)
-                ])
-            except ValueError as e:
-                raise InvalidConfigurationError(
-                    f"Invalid valve configuration! Supported valve types are: {[v.value for v in ValveType]}"
-                ) from e
+            # Handle valve configuration
+            left_valve = ValveType(self.config["valve_left_class"])
+            right_valve = ValveType(self.config["valve_rigth_class"])
+            self.components.extend([
+                ML600LeftValve("left_valve", self) if left_valve == ValveType.LEFT else ML600RightValve("left_valve",
+                                                                                                        self),
+                ML600RightValve("right_valve", self) if right_valve == ValveType.RIGHT else ML600LeftValve(
+                    "right_valve", self)
+            ])
         else:
-            # Single syringe system
             self.components.append(ML600Pump("pump", self))
-
-            try:
-                valve_type = ValveType(self.config.get("valve_class", "LEFT"))
-                self.components.append(
-                    ML600LeftValve("valve", self) if valve_type == ValveType.LEFT else ML600RightValve("valve", self)
-                )
-            except ValueError as e:
-                raise InvalidConfigurationError(
-                    f"Invalid valve configuration! Supported valve types are: {[v.value for v in ValveType]}"
-                ) from e
+            valve = ValveType(self.config["valve_class"])
+            self.components.append(
+                ML600LeftValve("valve", self) if valve == ValveType.LEFT else ML600RightValve("valve", self))
 
     async def send_command_and_read_reply(self, command: Protocol1Command) -> str:
         """Send a command to the pump. Here we just add the right pump number."""

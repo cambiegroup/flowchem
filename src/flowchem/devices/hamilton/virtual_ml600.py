@@ -95,16 +95,16 @@ class VirtualML600(FlowchemDevice):
             ])
 
             # Handle valve configuration
-            if self.dual_syringe:
-                left_valve = ValveType(self.config["valve_left_class"])
-                right_valve = ValveType(self.config["valve_rigth_class"])
-                self.components.extend([
-                    ML600LeftValve("left_valve", self) if left_valve == ValveType.LEFT else ML600RightValve("left_valve", self),
-                    ML600RightValve("right_valve", self) if right_valve == ValveType.RIGHT else ML600LeftValve("right_valve", self)
-                ])
-            else:
-                valve = ValveType(self.config["valve_class"])
-                self.components.append(ML600LeftValve("valve", self) if valve == ValveType.LEFT else ML600RightValve("valve", self))
+            left_valve = ValveType(self.config["valve_left_class"])
+            right_valve = ValveType(self.config["valve_rigth_class"])
+            self.components.extend([
+                ML600LeftValve("left_valve", self) if left_valve == ValveType.LEFT else ML600RightValve("left_valve", self),
+                ML600RightValve("right_valve", self) if right_valve == ValveType.RIGHT else ML600LeftValve("right_valve", self)
+            ])
+        else:
+            self.components.append(ML600Pump("pump", self))
+            valve = ValveType(self.config["valve_class"])
+            self.components.append(ML600LeftValve("valve", self) if valve == ValveType.LEFT else ML600RightValve("valve", self))
 
     async def get_current_volume(self, pump: str) -> pint.Quantity:
         """Return current syringe position in ml."""
