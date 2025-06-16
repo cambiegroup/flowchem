@@ -250,6 +250,12 @@ class HamiltonPumpIO:
         return self._parse_response(response)
 
 
+class ValveType(Enum):
+    """Enum for supported valve types in ML600."""
+    LEFT = "ML600LeftValve"
+    RIGHT = "ML600RightValve"
+
+
 class ML600(FlowchemDevice):
     """ML600 implementation according to manufacturer docs. Tested on a 61501-01 (i.e. single syringe system).
 
@@ -264,9 +270,9 @@ class ML600(FlowchemDevice):
     DEFAULT_CONFIG = {
         "default_infuse_rate": "1 ml/min",
         "default_withdraw_rate": "1 ml/min",
-        "valve_left_class": "ML600LeftValve",     # for device with two syringe pump and two valve
-        "valve_rigth_class": "ML600RightValve",   # for device with two syringe pump and two valve
-        "valve_class": "ML600LeftValve"           # for device with one syringe pump and valve
+        "valve_left_class": ValveType.LEFT.value,     # for device with two syringe pump and two valve
+        "valve_rigth_class": ValveType.RIGHT.value,   # for device with two syringe pump and two valve
+        "valve_class": ValveType.LEFT.value           # for device with one syringe pump and valve
     }
 
     # This class variable is used for daisy chains (i.e. multiple pumps on the same serial connection). Details below.
@@ -343,8 +349,27 @@ class ML600(FlowchemDevice):
         # self._max_vol = (48000 - self._offset_steps) * ureg.step / self._steps_per_ml
         # logger.warning(f"due to offset steps is {self._offset_steps}. the max_vol : {self._max_vol}")
         # This enables to configure on per-pump basis uncommon parameters
-        self.config = ML600.DEFAULT_CONFIG | config # This will merger the config into ML600.DEFAULT_CONFIG (in order to update)
+        self.inspect_valve_argument(config)
         self.dual_syringe = False
+
+    def inspect_valve_argument(self, config: dict):
+        if config.get("valve_left_class") and not config.get("valve_left_class") in ValveType:
+            logger.error(f"Invalid valve configuration in left valve of {self.name}! "
+                         f"Supported valve types are: {[v.value for v in ValveType]}. Assuming "
+                         f"{ML600.DEFAULT_CONFIG["valve_left_class"]}!")
+            config.pop("valve_left_class")
+        if config.get("valve_rigth_class") and not config.get("valve_rigth_class") in ValveType:
+            logger.error(f"Invalid valve configuration in rigth valve of {self.name}! "
+                         f"Supported valve types are: {[v.value for v in ValveType]}. Assuming "
+                         f"{ML600.DEFAULT_CONFIG["valve_rigth_class"]}!")
+            config.pop("valve_rigth_class")
+        if config.get("valve_class") and not config.get("valve_class") in ValveType:
+            logger.error(f"Invalid valve configuration in valve of {self.name}! "
+                         f"Supported valve types are: {[v.value for v in ValveType]}. Assuming "
+                         f"{ML600.DEFAULT_CONFIG["valve_class"]}!")
+            config.pop("valve_class")
+        # This will merger the config into ML600.DEFAULT_CONFIG (in order to update)
+        self.config = VirtualML600.DEFAULT_CONFIG | config
 
     @classmethod
     def from_config(cls, **config):

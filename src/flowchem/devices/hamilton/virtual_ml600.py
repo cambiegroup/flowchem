@@ -1,4 +1,5 @@
 from flowchem.devices.flowchem_device import FlowchemDevice
+from flowchem.devices.hamilton.ml600 import ValveType, InvalidConfigurationError
 from flowchem.devices.hamilton.ml600_pump import ML600Pump
 from flowchem.devices.hamilton.ml600_valve import ML600LeftValve, ML600RightValve
 from flowchem.utils.people import samuel_saraiva
@@ -38,8 +39,27 @@ class VirtualML600(FlowchemDevice):
         }
         self.syringe_volume = ureg.Quantity(config.get("syringe_volume", "10 ml"))
         self._current_volume = self.syringe_volume.magnitude
-        self.config = VirtualML600.DEFAULT_CONFIG | config
+        self.inspect_valve_argument(config)
         self.dual_syringe = config.get("dual_syringe", "") == "true"
+
+    def inspect_valve_argument(self, config: dict):
+        if config.get("valve_left_class") and not config.get("valve_left_class") in ValveType:
+            logger.error(f"Invalid valve configuration in left valve of {self.name}! "
+                         f"Supported valve types are: {[v.value for v in ValveType]}. Assuming "
+                         f"{ML600.DEFAULT_CONFIG["valve_left_class"]}!")
+            config.pop("valve_left_class")
+        if config.get("valve_rigth_class") and not config.get("valve_rigth_class") in ValveType:
+            logger.error(f"Invalid valve configuration in rigth valve of {self.name}! "
+                         f"Supported valve types are: {[v.value for v in ValveType]}. Assuming "
+                         f"{ML600.DEFAULT_CONFIG["valve_rigth_class"]}!")
+            config.pop("valve_rigth_class")
+        if config.get("valve_class") and not config.get("valve_class") in ValveType:
+            logger.error(f"Invalid valve configuration in valve of {self.name}! "
+                         f"Supported valve types are: {[v.value for v in ValveType]}. Assuming "
+                         f"{ML600.DEFAULT_CONFIG["valve_class"]}!")
+            config.pop("valve_class")
+        # This will merger the config into ML600.DEFAULT_CONFIG (in order to update)
+        self.config = VirtualML600.DEFAULT_CONFIG | config
 
     @classmethod
     def from_config(cls, **config):
@@ -68,21 +88,23 @@ class VirtualML600(FlowchemDevice):
         logger.info(f"Virtual ML600 {self.name} with syringe {self.syringe_volume} initialized with conf: {self.config}!")
         # Add device components
         if self.dual_syringe:
-            self.components.extend([ML600Pump("left_pump", self, "B"), ML600Pump("right_pump", self, "C")])
-            if self.config.get("valve_left_class", "") == "ML600RightValve":
-                self.components.extend([ML600RightValve("left_valve", self)])
-            else:
-                self.components.extend([ML600LeftValve("left_valve", self)])
+            # Add pumps
+            self.components.extend([
+                ML600Pump("left_pump", self, "B"),
+                ML600Pump("right_pump", self, "C")
+            ])
 
-            if self.config.get("valve_rigth_class", "") == "ML600LeftValve":
-                self.components.extend([ML600LeftValve("right_valve", self)])
+            # Handle valve configuration
+            if self.dual_syringe:
+                left_valve = ValveType(self.config["valve_left_class"])
+                right_valve = ValveType(self.config["valve_rigth_class"])
+                self.components.extend([
+                    ML600LeftValve("left_valve", self) if left_valve == ValveType.LEFT else ML600RightValve("left_valve", self),
+                    ML600RightValve("right_valve", self) if right_valve == ValveType.RIGHT else ML600LeftValve("right_valve", self)
+                ])
             else:
-                self.components.extend([ML600RightValve("right_valve", self)])
-        else:
-            if self.config.get("valve_class", "") == "ML600RightValve":
-                self.components.extend([ML600Pump("pump", self), ML600RightValve("valve", self)])
-            else:
-                self.components.extend([ML600Pump("pump", self), ML600LeftValve("valve", self)])
+                valve = ValveType(self.config["valve_class"])
+                self.components.append(ML600LeftValve("valve", self) if valve == ValveType.LEFT else ML600RightValve("valve", self))
 
     async def get_current_volume(self, pump: str) -> pint.Quantity:
         """Return current syringe position in ml."""
