@@ -40,7 +40,7 @@ class FakeSpecificComponent(FakeComponent):
         await self.hw_device.send_command('Request a data from the FakeDevice')
         return 0.5  # Generic data to show how it works
 
-    async def set_specif_command(self, command: str = "command") -> bool:
+    async def set_specific_command(self, command: str = "command") -> bool:
         """
         This is an example of a specific command that only this device has!
 
@@ -84,7 +84,7 @@ class FakeSpecificComponent2(FakeComponent):
         await self.hw_device.send_command('Request a data from the FakeDevice')
         return 0.5  # Generic data to show how it works
 
-    async def set_specif_command(self) -> bool:
+    async def set_specific_command(self) -> bool:
         """
         This is an example of a specific command that only this device has!
 
