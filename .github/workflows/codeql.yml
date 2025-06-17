@@ -1,37 +1,33 @@
-name: "CodeQL"
+name: Bandit Security Scan
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  schedule:
-    - cron: '40 3 * * 2'
 
 jobs:
-  analyze:
-    name: Analyze
-    runs-on: 'ubuntu-latest'
-    timeout-minutes: 360
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-
-    strategy:
-      fail-fast: false
+  bandit:
+    name: Run Bandit Scan
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    # Initializes the CodeQL tools for scanning.
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        languages: 'python'
+        python-version: '3.x'
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+    - name: Install Bandit
+      run: pip install bandit
+
+    - name: Run Bandit on code
+      run: bandit -r . -f txt -o bandit-report.txt
+
+    - name: Upload Bandit Report
+      uses: actions/upload-artifact@v4
       with:
-        category: "/language:python"
+        name: bandit-report
+        path: bandit-report.txt
