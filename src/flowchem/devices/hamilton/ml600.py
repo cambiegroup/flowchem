@@ -274,7 +274,7 @@ class ML600(FlowchemDevice):
         "default_infuse_rate": "1 ml/min",
         "default_withdraw_rate": "1 ml/min",
         "valve_left_class": ValveType.LEFT.value,     # for device with two syringe pump and two valve
-        "valve_rigth_class": ValveType.RIGHT.value,   # for device with two syringe pump and two valve
+        "valve_right_class": ValveType.RIGHT.value,   # for device with two syringe pump and two valve
         "valve_class": ValveType.LEFT.value           # for device with one syringe pump and valve
     }
 
@@ -363,7 +363,7 @@ class ML600(FlowchemDevice):
             logger.error(f"Supported valve types are: {[v.value for v in ValveType]}.")
             logger.error("Assuming default configuration!")
             config.pop("valve_left_class")
-        if config.get("valve_rigth_class") and config.get("valve_rigth_class") not in ValveType:
+        if config.get("valve_right_class") and config.get("valve_rigtht_class") not in ValveType:
             logger.error(f"Invalid valve configuration in rigth valve of {self.name}!")
             logger.error(f"Supported valve types are: {[v.value for v in ValveType]}.")
             logger.error("Assuming default configuration!")
